@@ -1,0 +1,16 @@
+{
+  "name": "visual-fx",
+  "version": "1.0.0",
+  "description": "Visual-FX: Sistema de transmisiones de carreras de caballos en directo y multicanal para Agencias Fenix",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^2.7.0"
+  }
+}
