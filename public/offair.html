@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fénix TV - Fuera de Horario</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0b1329;
+      background-image: radial-gradient(circle at 50% 50%, #172755 0%, #080e1e 100%);
+      color: #ffffff;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 40px 30px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255, 171, 0, 0.15);
+      color: #ffab00;
+      border: 1px solid rgba(255, 171, 0, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+    .flag {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+    .track-name {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .location {
+      font-size: 0.95rem;
+      color: #94a3b8;
+      margin-bottom: 25px;
+    }
+    .status-box {
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 20px;
+    }
+    .status-text {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+    .clock {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-top: 5px;
+      font-family: monospace;
+    }
+    .footer-logo {
+      font-size: 0.8rem;
+      color: #64748b;
+      letter-spacing: 1px;
+    }
+    .footer-logo span {
+      color: #e11d48;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">⏱️ Fuera de Horario de Carreras</div>
+    <div class="flag" id="txtFlag">🏇</div>
+    <h1 class="track-name" id="txtTrackName">Hipódromo Oficial</h1>
+    <p class="location" id="txtLocation">Transmisión en Espera</p>
+
+    <div class="status-box">
+      <div class="status-text">Sin carreras en vivo en este momento. La señal se activará automáticamente al iniciar la próxima jornada.</div>
+      <div class="clock" id="txtClock">00:00:00</div>
+    </div>
+
+    <div class="footer-logo">VISUAL-<span>FX</span> • AGENCIAS FÉNIX MÁSTER</div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const track = params.get('track') || 'Hipódromo Seleccionado';
+    const flag = params.get('flag') || '🏇';
+    const loc = params.get('loc') || 'Circuito de Carreras';
+
+    document.getElementById('txtTrackName').textContent = track;
+    document.getElementById('txtFlag').textContent = flag;
+    document.getElementById('txtLocation').textContent = loc;
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('txtClock').textContent = now.toLocaleTimeString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>

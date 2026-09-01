@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual-FX | Transmisiones Hípicas en Vivo - Agencias Fenix</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- HLS.js for Live Video Streaming -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  
+  <!-- Anti-Recursion Frame Guard -->
+  <script>
+    if (window.self !== window.top) {
+      window.addEventListener('DOMContentLoaded', () => {
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#94a3b8;font-family:sans-serif;text-align:center;padding:20px;"><div><h3 style="color:#f87171;margin-bottom:8px;">⚠️ Sitio Web Externo No Incrustable</h3><p style="font-size:0.9rem;">La URL asignada no permite ser incrustada directamente en iFrame por políticas de seguridad (X-Frame-Options).</p><small style="color:#64748b;">Configure una señal HLS (.m3u8) o Embed válido en el Panel Máster.</small></div></div>';
+      });
+    }
+  </script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="tv-mode">
+  
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-logo">
+        <div class="logo-icon">
+          <span class="live-pulse"></span>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">VISUAL<span class="highlight">-FX</span></span>
+          <span class="brand-subtitle">AGENCIAS FENIX • HÍPICA EN DIRECTO</span>
+        </div>
+      </div>
+      
+      <div class="device-badge" id="deviceBadge">
+        <span class="status-dot green"></span>
+        <span id="deviceBadgeText">Sede Caracas • TV #1 [AUTORIZADO]</span>
+      </div>
+    </div>
+    
+    <div class="header-center">
+      <!-- Grid Layout Controls -->
+      <div class="layout-selector" role="group" aria-label="Selección de Pantallas">
+        <span class="selector-label">VISTA:</span>
+        <button class="layout-btn active" data-grid="1" title="Pantalla Única (Tecla 1)" id="btnGrid1">
+          <span class="icon">🔲</span> 1 CANAL
+        </button>
+        <button class="layout-btn" data-grid="2" title="Dos Pantallas (Tecla 2)" id="btnGrid2">
+          <span class="icon">⏸️</span> 2 CANALES
+        </button>
+        <button class="layout-btn" data-grid="3" title="Tres Pantallas (Tecla 3)" id="btnGrid3">
+          <span class="icon">⏹️</span> 3 CANALES
+        </button>
+        <button class="layout-btn" data-grid="4" title="Cuatro Pantallas 2x2 (Tecla 4)" id="btnGrid4">
+          <span class="icon">⊞</span> 4 MULTICANAL (2x2)
+        </button>
+      </div>
+    </div>
+    
+    <div class="header-right">
+      <button class="btn-sidebar-toggle" id="btnToggleSidebar" title="Lista de Canales">
+        <span class="icon">📺</span> Hipódromos
+      </button>
+      <button class="btn-admin-modal" id="btnAdminModal" title="Panel de Administración">
+        <span class="icon">⚙️</span> Panel de Control
+      </button>
+      <div class="user-profile" id="userProfileArea">
+        <span class="user-name" id="lblUserName">Agencia Cabimas</span>
+        <button class="btn-logout" id="btnLogout" title="Cerrar Sesión">🚪</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Modal / Screen -->
+  <div class="modal-overlay" id="loginModal" style="display: none;">
+    <div class="login-card glassmorphism">
+      <div class="login-header">
+        <div class="logo-icon large">
+          <span class="live-pulse"></span>
+        </div>
+        <h2>Acceso a Visual-FX</h2>
+        <p>Introduzca sus credenciales de Agencia Fenix</p>
+      </div>
+      
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="txtUser">Usuario de Agencia o Administrador</label>
+          <input type="text" id="txtUser" placeholder="Ej. hector_owner o leo1" value="hector_owner" required autofocus>
+        </div>
+        
+        <div class="form-group">
+          <label for="txtPass">Contraseña</label>
+          <input type="password" id="txtPass" placeholder="••••••••" value="admin2026" required>
+        </div>
+        
+        <div class="form-error" id="loginError" style="display: none;"></div>
+        
+        <button type="submit" class="btn-primary btn-block">
+          ENTRAR AL SISTEMA
+        </button>
+      </form>
+      <div class="login-footer">
+        <small>Sistema de Transmisión Exclusivo Agencias Fenix © 2026</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Executive Admin Control Panel Modal -->
+  <div class="modal-overlay" id="deviceModal" style="display: none;">
+    <div class="modal-card wide-admin glassmorphism">
+      
+      <!-- Admin Modal Header -->
+      <div class="modal-header">
+        <div class="admin-title-area">
+          <h3>⚙️ Panel de Control Administrativo</h3>
+          <span class="admin-subtitle">Gestión Centralizada Fenix • Dispositivos, Canales y Usuarios</span>
+        </div>
+        <button class="btn-close" id="btnCloseDeviceModal">&times;</button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="admin-tabs">
+        <button class="admin-tab-btn active" data-tab="tab-devices" id="tabBtnDevices">
+          📺 Televisores y Licencias
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-channels" id="tabBtnChannels">
+          📡 Transmisiones Máster (30 Hipódromos)
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-users" id="tabBtnUsers">
+          👥 Usuarios y Agencias
+        </button>
+      </nav>
+
+      <div class="modal-body admin-tab-content">
+        
+        <!-- TAB 1: TELEVISORES Y LICENCIAS -->
+        <div class="tab-pane active" id="tab-devices">
+          <div class="admin-section-box">
+            <h4>🔑 Activar Nuevo Televisor por PIN</h4>
+            <p class="section-desc">Ingrese el código de 6 dígitos que aparece en la pantalla del televisor no autorizado:</p>
+            <div class="form-grid-row">
+              <input type="text" id="txtActivationPin" placeholder="PIN (Ej. FX-4912)" style="flex:1;">
+              <input type="text" id="txtTvName" placeholder="Nombre del TV (Ej. TV-Caja 2)" style="flex:2;">
+              <button class="btn-accent" id="btnSubmitActivation">ACTIVAR TELEVISOR</button>
+            </div>
+            <div class="form-msg" id="activationMsg"></div>
+          </div>
+
+          <h4 class="table-section-title">📺 Televisores y Pantallas Autorizadas</h4>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Nombre del TV</th>
+                  <th>ID Dispositivo</th>
+                  <th>Sede / Agencia</th>
+                  <th>Fecha Registro</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="approvedDeviceTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: SEÑALES MÁSTER Y HIPÓDROMOS -->
+        <div class="tab-pane" id="tab-channels">
+          <div class="admin-section-box">
+            <h4>📡 Cambiar Señal de Transmisión Máster</h4>
+            <p class="section-desc">Seleccione un hipódromo y pegue la nueva URL de transmisión HLS (.m3u8) o iFrame:</p>
+            <div class="form-grid-row">
+              <select id="selAdminChannel" style="flex:1.2;"></select>
+              <input type="text" id="txtAdminStreamUrl" placeholder="Nueva URL de Transmisión (ej. https://...m3u8)" style="flex:2.5;">
+              <button class="btn-primary" id="btnUpdateChannelStream">ACTUALIZAR SEÑAL</button>
+            </div>
+            <div class="form-msg" id="channelUpdateMsg"></div>
+          </div>
+
+          <h4 class="table-section-title">🏇 Estado de los 30 Hipódromos Oficiales</h4>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Hipódromo</th>
+                  <th>Ubicación</th>
+                  <th>Tipo</th>
+                  <th>Estado Señal</th>
+                  <th>URL Configurada</th>
+                </tr>
+              </thead>
+              <tbody id="adminChannelsTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: USUARIOS Y AGENCIAS -->
+        <div class="tab-pane" id="tab-users">
+          <div class="admin-section-box">
+            <h4>➕ Crear Nuevo Usuario / Agencia Fenix</h4>
+            <p class="section-desc">Asigne el nombre de usuario, clave y nivel de acceso jerárquico:</p>
+            <div class="form-grid-row">
+              <input type="text" id="newTxtUsername" placeholder="Usuario (ej. agencia_barquisimeto)">
+              <input type="password" id="newTxtPassword" placeholder="Contraseña">
+              <input type="text" id="newTxtName" placeholder="Nombre Completo o Sede">
+              <select id="newSelRole">
+                <option value="AGENCY_MANAGER">🏢 Encargado de Agencia</option>
+                <option value="TECH_CHIEF">🛠️ Jefe de Soporte Técnico</option>
+                <option value="SUPER_ADMIN">👑 Super Administrador</option>
+              </select>
+              <button class="btn-accent" id="btnCreateUser">CREAR CUENTA</button>
+            </div>
+            <div class="form-msg" id="userCreateMsg"></div>
+          </div>
+
+          <h4 class="table-section-title">👥 Directorio de Cuentas y Accesos</h4>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Nombre / Sede</th>
+                  <th>Rol Jerárquico</th>
+                  <th>Ubicación</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="systemUsersTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Unauthorized Device Lock Screen -->
+  <div class="unauthorized-banner" id="unauthorizedBanner" style="display: none;">
+    <div class="unauthorized-content glassmorphism">
+      <div class="lock-icon">🔒</div>
+      <h2>Dispositivo No Autorizado</h2>
+      <p>Este televisor o navegador no está registrado para transmitir en las agencias Fenix.</p>
+      <div class="pin-display">
+        <span>CÓDIGO DE ACTIVACIÓN:</span>
+        <strong id="lblDevicePin">FX-0000</strong>
+      </div>
+      <p class="help-text">Proporcione este código al administrador de la sede Fenix para habilitar esta pantalla.</p>
+    </div>
+  </div>
+
+  <!-- Main Container Layout -->
+  <main class="main-container">
+    
+    <!-- Sidebar: Racetracks Channel Catalog -->
+    <aside class="sidebar-channels" id="sidebarChannels">
+      <div class="sidebar-header">
+        <h3><span class="icon">🏇</span> Hipódromos en Vivo</h3>
+        <span class="badge-count" id="lblChannelCount">14</span>
+      </div>
+      
+      <div class="sidebar-search">
+        <input type="text" id="txtSearchChannel" placeholder="Buscar hipódromo (Ej. Gulfstream, Saratoga)...">
+      </div>
+      
+      <div class="channel-list" id="channelListContainer">
+        <!-- Dynamic Channel Items Rendered Here -->
+      </div>
+    </aside>
+
+    <!-- Main Viewport: Multi-Channel Grid Matrix -->
+    <section class="grid-viewport" id="gridViewport" data-grid="1">
+      
+      <!-- Video Cell 1 -->
+      <div class="video-cell focused" id="cell-1" data-cell="1" tabindex="0">
+        <div class="cell-header">
+          <div class="channel-info">
+            <span class="channel-flag" id="cell1Flag">🇺🇸</span>
+            <span class="channel-name" id="cell1Name">Gulfstream Park</span>
+            <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
+          </div>
+          <div class="cell-controls">
+            <select class="channel-select-dropdown" data-cell="1" id="selectCell1"></select>
+          </div>
+        </div>
+        
+        <div class="video-wrapper">
+          <video id="video-1" autoplay muted playsinline></video>
+          <div class="video-loader" id="loader-1"><div class="spinner"></div><span>Conectando Señal...</span></div>
+        </div>
+
+        <div class="cell-footer">
+          <button class="btn-audio active" data-cell="1" id="btnAudio1">
+            <span class="icon">🔊</span> AUDIO ACTIVO
+          </button>
+          <span class="cell-status-text" id="cell1StatusText">Carreras en Vivo</span>
+          <button class="btn-fullscreen" data-cell="1" id="btnFullscreen1" title="Pantalla Completa">
+            <span class="icon">⛶</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Video Cell 2 -->
+      <div class="video-cell" id="cell-2" data-cell="2" tabindex="0" style="display: none;">
+        <div class="cell-header">
+          <div class="channel-info">
+            <span class="channel-flag" id="cell2Flag">🇺🇸</span>
+            <span class="channel-name" id="cell2Name">Saratoga</span>
+            <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
+          </div>
+          <div class="cell-controls">
+            <select class="channel-select-dropdown" data-cell="2" id="selectCell2"></select>
+          </div>
+        </div>
+        <div class="video-wrapper">
+          <video id="video-2" autoplay muted playsinline></video>
+          <div class="video-loader" id="loader-2"><div class="spinner"></div><span>Conectando Señal...</span></div>
+        </div>
+        <div class="cell-footer">
+          <button class="btn-audio" data-cell="2" id="btnAudio2">
+            <span class="icon">🔇</span> SILENCIADO
+          </button>
+          <span class="cell-status-text" id="cell2StatusText">Carreras en Vivo</span>
+          <button class="btn-fullscreen" data-cell="2" id="btnFullscreen2"><span class="icon">⛶</span></button>
+        </div>
+      </div>
+
+      <!-- Video Cell 3 -->
+      <div class="video-cell" id="cell-3" data-cell="3" tabindex="0" style="display: none;">
+        <div class="cell-header">
+          <div class="channel-info">
+            <span class="channel-flag" id="cell3Flag">🇺🇸</span>
+            <span class="channel-name" id="cell3Name">Aqueduct Racetrack</span>
+            <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
+          </div>
+          <div class="cell-controls">
+            <select class="channel-select-dropdown" data-cell="3" id="selectCell3"></select>
+          </div>
+        </div>
+        <div class="video-wrapper">
+          <video id="video-3" autoplay muted playsinline></video>
+          <div class="video-loader" id="loader-3"><div class="spinner"></div><span>Conectando Señal...</span></div>
+        </div>
+        <div class="cell-footer">
+          <button class="btn-audio" data-cell="3" id="btnAudio3">
+            <span class="icon">🔇</span> SILENCIADO
+          </button>
+          <span class="cell-status-text" id="cell3StatusText">Carreras en Vivo</span>
+          <button class="btn-fullscreen" data-cell="3" id="btnFullscreen3"><span class="icon">⛶</span></button>
+        </div>
+      </div>
+
+      <!-- Video Cell 4 -->
+      <div class="video-cell" id="cell-4" data-cell="4" tabindex="0" style="display: none;">
+        <div class="cell-header">
+          <div class="channel-info">
+            <span class="channel-flag" id="cell4Flag">🇺🇸</span>
+            <span class="channel-name" id="cell4Name">Parx Racing</span>
+            <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
+          </div>
+          <div class="cell-controls">
+            <select class="channel-select-dropdown" data-cell="4" id="selectCell4"></select>
+          </div>
+        </div>
+        <div class="video-wrapper">
+          <video id="video-4" autoplay muted playsinline></video>
+          <div class="video-loader" id="loader-4"><div class="spinner"></div><span>Conectando Señal...</span></div>
+        </div>
+        <div class="cell-footer">
+          <button class="btn-audio" data-cell="4" id="btnAudio4">
+            <span class="icon">🔇</span> SILENCIADO
+          </button>
+          <span class="cell-status-text" id="cell4StatusText">Carreras en Vivo</span>
+          <button class="btn-fullscreen" data-cell="4" id="btnFullscreen4"><span class="icon">⛶</span></button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- TV Remote Control Legend Footer -->
+  <footer class="tv-control-legend">
+    <div class="legend-item"><kbd>1</kbd> - <kbd>4</kbd> Cambiar Grilla (1 a 4 Canales)</div>
+    <div class="legend-item"><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> Navegar Canales TV</div>
+    <div class="legend-item"><kbd>Enter</kbd> Enfocar Audio / Selección</div>
+    <div class="legend-item"><kbd>F</kbd> Pantalla Completa</div>
+  </footer>
+
+  <!-- App Logic -->
+  <script src="/app.js"></script>
+</body>
+</html>
