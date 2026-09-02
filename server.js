@@ -23,6 +23,15 @@ const PORT = process.env.PORT || 3500;
 app.use(cors());
 app.use(express.json());
 
+// Anti-Cache Middleware para forzar la actualización inmediata en Smart TVs y navegadores
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Servir archivos estáticos desde cualquier ubicación posible
 const possiblePublicDirs = [
   path.join(__dirname, 'public'),
@@ -33,7 +42,7 @@ const possiblePublicDirs = [
 
 possiblePublicDirs.forEach(dir => {
   if (fs.existsSync(dir)) {
-    app.use(express.static(dir));
+    app.use(express.static(dir, { etag: false, lastModified: false }));
   }
 });
 

@@ -8,45 +8,67 @@ const RTN_CREDS = {
   password: process.env.RTN_PASS || 'K!Z9qz$ew2SamCp'
 };
 
-// Mapeo de Nombres de Hipódromos RTN a IDs de Visual-FX
+// Mapeo Extendido de Nombres de Hipódromos RTN a IDs de Visual-FX
 const RTN_TRACK_MAP = {
   'aqueduct': 'aqueduct-racetrack',
-  'belmont park': 'belmont-park',
+  'assiniboia': 'assiniboia-downs',
+  'belmont': 'belmont-park',
   'cal racing': 'cal-racing',
+  'canterbury': 'canterbury-park',
   'capital otb': 'capital-otb',
-  'churchill downs': 'churchill-downs',
-  'colonial downs': 'colonial-downs',
+  'century mile': 'century-mile',
+  'charles town': 'charles-town',
+  'churchill': 'churchill-downs',
+  'clinton': 'clinton-raceway',
+  'colonial': 'colonial-downs',
   'del mar': 'del-mar',
-  'delaware park': 'delaware-park',
+  'delaware': 'delaware-park',
+  'delta downs': 'delta-downs',
   'ellis park': 'ellis-park',
-  'evangeline downs': 'evangeline-downs',
+  'emerald downs': 'emerald-downs',
   'evangeline': 'evangeline-downs',
+  'fair grounds': 'fair-grounds',
   'finger lakes': 'finger-lakes',
-  'gulfstream park': 'gulfstream-park',
+  'flamboro': 'flamboro-downs',
+  'fonner': 'fonner-park',
+  'golden gate': 'golden-gate-fields',
+  'grand river': 'grand-river-raceway',
   'gulfstream': 'gulfstream-park',
   'hawthorne': 'hawthorne',
-  'palermo': 'hipodromo-palermo',
+  'hiawatha': 'hiawatha-horse-park',
   'horseshoe indianapolis': 'horseshoe-indianapolis',
   'indiana': 'horseshoe-indianapolis',
   'keeneland': 'keeneland',
   'kentucky downs': 'kentucky-downs',
   'la rinconada': 'la-rinconada',
-  'laurel park': 'laurel-park',
   'laurel': 'laurel-park',
   'los alamitos': 'los-alamitos',
-  'monmouth park': 'monmouth-park',
+  'mahoning': 'mahoning-valley',
+  'meadowlands': 'meadowlands',
+  'monmouth': 'monmouth-park',
   'mountaineer': 'mountaineer-park',
-  'mountaineer park': 'mountaineer-park',
-  'parx racing': 'parx-racing',
+  'palermo': 'hipodromo-palermo',
   'parx': 'parx-racing',
+  'penn national': 'penn-national',
+  'pocono': 'pocono-downs',
+  'prairie meadows': 'prairie-meadows',
   'presque isle': 'presque-isle',
+  'remington': 'remington-park',
+  'rideau': 'rideau-carleton',
+  'ruakaka': 'ruakaka-nz',
+  'sam houston': 'sam-houston',
   'santa anita': 'santa-anita-park',
   'saratoga': 'saratoga',
+  'sunland': 'sunland-park',
   'tampa bay': 'tampa-bay-downs',
   'thistledown': 'thistledown',
-  'jack thistledown': 'thistledown',
+  'turfway': 'turfway-park',
   'vsin': 'vsin',
-  'woodbine': 'woodbine'
+  'western fair': 'western-fair-way',
+  'woodbine mohawk': 'woodbine-mohawk',
+  'woodbine': 'woodbine',
+  'yonkers': 'yonkers-raceway',
+  'zia park': 'zia-park'
 };
 
 async function fetchRtnLiveStreams() {
@@ -112,13 +134,16 @@ async function fetchRtnLiveStreams() {
 
         const trackNameLower = (info.trackName || '').toLowerCase().trim();
 
-        // Buscar correspondencia con Visual-FX
+        // Buscar correspondencia en mapa o generar ID dinámico para cualquier hipódromo de RTN
         let matchedId = null;
         for (const [key, val] of Object.entries(RTN_TRACK_MAP)) {
           if (trackNameLower.includes(key)) {
             matchedId = val;
             break;
           }
+        }
+        if (!matchedId) {
+          matchedId = trackNameLower.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         }
 
         if (matchedId) {
@@ -150,11 +175,17 @@ async function fetchRtnLiveStreams() {
           if (iframeMatch && iframeMatch[1]) {
             const streamUrl = iframeMatch[1].replace(/&amp;/g, '&');
             activeStreams[matchedId] = {
+              id: matchedId,
               streamUrl,
               type: 'iframe',
-              trackName: info.trackName
+              name: info.trackName,
+              trackName: info.trackName,
+              onAir: true,
+              mtp: info.mtp || info.MTP || '',
+              race: info.race || info.Race || '',
+              onAirTime: info.onAirTime || ''
             };
-            console.log(`✅ [RTN Bridge] Señal obtenida para '${matchedId}' (${info.trackName}): ${streamUrl.substring(0, 75)}...`);
+            console.log(`✅ [RTN Bridge] Señal EN VIVO obtenida para '${matchedId}' (${info.trackName}): ${streamUrl.substring(0, 75)}...`);
           }
         }
       } catch (err) {

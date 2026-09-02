@@ -9,24 +9,56 @@ const masterState = {
 
 async function syncRtnStreams(channelsCatalog) {
   try {
+    // 1. Resetear el estado onAir previo
+    channelsCatalog.forEach(c => {
+      // YouTube streams u oficiales siempre permanecen onAir si no son de RTN
+      if (!c.officialSource || !c.officialSource.includes('NYRA') && !c.officialSource.includes('RTN')) {
+        c.onAir = true;
+      } else {
+        c.onAir = false;
+      }
+    });
+
     const bridgeStreams = await fetchRtnLiveStreams();
     for (const [chId, data] of Object.entries(bridgeStreams)) {
-      if (masterState.activeStreams.has(chId)) {
-        const current = masterState.activeStreams.get(chId);
-        current.streamUrl = data.streamUrl;
-        current.type = data.type;
-        current.lastUpdate = new Date().toISOString();
-        
-        const chInCatalog = channelsCatalog.find(c => c.id === chId);
-        if (chInCatalog) {
-          chInCatalog.streamUrl = data.streamUrl;
-          chInCatalog.iframeUrl = data.streamUrl;
-          chInCatalog.type = data.type;
-        }
+      masterState.activeStreams.set(chId, {
+        id: chId,
+        name: data.name || chId,
+        streamUrl: data.streamUrl,
+        type: data.type,
+        status: 'ONLINE',
+        lastUpdate: new Date().toISOString()
+      });
+
+      let chInCatalog = channelsCatalog.find(c => c.id === chId);
+      if (chInCatalog) {
+        chInCatalog.streamUrl = data.streamUrl;
+        chInCatalog.iframeUrl = data.streamUrl;
+        chInCatalog.type = data.type;
+        chInCatalog.onAir = true;
+        if (data.race) chInCatalog.nextRace = `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}`;
+      } else {
+        // Agregar dinámicamente cualquier nuevo hipódromo de RTN en vivo
+        chInCatalog = {
+          id: chId,
+          name: data.name || data.trackName || chId,
+          flag: "🏇",
+          location: "RTN.tv Live Simulcast",
+          type: data.type || "iframe",
+          aliases: [chId],
+          streamUrl: data.streamUrl,
+          iframeUrl: data.streamUrl,
+          officialSource: "RTN.tv Live Official",
+          statusText: "Carreras en Vivo • RTN HD Directo",
+          nextRace: data.race ? `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}` : "Siguiente Carrera en Vivo",
+          onAir: true
+        };
+        channelsCatalog.push(chInCatalog);
       }
     }
+    masterState.healthyChannelsCount = masterState.activeStreams.size;
     masterState.lastCheck = new Date().toISOString();
-    console.log(`📡 [Master Ingest RTN] Sincronización finalizada exitosamente (${Object.keys(bridgeStreams).length} señales activas).`);
+    console.log(`📡 [Master Ingest RTN] Sincronización exitosa (${Object.keys(bridgeStreams).length} señales EN VIVO activas).`);
   } catch (e) {
     console.error('⚠️ [Master Ingest RTN] Error en chequeo automático:', e.message);
   }

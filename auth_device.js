@@ -95,17 +95,6 @@ function checkDeviceStatus(deviceId, agencyId) {
     return { status: 'APPROVED', device: dev };
   }
 
-  if (deviceId.startsWith('TV-FX-')) {
-    const autoDev = {
-      agencyId: agencyId || 'GLOBAL_HQ',
-      tvName: `Televisor / PC (${deviceId})`,
-      status: 'APPROVED',
-      registeredAt: new Date().toISOString().split('T')[0]
-    };
-    APPROVED_DEVICES.set(deviceId, autoDev);
-    return { status: 'APPROVED', device: autoDev };
-  }
-
   let pin = PENDING_ACTIVATIONS.get(deviceId)?.pin;
   if (!pin) {
     pin = 'FX-' + Math.floor(1000 + Math.random() * 9000);
