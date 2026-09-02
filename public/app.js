@@ -68,6 +68,8 @@ function initDeviceId() {
   currentDeviceId = devId;
 }
 
+let devicePollingTimer = null;
+
 // Device Authorization Check
 async function checkDeviceAuthorization() {
   try {
@@ -77,10 +79,17 @@ async function checkDeviceAuthorization() {
     if (data.status === 'APPROVED') {
       elements.unauthorizedBanner.style.display = 'none';
       elements.deviceBadgeText.textContent = `${data.device.tvName} [AUTORIZADO]`;
+      if (devicePollingTimer) {
+        clearInterval(devicePollingTimer);
+        devicePollingTimer = null;
+      }
     } else {
       elements.unauthorizedBanner.style.display = 'flex';
       elements.lblDevicePin.textContent = data.pin || 'FX-PENDING';
       elements.deviceBadgeText.textContent = `Dispositivo No Autorizado (${currentDeviceId})`;
+      if (!devicePollingTimer) {
+        devicePollingTimer = setInterval(checkDeviceAuthorization, 4000);
+      }
     }
   } catch (err) {
     console.error('Error verificando dispositivo:', err);
@@ -141,21 +150,35 @@ elements.loginForm.addEventListener('submit', async (e) => {
   }
 });
 
-// Logout
-elements.btnLogout.addEventListener('click', () => {
+// Logout handler
+function handleLogout() {
   localStorage.removeItem('visual_fx_token');
   localStorage.removeItem('visual_fx_user');
   location.reload();
-});
+}
 
-// Load Channels
+elements.btnLogout.addEventListener('click', handleLogout);
+const btnLogoutAdminModal = document.getElementById('btnLogoutAdminModal');
+if (btnLogoutAdminModal) {
+  btnLogoutAdminModal.addEventListener('click', handleLogout);
+}
+
+// Load Channels & Prioritize Active RTN On Air Simulcasts
 async function loadChannelCatalog() {
   try {
     const res = await fetch('/api/channels');
     const data = await res.json();
     channelCatalog = data.channels || [];
-    channelCatalog.sort((a, b) => a.name.localeCompare(b.name));
-    elements.lblChannelCount.textContent = channelCatalog.length;
+
+    // Ordenar: Primero los hipódromos EN VIVO (onAir), luego alfabéticamente por nombre
+    channelCatalog.sort((a, b) => {
+      if (a.onAir && !b.onAir) return -1;
+      if (!a.onAir && b.onAir) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    const activeCount = channelCatalog.filter(c => c.onAir).length;
+    elements.lblChannelCount.textContent = `${activeCount} EN VIVO (${channelCatalog.length} TOTAL)`;
     
     renderChannelList(channelCatalog);
     populateSelectDropdowns();
@@ -172,15 +195,19 @@ function renderChannelList(channels) {
   
   channels.forEach(ch => {
     const card = document.createElement('div');
-    card.className = 'channel-card';
+    card.className = `channel-card ${ch.onAir ? 'on-air' : 'off-air'}`;
     card.setAttribute('tabindex', '0');
     
+    const liveBadgeHtml = ch.onAir
+      ? `<span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>`
+      : `<span class="badge-live off"><span class="live-dot gray"></span> FUERA DE AIRE</span>`;
+
     card.innerHTML = `
       <div class="channel-card-top">
         <span class="channel-card-name">${ch.flag} ${ch.name}</span>
-        <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
+        ${liveBadgeHtml}
       </div>
-      <div class="channel-card-loc">📍 ${ch.location} • ${ch.nextRace}</div>
+      <div class="channel-card-loc">📍 ${ch.location} • ${ch.nextRace || 'Transmisión RTN'}</div>
       <div class="channel-card-actions">
         <button class="btn-assign-cell" data-cell="1" data-channel="${ch.id}">P1</button>
         <button class="btn-assign-cell" data-cell="2" data-channel="${ch.id}">P2</button>
@@ -206,22 +233,48 @@ function renderChannelList(channels) {
   });
 }
 
-// Populate Select Dropdowns inside each Video Cell
+// Populate Select Dropdowns inside each Video Cell (Priorizando ON AIR Simulcasts)
 function populateSelectDropdowns() {
   [1, 2, 3, 4].forEach(cellNum => {
     const select = document.getElementById(`selectCell${cellNum}`);
     if (!select) return;
     
     select.innerHTML = '';
-    channelCatalog.forEach(ch => {
+
+    const activeChannels = channelCatalog.filter(c => c.onAir);
+    const inactiveChannels = channelCatalog.filter(c => !c.onAir);
+
+    // Grupo 1: Hipódromos Transmitiendo EN VIVO en RTN.tv
+    const groupLive = document.createElement('optgroup');
+    groupLive.label = `🟢 HIPÓDROMOS EN VIVO (${activeChannels.length} ON AIR)`;
+
+    activeChannels.forEach(ch => {
       const option = document.createElement('option');
       option.value = ch.id;
-      option.textContent = `${ch.flag} ${ch.name}`;
+      option.textContent = `🟢 ${ch.flag} ${ch.name} - ${ch.nextRace || 'EN VIVO'}`;
       if (ch.id === cellChannels[cellNum]) {
         option.selected = true;
       }
-      select.appendChild(option);
+      groupLive.appendChild(option);
     });
+    select.appendChild(groupLive);
+
+    // Grupo 2: Resto de Hipódromos
+    if (inactiveChannels.length > 0) {
+      const groupOther = document.createElement('optgroup');
+      groupOther.label = `⚪ RESTO DE HIPÓDROMOS (${inactiveChannels.length})`;
+
+      inactiveChannels.forEach(ch => {
+        const option = document.createElement('option');
+        option.value = ch.id;
+        option.textContent = `⚪ ${ch.flag} ${ch.name}`;
+        if (ch.id === cellChannels[cellNum]) {
+          option.selected = true;
+        }
+        groupOther.appendChild(option);
+      });
+      select.appendChild(groupOther);
+    }
 
     select.addEventListener('change', (e) => {
       assignChannelToCell(cellNum, e.target.value);
@@ -267,15 +320,15 @@ function playIframeInCell(cellNum, iframeUrl) {
   `;
 }
 
-// Play HLS Stream with Smart Fallback
+// Play HLS Stream with Smart Fallback & TV Performance Optimization
 function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
   const cell = document.getElementById(`cell-${cellNum}`);
   const wrapper = cell.querySelector('.video-wrapper');
   if (!wrapper) return;
 
   wrapper.innerHTML = `
-    <video id="video-${cellNum}" autoplay muted playsinline style="width:100%; height:100%; object-fit:contain;"></video>
-    <div class="video-loader" id="loader-${cellNum}"><div class="spinner"></div><span>Conectando Señal...</span></div>
+    <video id="video-${cellNum}" autoplay muted playsinline style="width:100%; height:100%; object-fit:contain; transform: translateZ(0); -webkit-transform: translateZ(0);"></video>
+    <div class="video-loader" id="loader-${cellNum}"><div class="spinner"></div><span>Conectando Señal HD...</span></div>
   `;
 
   const video = document.getElementById(`video-${cellNum}`);
@@ -290,10 +343,16 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
 
   function startHls(targetUrl, isFallback = false) {
     if (Hls.isSupported()) {
+      const isMultiCell = activeGridMode > 1;
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 90
+        lowLatencyMode: false, // Smart TV TV browser optimization for maximum fluidity without stuttering
+        capLevelToPlayerSize: isMultiCell, // Auto-balance resolution in multi-channel grid to prevent TV GPU overload
+        maxBufferLength: isMultiCell ? 10 : 25,
+        maxMaxBufferLength: isMultiCell ? 20 : 40,
+        maxBufferHole: 0.5,
+        highBufferWatchdogPeriod: 3,
+        nudgeMaxRetries: 5
       });
 
       hls.loadSource(targetUrl);
@@ -306,21 +365,23 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
 
       hls.on(Hls.Events.ERROR, (event, data) => {
         if (data.fatal) {
-          if (!isFallback && rawStreamUrl) {
-            hls.destroy();
-            startHls(rawStreamUrl, true);
-          } else {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                hls.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                hls.recoverMediaError();
-                break;
-              default:
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.warn('Network error in HLS, recovering...');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.warn('Media error in HLS, recovering media...');
+              hls.recoverMediaError();
+              break;
+            default:
+              if (!isFallback && rawStreamUrl) {
                 hls.destroy();
-                break;
-            }
+                startHls(rawStreamUrl, true);
+              } else {
+                hls.destroy();
+              }
+              break;
           }
         }
       });

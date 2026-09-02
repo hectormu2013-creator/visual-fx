@@ -199,24 +199,49 @@ body {
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(15, 23, 42, 0.8);
-  padding: 4px 10px;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.9);
+  padding: 4px 14px;
   border-radius: 20px;
   border: 1px solid var(--bg-card-border);
   font-size: 0.85rem;
 }
 
-.btn-logout {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
+.btn-logout-header {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.btn-logout:hover {
-  color: var(--accent-red);
+.btn-logout-header:hover {
+  background: var(--accent-red);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.btn-logout-header.secondary {
+  margin-right: 12px;
+}
+
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+optgroup {
+  background: #0f172a;
+  color: var(--accent-cyan);
+  font-weight: bold;
 }
 
 /* Main Container */
@@ -462,12 +487,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
-video {
+video, iframe {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  border: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .video-loader {
@@ -555,52 +589,68 @@ video {
   padding: 32px;
 }
 
-/* Executive Admin Portal Modal Styles */
+/* Executive Admin Portal Modal Styles - Ventana Completa Fullscreen */
 .modal-card.wide-admin {
-  width: 920px;
-  max-width: 94vw;
-  max-height: 90vh;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
+  border: none;
   display: flex;
   flex-direction: column;
-  padding: 24px 32px;
-  border-radius: 18px;
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+  padding: 24px 40px;
+  background: rgba(8, 12, 22, 0.98);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .admin-title-area h3 {
-  font-size: 1.35rem;
+  font-size: 1.6rem;
   font-weight: 800;
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  letter-spacing: 0.5px;
 }
 
 .admin-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
   display: block;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .btn-close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.8rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  font-size: 1.5rem;
+  font-weight: 700;
   cursor: pointer;
   line-height: 1;
+  padding: 6px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-close:hover {
+  background: var(--accent-red);
   color: #fff;
 }
 

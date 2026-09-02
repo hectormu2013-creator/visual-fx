@@ -22,8 +22,8 @@
     }
   </script>
 
-  <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="/styles.css">
+  <!-- Custom Stylesheet (Anti-Cache) -->
+  <link rel="stylesheet" href="/styles.css?v=2.0">
 </head>
 <body class="tv-mode">
   
@@ -75,7 +75,7 @@
       </button>
       <div class="user-profile" id="userProfileArea">
         <span class="user-name" id="lblUserName">Agencia Cabimas</span>
-        <button class="btn-logout" id="btnLogout" title="Cerrar Sesión">🚪</button>
+        <button class="btn-logout-header" id="btnLogout" title="Cerrar Sesión">🚪 CERRAR SESIÓN</button>
       </div>
     </div>
   </header>
@@ -94,12 +94,12 @@
       <form id="loginForm" class="login-form">
         <div class="form-group">
           <label for="txtUser">Usuario de Agencia o Administrador</label>
-          <input type="text" id="txtUser" placeholder="Ej. hector_owner o leo1" value="hector_owner" required autofocus>
+          <input type="text" id="txtUser" placeholder="Ej. hector_owner o leo1" value="" required autofocus>
         </div>
         
         <div class="form-group">
           <label for="txtPass">Contraseña</label>
-          <input type="password" id="txtPass" placeholder="••••••••" value="admin2026" required>
+          <input type="password" id="txtPass" placeholder="••••••••" value="" required>
         </div>
         
         <div class="form-error" id="loginError" style="display: none;"></div>
@@ -124,7 +124,10 @@
           <h3>⚙️ Panel de Control Administrativo</h3>
           <span class="admin-subtitle">Gestión Centralizada Fenix • Dispositivos, Canales y Usuarios</span>
         </div>
-        <button class="btn-close" id="btnCloseDeviceModal">&times;</button>
+        <div class="admin-header-actions">
+          <button class="btn-logout-header secondary" id="btnLogoutAdminModal" title="Cerrar Sesión">🚪 CERRAR SESIÓN</button>
+          <button class="btn-close" id="btnCloseDeviceModal">&times;</button>
+        </div>
       </div>
 
       <!-- Navigation Tabs -->
@@ -400,7 +403,7 @@
     <div class="legend-item"><kbd>F</kbd> Pantalla Completa</div>
   </footer>
 
-  <!-- App Logic -->
-  <script src="/app.js"></script>
+  <!-- App Logic (Anti-Cache) -->
+  <script src="/app.js?v=2.0"></script>
 </body>
 </html>
