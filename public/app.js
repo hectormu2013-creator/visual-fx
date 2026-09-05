@@ -87,8 +87,8 @@ const elements = {
 let selectedService = localStorage.getItem('visual_fx_service') || 'hipica';
 
 const SERVICES_MAP = {
-  'hipica': { name: 'Carreras de Caballos', panelId: null },
-  'loteria': { name: 'Resultados Loterías', panelId: 'panelLottery' },
+  'hipica': { name: 'Carreras', panelId: null },
+  'loteria': { name: 'Loterías', panelId: 'panelLottery' },
   'deportes': { name: 'Marcadores Deportivos', panelId: 'panelSports' },
   'tv_deportes': { name: 'Juegos y Eventos TV', panelId: 'panelLiveTv' },
   'publicidad': { name: 'Publicidad del Negocio', panelId: 'panelAds' }
@@ -102,6 +102,18 @@ function applyActiveServiceView(serviceId) {
   if (lbl && SERVICES_MAP[selectedService]) {
     lbl.textContent = SERVICES_MAP[selectedService].name;
   }
+
+  // Actualizar botones de acceso directo 1-Click en el Cintillo Superior
+  const btnHipica = document.getElementById('btnDirectHipica');
+  const btnLoteria = document.getElementById('btnDirectLoteria');
+  if (btnHipica) btnHipica.classList.toggle('active', selectedService === 'hipica');
+  if (btnLoteria) btnLoteria.classList.toggle('active', selectedService === 'loteria');
+
+  // Alternar controles de cintillo según el servicio activo
+  const hipControls = document.getElementById('hipicaHeaderControls');
+  const lotControls = document.getElementById('lotteryHeaderControls');
+  if (hipControls) hipControls.style.display = (selectedService === 'hipica' ? 'flex' : 'none');
+  if (lotControls) lotControls.style.display = (selectedService === 'loteria' ? 'flex' : 'none');
 
   // Ocultar todos los paneles de servicios alternativos
   document.querySelectorAll('.service-view-panel').forEach(p => p.style.display = 'none');
@@ -119,14 +131,171 @@ function applyActiveServiceView(serviceId) {
       if (panel) panel.style.display = 'block';
     }
   }
+
+  // Control de ciclo de vida del módulo de Loterías
+  if (selectedService === 'loteria') {
+    startLotteryEngineView();
+  } else {
+    stopLotteryEngineView();
+  }
 }
+
+function switchDirectService(serviceId) {
+  console.log(`[Visual-FX] Cambio directo de servicio solicitado: ${serviceId}`);
+  applyActiveServiceView(serviceId);
+}
+window.switchDirectService = switchDirectService;
+
+// ==========================================
+// Floating Header & Auto-Hide Controller
+// ==========================================
+let headerAutoHideTimer = null;
+let isHeaderPinned = localStorage.getItem('visual_fx_header_pinned') === 'true';
+
+function initFloatingHeader() {
+  const header = document.getElementById('appHeader');
+  const triggerBtn = document.getElementById('btnShowHeaderFloating');
+  const hoverZone = document.getElementById('topHeaderHoverZone');
+  const pinBtn = document.getElementById('btnPinHeader');
+  const pinLbl = document.getElementById('lblPinState');
+
+  if (isHeaderPinned) {
+    document.body.classList.add('header-pinned-active');
+    if (header) header.classList.add('header-pinned');
+    if (pinBtn) pinBtn.classList.add('pinned');
+    if (pinLbl) pinLbl.textContent = 'Desanclar';
+  } else {
+    document.body.classList.remove('header-pinned-active');
+    if (header) header.classList.remove('header-pinned');
+    if (pinBtn) pinBtn.classList.remove('pinned');
+    if (pinLbl) pinLbl.textContent = 'Fijar';
+  }
+
+  function showHeaderTemporarily(durationMs = 4000) {
+    if (isHeaderPinned || !header) return;
+    header.classList.add('visible');
+    if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
+    headerAutoHideTimer = setTimeout(() => {
+      header.classList.remove('visible');
+    }, durationMs);
+  }
+
+  if (hoverZone) {
+    hoverZone.addEventListener('mouseenter', () => showHeaderTemporarily(5000));
+  }
+  if (triggerBtn) {
+    triggerBtn.addEventListener('click', () => showHeaderTemporarily(6000));
+  }
+  if (header) {
+    header.addEventListener('mouseenter', () => {
+      if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
+      header.classList.add('visible');
+    });
+    header.addEventListener('mouseleave', () => {
+      if (!isHeaderPinned) {
+        headerAutoHideTimer = setTimeout(() => {
+          header.classList.remove('visible');
+        }, 1200);
+      }
+    });
+  }
+
+  // Detect mouse movement near the top 20px
+  document.addEventListener('mousemove', (e) => {
+    if (!isHeaderPinned && e.clientY <= 20) {
+      showHeaderTemporarily(4000);
+    }
+  });
+}
+
+function toggleHeaderPin() {
+  isHeaderPinned = !isHeaderPinned;
+  localStorage.setItem('visual_fx_header_pinned', isHeaderPinned);
+  const header = document.getElementById('appHeader');
+  const pinBtn = document.getElementById('btnPinHeader');
+  const pinLbl = document.getElementById('lblPinState');
+
+  if (isHeaderPinned) {
+    document.body.classList.add('header-pinned-active');
+    if (header) {
+      header.classList.add('header-pinned');
+      header.classList.remove('visible');
+    }
+    if (pinBtn) pinBtn.classList.add('pinned');
+    if (pinLbl) pinLbl.textContent = 'Desanclar';
+  } else {
+    document.body.classList.remove('header-pinned-active');
+    if (header) {
+      header.classList.remove('header-pinned');
+      header.classList.add('visible');
+    }
+    if (pinBtn) pinBtn.classList.remove('pinned');
+    if (pinLbl) pinLbl.textContent = 'Fijar';
+    setTimeout(() => {
+      if (!isHeaderPinned && header) header.classList.remove('visible');
+    }, 3000);
+  }
+}
+window.toggleHeaderPin = toggleHeaderPin;
+
+// ==========================================
+// Pantalla Completa Universal (Tecla F & Botón) - Petición 4
+// ==========================================
+function toggleAppFullscreen() {
+  const isCssFull = document.body.classList.toggle('app-fullscreen-mode');
+  const isNativeFull = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+
+  if (isCssFull && !isNativeFull) {
+    const docEl = document.documentElement;
+    try {
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch(err => console.warn('[Native Fullscreen Fallback]', err));
+      } else if (docEl.webkitRequestFullscreen) {
+        docEl.webkitRequestFullscreen();
+      }
+    } catch (e) {}
+  } else if (!isCssFull && isNativeFull) {
+    try {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.warn('[Exit Fullscreen Fallback]', err));
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } catch (e) {}
+  }
+
+  // Actualizar estado en todos los botones de pantalla completa
+  const btns = document.querySelectorAll('#btnToggleAppFullscreen, .btn-fullscreen-lottery, .btn-ticker-fullscreen, #btnFullscreenLotteryMain');
+  btns.forEach(b => {
+    b.innerHTML = isCssFull ? '✕ Salir Pantalla Completa' : '⛶ Pantalla Completa';
+  });
+}
+window.toggleAppFullscreen = toggleAppFullscreen;
+
+// Capturador Global de Tecla F para Pantalla Completa
+window.addEventListener('keydown', (e) => {
+  if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  if (e.key === 'f' || e.key === 'F') {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleAppFullscreen();
+  } else if (e.key === 'Escape') {
+    if (document.body.classList.contains('app-fullscreen-mode')) {
+      document.body.classList.remove('app-fullscreen-mode');
+      const btns = document.querySelectorAll('#btnToggleAppFullscreen, .btn-fullscreen-lottery, .btn-ticker-fullscreen, #btnFullscreenLotteryMain');
+      btns.forEach(b => { b.innerHTML = '⛶ Pantalla Completa'; });
+    }
+  }
+}, true);
 
 // Initialization
 document.addEventListener('DOMContentLoaded', async () => {
   initDeviceId();
+  initFloatingHeader();
   setupEventListeners();
   setupKeyboardNavigation();
   setupAdminTabs();
+  startLotteryClock();
   
   applyActiveServiceView(selectedService);
 
@@ -307,12 +476,14 @@ function openExecutiveAdminModal() {
   const tabBtnChannels = document.getElementById('tabBtnChannels');
   const tabBtnUsers = document.getElementById('tabBtnUsers');
   const tabBtnAnalytics = document.getElementById('tabBtnAnalytics');
+  const tabBtnLottery = document.getElementById('tabBtnLottery');
 
   if (tabBtnClients) tabBtnClients.style.display = isSuperAdmin ? 'inline-block' : 'none';
   if (tabBtnDevices) tabBtnDevices.style.display = 'inline-block';
   if (tabBtnChannels) tabBtnChannels.style.display = isTech ? 'inline-block' : 'none';
   if (tabBtnUsers) tabBtnUsers.style.display = isSuperAdmin ? 'inline-block' : 'none';
   if (tabBtnAnalytics) tabBtnAnalytics.style.display = (isSuperAdmin || isTech) ? 'inline-block' : 'none';
+  if (tabBtnLottery) tabBtnLottery.style.display = isTech ? 'inline-block' : 'none';
 
   // Configuración de la pestaña Dispositivos
   const boxActivateDevice = document.getElementById('boxActivateDevice');
@@ -853,6 +1024,8 @@ function switchAdminTab(targetTabId) {
   } else if (targetTabId === 'tab-devices') {
     const selFilterDev = document.getElementById('selFilterClientDevices');
     loadApprovedDevicesList(selFilterDev ? selFilterDev.value : 'ALL');
+  } else if (targetTabId === 'tab-lottery') {
+    updateAdminManualLotteryDropdowns();
   }
 }
 
@@ -1283,6 +1456,111 @@ function setupEventListeners() {
   if (selFilterAnalyticsClient) {
     selFilterAnalyticsClient.addEventListener('change', (e) => {
       loadSystemAnalytics(e.target.value);
+    });
+  }
+
+  // Control de Rotación de Loterías
+  const btnToggleLottery = document.getElementById('btnToggleLotteryCarousel');
+  if (btnToggleLottery) {
+    btnToggleLottery.addEventListener('click', toggleLotteryCarousel);
+  }
+
+  // Cambio de juego en Formulario Manual de Loterías
+  const selManualGame = document.getElementById('selManualGame');
+  if (selManualGame) {
+    selManualGame.addEventListener('change', updateManualHoursDropdown);
+  }
+
+  // Forzar Sincronización Inmediata de Loterías (Super Admin / Tech)
+  const btnForceSync = document.getElementById('btnForceSyncLottery');
+  const toastSync = document.getElementById('lotterySyncToast');
+  if (btnForceSync) {
+    btnForceSync.addEventListener('click', async () => {
+      btnForceSync.disabled = true;
+      btnForceSync.textContent = '⏳ Sincronizando fuentes...';
+      try {
+        const res = await fetch('/api/admin/lottery/sync-now', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (toastSync) {
+            toastSync.style.display = 'block';
+            toastSync.textContent = `✅ ${data.message} (${data.resultsCount} sorteos cargados)`;
+            setTimeout(() => { toastSync.style.display = 'none'; }, 4000);
+          }
+          await loadLotteryTop10Data();
+        } else {
+          alert(data.error || 'Error forzando sincronización.');
+        }
+      } catch (err) {
+        alert('Error de conexión.');
+      } finally {
+        btnForceSync.disabled = false;
+        btnForceSync.textContent = '🔄 Forzar Sincronización Inmediata';
+      }
+    });
+  }
+
+  // Guardar Resultado Manual de Emergencia (Super Admin / Tech)
+  const btnSubmitManual = document.getElementById('btnSubmitManualLottery');
+  const msgManual = document.getElementById('manualLotteryMsg');
+  if (btnSubmitManual) {
+    btnSubmitManual.addEventListener('click', async () => {
+      const selGame = document.getElementById('selManualGame');
+      const selHour = document.getElementById('selManualHour');
+      if (!selGame || !selHour) return;
+
+      const gameId = selGame.value;
+      const hour = selHour.value;
+      const game = lotteryTop10.find(g => g.id === gameId);
+      if (!game) return;
+
+      let resultPayload = null;
+      if (game.type === 'animalitos') {
+        const number = document.getElementById('txtManualNumber')?.value.trim();
+        const name = document.getElementById('txtManualName')?.value.trim();
+        if (!number) {
+          alert('Por favor ingrese al menos el número del animalito.');
+          return;
+        }
+        resultPayload = { number, name };
+      } else {
+        const tripleA = document.getElementById('txtManualTripleA')?.value.trim();
+        const tripleB = document.getElementById('txtManualTripleB')?.value.trim();
+        const signo = document.getElementById('txtManualSigno')?.value.trim();
+        if (!tripleA && !tripleB) {
+          alert('Por favor ingrese al menos el Triple A o Triple B.');
+          return;
+        }
+        resultPayload = { tripleA, tripleB, signo };
+      }
+
+      try {
+        const res = await fetch('/api/admin/lottery/manual', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentToken}`
+          },
+          body: JSON.stringify({ gameId, hour, result: resultPayload })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (msgManual) {
+            msgManual.style.display = 'block';
+            msgManual.style.color = '#34d399';
+            msgManual.textContent = `¡Resultado publicado con éxito para ${game.name} (${hour})!`;
+            setTimeout(() => { msgManual.style.display = 'none'; }, 4000);
+          }
+          await loadLotteryTop10Data();
+        } else {
+          alert(data.error || 'Error registrando resultado manual.');
+        }
+      } catch (err) {
+        alert('Error de conexión con el servidor.');
+      }
     });
   }
 
@@ -2083,7 +2361,995 @@ function goToLiveStreams() {
   loadChannelCatalog();
 }
 
-// D-Pad Remote Navigation
+// ==========================================
+// Top 10 Loterías & Animalitos State & Engine
+// ==========================================
+let lotteryTop10 = [];
+let selectedLotteryGameId = 'guacharo-activo';
+let lotteryCarouselActive = true;
+let lotteryCarouselTimer = null;
+let lotteryProgressStartTime = null;
+let lotteryProgressAnimFrame = null;
+let lotteryPollingTimer = null;
+let lotteryDisplayMode = 'carousel'; // 'carousel' | 'overview'
+let lotteryStatsData = null;
+let activeStatsGameId = 'guacharo-activo';
+let lastAnnouncedDrawId = {};
+const LOTTERY_ROTATION_INTERVAL_MS = 15000; // 15 segundos por juego
+
+// ==========================================
+// Mapa Oficial de Signos Zodiacales (Petición 6)
+// ==========================================
+const ZODIAC_MAP = {
+  'aries': { name: 'Aries', symbol: '♈', file: 'aries.svg', element: 'Fuego' },
+  'tauro': { name: 'Tauro', symbol: '♉', file: 'tauro.svg', element: 'Tierra' },
+  'geminis': { name: 'Géminis', symbol: '♊', file: 'geminis.svg', element: 'Aire' },
+  'cancer': { name: 'Cáncer', symbol: '♋', file: 'cancer.svg', element: 'Agua' },
+  'leo': { name: 'Leo', symbol: '♌', file: 'leo.svg', element: 'Fuego' },
+  'virgo': { name: 'Virgo', symbol: '♍', file: 'virgo.svg', element: 'Tierra' },
+  'libra': { name: 'Libra', symbol: '♎', file: 'libra.svg', element: 'Aire' },
+  'escorpio': { name: 'Escorpio', symbol: '♏', file: 'escorpio.svg', element: 'Agua' },
+  'sagitario': { name: 'Sagitario', symbol: '♐', file: 'sagitario.svg', element: 'Fuego' },
+  'capricornio': { name: 'Capricornio', symbol: '♑', file: 'capricornio.svg', element: 'Tierra' },
+  'acuario': { name: 'Acuario', symbol: '♒', file: 'acuario.svg', element: 'Aire' },
+  'piscis': { name: 'Piscis', symbol: '♓', file: 'piscis.svg', element: 'Agua' }
+};
+
+function getZodiacData(rawSign) {
+  if (!rawSign) return null;
+  const clean = rawSign.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z]/g, "");
+  for (const [key, data] of Object.entries(ZODIAC_MAP)) {
+    if (clean.includes(key) || key.includes(clean)) {
+      return data;
+    }
+  }
+  return null;
+}
+
+// ==========================================
+// Reloj en Tiempo Real para Pizarra (Petición 3)
+// ==========================================
+let lotteryClockTimer = null;
+function startLotteryClock() {
+  if (lotteryClockTimer) clearInterval(lotteryClockTimer);
+  function updateClock() {
+    const clockEl = document.getElementById('lblLotteryLiveClock');
+    if (!clockEl) return;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    clockEl.innerHTML = `🕒 <strong>${timeStr}</strong>`;
+  }
+  updateClock();
+  lotteryClockTimer = setInterval(updateClock, 1000);
+}
+window.startLotteryClock = startLotteryClock;
+
+// ==========================================
+// Pantalla Completa Universal (Petición 4)
+// ==========================================
+function toggleAppFullscreen() {
+  const isCurrentlyFs = !!(
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    document.body.classList.contains('app-fullscreen-mode')
+  );
+
+  const btnLottery = document.getElementById('btnFullscreenLotteryMain');
+  const btnTicker = document.querySelector('.btn-ticker-fullscreen');
+
+  if (!isCurrentlyFs) {
+    document.body.classList.add('app-fullscreen-mode');
+    const docEl = document.documentElement;
+    const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+    if (req) {
+      req.call(docEl).catch(err => {
+        console.log('[Fullscreen] Fallback CSS activo (API denegada por navegador):', err.message);
+      });
+    }
+    if (btnLottery) btnLottery.innerHTML = '🗗 Salir Pantalla Completa';
+    if (btnTicker) btnTicker.innerHTML = '🗗 SALIR PANTALLA COMPLETA';
+  } else {
+    document.body.classList.remove('app-fullscreen-mode');
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+    if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) {
+      exit.call(document).catch(e => console.warn(e));
+    }
+    if (btnLottery) btnLottery.innerHTML = '⛶ Pantalla Completa';
+    if (btnTicker) btnTicker.innerHTML = '⛶ PANTALLA COMPLETA';
+  }
+}
+window.toggleAppFullscreen = toggleAppFullscreen;
+
+['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    const isNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+    if (!isNativeFs && !document.body.classList.contains('app-fullscreen-mode')) {
+      const btnLottery = document.getElementById('btnFullscreenLotteryMain');
+      const btnTicker = document.querySelector('.btn-ticker-fullscreen');
+      if (btnLottery) btnLottery.innerHTML = '⛶ Pantalla Completa';
+      if (btnTicker) btnTicker.innerHTML = '⛶ PANTALLA COMPLETA';
+    }
+  });
+});
+
+// Audio Chime & Speech Synthesis
+let audioCtx = null;
+let lotteryVoiceEnabled = localStorage.getItem('visual_fx_lottery_voice') !== 'false';
+
+function playChimeAlert() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    if (!audioCtx) audioCtx = new AudioContextClass();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    osc1.frequency.setValueAtTime(523.25, now); // C5
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+    osc2.frequency.setValueAtTime(659.25, now + 0.05); // E5
+    osc2.frequency.exponentialRampToValueAtTime(1046.5, now + 0.2); // C6
+
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.start(now);
+    osc2.start(now + 0.05);
+    osc1.stop(now + 0.75);
+    osc2.stop(now + 0.75);
+  } catch (e) {
+    console.warn('[Chime Alert]', e);
+  }
+}
+
+function updateVoiceButtonsUI() {
+  const btnHeader = document.getElementById('btnHeaderVoiceToggle');
+  const btnMain = document.getElementById('btnVoiceToggleMain');
+  const icon = document.getElementById('lblVoiceIcon');
+  const txt = document.getElementById('lblVoiceText');
+
+  const textVal = lotteryVoiceEnabled ? 'Voz: ON' : 'Voz: OFF';
+  const iconVal = lotteryVoiceEnabled ? '🔊' : '🔇';
+
+  if (btnHeader) btnHeader.textContent = `${iconVal} ${textVal}`;
+  if (btnMain) {
+    btnMain.classList.toggle('active', lotteryVoiceEnabled);
+  }
+  if (icon) icon.textContent = iconVal;
+  if (txt) txt.textContent = textVal;
+}
+
+function toggleLotteryVoiceAnnouncements() {
+  lotteryVoiceEnabled = !lotteryVoiceEnabled;
+  localStorage.setItem('visual_fx_lottery_voice', lotteryVoiceEnabled);
+  updateVoiceButtonsUI();
+}
+window.toggleLotteryVoiceAnnouncements = toggleLotteryVoiceAnnouncements;
+
+// Voz Humana Natural (Petición 7)
+function getBestSpanishVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return null;
+
+  // 1. Voces Naturales / Neurales (Edge / Windows / Chrome)
+  const naturalSpanish = voices.find(v => {
+    const name = (v.name || '').toLowerCase();
+    const lang = (v.lang || '').toLowerCase();
+    return lang.startsWith('es') && (name.includes('natural') || name.includes('online') || name.includes('neural'));
+  });
+  if (naturalSpanish) return naturalSpanish;
+
+  // 2. Voces Google de alta fidelidad o nombres reconocidos
+  const googleSpanish = voices.find(v => {
+    const name = (v.name || '').toLowerCase();
+    const lang = (v.lang || '').toLowerCase();
+    return lang.startsWith('es') && (name.includes('google') || name.includes('sabina') || name.includes('dalia') || name.includes('jorge') || name.includes('paulina'));
+  });
+  if (googleSpanish) return googleSpanish;
+
+  // 3. Voces latinoamericanas
+  const latamSpanish = voices.find(v => {
+    const lang = (v.lang || '').toLowerCase();
+    return lang === 'es-ve' || lang === 'es-419' || lang === 'es-mx' || lang === 'es-us';
+  });
+  if (latamSpanish) return latamSpanish;
+
+  return voices.find(v => (v.lang || '').toLowerCase().startsWith('es')) || null;
+}
+
+function speakLotteryDraw(gameName, drawTime, resultText) {
+  if (!lotteryVoiceEnabled) return;
+  if (!('speechSynthesis' in window)) return;
+  playChimeAlert();
+  setTimeout(() => {
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`Atención. Resultado oficial de ${gameName}, sorteo de las ${drawTime}: ${resultText}.`);
+      utterance.lang = 'es-VE';
+      utterance.rate = 0.90; // Ritmo pausado y más natural
+      utterance.pitch = 1.02; // Tono amigable y balanceado
+      utterance.volume = 1.0;
+      const bestVoice = getBestSpanishVoice();
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+      }
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('[SpeechSynthesis]', e);
+    }
+  }, 350);
+}
+
+function checkForNewDrawAnnouncements(games) {
+  if (!games || games.length === 0) return;
+  games.forEach(game => {
+    const draws = game.draws || game.results || [];
+    const completed = draws.filter(d => !d.isPending && (d.number || d.tripleA));
+    if (completed.length > 0) {
+      const latest = completed[completed.length - 1];
+      const drawId = `${game.id || game.gameId}-${latest.time || latest.hour}-${latest.number || latest.tripleA}`;
+      const gKey = game.id || game.gameId;
+
+      if (!lastAnnouncedDrawId[gKey]) {
+        // Inicialización: marcar el más reciente sin disparar ráfaga de 10 voces
+        lastAnnouncedDrawId[gKey] = drawId;
+      } else if (lastAnnouncedDrawId[gKey] !== drawId) {
+        lastAnnouncedDrawId[gKey] = drawId;
+        const resultDesc = game.type === 'animalitos'
+          ? `Número ${latest.number}, ${latest.name}`
+          : `Triple A ${latest.tripleA}, Triple B ${latest.tripleB}${latest.signo ? ', Signo ' + latest.signo : ''}`;
+        speakLotteryDraw(game.name, latest.time || latest.hour, resultDesc);
+      }
+    }
+  });
+}
+
+// Barra Indicadora de Tiempo / Cuenta Regresiva en Tarjeta Destacada (Petición 5)
+function startLotteryProgressBar() {
+  stopLotteryProgressBar();
+  if (!lotteryCarouselActive) return;
+  lotteryProgressStartTime = Date.now();
+
+  function updateProgress() {
+    const elapsed = Date.now() - lotteryProgressStartTime;
+    const remainingMs = Math.max(0, LOTTERY_ROTATION_INTERVAL_MS - elapsed);
+    const remainingSec = Math.ceil(remainingMs / 1000);
+    const pct = Math.min(100, (elapsed / LOTTERY_ROTATION_INTERVAL_MS) * 100);
+
+    const fill = document.getElementById('heroCountdownFill');
+    const lbl = document.getElementById('lblHeroCountdown');
+    if (fill) fill.style.width = `${pct}%`;
+    if (lbl) lbl.textContent = `${remainingSec}s`;
+
+    if (elapsed < LOTTERY_ROTATION_INTERVAL_MS && lotteryCarouselActive) {
+      lotteryProgressAnimFrame = requestAnimationFrame(updateProgress);
+    }
+  }
+  lotteryProgressAnimFrame = requestAnimationFrame(updateProgress);
+}
+
+function stopLotteryProgressBar() {
+  if (lotteryProgressAnimFrame) {
+    cancelAnimationFrame(lotteryProgressAnimFrame);
+    lotteryProgressAnimFrame = null;
+  }
+  const fill = document.getElementById('heroCountdownFill');
+  const lbl = document.getElementById('lblHeroCountdown');
+  if (fill) fill.style.width = '0%';
+  if (lbl) lbl.textContent = '15s';
+}
+
+function startLotteryCarousel() {
+  stopLotteryCarousel();
+  if (!lotteryCarouselActive || lotteryDisplayMode !== 'carousel') return;
+
+  startLotteryProgressBar();
+  lotteryCarouselTimer = setTimeout(() => {
+    advanceLotteryCarousel();
+  }, LOTTERY_ROTATION_INTERVAL_MS);
+}
+
+function stopLotteryCarousel() {
+  if (lotteryCarouselTimer) {
+    clearTimeout(lotteryCarouselTimer);
+    lotteryCarouselTimer = null;
+  }
+  stopLotteryProgressBar();
+}
+
+function advanceLotteryCarousel() {
+  if (!lotteryTop10 || lotteryTop10.length === 0) return;
+  const currentIndex = lotteryTop10.findIndex(g => (g.gameId || g.id) === selectedLotteryGameId);
+  const nextIndex = (currentIndex + 1) % lotteryTop10.length;
+  const nextGame = lotteryTop10[nextIndex];
+  selectLotteryGame(nextGame.gameId || nextGame.id, false);
+}
+
+function toggleLotteryCarousel() {
+  lotteryCarouselActive = !lotteryCarouselActive;
+  const btn = document.getElementById('btnToggleLotteryCarousel');
+  const lbl = document.getElementById('lblCarouselState');
+  if (lotteryCarouselActive) {
+    if (btn) {
+      btn.classList.add('active');
+      btn.classList.remove('paused');
+    }
+    if (lbl) lbl.textContent = 'Rotación: ACTIVA (15s)';
+    if (lotteryDisplayMode === 'carousel') startLotteryCarousel();
+  } else {
+    if (btn) {
+      btn.classList.remove('active');
+      btn.classList.add('paused');
+    }
+    if (lbl) lbl.textContent = 'Rotación: EN PAUSA';
+    stopLotteryCarousel();
+  }
+}
+
+// Selector Desplegable de Lotería en la barra superior (Petición 2)
+function updateLotteryDropdownNav() {
+  const sel = document.getElementById('selLotteryGameNav');
+  if (!sel || !lotteryTop10 || lotteryTop10.length === 0) return;
+
+  const currentVal = selectedLotteryGameId;
+  sel.innerHTML = lotteryTop10.map(g => {
+    const gId = g.gameId || g.id;
+    const icon = g.type === 'animalitos' ? '🐾' : '🎰';
+    return `<option value="${gId}" ${gId === currentVal ? 'selected' : ''}>${icon} ${g.name}</option>`;
+  }).join('');
+}
+
+function selectLotteryGame(gameId, userInitiated = true) {
+  selectedLotteryGameId = gameId;
+
+  // Sincronizar dropdown
+  const sel = document.getElementById('selLotteryGameNav');
+  if (sel && sel.value !== gameId) sel.value = gameId;
+
+  // Auto-ajustar categoría en la pizarra según el tipo del juego seleccionado
+  const game = lotteryTop10.find(g => (g.gameId || g.id) === gameId);
+  if (game) {
+    if (game.type === 'animalitos' && currentTimelineCategory !== 'animalitos') {
+      currentTimelineCategory = 'animalitos';
+      const btnAnim = document.getElementById('btnCatAnimalitos');
+      const btnTrip = document.getElementById('btnCatTriples');
+      if (btnAnim) btnAnim.classList.add('active');
+      if (btnTrip) btnTrip.classList.remove('active');
+    } else if (game.type === 'triples' && currentTimelineCategory !== 'triples') {
+      currentTimelineCategory = 'triples';
+      const btnAnim = document.getElementById('btnCatAnimalitos');
+      const btnTrip = document.getElementById('btnCatTriples');
+      if (btnAnim) btnAnim.classList.remove('active');
+      if (btnTrip) btnTrip.classList.add('active');
+    }
+  }
+
+  renderActiveLotteryBoard();
+
+  if (lotteryCarouselActive && lotteryDisplayMode === 'carousel') {
+    startLotteryCarousel();
+  }
+}
+window.selectLotteryGame = selectLotteryGame;
+
+// Pizarra Multicolumna Estilo 1000Resultados (Petición 4)
+let currentTimelineCategory = 'animalitos';
+function setTimelineCategory(cat) {
+  currentTimelineCategory = cat;
+  const btnAnim = document.getElementById('btnCatAnimalitos');
+  const btnTrip = document.getElementById('btnCatTriples');
+  if (btnAnim) btnAnim.classList.toggle('active', cat === 'animalitos');
+  if (btnTrip) btnTrip.classList.toggle('active', cat === 'triples');
+  renderPizarra1000Board();
+}
+window.setTimelineCategory = setTimelineCategory;
+
+function renderPizarra1000Board() {
+  const container = document.getElementById('pizarra1000Board');
+  if (!container || !lotteryTop10 || lotteryTop10.length === 0) return;
+
+  // Filtrar según la categoría activa
+  let filteredGames = lotteryTop10.filter(g => {
+    if (currentTimelineCategory === 'animalitos') {
+      return g.type === 'animalitos';
+    } else {
+      return g.type === 'triples';
+    }
+  });
+
+  if (filteredGames.length === 0) {
+    filteredGames = lotteryTop10.slice(0, 4);
+  } else if (filteredGames.length > 4) {
+    filteredGames = filteredGames.slice(0, 4);
+  }
+
+  container.innerHTML = filteredGames.map(game => {
+    const gId = game.gameId || game.id;
+    const isCurrentActive = (gId === selectedLotteryGameId);
+    const draws = game.draws || game.results || [];
+    const completed = draws.filter(d => !d.isPending && (d.number || d.tripleA));
+
+    const rowsHtml = draws.slice(0, 10).map(draw => {
+      const isDone = !draw.isPending && (draw.number || draw.tripleA);
+      const drawTime = draw.time || draw.hour || '';
+
+      if (game.type === 'animalitos') {
+        const num = isDone ? (draw.number || '--') : '--';
+        const name = isDone ? (draw.name || '') : 'Esperando...';
+        const img = isDone ? (draw.image || '') : '';
+        return `
+          <div class="pizarra-row-item ${isDone ? 'done' : ''}">
+            <span class="pizarra-row-time">${drawTime}</span>
+            <div class="pizarra-row-center">
+              <span class="pizarra-row-num" style="${!isDone ? 'color:#64748b; font-size:1rem;' : ''}">${num}</span>
+              <span class="pizarra-row-name" style="${!isDone ? 'color:#64748b; font-size:0.75rem;' : ''}">${name}</span>
+            </div>
+            ${img ? `<img src="${img}" class="pizarra-row-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '' : '<span style="font-size:0.7rem; color:#475569;">⏳</span>')}
+          </div>
+        `;
+      } else {
+        // Triples
+        const tripleA = isDone ? (draw.tripleA || '--') : '--';
+        const tripleB = isDone ? (draw.tripleB || '--') : '--';
+        const signo = isDone ? (draw.signo || '') : '';
+        const zData = getZodiacData(signo);
+        return `
+          <div class="pizarra-row-item ${isDone ? 'done' : ''}">
+            <span class="pizarra-row-time">${drawTime}</span>
+            <div class="pizarra-row-center">
+              <span class="pizarra-row-num" style="${!isDone ? 'color:#64748b; font-size:0.95rem;' : ''}">${isDone ? `A:${tripleA} B:${tripleB}` : '--'}</span>
+            </div>
+            ${zData ? `<img src="/images/zodiac/${zData.file}" class="pizarra-row-zodiac" title="${zData.name}" alt="${zData.name}">` : (signo ? `<span style="font-size:0.72rem; color:#f59e0b; font-weight:800;">${signo}</span>` : '')}
+          </div>
+        `;
+      }
+    }).join('');
+
+    return `
+      <div class="pizarra-col ${isCurrentActive ? 'active-game' : ''}" onclick="window.selectLotteryGame('${gId}', true)" style="cursor:pointer;" title="Click para destacar en carrusel">
+        <div class="pizarra-col-header ${game.type === 'animalitos' ? 'green' : ''}">
+          <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+            ${game.logoUrl ? `<img src="${game.logoUrl}" alt="${game.name}" onerror="this.style.display='none'">` : ''}
+            <span>${game.name}</span>
+          </div>
+          <span style="font-size:0.7rem; font-weight:800; background:rgba(0,0,0,0.3); padding:2px 6px; border-radius:8px;">
+            ${completed.length}/${draws.length}
+          </span>
+        </div>
+        <div class="pizarra-rows-list">
+          ${rowsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadLotteryTop10Data(silent = false) {
+  try {
+    const res = await fetch('/api/lottery/top10');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.games) {
+      lotteryTop10 = data.games;
+
+      const lblDate = document.getElementById('lblLotteryCurrentDate');
+      if (lblDate && data.date) {
+        const parts = data.date.split('-');
+        if (parts.length === 3) {
+          const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          const dateStr = dateObj.toLocaleDateString('es-VE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+          lblDate.textContent = `📅 ${dateStr.charAt(0).toUpperCase() + dateStr.slice(1)}`;
+        } else {
+          lblDate.textContent = `📅 ${data.date}`;
+        }
+      }
+
+      startLotteryClock();
+      checkForNewDrawAnnouncements(lotteryTop10);
+      updateLotteryDropdownNav();
+      renderActiveLotteryBoard();
+      if (lotteryDisplayMode === 'overview') {
+        renderLotteryOverviewGrid();
+      }
+      updateAdminManualLotteryDropdowns();
+    }
+  } catch (err) {
+    if (!silent) console.error('Error cargando Top 10 loterías:', err);
+  }
+}
+
+function renderActiveLotteryBoard() {
+  const heroCard = document.getElementById('lotteryHeroCard');
+  const lblTitle = document.getElementById('lblTimelineGameTitle');
+  const lblProgress = document.getElementById('lblTimelineProgress');
+
+  if (!lotteryTop10 || lotteryTop10.length === 0) return;
+  const game = lotteryTop10.find(g => (g.gameId || g.id) === selectedLotteryGameId) || lotteryTop10[0];
+  if (!game) return;
+
+  const draws = game.draws || game.results || [];
+  const completedResults = draws.filter(d => !d.isPending && (d.number || d.tripleA));
+  const latestResult = completedResults.length > 0 ? completedResults[completedResults.length - 1] : null;
+
+  if (lblTitle) {
+    lblTitle.textContent = `📊 Pizarra de Resultados: ${game.name}`;
+  }
+  if (lblProgress) {
+    lblProgress.textContent = `${completedResults.length} de ${draws.length} sorteos emitidos`;
+  }
+
+  // A) RENDER HERO CARD (Con Barra de Tiempo y Fuentes Grandes - Petición 5 y 6)
+  if (heroCard) {
+    const typeLabel = game.type === 'animalitos' ? '🐾 RULETA DE ANIMALITOS' : '🎰 LOTERÍA DE TRIPLES';
+    let heroContent = '';
+
+    const logoHtml = game.logoUrl ? `<img src="${game.logoUrl}" class="hero-game-logo" alt="${game.name}" onerror="this.style.display='none'">` : '';
+
+    // Barra de cuenta regresiva en tarjeta destacada
+    const countdownBarHtml = `
+      <div class="hero-countdown-container">
+        <div class="hero-countdown-header">
+          <span>⏱️ TIEMPO EN PANTALLA</span>
+          <span id="lblHeroCountdown">15s</span>
+        </div>
+        <div class="hero-countdown-track">
+          <div id="heroCountdownFill" class="hero-countdown-fill"></div>
+        </div>
+      </div>
+    `;
+
+    if (!latestResult) {
+      const firstHour = draws.length > 0 ? (draws[0].time || draws[0].hour) : '08:00 AM';
+      heroContent = `
+        <span class="hero-lottery-badge">${typeLabel}</span>
+        ${countdownBarHtml}
+        ${logoHtml}
+        <h2 style="font-size:1.6rem; font-weight:900; color:#fff; margin:6px 0 10px 0;">${game.name}</h2>
+        <div style="margin:30px 0; color:#94a3b8; text-align:center;">
+          <div style="font-size:3.5rem; margin-bottom:12px;">⏳</div>
+          <strong style="font-size:1.1rem; color:#f1f5f9; display:block;">Sorteos de hoy en preparación</strong>
+          <span style="font-size:0.9rem;">Primer sorteo programado a las <strong>${firstHour}</strong></span>
+        </div>
+        <div class="hero-time-footer">
+          <span>Sincronización: Activa</span>
+          <span>Modo: Automático (+2m)</span>
+        </div>
+      `;
+    } else if (game.type === 'animalitos') {
+      const num = latestResult.number || '--';
+      const name = latestResult.name || '';
+      const img = latestResult.image || '';
+      const isManual = Boolean(latestResult.isManual);
+      const drawTime = latestResult.time || latestResult.hour || '';
+
+      heroContent = `
+        <span class="hero-lottery-badge">${typeLabel}</span>
+        ${countdownBarHtml}
+        ${logoHtml}
+        <h2 style="font-size:1.55rem; font-weight:900; color:#fff; margin:2px 0;">${game.name}</h2>
+        
+        <div class="hero-number-giant">${num}</div>
+        <div class="hero-name-banner">${name}</div>
+
+        ${img ? `
+          <div class="hero-image-aura">
+            <img src="${img}" alt="${name}" onerror="this.style.display='none'">
+          </div>
+        ` : ''}
+
+        <div class="hero-time-footer">
+          <span>🕒 Sorteo de las <strong>${drawTime}</strong></span>
+          ${isManual ? '<span style="color:#f59e0b; font-weight:700;">✏️ Verificado Manual</span>' : '<span style="color:#10b981; font-weight:700;">🟢 Oficial en Vivo</span>'}
+        </div>
+      `;
+    } else {
+      // Triples (Zulia, Táchira, Chance, Zamorano) - Petición 6 con imagen oficial del signo
+      const tripleA = latestResult.tripleA || '--';
+      const tripleB = latestResult.tripleB || '--';
+      const signo = latestResult.signo || '';
+      const zData = getZodiacData(signo);
+      const isManual = Boolean(latestResult.isManual);
+      const drawTime = latestResult.time || latestResult.hour || '';
+
+      heroContent = `
+        <span class="hero-lottery-badge">${typeLabel}</span>
+        ${countdownBarHtml}
+        ${logoHtml}
+        <h2 style="font-size:1.55rem; font-weight:900; color:#fff; margin:2px 0 10px 0;">${game.name}</h2>
+
+        <div class="hero-triples-grid">
+          <div class="hero-triple-box">
+            <div class="hero-triple-label">TRIPLE A</div>
+            <div class="hero-triple-value">${tripleA}</div>
+          </div>
+          <div class="hero-triple-box">
+            <div class="hero-triple-label">TRIPLE B</div>
+            <div class="hero-triple-value">${tripleB}</div>
+          </div>
+          ${signo ? `
+            <div class="hero-zodiac-box">
+              ${zData ? `<img src="/images/zodiac/${zData.file}" class="hero-zodiac-img" alt="${zData.name}">` : '<div style="font-size:2.2rem;">♈</div>'}
+              <div class="hero-zodiac-info">
+                <span class="hero-zodiac-label">SIGNO ZODIACAL / ASTRAL</span>
+                <span class="hero-zodiac-name">${zData ? `${zData.symbol} ${zData.name.toUpperCase()}` : signo.toUpperCase()}</span>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="hero-time-footer" style="margin-top:auto;">
+          <span>🕒 Sorteo de las <strong>${drawTime}</strong></span>
+          ${isManual ? '<span style="color:#f59e0b; font-weight:700;">✏️ Verificado Manual</span>' : '<span style="color:#10b981; font-weight:700;">🟢 Oficial en Vivo</span>'}
+        </div>
+      `;
+    }
+
+    heroCard.innerHTML = heroContent;
+  }
+
+  // B) RENDER PIZARRA MULTICOLUMNA 1000RESULTADOS (Petición 4)
+  renderPizarra1000Board();
+}
+
+
+// ==========================================
+// Modo Selector: Carrusel vs Resumen General
+// ==========================================
+function setLotteryDisplayMode(mode) {
+  lotteryDisplayMode = mode;
+  const carouselView = document.getElementById('lotteryCarouselView');
+  const overviewView = document.getElementById('lotteryOverviewView');
+  const btnCarousel = document.getElementById('btnModeCarousel');
+  const btnOverview = document.getElementById('btnModeOverview');
+  const btnHeader = document.getElementById('btnHeaderViewMode');
+
+  if (mode === 'overview') {
+    if (carouselView) carouselView.style.display = 'none';
+    if (overviewView) overviewView.style.display = 'block';
+    if (btnCarousel) btnCarousel.classList.remove('active');
+    if (btnOverview) btnOverview.classList.add('active');
+    if (btnHeader) btnHeader.textContent = '🎠 Modo Carrusel';
+    stopLotteryCarousel();
+    renderLotteryOverviewGrid();
+  } else {
+    if (carouselView) carouselView.style.display = 'block';
+    if (overviewView) overviewView.style.display = 'none';
+    if (btnCarousel) btnCarousel.classList.add('active');
+    if (btnOverview) btnOverview.classList.remove('active');
+    if (btnHeader) btnHeader.textContent = '📋 Pizarra Resumen';
+    if (lotteryCarouselActive) startLotteryCarousel();
+  }
+}
+window.setLotteryDisplayMode = setLotteryDisplayMode;
+
+function toggleLotteryViewMode() {
+  setLotteryDisplayMode(lotteryDisplayMode === 'carousel' ? 'overview' : 'carousel');
+}
+window.toggleLotteryViewMode = toggleLotteryViewMode;
+
+function renderLotteryOverviewGrid() {
+  const grid = document.getElementById('lotteryOverviewGrid');
+  if (!grid || !lotteryTop10 || lotteryTop10.length === 0) return;
+
+  grid.innerHTML = lotteryTop10.map(game => {
+    const draws = game.draws || game.results || [];
+    const completed = draws.filter(d => !d.isPending && (d.number || d.tripleA));
+    const latest = completed.length > 0 ? completed[completed.length - 1] : null;
+
+    let latestHtml = '';
+    if (!latest) {
+      latestHtml = `
+        <div class="overview-card-latest" style="justify-content:center; color:#94a3b8; font-size:0.85rem;">
+          ⏳ Esperando primer sorteo
+        </div>
+      `;
+    } else if (game.type === 'animalitos') {
+      latestHtml = `
+        <div class="overview-card-latest">
+          <div>
+            <div class="overview-latest-num">${latest.number || '--'}</div>
+            <div class="overview-latest-name">${latest.name || ''}</div>
+            <small style="color:#94a3b8; font-size:0.75rem;">🕒 ${latest.time || latest.hour}</small>
+          </div>
+          ${latest.image ? `<img src="${latest.image}" class="overview-latest-thumb" alt="${latest.name}" onerror="this.style.display='none'">` : ''}
+        </div>
+      `;
+    } else {
+      latestHtml = `
+        <div class="overview-card-latest">
+          <div>
+            <div style="font-size:1.35rem; font-weight:900; color:#fff;">A: ${latest.tripleA || '--'} | B: ${latest.tripleB || '--'}</div>
+            ${latest.signo ? `<div style="font-size:0.82rem; font-weight:700; color:#f59e0b;">♈ ${latest.signo}</div>` : ''}
+            <small style="color:#94a3b8; font-size:0.75rem;">🕒 ${latest.time || latest.hour}</small>
+          </div>
+        </div>
+      `;
+    }
+
+    const miniDrawsHtml = draws.slice(0, 8).map(d => {
+      const isDone = !d.isPending && (d.number || d.tripleA);
+      const val = isDone ? (game.type === 'animalitos' ? d.number : d.tripleA) : '--';
+      return `
+        <div class="overview-mini-draw" style="${isDone ? 'border-color:rgba(16,185,129,0.3);' : ''}">
+          <span class="time">${d.time || d.hour}</span>
+          <span class="val" style="${isDone ? 'color:#34d399;' : 'color:#64748b;'}">${val}</span>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="overview-game-card" onclick="window.switchDirectToLotteryGame('${game.id || game.gameId}')" style="cursor:pointer;" title="Ver en pantalla grande">
+        <div class="overview-card-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            ${game.logoUrl ? `<img src="${game.logoUrl}" alt="${game.name}" onerror="this.style.display='none'">` : ''}
+            <h4>${game.name}</h4>
+          </div>
+          <span style="font-size:0.7rem; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:10px;">
+            ${completed.length}/${draws.length}
+          </span>
+        </div>
+        ${latestHtml}
+        <div class="overview-mini-draws">${miniDrawsHtml}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function switchDirectToLotteryGame(gameId) {
+  setLotteryDisplayMode('carousel');
+  selectLotteryGame(gameId, true);
+}
+window.switchDirectToLotteryGame = switchDirectToLotteryGame;
+
+// ==========================================
+// Estadísticas 30D, Pronósticos y Cintillo
+// ==========================================
+async function loadLotteryStats() {
+  try {
+    const res = await fetch('/api/lottery/stats');
+    if (!res.ok) return;
+    lotteryStatsData = await res.json();
+    renderLotteryTicker();
+  } catch (err) {
+    console.warn('[Lottery Stats]', err);
+  }
+}
+
+function renderLotteryTicker() {
+  const track = document.getElementById('tickerContentTrack');
+  if (!track || !lotteryStatsData) return;
+
+  const items = lotteryStatsData.ticker || lotteryStatsData.tickerFeed || [];
+  if (items.length === 0) return;
+
+  const itemsHtml = items.map(it => {
+    let valClass = 'val-winner';
+    if (it.type === 'hot') valClass = 'val-hot';
+    if (it.type === 'cold') valClass = 'val-cold';
+    return `
+      <div class="ticker-item">
+        <span class="game-tag">${it.gameName || ''}</span>:
+        <span style="font-size:0.78rem; opacity:0.85;">${it.badge || it.label || ''}</span>
+        <strong class="${valClass}">${it.text || it.value || ''}</strong>
+      </div>
+    `;
+  }).join('');
+
+  track.innerHTML = itemsHtml + itemsHtml; // Doble para loop continuo fluido
+}
+
+function openLotteryStatsModal() {
+  const modal = document.getElementById('lotteryStatsModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    renderStatsGameSelector();
+    renderGameStats(activeStatsGameId);
+  }
+}
+window.openLotteryStatsModal = openLotteryStatsModal;
+
+function closeLotteryStatsModal() {
+  const modal = document.getElementById('lotteryStatsModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeLotteryStatsModal = closeLotteryStatsModal;
+
+function renderStatsGameSelector() {
+  const container = document.getElementById('statsGameSelector');
+  if (!container || !lotteryTop10) return;
+
+  container.innerHTML = lotteryTop10.map(game => {
+    const gId = game.gameId || game.id;
+    const isActive = (gId === activeStatsGameId);
+    return `
+      <button class="stats-game-btn ${isActive ? 'active' : ''}" onclick="window.selectStatsGame('${gId}')">
+        ${game.logoUrl ? `<img src="${game.logoUrl}" style="height:18px; object-fit:contain;" alt="">` : ''}
+        <span>${game.name}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function selectStatsGame(gameId) {
+  activeStatsGameId = gameId;
+  renderStatsGameSelector();
+  renderGameStats(gameId);
+}
+window.selectStatsGame = selectStatsGame;
+
+function renderGameStats(gameId) {
+  const body = document.getElementById('statsModalBody');
+  if (!body) return;
+
+  const gamesDict = lotteryStatsData?.summary || lotteryStatsData?.games || {};
+  if (!lotteryStatsData || !gamesDict[gameId]) {
+    body.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">Cargando estadísticas de 30 días...</div>';
+    return;
+  }
+
+  const gStats = gamesDict[gameId];
+  const hot = gStats.hot || [];
+  const cold = gStats.cold || [];
+  const predictions = gStats.predictions || {};
+
+  const hotHtml = hot.slice(0, 5).map((item, idx) => {
+    const rankClass = idx === 0 ? 'r1' : (idx === 1 ? 'r2' : (idx === 2 ? 'r3' : 'rn'));
+    const numVal = item.number || item.num || '--';
+    const nameVal = item.name ? ` (${item.name})` : '';
+    const countVal = item.occurrences || item.count || 0;
+    return `
+      <div class="stats-list-item">
+        <div class="stats-item-left">
+          <span class="stats-rank ${rankClass}">${idx + 1}</span>
+          <span class="stats-num">${numVal}</span>
+          <span class="stats-name">${nameVal}</span>
+        </div>
+        <span class="stats-badge-count hot">🔥 ${countVal} veces</span>
+      </div>
+    `;
+  }).join('');
+
+  const coldHtml = cold.slice(0, 5).map((item, idx) => {
+    const numVal = item.number || item.num || '--';
+    const nameVal = item.name ? ` (${item.name})` : '';
+    const delayVal = item.daysOverdue !== undefined ? `${item.daysOverdue} días` : (item.delay ? `${item.delay} sorteos` : 'Pendiente');
+    return `
+      <div class="stats-list-item">
+        <div class="stats-item-left">
+          <span class="stats-rank rn">${idx + 1}</span>
+          <span class="stats-num">${numVal}</span>
+          <span class="stats-name">${nameVal}</span>
+        </div>
+        <span class="stats-badge-count cold">❄️ ${delayVal}</span>
+      </div>
+    `;
+  }).join('');
+
+  const hotPredPills = (predictions.calientes || []).map(p => {
+    const n = p.number || p.num || p;
+    const nm = p.name ? ` ${p.name}` : '';
+    return `<span class="prediction-pill">🔥 ${n}${nm}</span>`;
+  }).join('');
+
+  const coldPredPills = (predictions.atrasados || predictions.reventar || []).map(p => {
+    const n = p.number || p.num || p;
+    const nm = p.name ? ` ${p.name}` : '';
+    return `<span class="prediction-pill">⚡ ${n}${nm}</span>`;
+  }).join('');
+
+  const dreamPredPills = (predictions.datosFenix || predictions.fijos || []).map(p => {
+    const n = p.number || p.num || p;
+    const nm = p.name ? ` ${p.name}` : '';
+    return `<span class="prediction-pill">🎯 ${n}${nm}</span>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="stats-grid-cards">
+      <div class="stats-card-col">
+        <h4 style="color:#fbbf24;">🥇 Top 5 Más Premiados (30 Días)</h4>
+        <div class="stats-list">${hotHtml || '<p style="color:#64748b;">Sin datos suficientes</p>'}</div>
+      </div>
+      <div class="stats-card-col">
+        <h4 style="color:#60a5fa;">❄️ Top 5 Atrasados (Por Reventar)</h4>
+        <div class="stats-list">${coldHtml || '<p style="color:#64748b;">Sin datos suficientes</p>'}</div>
+      </div>
+      <div class="stats-card-col">
+        <h4 style="color:#34d399;">🔮 Pronósticos Estadísticos de Hoy</h4>
+        <div class="prediction-card-box">
+          <div class="prediction-title">🔥 Datos Calientes Probables</div>
+          <div class="prediction-numbers-row">${hotPredPills || '--'}</div>
+        </div>
+        <div class="prediction-card-box" style="border-color:rgba(59,130,246,0.35); background:linear-gradient(145deg, rgba(59,130,246,0.12), rgba(30,58,138,0.25));">
+          <div class="prediction-title" style="color:#60a5fa;">⚡ Por Reventar (Ciclo Vencido)</div>
+          <div class="prediction-numbers-row">${coldPredPills || '--'}</div>
+        </div>
+        <div class="prediction-card-box" style="border-color:rgba(245,158,11,0.35); background:linear-gradient(145deg, rgba(245,158,11,0.12), rgba(120,53,15,0.25));">
+          <div class="prediction-title" style="color:#fbbf24;">🎯 Fijos y Sorpresas Recomendadas</div>
+          <div class="prediction-numbers-row">${dreamPredPills || '--'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function startLotteryEngineView() {
+  updateVoiceButtonsUI();
+  loadLotteryTop10Data();
+  loadLotteryStats();
+  if (lotteryCarouselActive && lotteryDisplayMode === 'carousel') {
+    startLotteryCarousel();
+  }
+  if (!lotteryPollingTimer) {
+    lotteryPollingTimer = setInterval(() => {
+      loadLotteryTop10Data(true);
+      loadLotteryStats();
+    }, 45000);
+  }
+}
+
+function stopLotteryEngineView() {
+  stopLotteryCarousel();
+  if (lotteryPollingTimer) {
+    clearInterval(lotteryPollingTimer);
+    lotteryPollingTimer = null;
+  }
+}
+
+function updateAdminManualLotteryDropdowns() {
+  const selGame = document.getElementById('selManualGame');
+  if (!selGame || !lotteryTop10 || lotteryTop10.length === 0) return;
+
+  const currentVal = selGame.value;
+  selGame.innerHTML = lotteryTop10.map(g => {
+    const gId = g.gameId || g.id;
+    const icon = g.icon || (g.type === 'animalitos' ? '🐾' : '🎰');
+    return `<option value="${gId}" ${gId === currentVal ? 'selected' : ''}>${icon} ${g.name}</option>`;
+  }).join('');
+
+  if (!currentVal && lotteryTop10.length > 0) {
+    selGame.value = lotteryTop10[0].gameId || lotteryTop10[0].id;
+  }
+
+  updateManualHoursDropdown();
+}
+
+function updateManualHoursDropdown() {
+  const selGame = document.getElementById('selManualGame');
+  const selHour = document.getElementById('selManualHour');
+  const boxAnimal = document.getElementById('boxManualAnimal');
+  const boxTriple = document.getElementById('boxManualTriple');
+  if (!selGame || !selHour) return;
+
+  const game = lotteryTop10.find(g => (g.gameId || g.id) === selGame.value);
+  if (!game) return;
+
+  if (game.type === 'animalitos') {
+    if (boxAnimal) boxAnimal.style.display = 'flex';
+    if (boxTriple) boxTriple.style.display = 'none';
+  } else {
+    if (boxAnimal) boxAnimal.style.display = 'none';
+    if (boxTriple) boxTriple.style.display = 'flex';
+  }
+
+  const draws = game.draws || game.results || [];
+  const hours = draws.map(d => d.time || d.hour);
+  selHour.innerHTML = hours.map(h => `<option value="${h}">${h}</option>`).join('');
+}
+
+// D-Pad Remote Navigation & Universal Shortcuts
 function setupKeyboardNavigation() {
   document.addEventListener('keydown', (e) => {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
@@ -2104,11 +3370,23 @@ function setupKeyboardNavigation() {
         updateGridView(4);
         break;
       case 'ArrowRight':
+        if (selectedService === 'loteria') {
+          advanceLotteryCarousel();
+          break;
+        }
         if (focusedCellIndex < activeGridMode) {
           setFocusedCell(focusedCellIndex + 1);
         }
         break;
       case 'ArrowLeft':
+        if (selectedService === 'loteria') {
+          if (lotteryTop10.length > 0) {
+            const curIdx = lotteryTop10.findIndex(g => g.id === selectedLotteryGameId);
+            const prevIdx = (curIdx - 1 + lotteryTop10.length) % lotteryTop10.length;
+            selectLotteryGame(lotteryTop10[prevIdx].id, true);
+          }
+          break;
+        }
         if (focusedCellIndex > 1) {
           setFocusedCell(focusedCellIndex - 1);
         }
@@ -2124,11 +3402,31 @@ function setupKeyboardNavigation() {
         }
         break;
       case 'Enter':
+        if (selectedService === 'loteria') {
+          toggleLotteryCarousel();
+          break;
+        }
         setAudioFocus(focusedCellIndex);
+        break;
+      case ' ':
+        if (selectedService === 'loteria') {
+          e.preventDefault();
+          toggleLotteryCarousel();
+          break;
+        }
         break;
       case 'f':
       case 'F':
-        toggleCellFullscreen(focusedCellIndex);
+        e.preventDefault();
+        toggleAppFullscreen();
+        break;
+      case 'h':
+      case 'H':
+      case 'm':
+      case 'M':
+        e.preventDefault();
+        const header = document.getElementById('appHeader');
+        if (header) header.classList.toggle('visible');
         break;
       case 'a':
       case 'A':
@@ -2165,3 +3463,18 @@ window.loadApprovedDevicesList = loadApprovedDevicesList;
 window.loadClientsList = loadClientsList;
 window.loadSystemAnalytics = loadSystemAnalytics;
 window.loadSystemUsersList = loadSystemUsersList;
+window.selectLotteryGame = selectLotteryGame;
+window.toggleLotteryCarousel = toggleLotteryCarousel;
+window.loadLotteryTop10Data = loadLotteryTop10Data;
+window.toggleAppFullscreen = toggleAppFullscreen;
+window.switchDirectService = switchDirectService;
+window.toggleHeaderPin = toggleHeaderPin;
+window.toggleLotteryVoiceAnnouncements = toggleLotteryVoiceAnnouncements;
+window.toggleLotteryViewMode = toggleLotteryViewMode;
+window.setLotteryDisplayMode = setLotteryDisplayMode;
+window.openLotteryStatsModal = openLotteryStatsModal;
+window.closeLotteryStatsModal = closeLotteryStatsModal;
+window.selectStatsGame = selectStatsGame;
+window.switchDirectToLotteryGame = switchDirectToLotteryGame;
+
+

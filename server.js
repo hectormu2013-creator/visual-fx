@@ -25,6 +25,21 @@ const {
   deleteSystemUser
 } = require('./auth_device');
 const { initMasterIngest, getMasterState, updateChannelSource } = require('./master_ingest');
+const {
+  TOP_10_GAMES,
+  initLotteryEngine,
+  getTop10Results,
+  setManualResult,
+  syncAllTop10,
+  getVenezuelaDateString
+} = require('./lottery_engine');
+const {
+  getHotNumbers,
+  getColdNumbers,
+  getDailyPredictions,
+  generateTickerFeed,
+  getFullGameAnalytics
+} = require('./lottery_stats');
 
 const app = express();
 const PORT = process.env.PORT || 3500;
@@ -55,8 +70,9 @@ possiblePublicDirs.forEach(dir => {
   }
 });
 
-// Inicializar Ingestor Máster
+// Inicializar Ingestor Máster y Motor de Loterías
 initMasterIngest(CHANNELS);
+initLotteryEngine();
 
 // Middleware para verificar Roles
 function requireRoles(...allowedRoles) {
@@ -432,6 +448,78 @@ app.get('/api/stream/proxy', (req, res) => {
   }
 
   return handleStreamProxy(req, res, targetUrl);
+});
+
+// ==========================================
+// RUTAS DE LOTERÍAS Y ANIMALITOS (TOP 10 OFICIAL)
+// ==========================================
+// 1. Obtener Pizarra del Día (Resultados Top 10)
+app.get('/api/lottery/top10', (req, res) => {
+  return res.json({
+    success: true,
+    date: getVenezuelaDateString(),
+    games: getTop10Results()
+  });
+});
+
+// 2. Registro Manual de Emergencia (SuperAdmin y Jefe Técnico)
+app.post('/api/admin/lottery/manual', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
+  const gameId = req.body.gameId;
+  const time = req.body.time || req.body.hour;
+  const number = req.body.number || req.body.result?.number;
+  const name = req.body.name || req.body.result?.name;
+  const tripleA = req.body.tripleA || req.body.result?.tripleA;
+  const tripleB = req.body.tripleB || req.body.result?.tripleB;
+  const signo = req.body.signo || req.body.result?.signo;
+
+  if (!gameId || !time) {
+    return res.status(400).json({ error: 'gameId y time son obligatorios.' });
+  }
+  const result = setManualResult({ gameId, time, number, name, tripleA, tripleB, signo });
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// 3. Forzar sincronización inmediata (SuperAdmin y Jefe Técnico)
+app.post('/api/admin/lottery/sync-now', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), async (req, res) => {
+  try {
+    await syncAllTop10();
+    return res.json({ success: true, message: 'Sincronización forzada completada con éxito.', games: getTop10Results() });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+// 4. Estadísticas y Pronósticos 30 Días & Ticker Feed
+app.get('/api/lottery/stats', (req, res) => {
+  try {
+    const ticker = generateTickerFeed(TOP_10_GAMES);
+    const summary = {};
+    for (const g of TOP_10_GAMES) {
+      summary[g.id] = {
+        name: g.name,
+        logoUrl: g.logoUrl,
+        icon: g.icon,
+        type: g.type,
+        hot: getHotNumbers(g.id, 5),
+        cold: getColdNumbers(g.id, 5),
+        predictions: getDailyPredictions(g.id)
+      };
+    }
+    return res.json({ success: true, ticker, summary });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/lottery/stats/:gameId', (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const analytics = getFullGameAnalytics(gameId);
+    return res.json({ success: true, analytics });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // ==========================================

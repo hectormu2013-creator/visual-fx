@@ -51,8 +51,15 @@
 </head>
 <body class="tv-mode">
   
-  <!-- Top Navigation Header -->
-  <header class="app-header">
+  <!-- Top Header Hover Trigger Zone (For Auto-Hide Mode) -->
+  <div id="topHeaderHoverZone" class="top-header-hover-zone" title="Mover mouse aquí para mostrar controles"></div>
+  <button id="btnShowHeaderFloating" class="btn-floating-header-trigger" title="Mostrar menú y controles">
+    <span>⚡ MENÚ & SERVICIOS</span>
+    <span class="shortcut-tip">[Tecla F: Pantalla Completa]</span>
+  </button>
+
+  <!-- Top Navigation Header (Floating / Auto-Hide) -->
+  <header class="app-header floating-header" id="appHeader">
     <div class="header-left">
       <div class="brand-logo" id="brandLogoTrigger" title="Visual-FX" style="cursor: pointer;">
         <div class="logo-icon">
@@ -61,23 +68,29 @@
         </div>
         <div class="brand-text">
           <span class="brand-name">VISUAL<span class="highlight">-FX</span></span>
-          <span class="brand-subtitle" id="lblBrandSubtitle">FENIX • HÍPICA EN DIRECTO</span>
+          <span class="brand-subtitle" id="lblBrandSubtitle">FENIX • PLATAFORMA SAAS</span>
         </div>
       </div>
       
       <div class="device-badge" id="deviceBadge">
         <span class="status-dot green"></span>
-        <span id="deviceBadgeText">Sede Caracas • TV #1 [AUTORIZADO]</span>
+        <span id="deviceBadgeText">TV [AUTORIZADO]</span>
       </div>
 
-      <button type="button" class="btn-live-racing-header" onclick="window.goToLiveStreams()" title="Ver Transmisión en Vivo de Carreras">
-        <span class="live-pulse"></span> 🏇 CARRERAS EN VIVO
-      </button>
+      <!-- Direct 1-Click Service Switchers -->
+      <div class="service-quick-bar">
+        <button type="button" class="btn-service-direct active" id="btnDirectHipica" onclick="window.switchDirectService('hipica')" title="Ir a Carreras de Caballos">
+          🏇 Carreras
+        </button>
+        <button type="button" class="btn-service-direct" id="btnDirectLoteria" onclick="window.switchDirectService('loteria')" title="Ir a Resultados de Loterías">
+          🎲 Loterías
+        </button>
+      </div>
     </div>
     
     <div class="header-center">
-      <!-- Grid Layout Controls -->
-      <div class="layout-selector" role="group" aria-label="Selección de Pantallas">
+      <!-- Grid Layout Controls (Solo Hípica) -->
+      <div class="layout-selector" id="hipicaHeaderControls" role="group" aria-label="Selección de Pantallas">
         <span class="selector-label">VISTA:</span>
         <button class="layout-btn active" data-grid="1" title="Pantalla Única (Tecla 1)" id="btnGrid1">
           <span class="icon">🔲</span> 1 CANAL
@@ -92,21 +105,40 @@
           <span class="icon">⊞</span> 4 MULTICANAL (2x2)
         </button>
       </div>
+
+      <!-- Lottery-specific Header Controls (Solo Loterías) -->
+      <div class="lottery-header-controls" id="lotteryHeaderControls" style="display: none;">
+        <button class="btn-header-lottery-action" id="btnHeaderViewMode" onclick="window.toggleLotteryViewMode()" title="Alternar entre Carrusel y Pizarra General">
+          📋 Pizarra Resumen
+        </button>
+        <button class="btn-header-lottery-action" id="btnHeaderStats" onclick="window.openLotteryStatsModal()" title="Ver Estadísticas 30D y Pronósticos">
+          📊 Estadísticas 30D
+        </button>
+        <button class="btn-header-lottery-action" id="btnHeaderVoiceToggle" onclick="window.toggleLotteryVoiceAnnouncements()" title="Activar/Desactivar Locución de Voz">
+          🔊 Voz: ON
+        </button>
+      </div>
     </div>
     
     <div class="header-right">
-      <button class="btn-service-hub" id="btnOpenServiceHub" title="Cambiar Servicio de la Pantalla">
-        <span class="icon">🎛️</span> <span id="lblActiveService">Carreras de Caballos</span>
+      <button class="btn-header-action" id="btnToggleAppFullscreen" onclick="window.toggleAppFullscreen()" title="Pantalla Completa (Tecla F)">
+        <span class="icon">⛶</span> Pantalla Completa
+      </button>
+      <button class="btn-pin-header" id="btnPinHeader" onclick="window.toggleHeaderPin()" title="Fijar / Desanclar barra superior">
+        📌 <span id="lblPinState">Fijar</span>
+      </button>
+      <button class="btn-service-hub" id="btnOpenServiceHub" title="Todos los Servicios">
+        <span class="icon">🎛️</span> <span id="lblActiveService">Carreras</span>
       </button>
       <button class="btn-sidebar-toggle" id="btnToggleSidebar" title="Lista de Canales">
         <span class="icon">📺</span> Hipódromos
       </button>
       <button class="btn-admin-modal" id="btnAdminModal" title="Panel de Administración">
-        <span class="icon">⚙️</span> Panel de Control
+        <span class="icon">⚙️</span>
       </button>
       <div class="user-profile" id="userProfileArea">
-        <span class="user-name" id="lblUserName">Agencia Cabimas</span>
-        <button class="btn-logout-header" id="btnLogout" title="Cerrar Sesión">🚪 CERRAR SESIÓN</button>
+        <span class="user-name" id="lblUserName">Administrador</span>
+        <button class="btn-logout-header" id="btnLogout" title="Cerrar Sesión">🚪</button>
       </div>
     </div>
   </header>
@@ -247,6 +279,9 @@
         </button>
         <button class="admin-tab-btn" data-tab="tab-analytics" id="tabBtnAnalytics">
           📊 Analíticas y Monitoreo
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-lottery" id="tabBtnLottery">
+          🎲 Loterías (Emergencia)
         </button>
       </nav>
 
@@ -541,6 +576,49 @@
           </div>
         </div>
 
+        <!-- TAB 6: LOTERÍAS Y ANIMALITOS (PUBLICACIÓN MANUAL DE EMERGENCIA) -->
+        <div class="tab-pane" id="tab-lottery">
+          <div class="admin-section-box" style="margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h4 style="margin:0;">🎲 Publicación Manual de Emergencia</h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">Utilice esta consola si una fuente externa se demora en publicar o para corregir un sorteo:</p>
+              </div>
+              <div>
+                <button class="btn-secondary" id="btnForceSyncLottery" style="background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#38bdf8; font-weight:700; padding:8px 16px; border-radius:8px; cursor:pointer;">
+                  🔄 Forzar Sincronización Inmediata
+                </button>
+              </div>
+            </div>
+            <div id="lotterySyncToast" style="display:none; margin-top:8px; font-size:0.85rem; color:#34d399; font-weight:600;"></div>
+          </div>
+
+          <div class="admin-section-box">
+            <h4>📝 Ingresar o Corregir Sorteo</h4>
+            <div class="form-grid-row" style="flex-wrap:wrap; gap:10px;">
+              <select id="selManualGame" style="flex:1.5; min-width:180px;">
+                <!-- Populated via JS with Top 10 -->
+              </select>
+              <select id="selManualHour" style="flex:1.2; min-width:130px;">
+                <!-- Populated dynamically based on game -->
+              </select>
+              <div id="boxManualAnimal" style="display:flex; flex:2; gap:8px;">
+                <input type="text" id="txtManualNumber" placeholder="Número (ej. 12)" style="width:100px; text-align:center;">
+                <input type="text" id="txtManualName" placeholder="Animal (ej. Caballo)" style="flex:1;">
+              </div>
+              <div id="boxManualTriple" style="display:none; flex:2; gap:8px;">
+                <input type="text" id="txtManualTripleA" placeholder="Triple A (ej. 302)" style="width:110px; text-align:center;">
+                <input type="text" id="txtManualTripleB" placeholder="Triple B (ej. 634)" style="width:110px; text-align:center;">
+                <input type="text" id="txtManualSigno" placeholder="Signo (ej. Libra)" style="flex:1;">
+              </div>
+              <button class="btn-accent" id="btnSubmitManualLottery" style="flex:1.3; min-width:170px; font-weight:bold; background:linear-gradient(135deg, #0284c7, #10b981);">
+                💾 Publicar Resultado
+              </button>
+            </div>
+            <div id="manualLotteryMsg" style="display:none; margin-top:10px; font-weight:600; font-size:0.9rem;"></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -718,62 +796,124 @@
 
     </section>
 
-    <!-- View 2: Lottery Live Board -->
+    <!-- View 2: Lottery Live Board (Pizarra Dinámica Top 10 + Resumen General + Ticker) -->
     <section class="service-view-panel" id="panelLottery" style="display: none;">
-      <div class="panel-hero-header">
-        <h2>🎲 Pizarra de Resultados: Loterías & Animalitos</h2>
-        <span class="live-status-pill">🟢 Sorteos en Tiempo Real</span>
+      <!-- Hero Top Bar (Compacto & Optimizado - Petición 2 y 3) -->
+      <div class="lottery-top-bar compact">
+        <div class="lottery-top-bar-left">
+          <!-- Selector Desplegable de Lotería (Petición 2) -->
+          <div class="lottery-select-wrapper">
+            <span class="select-prefix">🎯 Lotería:</span>
+            <select id="selLotteryGameNav" class="lottery-select-nav" onchange="window.selectLotteryGame(this.value, true)" title="Seleccionar Lotería"></select>
+          </div>
+          <div class="lottery-date-badge" id="lblLotteryCurrentDate">
+            📅 Sábado, 05 de Septiembre
+          </div>
+          <!-- Reloj en Tiempo Real (Petición 3) -->
+          <div class="lottery-clock-badge" id="lblLotteryLiveClock">
+            🕒 --:--:-- --
+          </div>
+        </div>
+
+        <div class="lottery-controls-bar">
+          <!-- Modo Selector: Carrusel vs Resumen -->
+          <div class="lottery-mode-pills">
+            <button class="btn-mode-pill active" id="btnModeCarousel" onclick="window.setLotteryDisplayMode('carousel')">
+              🎠 Carrusel
+            </button>
+            <button class="btn-mode-pill" id="btnModeOverview" onclick="window.setLotteryDisplayMode('overview')">
+              📋 Resumen General
+            </button>
+          </div>
+          <button class="btn-mode-pill" id="btnLotteryStatsTrigger" onclick="window.openLotteryStatsModal()">
+            📊 Estadísticas 30D
+          </button>
+          <button class="btn-mode-pill active" id="btnVoiceToggleMain" onclick="window.toggleLotteryVoiceAnnouncements()">
+            <span id="lblVoiceIcon">🔊</span> <span id="lblVoiceText">Voz: ON</span>
+          </button>
+          <button class="btn-carousel-toggle active" id="btnToggleLotteryCarousel" title="Alternar Rotación Automática">
+            <span class="carousel-dot pulse"></span>
+            <span id="lblCarouselState">Rotación: ACTIVA (15s)</span>
+          </button>
+          <button class="btn-fullscreen-lottery" id="btnFullscreenLotteryMain" onclick="window.toggleAppFullscreen()" title="Pantalla Completa (Tecla F)">
+            ⛶ Pantalla Completa
+          </button>
+        </div>
       </div>
-      <div class="lottery-grid">
-        <div class="lottery-card">
-          <div class="lottery-title">
-            <span>🐾 Lotto Activo</span>
-            <span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>
-          </div>
-          <div class="animal-result-display">
-            <div class="animal-number">12</div>
-            <div class="animal-name">🐴 CABALLO</div>
-          </div>
-          <div class="sorteo-history">
-            <span>09:00 AM: 05 LEÓN</span>
-            <span>10:00 AM: 18 TIGRE</span>
-            <span>11:00 AM: 12 CABALLO</span>
-          </div>
-        </div>
 
-        <div class="lottery-card">
-          <div class="lottery-title">
-            <span>🐸 La Granjita</span>
-            <span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>
+      <!-- VISTA A: MODO CARRUSEL DINÁMICO (Con Pizarra Multicolumna Estilo 1000Resultados) -->
+      <div id="lotteryCarouselView">
+        <!-- Main Display Board -->
+        <div class="lottery-main-board" id="lotteryMainBoard">
+          <!-- Left: Hero Card con Barra de Cuenta Regresiva (Petición 5 y 6) -->
+          <div class="lottery-hero-card" id="lotteryHeroCard">
+            <!-- Rendered via JS -->
           </div>
-          <div class="animal-result-display">
-            <div class="animal-number">03</div>
-            <div class="animal-name">CENTAURO</div>
-          </div>
-          <div class="sorteo-history">
-            <span>09:00 AM: 21 GALLO</span>
-            <span>10:00 AM: 08 RATÓN</span>
-            <span>11:00 AM: 03 CENTAURO</span>
-          </div>
-        </div>
 
-        <div class="lottery-card">
-          <div class="lottery-title">
-            <span>🎰 Triple Zulia & Chance</span>
-            <span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>
-          </div>
-          <div class="animal-result-display">
-            <div class="animal-number">742</div>
-            <div class="animal-name">SIGNO: LEO</div>
-          </div>
-          <div class="sorteo-history">
-            <span>Zulia A: 742</span>
-            <span>Zulia B: 189</span>
-            <span>Chance A: 903</span>
+          <!-- Right: Pizarra Multicolumna Estilo 1000Resultados (Petición 4) -->
+          <div class="lottery-timeline-container" id="lotteryTimelineContainer">
+            <div class="timeline-header">
+              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <h3 id="lblTimelineGameTitle">📊 Pizarra de Resultados Oficiales</h3>
+                <span class="timeline-meta" id="lblTimelineProgress">Sorteos de hoy</span>
+              </div>
+              <div class="timeline-view-switch" id="timelineCategorySwitch">
+                <button class="btn-cat-switch active" id="btnCatAnimalitos" onclick="window.setTimelineCategory('animalitos')">🐾 Animalitos (4 Columnas)</button>
+                <button class="btn-cat-switch" id="btnCatTriples" onclick="window.setTimelineCategory('triples')">🎰 Triples y Signos (4 Columnas)</button>
+              </div>
+            </div>
+            <!-- Multi-column Grid (Pizarra 1000Resultados) -->
+            <div class="pizarra-1000-board" id="pizarra1000Board">
+              <!-- Rendered via JS: 4 columns side by side just like Image 4 -->
+            </div>
           </div>
         </div>
+      </div>
+
+      <!-- VISTA B: MODO RESUMEN GENERAL (TODAS LAS LOTERÍAS EN 1 SOLA PANTALLA) -->
+      <div id="lotteryOverviewView" style="display: none;">
+        <div class="overview-header-bar">
+          <h3>📊 Resumen Consolidado del Día • Todas las Loterías y Ruletas</h3>
+          <span class="overview-badge">Actualización en Vivo • Hora de Venezuela (UTC-4)</span>
+        </div>
+        <div class="lottery-overview-grid" id="lotteryOverviewGrid">
+          <!-- Rendered via JS with all 10 lotteries side-by-side -->
+        </div>
+      </div>
+
+      <!-- Cintillo Inferior Desplazable (Live Ticker con Pronósticos y Estadísticas) - Petición 1 -->
+      <div class="lottery-ticker-wrapper" id="lotteryLiveTicker">
+        <div class="ticker-label">
+          <span class="live-dot pulse"></span>
+          <span>DATOS & PRONÓSTICOS</span>
+        </div>
+        <div class="ticker-content-track" id="tickerContentTrack">
+          <!-- Marquee items populated via JS -->
+        </div>
+        <button class="btn-ticker-fullscreen" onclick="window.toggleAppFullscreen()" title="Ver en Pantalla Completa (Tecla F)">
+          ⛶ PANTALLA COMPLETA
+        </button>
       </div>
     </section>
+
+    <!-- Modal Pantalla Completa: Estadísticas 30D y Pronósticos -->
+    <div class="modal-overlay" id="lotteryStatsModal" style="display: none;">
+      <div class="stats-modal-card glassmorphism">
+        <div class="stats-modal-header">
+          <div>
+            <h2>📊 Radiografía Estadística de 30 Días & Pronósticos</h2>
+            <p>Números más premiados, números por reventar (atrasados) y predicciones estadísticas</p>
+          </div>
+          <button class="btn-modal-close" onclick="window.closeLotteryStatsModal()">✖️</button>
+        </div>
+        <div class="stats-game-selector" id="statsGameSelector">
+          <!-- Populated via JS with 10 game buttons -->
+        </div>
+        <div class="stats-modal-body" id="statsModalBody">
+          <!-- Rendered via JS: Podio calientes, Atrasados, Pronósticos -->
+        </div>
+      </div>
+    </div>
 
     <!-- View 3: Sports Livescore Board -->
     <section class="service-view-panel" id="panelSports" style="display: none;">

@@ -13,3 +13,4 @@ android-tv-app/.gradle/
 android-tv-app/app/build/
 android-tv-app/local.properties
 scratch/
+.github/
