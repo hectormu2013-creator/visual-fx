@@ -6,3 +6,10 @@ yarn-error.log*
 Thumbs.db
 *.zip
 .render_config.json
+.gradle/
+build/
+local.properties
+android-tv-app/.gradle/
+android-tv-app/app/build/
+android-tv-app/local.properties
+scratch/
