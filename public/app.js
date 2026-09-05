@@ -177,6 +177,40 @@ async function checkDeviceAuthorization() {
         clearInterval(devicePollingTimer);
         devicePollingTimer = null;
       }
+
+      // 1. Marca Dinámica por Cliente: Reemplazar "Agencias Fenix" por el nombre real del cliente
+      const clientTitle = data.clientName || (data.device && data.device.clientName) || (currentUser && (currentUser.clientName || currentUser.clientId)) || 'Fenix';
+      const subEl = document.getElementById('lblBrandSubtitle');
+      if (subEl) {
+        subEl.textContent = `${clientTitle.toUpperCase()} • HÍPICA EN DIRECTO`;
+      }
+      const adminSub = document.getElementById('lblAdminModalSubtitle');
+      if (adminSub) {
+        adminSub.textContent = `Gestión Centralizada ${clientTitle} • Dispositivos, Canales y Usuarios`;
+      }
+
+      // 2. Jerarquía de Seguridad: Las pantallas/Smart TVs NO son consolas administrativas
+      const isSuperAdmin = currentUser && (currentUser.role === 'SUPER_ADMIN');
+      const isTvDisplay = IS_SMART_TV || (!isSuperAdmin && data.device && data.device.tvName);
+
+      if (isTvDisplay) {
+        document.body.classList.add('authorized-screen');
+        if (elements.btnAdminModal) elements.btnAdminModal.style.display = 'none';
+        const profileArea = document.getElementById('userProfileArea');
+        if (profileArea) profileArea.style.display = 'none';
+
+        // Si el televisor guardó accidentalmente credenciales de cliente en localStorage, purgarlas
+        if (IS_SMART_TV) {
+          localStorage.removeItem('visual_fx_token');
+          localStorage.removeItem('visual_fx_user');
+          currentToken = null;
+          currentUser = null;
+        }
+      } else {
+        document.body.classList.remove('authorized-screen');
+        if (elements.btnAdminModal) elements.btnAdminModal.style.display = 'inline-flex';
+      }
+
       // Aplicar servicio de inicio por defecto asignado al televisor al encenderse
       if (data.device && (data.device.defaultService || data.device.activeService)) {
         const remoteDefault = data.device.defaultService || data.device.activeService;
@@ -200,6 +234,19 @@ async function checkDeviceAuthorization() {
 
 // User Session
 function checkUserSession() {
+  // En Smart TVs nunca restauramos sesiones administrativas de usuario en el arranque
+  if (IS_SMART_TV) {
+    localStorage.removeItem('visual_fx_token');
+    localStorage.removeItem('visual_fx_user');
+    currentToken = null;
+    currentUser = null;
+    const profileArea = document.getElementById('userProfileArea');
+    if (profileArea) profileArea.style.display = 'none';
+    if (elements.btnAdminModal) elements.btnAdminModal.style.display = 'none';
+    document.body.classList.add('authorized-screen');
+    return;
+  }
+
   const savedToken = localStorage.getItem('visual_fx_token');
   const savedUser = localStorage.getItem('visual_fx_user');
   
@@ -239,6 +286,10 @@ function checkUserSession() {
 
 // Abrir Panel de Control Administrativo Ejecutivo según Rol
 function openExecutiveAdminModal() {
+  if (IS_SMART_TV) {
+    console.warn('[Security] Panel Administrativo restringido en pantallas Smart TV.');
+    return;
+  }
   if (!currentUser) {
     openAdminModalDirectly();
     return;
@@ -603,18 +654,20 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
   function startHls(targetUrl, isFallback = false) {
     if (Hls.isSupported()) {
       const isMultiCell = activeGridMode > 1;
+      const isUltraMulti = activeGridMode >= 3;
       
       const hls = new Hls({
-        enableWorker: !IS_SMART_TV, // Web Workers disable on Smart TVs to prevent thread lock/RAM crashes
+        enableWorker: !IS_SMART_TV, // Web Workers deshabilitado en Smart TVs para no bloquear hilos del navegador
         lowLatencyMode: false,
-        capLevelToPlayerSize: true, // Scales stream bitrate & resolution to container dimensions
-        maxBufferLength: IS_SMART_TV ? (isMultiCell ? 5 : 8) : (isMultiCell ? 10 : 25),
-        maxMaxBufferLength: IS_SMART_TV ? (isMultiCell ? 10 : 15) : (isMultiCell ? 20 : 40),
-        maxBufferSize: IS_SMART_TV ? (isMultiCell ? 8 * 1024 * 1024 : 12 * 1024 * 1024) : 30 * 1024 * 1024,
+        capLevelToPlayerSize: true, // Escala la resolución al tamaño real del contenedor
+        backBufferLength: IS_SMART_TV ? 0 : 30, // En Smart TV libera memoria RAM de inmediato
+        maxBufferLength: IS_SMART_TV ? (isUltraMulti ? 3 : (isMultiCell ? 4 : 8)) : (isMultiCell ? 10 : 25),
+        maxMaxBufferLength: IS_SMART_TV ? (isUltraMulti ? 5 : (isMultiCell ? 7 : 15)) : (isMultiCell ? 20 : 40),
+        maxBufferSize: IS_SMART_TV ? (isUltraMulti ? 2 * 1024 * 1024 : (isMultiCell ? 4 * 1024 * 1024 : 8 * 1024 * 1024)) : 30 * 1024 * 1024,
         maxBufferHole: 0.5,
         highBufferWatchdogPeriod: 2,
         nudgeMaxRetries: 5,
-        startLevel: -1,
+        startLevel: (IS_SMART_TV && isUltraMulti) ? 0 : -1,
         testBandwidth: true
       });
 
@@ -624,14 +677,31 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
       hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
         if (loader) loader.style.display = 'none';
 
-        // Limit quality levels on Smart TVs if higher than 720p 30fps
+        // Limitación inteligente de resolución para Smart TV:
         if (IS_SMART_TV && data.levels && data.levels.length > 1) {
-          const safeLevels = data.levels
-            .map((lvl, index) => ({ ...lvl, index }))
-            .filter(lvl => (lvl.height <= 720));
-          if (safeLevels.length > 0) {
-            const maxSafeIndex = safeLevels[safeLevels.length - 1].index;
-            hls.autoLevelCappedAt = maxSafeIndex;
+          if (activeGridMode >= 3) {
+            // En 3 o 4 pantallas en Smart TV: forzar el nivel más liviano (360p/480p) para ahorrar 75% CPU/RAM
+            hls.autoLevelCappedAt = 0;
+            hls.currentLevel = 0;
+          } else if (activeGridMode === 2) {
+            // En 2 pantallas: permitir hasta 480p
+            const safeLevels = data.levels
+              .map((lvl, index) => ({ ...lvl, index }))
+              .filter(lvl => (lvl.height <= 480));
+            if (safeLevels.length > 0) {
+              hls.autoLevelCappedAt = safeLevels[safeLevels.length - 1].index;
+            } else {
+              hls.autoLevelCappedAt = 0;
+            }
+          } else {
+            // En 1 sola pantalla: permitir hasta 720p HD
+            const safeLevels = data.levels
+              .map((lvl, index) => ({ ...lvl, index }))
+              .filter(lvl => (lvl.height <= 720));
+            if (safeLevels.length > 0) {
+              const maxSafeIndex = safeLevels[safeLevels.length - 1].index;
+              hls.autoLevelCappedAt = maxSafeIndex;
+            }
           }
         }
 
@@ -903,14 +973,33 @@ function setupEventListeners() {
     });
   }
 
-  // Open Admin Portal Button
+  // Open Admin Portal Button (Solo para consolas de administración, bloqueado en TVs)
   elements.btnAdminModal.addEventListener('click', () => {
+    if (IS_SMART_TV) {
+      return;
+    }
     if (!currentToken || !currentUser) {
       openAdminModalDirectly();
     } else {
       openExecutiveAdminModal();
     }
   });
+
+  // Acceso Técnico Oculto en Smart TVs: 5 clics rápidos sobre el logotipo Visual-FX
+  let logoClicks = 0;
+  let logoTimer = null;
+  const logoTrigger = document.getElementById('brandLogoTrigger');
+  if (logoTrigger) {
+    logoTrigger.addEventListener('click', () => {
+      logoClicks++;
+      if (logoTimer) clearTimeout(logoTimer);
+      logoTimer = setTimeout(() => { logoClicks = 0; }, 2500);
+      if (logoClicks >= 5) {
+        logoClicks = 0;
+        openAdminModalDirectly();
+      }
+    });
+  }
 
   // Open Login Modal from Banner / Administrador Button
   const btnShowLoginFromBanner = document.getElementById('btnShowLoginFromBanner');
@@ -2040,6 +2129,13 @@ function setupKeyboardNavigation() {
       case 'f':
       case 'F':
         toggleCellFullscreen(focusedCellIndex);
+        break;
+      case 'a':
+      case 'A':
+        if (e.shiftKey) {
+          e.preventDefault();
+          openAdminModalDirectly();
+        }
         break;
     }
   });

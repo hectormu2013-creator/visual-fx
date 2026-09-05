@@ -54,14 +54,14 @@
   <!-- Top Navigation Header -->
   <header class="app-header">
     <div class="header-left">
-      <div class="brand-logo">
+      <div class="brand-logo" id="brandLogoTrigger" title="Visual-FX" style="cursor: pointer;">
         <div class="logo-icon">
           <span class="live-pulse"></span>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
         </div>
         <div class="brand-text">
           <span class="brand-name">VISUAL<span class="highlight">-FX</span></span>
-          <span class="brand-subtitle">AGENCIAS FENIX • HÍPICA EN DIRECTO</span>
+          <span class="brand-subtitle" id="lblBrandSubtitle">FENIX • HÍPICA EN DIRECTO</span>
         </div>
       </div>
       
@@ -217,7 +217,7 @@
       <div class="modal-header">
         <div class="admin-title-area">
           <h3>⚙️ Panel de Control Administrativo</h3>
-          <span class="admin-subtitle">Gestión Centralizada Fenix • Dispositivos, Canales y Usuarios</span>
+          <span class="admin-subtitle" id="lblAdminModalSubtitle">Gestión Centralizada Fenix • Dispositivos, Canales y Usuarios</span>
         </div>
         <div class="admin-header-actions">
           <button type="button" class="btn-live-racing-header modal-action" onclick="window.goToLiveStreams()" title="Ver Transmisión en Vivo de Carreras">

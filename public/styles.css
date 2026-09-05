@@ -196,6 +196,20 @@ body {
   color: var(--accent-cyan);
 }
 
+/* Seguridad Jerárquica: Las pantallas de TV NO acceden al Panel Administrativo */
+body.tv-mode #btnAdminModal,
+body.tv-mode #userProfileArea,
+body.authorized-screen #btnAdminModal,
+body.authorized-screen #userProfileArea {
+  display: none !important;
+}
+
+/* Solo visible si un Super Admin está explícitamente en modo consola técnica */
+body.console-admin #btnAdminModal,
+body.console-admin #userProfileArea {
+  display: inline-flex !important;
+}
+
 .user-profile {
   display: flex;
   align-items: center;
