@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Visual-FX TV</string>
+    <string name="connecting_server">Conectando con Servidor Visual-FX...</string>
+    <string name="press_again_exit">Presione ATRÁS nuevamente para salir</string>
+</resources>

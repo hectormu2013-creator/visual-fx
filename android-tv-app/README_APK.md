@@ -1,61 +1,67 @@
-# 📱 Guía de Empaquetado APK Nativa para FireStick y Android TV (`visual-fx-tv.apk`)
+# 📱 Guía Completa de la App Nativa para Android TV y FireStick (`visual-fx-tv.apk`)
 
-Esta guía explica detalladamente cómo compilar, distribuir e instalar la **App Nativa de Visual-FX** en televisores **Smart TV**, **Amazon FireStick**, **TV Boxes Android** y monitores de agencias hípicas.
-
----
-
-## ⚡ ¿Por qué usar la App Nativa / APK?
-1. **Rendimiento 60 FPS en Carreras:** Pasa directamente al chip decodificador de video GPU del televisor, eliminando entrecortes de video y congelamiento de memoria JS.
-2. **Auto-Inicio al Encender la TV:** Al conectar el televisor de la agencia hípica o encender el FireStick, la aplicación se abre sola en el servicio asignado.
-3. **Instalación Ultra-Fácil con Downloader:** No requiere Google Play Store. Se instala en 10 segundos desde la app gratuita **Downloader**.
+Esta guía explica la arquitectura, el flujo de compilación en la nube (GitHub Actions), la distribución y la instalación de la **App Nativa de Visual FX** para **Smart TVs**, **Amazon FireStick**, **Google TV**, **Android TV Boxes** y pantallas de agencias hípicas.
 
 ---
 
-## 🛠️ Método 1: Compilar la APK Nativa con Capacitor (Paso a Paso)
+## ⚡ 1. ¿Por qué usar la App Nativa / APK en lugar del Navegador?
 
-### Requisitos Previos:
-- Node.js instalado.
-- Android Studio instalado (con SDK de Android 11+).
+1. **Aceleración por Hardware Dedicada (GPU):**
+   - En navegadores de Smart TV convencionales (como Samsung Tizen o LG webOS), el motor web comparte recursos limitados de CPU con el sistema operativo, lo que causa tirones y saturación de RAM al decodificar más de 2 streams HLS a la vez.
+   - La aplicación nativa utiliza decodificación directa por hardware (`WebView` con `hardwareAccelerated="true"` y soporte nativo de códecs H.264/AAC), permitiendo reproducir **hasta 4 pantallas a 60 FPS fluidos**.
 
-### Comandos de Compilación:
-```bash
-# 1. Instalar dependencias de Capacitor en el proyecto
-npm install @capacitor/core @capacitor/cli @capacitor/android
+2. **Arranque Automático al Encender el TV:**
+   - La app incluye un `BootReceiver` con permiso `RECEIVE_BOOT_COMPLETED`.
+   - Cuando el encargado de la agencia enciende la regleta eléctrica o el televisor/FireStick, la app se abre sola sin requerir intervención manual.
 
-# 2. Inicializar la app de Android TV
-npx cap init "Visual-FX TV" "com.visualfx.tv" --web-dir public
+3. **Modo Kiosk y Pantalla Completa Absoluta:**
+   - Oculta barras de navegación, menús de sistema y bordes.
+   - Mantiene la pantalla siempre encendida (`FLAG_KEEP_SCREEN_ON`) evitando que el televisor entre en modo reposo o protector de pantalla.
 
-# 3. Agregar plataforma Android
-npx cap add android
+4. **Navegación Intuitiva con Control Remoto (D-Pad):**
+   - Soporte para flechas Arriba, Abajo, Izquierda, Derecha, Botón OK / Enter y tecla Atrás.
 
-# 4. Copiar archivos web actualizados y abrir en Android Studio
-npx cap copy
-npx cap open android
-```
-
-En Android Studio:
-1. Ir a **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
-2. Copiar el archivo `.apk` generado a la carpeta `public/visual-fx-tv.apk` del servidor.
+5. **Seguridad Jerárquica Blindada:**
+   - En modo TV, los accesos al panel administrativo de clientes y super admin están estrictamente deshabilitados en la interfaz para prevenir desvinculaciones indebidas por clientes finales o espectadores.
 
 ---
 
-## 📲 Método 2: Instalación en Amazon FireStick y Android TV usando "Downloader"
+## 🚀 2. Compilación Automatizada en la Nube (GitHub Actions)
 
-1. **En la TV o Firestick:**
-   - Ir a la tienda de aplicaciones (Appstore / Play Store) e instalar la aplicación gratuita **Downloader** (icono naranja).
-2. **Permitir Apps de fuentes desconocidas:**
-   - Ir a *Configuración > Mi Fire TV > Opciones para desarrolladores > Instalar apps desconocidas > Downloader: ACTIVADO*.
+No necesitas instalar Java ni Android Studio en tu computadora. El repositorio cuenta con un pipeline CI/CD en `.github/workflows/build-apk.yml` que:
+1. Detecta cambios en la carpeta `android-tv-app/`.
+2. Compila el código en un contenedor Ubuntu con JDK 17 y Android SDK 34.
+3. Firma digitalmente el archivo `visual-fx-tv.apk` con `signingConfig debug` para permitir instalación inmediata sin advertencias de firma.
+4. Publica automáticamente el archivo ejecutable en **GitHub Releases** bajo el tag `v1.0-tv`.
+
+---
+
+## 📥 3. Instalación Rápida con la App "Downloader" (FireStick y Android TV)
+
+Este es el método más rápido (toma menos de 1 minuto):
+
+1. **En tu FireStick o TV Box:**
+   - Ve a la tienda de aplicaciones e instala la app **Downloader** (icono naranja).
+2. **Habilitar instalación de aplicaciones desconocidas:**
+   - Ve a *Configuración > Mi Fire TV > Opciones para desarrolladores > Instalar apps desconocidas > Downloader: ACTIVADO*.
 3. **Descargar e Instalar:**
-   - Abrir **Downloader** e ingresar el código corto o la dirección IP/Dominio de tu servidor:
-     `http://TU-SERVIDOR:3500/app`
-   - Presionar **Go**. La APK se descargará y aparecerá el botón **INSTALAR**.
-4. ¡Listo! La App quedará guardada en el menú principal del televisor con su icono nativo de **Visual-FX TV**.
+   - Abre **Downloader** y en la barra escribe la URL corta oficial:
+     ```text
+     https://visual-fx.onrender.com/app
+     ```
+   - Pulsa **Go**. La descarga comenzará automáticamente.
+   - Al finalizar, pulsa **Instalar** y luego **Abrir**.
+4. **Vincular Pantalla:**
+   - La pantalla mostrará un **código PIN de 6 dígitos**.
+   - El cliente o administrador aprueba el dispositivo desde su panel de control y la transmisión comenzará de inmediato.
 
 ---
 
-## 🌐 Método 3: Instalación PWA (Smart TV LG webOS, Samsung Tizen y Android)
+## 🌐 4. Uso en Samsung Smart TV (Tizen) y LG (webOS)
 
-Para televisores Samsung o LG sin FireStick:
-1. Abrir el navegador del Smart TV e ingresar a la URL del sistema (`http://TU-SERVIDOR:3500`).
-2. En la barra de menú o configuraciones del navegador, seleccionar **"Agregar a Pantalla de Inicio"** o **"Instalar Aplicación Visual-FX"**.
-3. La App se guardará como un acceso directo nativo en el Home Dashboard del televisor.
+Los televisores Samsung y LG ejecutan sistemas propietarios (Tizen y webOS) que no admiten archivos `.apk`:
+
+- **Recomendación Operativa:**
+  - Para Samsung / LG sin FireStick: Abrir el navegador del TV en `https://visual-fx.onrender.com`.
+  - Se recomienda usar **1 o 2 pantallas simultáneas**.
+  - Si una agencia requiere **3 o 4 pantallas simultáneas a 60 FPS**, se debe conectar un dispositivo económico como **Amazon FireStick Lite / 4K** o **Xiaomi TV Stick** e instalar la app nativa.

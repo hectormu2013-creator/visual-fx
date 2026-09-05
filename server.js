@@ -260,20 +260,6 @@ app.post('/api/device/set-default-service', (req, res) => {
   return res.json(result);
 });
 
-// Ruta corta para fácil descarga en App Downloader de FireStick / Android TV
-app.get('/app', (req, res) => {
-  res.redirect('/download/visual-fx-tv.apk');
-});
-
-app.get('/download/visual-fx-tv.apk', (req, res) => {
-  const apkPath = path.join(__dirname, 'public', 'visual-fx-tv.apk');
-  if (fs.existsSync(apkPath)) {
-    res.download(apkPath, 'visual-fx-tv.apk');
-  } else {
-    res.status(404).json({ error: 'APK en compilación. Use la versión PWA o el navegador del TV.' });
-  }
-});
-
 // Analíticas y Monitoreo de Pantallas en Vivo (con filtro por Cliente para Super Admin)
 app.get('/api/admin/analytics', (req, res) => {
   const authHeader = req.headers.authorization;
@@ -448,9 +434,28 @@ app.get('/api/stream/proxy', (req, res) => {
   return handleStreamProxy(req, res, targetUrl);
 });
 
-// Fallback de API
-app.all('/api/*', (req, res) => {
-  return res.status(404).json({ error: 'Endpoint API no encontrado.' });
+// ==========================================
+// RUTAS DE DESCARGA DE APK (ANDROID TV / FIRESTICK)
+// ==========================================
+const GITHUB_APK_RELEASE_URL = 'https://github.com/hectormu2013-creator/visual-fx/releases/download/v1.0-tv/visual-fx-tv.apk';
+
+// 1. Descarga directa para la app "Downloader" en FireStick y Android TV (URL corta: /app)
+app.get(['/app', '/download/app', '/visual-fx-tv.apk'], (req, res) => {
+  const localApk = path.join(__dirname, 'public', 'downloads', 'visual-fx-tv.apk');
+  if (fs.existsSync(localApk)) {
+    return res.download(localApk, 'visual-fx-tv.apk');
+  }
+  // Redirección HTTP 302 directa al Release del APK compilado en GitHub
+  return res.redirect(GITHUB_APK_RELEASE_URL);
+});
+
+// 2. Página web de descarga e instrucciones guiadas
+app.get('/download', (req, res) => {
+  const downloadPage = path.join(__dirname, 'public', 'download.html');
+  if (fs.existsSync(downloadPage)) {
+    return res.sendFile(downloadPage);
+  }
+  return res.redirect(GITHUB_APK_RELEASE_URL);
 });
 
 // Ruta Fallback para SPA

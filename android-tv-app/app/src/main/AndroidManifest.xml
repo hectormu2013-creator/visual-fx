@@ -1,47 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.visualfx.tv">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permisos de Red y Auto-Inicio al encender la TV -->
+    <!-- Permisos de Red y Conectividad -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Permiso para Auto-Inicio al encender la TV o FireStick -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- Evitar que la TV se apague o suspenda durante la transmisión en vivo -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Característica obligatoria de Android TV (Leanback) -->
+    <!-- Compatibilidad Android TV y Pantallas Táctiles Opcionales -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="Visual-FX TV"
+        android:icon="@drawable/ic_launcher"
+        android:banner="@drawable/ic_banner"
+        android:label="@string/app_name"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:theme="@style/Theme.VisualFxTv">
 
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
-            android:label="Visual-FX TV"
+            android:label="@string/app_name"
             android:launchMode="singleTask"
+            android:screenOrientation="landscape"
             android:exported="true">
 
-            <!-- Lanzador Estándar Móvil/Tablet -->
+            <!-- Lanzador Teléfonos y Tablets -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Lanzador Pantalla Principal Android TV / FireStick -->
+            <!-- Lanzador Oficial de Android TV y Amazon FireStick (Leanback) -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Receptor de encendido de TV para inicio automático (Kiosk Mode) -->
+        <!-- Receptor para Auto-Inicio de Kiosco al encender el televisor -->
         <receiver
             android:name=".BootReceiver"
             android:enabled="true"
@@ -49,6 +55,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
 

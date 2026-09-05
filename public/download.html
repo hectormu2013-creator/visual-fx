@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Descargar Visual FX TV - App Oficial para Smart TV y FireStick</title>
+  <meta name="description" content="Descarga la aplicación nativa de Visual FX para Smart TV, Google TV, Android TV y Amazon FireStick. Transmisión hípica multi-pantalla 60 FPS con aceleración de hardware.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#10b981',
+              600: '#059669',
+            },
+            amber: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+            },
+            dark: {
+              950: '#06080e',
+              900: '#0b0f19',
+              850: '#111726',
+              800: '#161f33',
+              700: '#1e293b'
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #06080e;
+      color: #f1f5f9;
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+    }
+    .glow-cyan {
+      box-shadow: 0 0 35px -5px rgba(14, 165, 233, 0.35);
+    }
+    .glow-amber {
+      box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.35);
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-hover:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
+  
+  <!-- BACKGROUND AMBIENT GLOW -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-b from-cyan-600/15 via-indigo-600/10 to-transparent rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-10 w-[500px] h-[400px] bg-amber-500/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="relative z-10 border-b border-slate-800/80 bg-dark-900/60 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 p-0.5 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
+          <div class="w-full h-full bg-dark-950 rounded-[10px] flex items-center justify-center">
+            <span class="text-amber-400 font-black text-xl">FX</span>
+          </div>
+        </div>
+        <div>
+          <div class="text-lg font-extrabold tracking-wider bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            VISUAL <span class="text-amber-400">FX</span> TV
+          </div>
+          <div class="text-[10px] text-cyan-400 font-mono tracking-widest uppercase font-semibold">
+            Transmisión Hípica Pro
+          </div>
+        </div>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <a href="/" class="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700 rounded-lg transition-colors flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+          Abrir Web Player
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN HERO & DOWNLOAD -->
+  <main class="relative z-10 max-w-5xl mx-auto px-4 py-12 flex-1 w-full">
+    <div class="text-center max-w-3xl mx-auto mb-12">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 text-xs font-semibold mb-6 shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        App Nativa Android TV & FireStick v1.0
+      </div>
+
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-tight text-white mb-6">
+        Potencia Máxima en tu <span class="bg-gradient-to-r from-amber-400 to-amber-200 bg-clip-text text-transparent">Smart TV</span>
+      </h1>
+
+      <p class="text-base sm:text-lg text-slate-300 font-normal leading-relaxed mb-8">
+        Instala la app oficial optimizada con decodificación directa por hardware. Reproduce hasta <strong class="text-white font-semibold">4 transmisiones simultáneas a 60 FPS</strong> sin calentamiento ni lentitud.
+      </p>
+
+      <!-- BOTONES DE ACCIÓN PRINCIPAL -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+        <a href="/app" id="btnDownloadApk" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-base flex items-center justify-center gap-3 glow-amber transition-all transform active:scale-95 shadow-xl">
+          <svg class="w-6 h-6 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Descargar APK Nativa
+        </a>
+
+        <button onclick="copiarUrlDownloader()" class="w-full sm:w-auto px-6 py-4 rounded-xl bg-dark-850 hover:bg-dark-800 text-slate-200 border border-slate-700 font-semibold text-sm flex items-center justify-center gap-2 transition-all">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+          <span id="btnCopyText">Copiar Link Downloader</span>
+        </button>
+      </div>
+
+      <!-- URL CORTA PARA DOWNLOADER APP -->
+      <div class="mt-6 p-3 max-w-lg mx-auto rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs font-mono text-slate-300">
+        <span class="text-slate-500 uppercase tracking-wider font-sans font-bold">Link para Downloader:</span>
+        <code class="text-amber-400 font-bold select-all" id="downloaderCode">https://visual-fx.onrender.com/app</code>
+      </div>
+    </div>
+
+    <!-- GUÍA DE INSTALACIÓN PASO A PASO -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+      
+      <!-- TARJETA 1: FIRESTICK / ANDROID TV -->
+      <div class="glass-card rounded-2xl p-6 border border-slate-800/80 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5z"/>
+            </svg>
+          </div>
+          <div class="text-xs font-mono font-bold text-amber-400 tracking-wider uppercase mb-1">Paso 1</div>
+          <h3 class="text-lg font-bold text-white mb-2">Instala la App "Downloader"</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            En tu FireStick o Android TV, abre la tienda de aplicaciones (Amazon Appstore o Google Play) y busca e instala la app gratuita <strong class="text-white">Downloader</strong> (icono naranja).
+          </p>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center gap-1.5">
+          <span class="text-emerald-400 font-bold">✓</span> 100% gratuita y oficial
+        </div>
+      </div>
+
+      <!-- TARJETA 2: INTRODUCIR LINK -->
+      <div class="glass-card rounded-2xl p-6 border border-slate-800/80 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+            </svg>
+          </div>
+          <div class="text-xs font-mono font-bold text-cyan-400 tracking-wider uppercase mb-1">Paso 2</div>
+          <h3 class="text-lg font-bold text-white mb-2">Escribe la URL en Downloader</h3>
+          <p class="text-sm text-slate-300 leading-relaxed mb-3">
+            Abre Downloader y en la barra de direcciones escribe exactamente:
+          </p>
+          <div class="bg-dark-950 p-2.5 rounded-lg border border-slate-700 text-center font-mono text-xs text-cyan-300 font-bold">
+            https://visual-fx.onrender.com/app
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center gap-1.5">
+          <span class="text-emerald-400 font-bold">✓</span> Descarga directa e instantánea
+        </div>
+      </div>
+
+      <!-- TARJETA 3: ACTIVAR CON CÓDIGO PIN -->
+      <div class="glass-card rounded-2xl p-6 border border-slate-800/80 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+          </div>
+          <div class="text-xs font-mono font-bold text-emerald-400 tracking-wider uppercase mb-1">Paso 3</div>
+          <h3 class="text-lg font-bold text-white mb-2">Instala y Registra tu PIN</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Pulsa <strong>Instalar</strong>. Al abrir la app en tu TV, verás tu <strong class="text-amber-400">PIN de 6 dígitos</strong>. Tu encargado o cliente lo aprueba en el panel y la transmisión comenzará de inmediato.
+          </p>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-800 text-xs text-slate-400 flex items-center gap-1.5">
+          <span class="text-emerald-400 font-bold">✓</span> Auto-arranque al encender TV
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECCIÓN ESPECIAL: SAMSUNG SMART TV (TIZEN) Y LG (WEBOS) -->
+    <div class="glass-card rounded-2xl p-6 sm:p-8 border border-slate-800 mb-12">
+      <div class="flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
+        <div class="flex-1">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/70 border border-blue-500/30 text-blue-300 text-xs font-semibold mb-3">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            ¿Tienes Samsung Smart TV o LG?
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">Uso en Navegador Web Integrado</h3>
+          <p class="text-sm text-slate-300 leading-relaxed max-w-2xl">
+            Los Smart TV Samsung (Tizen) y LG (webOS) no utilizan formato APK. Para estos televisores, abre el navegador web integrado y navega a <code class="text-amber-400 font-bold">https://visual-fx.onrender.com</code>.
+            <br><br>
+            <span class="text-slate-400 text-xs">
+              💡 <strong>Recomendación Técnica:</strong> Los procesadores de televisores estándar admiten hasta <strong>1 o 2 pantallas simultáneas</strong> fluidas. Si tu agencia requiere <strong>3 o 4 pantallas en simultáneo a máxima calidad</strong>, te recomendamos conectar un dispositivo <strong>Amazon FireStick 4K</strong> o <strong>Android TV Box</strong> con la app APK nativa.
+            </span>
+          </p>
+        </div>
+        <div>
+          <a href="/" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold text-sm inline-flex items-center gap-2 transition-all">
+            Ir al Reproductor Web
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 border-t border-slate-900 bg-dark-950/80 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        Visual FX SaaS Streaming • Plataforma de Transmisión Hípica en Directo
+      </div>
+      <div class="text-slate-400 font-mono">
+        v1.0.0 • Hardware Accelerated Video Core
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function copiarUrlDownloader() {
+      const code = document.getElementById('downloaderCode').innerText.trim();
+      navigator.clipboard.writeText(code).then(() => {
+        const btnText = document.getElementById('btnCopyText');
+        const orig = btnText.innerText;
+        btnText.innerText = '¡Copiado al Portapapeles!';
+        btnText.style.color = '#34d399';
+        setTimeout(() => {
+          btnText.innerText = orig;
+          btnText.style.color = '';
+        }, 2500);
+      }).catch(err => {
+        alert('URL para Downloader: ' + code);
+      });
+    }
+  </script>
+</body>
+</html>
