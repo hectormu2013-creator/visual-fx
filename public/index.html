@@ -22,8 +22,32 @@
     }
   </script>
 
+  <!-- PWA & Mobile Web App Meta -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Service Worker Registration & Immediate Cache Busting -->
+  <script>
+    // Purgar caches viejos para reflejar siempre la última versión inmediatamente
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(k => {
+          if (k !== 'visual-fx-live-v6') caches.delete(k);
+        });
+      });
+    }
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js?v=4.0').catch(err => console.log('SW reg error:', err));
+      });
+    }
+  </script>
+
   <!-- Custom Stylesheet (Anti-Cache) -->
-  <link rel="stylesheet" href="/styles.css?v=2.0">
+  <link rel="stylesheet" href="/styles.css?v=4.0">
 </head>
 <body class="tv-mode">
   
@@ -45,6 +69,10 @@
         <span class="status-dot green"></span>
         <span id="deviceBadgeText">Sede Caracas • TV #1 [AUTORIZADO]</span>
       </div>
+
+      <button type="button" class="btn-live-racing-header" onclick="window.goToLiveStreams()" title="Ver Transmisión en Vivo de Carreras">
+        <span class="live-pulse"></span> 🏇 CARRERAS EN VIVO
+      </button>
     </div>
     
     <div class="header-center">
@@ -67,6 +95,9 @@
     </div>
     
     <div class="header-right">
+      <button class="btn-service-hub" id="btnOpenServiceHub" title="Cambiar Servicio de la Pantalla">
+        <span class="icon">🎛️</span> <span id="lblActiveService">Carreras de Caballos</span>
+      </button>
       <button class="btn-sidebar-toggle" id="btnToggleSidebar" title="Lista de Canales">
         <span class="icon">📺</span> Hipódromos
       </button>
@@ -80,42 +111,106 @@
     </div>
   </header>
 
-  <!-- Login Modal / Screen -->
-  <div class="modal-overlay" id="loginModal" style="display: none;">
-    <div class="login-card glassmorphism">
-      <div class="login-header">
+  <!-- Service Selection Hub Modal (Prioridad 4) -->
+  <div class="modal-overlay" id="serviceSelectorModal" style="display: none;">
+    <div class="service-hub-card glassmorphism">
+      <div class="hub-header">
         <div class="logo-icon large">
           <span class="live-pulse"></span>
         </div>
-        <h2>Acceso a Visual-FX</h2>
-        <p>Introduzca sus credenciales de Agencia Fenix</p>
+        <h2>Selección de Servicio para la Pantalla</h2>
+        <p>Elija el módulo que desea proyectar en este televisor o dispositivo:</p>
+      </div>
+
+      <div class="service-cards-grid">
+        <div class="service-card active" data-service="hipica" tabindex="0">
+          <div class="service-icon">🏇</div>
+          <h3>Carreras de Caballos</h3>
+          <p>Transmisión multicanal HLS en directo de 30 hipódromos internacionales.</p>
+          <span class="service-tag">ACTIVO</span>
+        </div>
+
+        <div class="service-card" data-service="loteria" tabindex="0">
+          <div class="service-icon">🎲</div>
+          <h3>Resultados Loterías</h3>
+          <p>Pizarra en vivo de sorteos, animalitos y loterías en tiempo real.</p>
+          <span class="service-tag">DISPONIBLE</span>
+        </div>
+
+        <div class="service-card" data-service="deportes" tabindex="0">
+          <div class="service-icon">⚽</div>
+          <h3>Marcadores Deportivos</h3>
+          <p>Resultados en directo de Béisbol, Fútbol, Baloncesto y Tenis.</p>
+          <span class="service-tag">DISPONIBLE</span>
+        </div>
+
+        <div class="service-card" data-service="tv_deportes" tabindex="0">
+          <div class="service-icon">📺</div>
+          <h3>Juegos y Eventos TV</h3>
+          <p>Retransmisión de canales deportivos en vivo para la agencia.</p>
+          <span class="service-tag">DISPONIBLE</span>
+        </div>
+
+        <div class="service-card" data-service="publicidad" tabindex="0">
+          <div class="service-icon">📢</div>
+          <h3>Publicidad del Negocio</h3>
+          <p>Pantalla promocional con ofertas, anuncios y productos de la agencia.</p>
+          <span class="service-tag">DISPONIBLE</span>
+        </div>
+      </div>
+
+      <div class="hub-footer" style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn-primary" id="btnConfirmServiceChoice" style="width: 100%;">CONFIRMAR Y PROYECTAR SERVICIO</button>
+        <button class="btn-secondary" id="btnSetAsDefaultStartup" style="width: 100%; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 10px; cursor: pointer; border-radius: 8px;">
+          📌 Fijar Servicio Seleccionado como Inicio por Defecto al encender esta TV
+        </button>
+        <div id="defaultServiceToast" style="display: none; font-size: 0.85rem; color: #34d399; text-align: center; margin-top: 5px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modern Clean Login Modal / Screen (Diseño Profesional Azul-Verde) -->
+  <div class="modal-overlay" id="loginModal" style="display: none; z-index: 999999 !important;">
+    <div class="login-card-modern" style="position: relative;">
+      <button type="button" class="btn-close-modal-modern" id="btnCloseLoginModal" onclick="window.closeLoginModalSafely()" title="Cerrar" style="display: none;">✕</button>
+      
+      <!-- Modern Brand Header (Limpio con tonos azules y verdes) -->
+      <div class="login-brand-header">
+        <div class="login-brand-badge">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <h2 class="login-brand-title">VISUAL<span class="highlight-brand">-FX</span></h2>
+        <p class="login-brand-subtitle">SISTEMA DE TRANSMISIÓN MULTICANAL</p>
       </div>
       
-      <form id="loginForm" class="login-form">
-        <div class="form-group">
-          <label for="txtUser">Usuario de Agencia o Administrador</label>
-          <input type="text" id="txtUser" placeholder="Ej. hector_owner o leo1" value="" required autofocus>
+      <form id="loginForm" class="login-form-modern">
+        <div class="form-group-modern">
+          <label for="txtUser">Nombre de usuario</label>
+          <input type="text" id="txtUser" placeholder="" value="" required autocomplete="username" autofocus>
         </div>
         
-        <div class="form-group">
+        <div class="form-group-modern">
           <label for="txtPass">Contraseña</label>
-          <input type="password" id="txtPass" placeholder="••••••••" value="" required>
+          <input type="password" id="txtPass" placeholder="" value="" required autocomplete="current-password">
         </div>
         
-        <div class="form-error" id="loginError" style="display: none;"></div>
+        <div class="form-error-modern" id="loginError" style="display: none;"></div>
         
-        <button type="submit" class="btn-primary btn-block">
-          ENTRAR AL SISTEMA
+        <button type="submit" class="btn-submit-modern" id="btnSubmitLogin">
+          Iniciar Sesión
         </button>
       </form>
-      <div class="login-footer">
-        <small>Sistema de Transmisión Exclusivo Agencias Fenix © 2026</small>
+
+      <div class="login-modern-footer">
+        <span>Plataforma Exclusiva Super Administradores y Clientes</span>
       </div>
     </div>
   </div>
 
   <!-- Executive Admin Control Panel Modal -->
-  <div class="modal-overlay" id="deviceModal" style="display: none;">
+  <div class="modal-overlay" id="deviceModal" style="display: none; z-index: 999999 !important;">
     <div class="modal-card wide-admin glassmorphism">
       
       <!-- Admin Modal Header -->
@@ -125,49 +220,133 @@
           <span class="admin-subtitle">Gestión Centralizada Fenix • Dispositivos, Canales y Usuarios</span>
         </div>
         <div class="admin-header-actions">
+          <button type="button" class="btn-live-racing-header modal-action" onclick="window.goToLiveStreams()" title="Ver Transmisión en Vivo de Carreras">
+            <span class="live-pulse"></span> 🏇 VER CARRERAS EN VIVO
+          </button>
           <button class="btn-logout-header secondary" id="btnLogoutAdminModal" title="Cerrar Sesión">🚪 CERRAR SESIÓN</button>
-          <button class="btn-close" id="btnCloseDeviceModal">&times;</button>
+          <button class="btn-close" id="btnCloseDeviceModal" onclick="document.getElementById('deviceModal').style.display='none'">&times;</button>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
       <nav class="admin-tabs">
-        <button class="admin-tab-btn active" data-tab="tab-devices" id="tabBtnDevices">
-          📺 Televisores y Licencias
+        <button class="admin-tab-btn active" data-tab="tab-clients" id="tabBtnClients">
+          🏢 Gestión de Clientes (Fichas y Cupos)
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-devices" id="tabBtnDevices">
+          📺 Árbol de Pantallas Autorizadas
         </button>
         <button class="admin-tab-btn" data-tab="tab-channels" id="tabBtnChannels">
-          📡 Transmisiones Máster (30 Hipódromos)
+          📡 Master Control (Hipódromos)
         </button>
         <button class="admin-tab-btn" data-tab="tab-users" id="tabBtnUsers">
-          👥 Usuarios y Agencias
+          👥 Gestión de Usuarios y Roles
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-analytics" id="tabBtnAnalytics">
+          📊 Analíticas y Monitoreo
         </button>
       </nav>
 
       <div class="modal-body admin-tab-content">
         
-        <!-- TAB 1: TELEVISORES Y LICENCIAS -->
-        <div class="tab-pane active" id="tab-devices">
+        <!-- TAB 1: GESTIÓN DE CLIENTES (FICHAS, PLANES Y CUPOS) - PESTAÑA PRINCIPAL SUPER ADMIN -->
+        <div class="tab-pane active" id="tab-clients">
           <div class="admin-section-box">
-            <h4>🔑 Activar Nuevo Televisor por PIN</h4>
-            <p class="section-desc">Ingrese el código de 6 dígitos que aparece en la pantalla del televisor no autorizado:</p>
+            <h4>🏢 Crear y Activar Ficha de Cliente (Organización)</h4>
+            <p class="section-desc">Cree la organización cliente, configure su encargado y asigne el cupo de pantallas:</p>
             <div class="form-grid-row">
-              <input type="text" id="txtActivationPin" placeholder="PIN (Ej. FX-4912)" style="flex:1;">
-              <input type="text" id="txtTvName" placeholder="Nombre del TV (Ej. TV-Caja 2)" style="flex:2;">
-              <button class="btn-accent" id="btnSubmitActivation">ACTIVAR TELEVISOR</button>
+              <input type="text" id="newClientName" placeholder="Nombre de Organización (ej. Fenix)" style="flex:1.5;">
+              <input type="text" id="newClientUsername" placeholder="Usuario Encargado (ej. fenix)" style="flex:1.2;">
+              <input type="password" id="newClientPassword" placeholder="Contraseña Encargado" style="flex:1.2;">
+              <input type="number" id="newClientMaxDevices" placeholder="Cupo Pantallas" value="4" min="1" max="100" style="flex:0.9; text-align:center;">
+              <select id="newClientPlan" style="flex:1.2;">
+                <option value="MONTHLY">Plan Mensual</option>
+                <option value="WEEKLY">Plan Semanal</option>
+                <option value="ANNUAL">Plan Anual</option>
+              </select>
+              <button class="btn-accent" id="btnCreateClient" style="flex:1.3; font-weight:bold; background:linear-gradient(135deg, #0284c7, #10b981);">
+                ➕ CREAR Y ACTIVAR CLIENTE
+              </button>
             </div>
-            <div class="form-msg" id="activationMsg"></div>
+            <div class="form-msg" id="clientCreateMsg" style="margin-top:10px; font-weight:bold;"></div>
           </div>
 
-          <h4 class="table-section-title">📺 Televisores y Pantallas Autorizadas</h4>
+          <h4 class="table-section-title">👥 Organizaciones Clientes Registradas</h4>
           <div class="table-responsive">
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>Nombre del TV</th>
-                  <th>ID Dispositivo</th>
-                  <th>Sede / Agencia</th>
-                  <th>Fecha Registro</th>
+                  <th>Cliente / Organización</th>
+                  <th>Usuario Encargado</th>
+                  <th>Cupo de Pantallas</th>
+                  <th>Plan / Vencimiento</th>
                   <th>Estado</th>
+                  <th>Acciones de Gestión</th>
+                </tr>
+              </thead>
+              <tbody id="clientsTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: ÁRBOL DE PANTALLAS (CLIENTE ACTIVA / SUPER ADMIN AUDITA Y FILTRA) -->
+        <div class="tab-pane" id="tab-devices">
+          <!-- Caja de Filtro para Super Admin -->
+          <div class="admin-section-box" id="boxSuperAdminDeviceFilter" style="display: none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h4 style="margin:0;">🌳 Árbol Global de Pantallas Autorizadas</h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">Supervise y audite todas las pantallas activas en la plataforma por organización:</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <label for="selFilterClientDevices" style="font-weight:700; color:var(--accent-cyan); font-size:0.9rem;">Organización / Cliente:</label>
+                <select id="selFilterClientDevices" style="background:#0f172a; color:#fff; border:1px solid rgba(56,189,248,0.4); border-radius:8px; padding:6px 14px; font-weight:bold;">
+                  <option value="ALL">🌐 Todos los Clientes (Global)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Caja de Activación (EXCLUSIVA PARA EL CLIENTE/ENCARGADO) -->
+          <div class="admin-section-box" id="boxActivateDevice">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+              <div>
+                <h4 style="margin:0;">🔑 Activar Nueva Pantalla de mi Sede</h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">Ingrese el código de 6 dígitos mostrado en el televisor y asígnele un nombre único:</p>
+              </div>
+              <div id="clientQuotaBadge" style="background:rgba(56, 189, 248, 0.15); border:1px solid #38bdf8; color:#38bdf8; padding:6px 16px; border-radius:20px; font-weight:bold; font-size:0.9rem;">
+                📊 Cupo de Pantallas: -- / -- Activas
+              </div>
+            </div>
+
+            <div class="form-grid-row">
+              <input type="text" id="txtActivationPin" placeholder="Código de 6 dígitos (ej. 718969)" style="flex:1.2; font-size:1.1rem; font-weight:bold; letter-spacing:1px; text-align:center;">
+              <input type="text" id="txtTvName" placeholder="Nombre único (ej. Dispositivo 1, TV Barra)" style="flex:2;">
+              <button class="btn-primary" id="btnSubmitActivation" style="flex:1.3; font-weight:bold; background:linear-gradient(135deg, #059669, #10b981);">
+                ⚡ ACTIVAR PANTALLA
+              </button>
+            </div>
+            <div class="form-msg" id="activationMsg" style="margin-top:10px; font-weight:bold;"></div>
+          </div>
+
+          <!-- Árbol Jerárquico de Clientes Autorizados y sus Pantallas -->
+          <h4 class="table-section-title">🌳 Jerarquía de Clientes Autorizados y Pantallas Activas</h4>
+          <div id="clientDeviceTreeContainer" style="margin-bottom: 24px;"></div>
+
+          <h4 class="table-section-title" id="lblDevicesTableTitle">📺 Tabla Detallada de Pantallas Registradas</h4>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Nombre del Dispositivo</th>
+                  <th>ID Hardware</th>
+                  <th>Cliente</th>
+                  <th>Servicio de Inicio</th>
+                  <th>Suscripción / Vence</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="approvedDeviceTableBody">
@@ -177,20 +356,56 @@
           </div>
         </div>
 
-        <!-- TAB 2: SEÑALES MÁSTER Y HIPÓDROMOS -->
+        <!-- TAB 3: MASTER CONTROL DE HIPÓDROMOS (SUPER ADMIN & TÉCNICO) -->
         <div class="tab-pane" id="tab-channels">
           <div class="admin-section-box">
-            <h4>📡 Cambiar Señal de Transmisión Máster</h4>
-            <p class="section-desc">Seleccione un hipódromo y pegue la nueva URL de transmisión HLS (.m3u8) o iFrame:</p>
+            <h4>➕ Agregar Nuevo Hipódromo al Catálogo Máster</h4>
+            <p class="section-desc">Registre un nuevo canal con su URL de transmisión en vivo:</p>
             <div class="form-grid-row">
-              <select id="selAdminChannel" style="flex:1.2;"></select>
-              <input type="text" id="txtAdminStreamUrl" placeholder="Nueva URL de Transmisión (ej. https://...m3u8)" style="flex:2.5;">
-              <button class="btn-primary" id="btnUpdateChannelStream">ACTUALIZAR SEÑAL</button>
+              <input type="text" id="newChannelName" placeholder="Nombre Hipódromo (ej. Belmont Park)" style="flex:1.8;">
+              <input type="text" id="newChannelFlag" placeholder="Bandera (ej. 🇺🇸)" value="🏇" style="flex:0.8; text-align:center;">
+              <input type="text" id="newChannelLoc" placeholder="Ubicación (ej. Nueva York, EE.UU.)" style="flex:1.5;">
+              <input type="text" id="newChannelUrl" placeholder="URL Transmisión (HLS .m3u8 o iFrame)" style="flex:2.5;">
+              <select id="newChannelType" style="flex:1;">
+                <option value="hls">HLS (.m3u8)</option>
+                <option value="iframe">iFrame Embed</option>
+              </select>
+              <button class="btn-accent" id="btnAddNewChannel" style="flex:1.3; font-weight:bold; background:linear-gradient(135deg, #0284c7, #10b981);">
+                ➕ AGREGAR CANAL
+              </button>
             </div>
-            <div class="form-msg" id="channelUpdateMsg"></div>
+            <div class="form-msg" id="channelAddMsg" style="margin-top:10px; font-weight:bold;"></div>
           </div>
 
-          <h4 class="table-section-title">🏇 Estado de los 30 Hipódromos Oficiales</h4>
+          <!-- Previsualizador y Actualización -->
+          <div class="admin-section-box" style="margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h4 style="margin:0;">📡 Actualizar o Probar Señal de Hipódromo</h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">Seleccione un canal para modificar su URL o verificar la señal en vivo en el monitor:</p>
+              </div>
+            </div>
+            <div class="form-grid-row" style="margin-top:12px;">
+              <select id="selAdminChannel" style="flex:1.5;"></select>
+              <input type="text" id="txtAdminStreamUrl" placeholder="Nueva URL de Transmisión (ej. https://...m3u8)" style="flex:2.5;">
+              <button class="btn-primary" id="btnUpdateChannelStream" style="flex:1.2;">ACTUALIZAR SEÑAL</button>
+              <button type="button" class="btn-secondary" id="btnTestChannelPreview" style="flex:1; background:#0284c7; color:#fff; font-weight:bold;">▶️ PROBAR SEÑAL</button>
+            </div>
+            <div class="form-msg" id="channelUpdateMsg" style="margin-top:10px; font-weight:bold;"></div>
+
+            <!-- Monitor de Prueba de Video en Vivo -->
+            <div id="channelTestMonitorContainer" style="display: none; margin-top: 16px; background: #020617; border: 1px solid rgba(56,189,248,0.3); border-radius: 12px; padding: 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-weight:bold; color:var(--accent-cyan);" id="lblTestChannelTitle">📺 Monitor de Verificación en Vivo</span>
+                <button type="button" id="btnCloseTestMonitor" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#ef4444; border-radius:6px; padding:4px 10px; cursor:pointer; font-weight:bold;">Cerrar Monitor ✕</button>
+              </div>
+              <div id="channelTestVideoWrapper" style="width:100%; max-width:640px; height:360px; margin:0 auto; background:#000; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                <!-- Video or iframe injected here -->
+              </div>
+            </div>
+          </div>
+
+          <h4 class="table-section-title" style="margin-top:20px;">🏇 Catálogo de Hipódromos Oficiales</h4>
           <div class="table-responsive">
             <table class="admin-table">
               <thead>
@@ -200,6 +415,7 @@
                   <th>Tipo</th>
                   <th>Estado Señal</th>
                   <th>URL Configurada</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="adminChannelsTableBody">
@@ -209,38 +425,113 @@
           </div>
         </div>
 
-        <!-- TAB 3: USUARIOS Y AGENCIAS -->
+        <!-- TAB 4: GESTIÓN DE USUARIOS Y ROLES (EXCLUSIVO SUPER ADMIN) -->
         <div class="tab-pane" id="tab-users">
           <div class="admin-section-box">
-            <h4>➕ Crear Nuevo Usuario / Agencia Fenix</h4>
-            <p class="section-desc">Asigne el nombre de usuario, clave y nivel de acceso jerárquico:</p>
+            <h4>👥 Crear Nuevo Usuario del Sistema</h4>
+            <p class="section-desc">Asigne roles de Super Administrador o Jefe Técnico para el control de la plataforma:</p>
             <div class="form-grid-row">
-              <input type="text" id="newTxtUsername" placeholder="Usuario (ej. agencia_barquisimeto)">
-              <input type="password" id="newTxtPassword" placeholder="Contraseña">
-              <input type="text" id="newTxtName" placeholder="Nombre Completo o Sede">
-              <select id="newSelRole">
-                <option value="AGENCY_MANAGER">🏢 Encargado de Agencia</option>
-                <option value="TECH_CHIEF">🛠️ Jefe de Soporte Técnico</option>
+              <input type="text" id="newSystemUserName" placeholder="Nombre Completo (ej. Juan Pérez)" style="flex:1.5;">
+              <input type="text" id="newSystemUserLogin" placeholder="Usuario (ej. juan_admin)" style="flex:1.2;">
+              <input type="password" id="newSystemUserPass" placeholder="Contraseña" style="flex:1.2;">
+              <select id="newSystemUserRole" style="flex:1.3;">
                 <option value="SUPER_ADMIN">👑 Super Administrador</option>
+                <option value="TECH_CHIEF">🛠️ Jefe Técnico / Soporte</option>
               </select>
-              <button class="btn-accent" id="btnCreateUser">CREAR CUENTA</button>
+              <input type="text" id="newSystemUserLoc" placeholder="Ubicación (ej. Caracas)" value="Sede Principal" style="flex:1.2;">
+              <button class="btn-accent" id="btnCreateSystemUser" style="flex:1.3; font-weight:bold; background:linear-gradient(135deg, #0284c7, #10b981);">
+                ➕ CREAR USUARIO
+              </button>
             </div>
-            <div class="form-msg" id="userCreateMsg"></div>
+            <div class="form-msg" id="userCreateMsg" style="margin-top:10px; font-weight:bold;"></div>
           </div>
 
-          <h4 class="table-section-title">👥 Directorio de Cuentas y Accesos</h4>
+          <h4 class="table-section-title">👤 Cuentas y Roles de Acceso</h4>
           <div class="table-responsive">
             <table class="admin-table">
               <thead>
                 <tr>
                   <th>Usuario</th>
-                  <th>Nombre / Sede</th>
-                  <th>Rol Jerárquico</th>
-                  <th>Ubicación</th>
-                  <th>Acción</th>
+                  <th>Nombre</th>
+                  <th>Rol Asignado</th>
+                  <th>Ubicación / Organización</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="systemUsersTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 5: ANALÍTICAS Y MONITOREO EN VIVO -->
+        <div class="tab-pane" id="tab-analytics">
+          <div class="admin-section-box" style="margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <h4 style="margin:0;">📊 Filtro de Métricas y Rendimiento</h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">Consulte las estadísticas por organización o de toda la red:</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <label for="selFilterAnalyticsClient" style="font-weight:700; color:var(--accent-cyan); font-size:0.9rem;">Organización:</label>
+                <select id="selFilterAnalyticsClient" style="background:#0f172a; color:#fff; border:1px solid rgba(56,189,248,0.4); border-radius:8px; padding:6px 14px; font-weight:bold;">
+                  <option value="ALL">🌐 Todas las Organizaciones</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-cards-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon">📺</div>
+              <div class="kpi-info">
+                <span class="kpi-label">Pantallas Registradas</span>
+                <strong class="kpi-value" id="kpiTotalDevices">--</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon green">🟢</div>
+              <div class="kpi-info">
+                <span class="kpi-label">Transmitiendo En Línea</span>
+                <strong class="kpi-value" id="kpiOnlineDevices">--</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon gold">⏱️</div>
+              <div class="kpi-info">
+                <span class="kpi-label">Promedio Diario</span>
+                <strong class="kpi-value" id="kpiAvgHours">-- hrs/día</strong>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon cyan">🏆</div>
+              <div class="kpi-info">
+                <span class="kpi-label">Servicio Más Utilizado</span>
+                <strong class="kpi-value" id="kpiTopService">Hípica en Vivo</strong>
+              </div>
+            </div>
+          </div>
+
+          <h4 class="table-section-title" style="margin-top:20px;">📊 Telemetría y Estado de Conexión en Tiempo Real</h4>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Pantalla / TV</th>
+                  <th>ID Dispositivo</th>
+                  <th>Cliente</th>
+                  <th>Estado Conexión</th>
+                  <th>Servicio Proyectado</th>
+                  <th>Último Ping (Heartbeat)</th>
+                  <th>Uptime Hoy / Mes</th>
+                  <th>Dirección IP</th>
+                </tr>
+              </thead>
+              <tbody id="telemetryTableBody">
                 <!-- Rendered via JS -->
               </tbody>
             </table>
@@ -251,17 +542,48 @@
     </div>
   </div>
 
-  <!-- Unauthorized Device Lock Screen -->
+  <!-- Unauthorized Device / Smart TV Activation Screen -->
   <div class="unauthorized-banner" id="unauthorizedBanner" style="display: none;">
-    <div class="unauthorized-content glassmorphism">
-      <div class="lock-icon">🔒</div>
-      <h2>Dispositivo No Autorizado</h2>
-      <p>Este televisor o navegador no está registrado para transmitir en las agencias Fenix.</p>
-      <div class="pin-display">
-        <span>CÓDIGO DE ACTIVACIÓN:</span>
-        <strong id="lblDevicePin">FX-0000</strong>
+    <div class="unauthorized-card glassmorphism">
+      <div class="tv-brand-header">
+        <div class="logo-icon large">
+          <span class="live-pulse"></span>
+        </div>
+        <h2>VISUAL<span class="highlight">-FX</span> LIVE</h2>
+        <span class="platform-tag">SISTEMA DE TRANSMISIÓN MULTICANAL</span>
       </div>
-      <p class="help-text">Proporcione este código al administrador de la sede Fenix para habilitar esta pantalla.</p>
+
+      <div class="activation-hero-box">
+        <span class="activation-label">CÓDIGO DE ACTIVACIÓN DE PANTALLA</span>
+        <div class="pin-code-hero">
+          <strong id="lblDevicePin">FX-000000</strong>
+        </div>
+      </div>
+
+      <div class="activation-steps-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-text">Envía este código numérico de 6 dígitos al encargado de tu sede.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-text">El encargado registrará el nombre único de este dispositivo en su panel de control.</div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-text">Al ser activada, la pantalla se conectará de inmediato a las carreras y transmisiones en vivo.</div>
+        </div>
+      </div>
+
+      <div class="activation-actions">
+        <button type="button" class="btn-admin-login-link" id="btnShowLoginFromBanner" onclick="window.openAdminModalDirectly()">
+          🔑 Administrador
+        </button>
+      </div>
+
+      <div class="activation-footer">
+        <small>ID de Dispositivo Hardware: <code id="lblHardwareDevId">...</code></small>
+      </div>
     </div>
   </div>
 
@@ -306,8 +628,8 @@
         </div>
 
         <div class="cell-footer">
-          <button class="btn-audio active" data-cell="1" id="btnAudio1">
-            <span class="icon">🔊</span> AUDIO ACTIVO
+          <button class="btn-audio" data-cell="1" id="btnAudio1">
+            <span class="icon">🔇</span> SILENCIADO
           </button>
           <span class="cell-status-text" id="cell1StatusText">Carreras en Vivo</span>
           <button class="btn-fullscreen" data-cell="1" id="btnFullscreen1" title="Pantalla Completa">
@@ -393,6 +715,122 @@
 
     </section>
 
+    <!-- View 2: Lottery Live Board -->
+    <section class="service-view-panel" id="panelLottery" style="display: none;">
+      <div class="panel-hero-header">
+        <h2>🎲 Pizarra de Resultados: Loterías & Animalitos</h2>
+        <span class="live-status-pill">🟢 Sorteos en Tiempo Real</span>
+      </div>
+      <div class="lottery-grid">
+        <div class="lottery-card">
+          <div class="lottery-title">
+            <span>🐾 Lotto Activo</span>
+            <span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>
+          </div>
+          <div class="animal-result-display">
+            <div class="animal-number">12</div>
+            <div class="animal-name">🐴 CABALLO</div>
+          </div>
+          <div class="sorteo-history">
+            <span>09:00 AM: 05 LEÓN</span>
+            <span>10:00 AM: 18 TIGRE</span>
+            <span>11:00 AM: 12 CABALLO</span>
+          </div>
+        </div>
+
+        <div class="lottery-card">
+          <div class="lottery-title">
+            <span>🐸 La Granjita</span>
+            <span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>
+          </div>
+          <div class="animal-result-display">
+            <div class="animal-number">03</div>
+            <div class="animal-name">CENTAURO</div>
+          </div>
+          <div class="sorteo-history">
+            <span>09:00 AM: 21 GALLO</span>
+            <span>10:00 AM: 08 RATÓN</span>
+            <span>11:00 AM: 03 CENTAURO</span>
+          </div>
+        </div>
+
+        <div class="lottery-card">
+          <div class="lottery-title">
+            <span>🎰 Triple Zulia & Chance</span>
+            <span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>
+          </div>
+          <div class="animal-result-display">
+            <div class="animal-number">742</div>
+            <div class="animal-name">SIGNO: LEO</div>
+          </div>
+          <div class="sorteo-history">
+            <span>Zulia A: 742</span>
+            <span>Zulia B: 189</span>
+            <span>Chance A: 903</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 3: Sports Livescore Board -->
+    <section class="service-view-panel" id="panelSports" style="display: none;">
+      <div class="panel-hero-header">
+        <h2>⚽ Marcadores Deportivos en Directo</h2>
+        <span class="live-status-pill">🟢 MLB • Champions League • NBA</span>
+      </div>
+      <div class="sports-livescore-grid">
+        <div class="match-card">
+          <div class="sport-tag">⚾ MLB BEISBOL</div>
+          <div class="teams-row">
+            <span class="team">NY Yankees</span>
+            <span class="score">5 - 3</span>
+            <span class="team">Boston Red Sox</span>
+          </div>
+          <div class="match-status">Alta 7ma Entrada • 2 Out</div>
+        </div>
+
+        <div class="match-card">
+          <div class="sport-tag">⚽ CHAMPIONS LEAGUE</div>
+          <div class="teams-row">
+            <span class="team">Real Madrid</span>
+            <span class="score">2 - 1</span>
+            <span class="team">Manchester City</span>
+          </div>
+          <div class="match-status">Minuto 78' • 2do Tiempo</div>
+        </div>
+
+        <div class="match-card">
+          <div class="sport-tag">🏀 NBA BALONCESTO</div>
+          <div class="teams-row">
+            <span class="team">LA Lakers</span>
+            <span class="score">102 - 98</span>
+            <span class="team">Golden State</span>
+          </div>
+          <div class="match-status">4to Cuarto • 03:15 Min</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 4: Live Sports TV -->
+    <section class="service-view-panel" id="panelLiveTv" style="display: none;">
+      <div class="panel-hero-header">
+        <h2>📺 Transmisión de Eventos Deportivos en Directo</h2>
+      </div>
+      <div class="full-panel-video">
+        <iframe src="https://stream.robertsstream.com/streamlive.php?referer=RTNThoroughbred" style="width:100%; height:100%; border:none;" allowfullscreen></iframe>
+      </div>
+    </section>
+
+    <!-- View 5: Business Ads & Promo Carousel -->
+    <section class="service-view-panel" id="panelAds" style="display: none;">
+      <div class="ads-hero-container">
+        <div class="ads-banner-card glassmorphism">
+          <h1>🔥 PROMOCIONES ESPECIALES DE LA AGENCIA</h1>
+          <p>¡Realiza tus apuestas hípicas y deportivas con el mejor dividendo del mercado!</p>
+          <div class="promo-badge">HASTA 20% DE BONIFICACIÓN EN RECARGAS</div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- TV Remote Control Legend Footer -->
@@ -403,7 +841,54 @@
     <div class="legend-item"><kbd>F</kbd> Pantalla Completa</div>
   </footer>
 
+  <!-- Inlined Direct Modal Opener & Security Close Handlers -->
+  <script>
+    window.openAdminModalDirectly = function() {
+      console.log('[Visual-FX] Botón Administrador pulsado - Solicitando credenciales');
+      const loginModal = document.getElementById('loginModal');
+      const deviceModal = document.getElementById('deviceModal');
+      const btnClose = document.getElementById('btnCloseLoginModal');
+      
+      if (deviceModal) deviceModal.style.display = 'none';
+
+      if (loginModal) {
+        // En este caso sí se puede mostrar la X para volver a la pantalla de TV de 6 dígitos
+        if (btnClose) btnClose.style.display = 'flex';
+
+        const txtUser = document.getElementById('txtUser');
+        const txtPass = document.getElementById('txtPass');
+        const loginErr = document.getElementById('loginError');
+        if (txtUser) txtUser.value = '';
+        if (txtPass) txtPass.value = '';
+        if (loginErr) {
+          loginErr.style.display = 'none';
+          loginErr.textContent = '';
+        }
+
+        loginModal.style.setProperty('display', 'flex', 'important');
+        loginModal.style.setProperty('z-index', '999999', 'important');
+        setTimeout(() => {
+          if (txtUser) txtUser.focus();
+        }, 150);
+      }
+    };
+
+    window.closeLoginModalSafely = function() {
+      const loginModal = document.getElementById('loginModal');
+      const unauthBanner = document.getElementById('unauthorizedBanner');
+      const token = localStorage.getItem('visual_fx_token');
+      
+      // Si no hay token de autenticación, NUNCA mostrar la pantalla de video
+      if (!token) {
+        if (unauthBanner) {
+          unauthBanner.style.setProperty('display', 'flex', 'important');
+        }
+      }
+      if (loginModal) loginModal.style.display = 'none';
+    };
+  </script>
+
   <!-- App Logic (Anti-Cache) -->
-  <script src="/app.js?v=2.0"></script>
+  <script src="/app.js?v=4.0"></script>
 </body>
 </html>

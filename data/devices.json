@@ -1,0 +1,77 @@
+[
+  [
+    "TV-DEMO-01",
+    {
+      "clientId": "fenix",
+      "clientName": "Fenix",
+      "tvName": "Dispositivo 1",
+      "deviceBinding": "HARDWARE_LOCKED",
+      "status": "APPROVED",
+      "registeredAt": "2026-08-28",
+      "expiresAt": "2026-12-31",
+      "planType": "MONTHLY",
+      "defaultService": "hipica",
+      "activeService": "hipica",
+      "lastSeen": "2026-09-04T03:28:35.401Z",
+      "ipAddress": "190.202.10.12",
+      "uptimeMinutesToday": 480,
+      "uptimeMinutesMonth": 12400
+    }
+  ],
+  [
+    "TV-DEMO-02",
+    {
+      "clientId": "fenix",
+      "clientName": "Fenix",
+      "tvName": "Dispositivo 2",
+      "deviceBinding": "HARDWARE_LOCKED",
+      "status": "APPROVED",
+      "registeredAt": "2026-08-28",
+      "expiresAt": "2026-12-31",
+      "planType": "MONTHLY",
+      "defaultService": "loteria",
+      "activeService": "loteria",
+      "lastSeen": "2026-09-04T03:28:35.406Z",
+      "ipAddress": "200.84.14.88",
+      "uptimeMinutesToday": 360,
+      "uptimeMinutesMonth": 9800
+    }
+  ],
+  [
+    "TV-FX-314372",
+    {
+      "clientId": "hector_owner",
+      "clientName": "Héctor (Super Admin)",
+      "tvName": "Consola Super Admin (Master)",
+      "deviceBinding": "HARDWARE_LOCKED",
+      "status": "APPROVED",
+      "registeredAt": "2026-09-04",
+      "expiresAt": "2030-12-31",
+      "planType": "SUPER_ADMIN",
+      "defaultService": "hipica",
+      "activeService": "hipica",
+      "lastSeen": "2026-09-04T03:38:21.169Z",
+      "uptimeMinutesToday": 3,
+      "uptimeMinutesMonth": 3,
+      "ipAddress": "::1"
+    }
+  ],
+  [
+    "TV-FX-298847",
+    {
+      "clientId": "hector_owner",
+      "clientName": "Héctor (Super Admin)",
+      "tvName": "Consola Super Admin (Master)",
+      "deviceBinding": "HARDWARE_LOCKED",
+      "status": "APPROVED",
+      "registeredAt": "2026-09-04",
+      "expiresAt": "2030-12-31",
+      "planType": "SUPER_ADMIN",
+      "defaultService": "hipica",
+      "activeService": "hipica",
+      "lastSeen": "2026-09-04T03:49:04.400Z",
+      "uptimeMinutesToday": 0,
+      "uptimeMinutesMonth": 0
+    }
+  ]
+]

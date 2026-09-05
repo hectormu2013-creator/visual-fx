@@ -1,0 +1,26 @@
+[
+  {
+    "clientId": "fenix",
+    "name": "Fenix",
+    "managerUsername": "fenix",
+    "managerName": "Encargado Fenix",
+    "pass": "fenix123",
+    "maxDevices": 4,
+    "planType": "MONTHLY",
+    "expiresAt": "2026-12-31",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-28"
+  },
+  {
+    "clientId": "fenix2023",
+    "name": "Fenix 2023",
+    "managerUsername": "fenix2023",
+    "managerName": "Encargado Fenix 2023",
+    "pass": "fenix2023",
+    "maxDevices": 4,
+    "planType": "MONTHLY",
+    "expiresAt": "2026-12-31",
+    "status": "ACTIVE",
+    "createdAt": "2026-08-28"
+  }
+]

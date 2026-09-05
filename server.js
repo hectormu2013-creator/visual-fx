@@ -9,11 +9,20 @@ const {
   loginUser, 
   verifyToken, 
   checkDeviceStatus, 
-  authorizeDevice, 
+  getAllClients,
+  createClient,
+  updateClient,
+  toggleClientStatus,
+  deleteClient,
+  authorizeDeviceForClient,
+  deleteDevice,
+  renameDevice,
+  setDefaultService,
   getApprovedDevicesList,
+  getSystemAnalytics,
   getAllUsers,
-  createUser,
-  deleteUser
+  createSystemUser,
+  deleteSystemUser
 } = require('./auth_device');
 const { initMasterIngest, getMasterState, updateChannelSource } = require('./master_ingest');
 
@@ -71,7 +80,7 @@ function requireRoles(...allowedRoles) {
   };
 }
 
-// 1. API Autenticación de Usuario
+// 1. API Autenticación de Usuario (Super Admin & Clientes)
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -84,71 +93,291 @@ app.post('/api/auth/login', (req, res) => {
   return res.json(result);
 });
 
-// 2. API Verificación de Dispositivo / TV
+// 2. API Verificación de Dispositivo / TV (Heartbeat & Telemetría)
 app.get('/api/device/verify', (req, res) => {
   const deviceId = req.query.deviceId || req.headers['x-device-id'];
-  const agencyId = req.query.agencyId || 'GLOBAL_HQ';
-  const status = checkDeviceStatus(deviceId, agencyId);
+  const activeService = req.query.activeService || 'hipica';
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '190.202.10.12';
+
+  let decodedUser = null;
+  const authHeader = req.headers.authorization;
+  const token = (authHeader && authHeader.startsWith('Bearer ')) 
+    ? authHeader.split(' ')[1] 
+    : (req.query.token || null);
+
+  if (token) {
+    decodedUser = verifyToken(token);
+  }
+  
+  const status = checkDeviceStatus(deviceId, activeService, clientIp, decodedUser);
   return res.json(status);
 });
 
-// 3. API Autorizar Dispositivo con PIN
-app.post('/api/admin/authorize-device', (req, res) => {
-  const { pin, tvName, agencyId } = req.body;
-  if (!pin) {
-    return res.status(400).json({ error: 'El PIN de activación es requerido.' });
-  }
-  const result = authorizeDevice(pin, tvName, agencyId);
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
+// ==========================================
+// RUTAS DE GESTIÓN DE CLIENTES (SUPER ADMIN)
+// ==========================================
+
+// Listar todos los clientes con conteo de dispositivos
+app.get('/api/admin/clients', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
+  return res.json({ clients: getAllClients() });
+});
+
+// Crear nuevo Cliente con ficha de cupos
+app.post('/api/admin/clients', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+  const result = createClient(req.body);
+  if (!result.success) return res.status(400).json(result);
   return res.json(result);
 });
 
-// 4. API Listar Dispositivos Autorizados
-app.get('/api/admin/devices', (req, res) => {
+// Actualizar ficha de Cliente (cupos, plan, contraseña)
+app.put('/api/admin/clients/:id', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+  const result = updateClient(req.params.id, req.body);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Suspender o Reactivar Cliente
+app.post('/api/admin/clients/toggle-status', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+  const { clientId } = req.body;
+  const result = toggleClientStatus(clientId);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Eliminar Cliente
+app.delete('/api/admin/clients/:id', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+  const result = deleteClient(req.params.id);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Modificar Cupo de Pantallas de un Cliente (Super Admin)
+app.post('/api/admin/clients/:id/quota', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+  const { maxDevices } = req.body;
+  if (!maxDevices) return res.status(400).json({ error: 'Cupo de pantallas requerido.' });
+  const result = updateClient(req.params.id, { maxDevices: parseInt(maxDevices) });
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// ==========================================
+// RUTAS DE ACTIVACIÓN Y DISPOSITIVOS (CLIENTE / ENCARGADO)
+// ==========================================
+
+// Activar Pantalla con Código de 6 Dígitos y Nombre Único
+app.post('/api/client/activate-device', (req, res) => {
   const authHeader = req.headers.authorization;
-  let userRole = ROLES.SUPER_ADMIN;
-  let userAgencyId = 'GLOBAL_HQ';
-  
+  let clientId = req.body.clientId;
+  let userRole = ROLES.CLIENT_MANAGER;
+
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const decoded = verifyToken(authHeader.split(' ')[1]);
     if (decoded) {
       userRole = decoded.role;
-      userAgencyId = decoded.agencyId;
+      if (userRole === ROLES.CLIENT_MANAGER) {
+        clientId = decoded.clientId;
+      }
     }
   }
-  return res.json({ devices: getApprovedDevicesList(userRole, userAgencyId) });
+
+  // Si no hay token o no se especificó cliente, por defecto asignar a 'fenix'
+  if (!clientId) clientId = 'fenix';
+
+  const { pin, tvName } = req.body;
+  if (!pin || !tvName) {
+    return res.status(400).json({ error: 'El código numérico de pantalla y el nombre del dispositivo son requeridos.' });
+  }
+
+  const result = authorizeDeviceForClient(clientId, pin, tvName);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
 });
 
-// 5. API Gestión de Usuarios (Exclusivo SuperAdmin)
-app.get('/api/admin/users', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+// Listar Dispositivos (Filtrados por Cliente si es Encargado, o Todos/Filtrados si es Super Admin)
+app.get('/api/admin/devices', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+  const filterClientId = req.query.clientId || null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+  return res.json({ devices: getApprovedDevicesList(userRole, clientId, filterClientId) });
+});
+
+// Renombrar Dispositivo (asegura nombre único)
+app.post('/api/client/devices/rename', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let clientId = null;
+  let userRole = ROLES.SUPER_ADMIN;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const { deviceId, newName } = req.body;
+  const result = renameDevice(deviceId, newName, clientId, userRole);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Eliminar / Desvincular Dispositivo (Libera 1 cupo de pantalla)
+app.delete('/api/client/devices/:id', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let clientId = null;
+  let userRole = ROLES.SUPER_ADMIN;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const result = deleteDevice(req.params.id, clientId, userRole);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Establecer Servicio de Inicio por Defecto de una Pantalla
+app.post('/api/device/set-default-service', (req, res) => {
+  const { deviceId, defaultService } = req.body;
+  if (!deviceId || !defaultService) {
+    return res.status(400).json({ error: 'ID de dispositivo y servicio de inicio son requeridos.' });
+  }
+  const result = setDefaultService(deviceId, defaultService);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Ruta corta para fácil descarga en App Downloader de FireStick / Android TV
+app.get('/app', (req, res) => {
+  res.redirect('/download/visual-fx-tv.apk');
+});
+
+app.get('/download/visual-fx-tv.apk', (req, res) => {
+  const apkPath = path.join(__dirname, 'public', 'visual-fx-tv.apk');
+  if (fs.existsSync(apkPath)) {
+    res.download(apkPath, 'visual-fx-tv.apk');
+  } else {
+    res.status(404).json({ error: 'APK en compilación. Use la versión PWA o el navegador del TV.' });
+  }
+});
+
+// Analíticas y Monitoreo de Pantallas en Vivo (con filtro por Cliente para Super Admin)
+app.get('/api/admin/analytics', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+  const filterClientId = req.query.clientId || null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const analytics = getSystemAnalytics(userRole, clientId, filterClientId);
+  return res.json(analytics);
+});
+
+// ==========================================
+// GESTIÓN DE USUARIOS Y ROLES (SUPER ADMIN)
+// ==========================================
+
+// Listar todos los usuarios del sistema
+app.get('/api/admin/users', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   return res.json({ users: getAllUsers() });
 });
 
-app.post('/api/admin/users/create', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
-  const result = createUser(req.body);
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
+// Crear nuevo usuario con rol específico
+app.post('/api/admin/users', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+  const result = createSystemUser(req.body);
+  if (!result.success) return res.status(400).json(result);
   return res.json(result);
 });
 
-app.post('/api/admin/users/delete', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
-  const { username } = req.body;
-  const result = deleteUser(username);
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
+// Eliminar usuario
+app.delete('/api/admin/users/:username', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
+  const result = deleteSystemUser(req.params.username);
+  if (!result.success) return res.status(400).json(result);
   return res.json(result);
 });
 
-// 6. API Estado del Ingestor Máster Relay
+// ==========================================
+// MASTER CONTROL DE HIPÓDROMOS (SUPER ADMIN & TÉCNICO)
+// ==========================================
+
+// Estado del Ingestor Máster Relay
 app.get('/api/admin/master-status', (req, res) => {
   return res.json(getMasterState());
 });
 
-// 7. API Actualizar URL de Transmisión (SuperAdmin y Jefe Técnico)
+// Agregar nuevo Hipódromo al Catálogo Máster
+app.post('/api/admin/channels/add', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
+  const { name, flag, location, streamUrl, type } = req.body;
+  if (!name || !streamUrl) {
+    return res.status(400).json({ error: 'Nombre del hipódromo y URL de transmisión son obligatorios.' });
+  }
+
+  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const existing = CHANNELS.find(c => c.id === id);
+  if (existing) {
+    return res.status(400).json({ error: `Ya existe un canal con identificador "${id}".` });
+  }
+
+  const newChannel = {
+    id,
+    name,
+    flag: flag || '🏇',
+    location: location || 'Internacional',
+    type: type || 'hls',
+    onAir: true,
+    streamUrl,
+    iframeUrl: streamUrl,
+    nextRace: 'En Vivo'
+  };
+
+  CHANNELS.push(newChannel);
+  console.log(`📡 [Master Ingest] Nuevo hipódromo agregado: ${name} (${id})`);
+  return res.json({ success: true, channel: newChannel, total: CHANNELS.length });
+});
+
+// Eliminar Hipódromo del Catálogo
+app.delete('/api/admin/channels/:id', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
+  const index = CHANNELS.findIndex(c => c.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Hipódromo no encontrado.' });
+  }
+
+  const removed = CHANNELS.splice(index, 1)[0];
+  console.log(`🗑️ [Master Ingest] Hipódromo eliminado: ${removed.name}`);
+  return res.json({ success: true, message: `Hipódromo "${removed.name}" eliminado del catálogo.` });
+});
+
+// Pausar o Reactivar Señal de Hipódromo (Toggle On/Off Air)
+app.post('/api/admin/channels/toggle', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
+  const { channelId } = req.body;
+  const ch = CHANNELS.find(c => c.id === channelId);
+  if (!ch) return res.status(404).json({ error: 'Hipódromo no encontrado.' });
+
+  ch.onAir = !ch.onAir;
+  return res.json({ success: true, channelId, onAir: ch.onAir });
+});
+
+// Actualizar URL de Transmisión (SuperAdmin y Jefe Técnico)
 app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   const { channelId, streamUrl, type } = req.body;
   if (!channelId || !streamUrl) {
@@ -170,7 +399,7 @@ app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
   return res.json({ success: true, message: `Canal ${ch.name} actualizado por ${req.user.name}.`, channel: ch });
 });
 
-// 8. API Lista de Canales / Hipódromos
+// Lista de Canales / Hipódromos
 app.get('/api/channels', (req, res) => {
   const host = req.headers.host || `localhost:${PORT}`;
   const protocol = req.protocol || 'http';
@@ -186,18 +415,32 @@ app.get('/api/channels', (req, res) => {
   });
 });
 
-// 9. API Proxy HLS de Streaming
+// Proxy HLS de Streaming
 app.get('/api/stream/proxy', (req, res) => {
   const targetUrl = req.query.url;
   const deviceId = req.query.deviceId || req.headers['x-device-id'];
+  const authHeader = req.headers.authorization;
+  const token = (authHeader && authHeader.startsWith('Bearer ')) 
+    ? authHeader.split(' ')[1] 
+    : (req.query.token || null);
 
   if (!targetUrl) {
     return res.status(400).send('URL de stream requerida.');
   }
 
+  let decodedUser = null;
+  if (token) {
+    decodedUser = verifyToken(token);
+  }
+
+  // Super Admin y Clientes autenticados transmiten sin restricción de hardware
+  if (decodedUser && (decodedUser.role === ROLES.SUPER_ADMIN || decodedUser.role === ROLES.CLIENT_MANAGER)) {
+    return handleStreamProxy(req, res, targetUrl);
+  }
+
   if (deviceId) {
-    const devStatus = checkDeviceStatus(deviceId);
-    if (devStatus.status === 'UNAUTHORIZED') {
+    const devStatus = checkDeviceStatus(deviceId, 'hipica', null, decodedUser);
+    if (devStatus.status === 'UNAUTHORIZED' || devStatus.status === 'SUSPENDED' || devStatus.status === 'EXPIRED') {
       return res.status(403).send('Dispositivo No Autorizado para transmitir.');
     }
   }
@@ -205,12 +448,12 @@ app.get('/api/stream/proxy', (req, res) => {
   return handleStreamProxy(req, res, targetUrl);
 });
 
-// Evitar que peticiones /api/ caigan en el fallback de index.html (Prevención de bucle infinito)
+// Fallback de API
 app.all('/api/*', (req, res) => {
   return res.status(404).json({ error: 'Endpoint API no encontrado.' });
 });
 
-// Ruta Fallback para SPA (Busca index.html en todas las rutas posibles)
+// Ruta Fallback para SPA
 app.get('*', (req, res) => {
   const candidates = [
     path.join(__dirname, 'public', 'index.html'),
@@ -230,6 +473,6 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`====================================================`);
   console.log(`🚀 Servidor Visual-FX activo en el puerto ${PORT}`);
-  console.log(`👥 Panel Completo de Gestión de Usuarios y Agencias Fenix listo.`);
+  console.log(`👑 Estructura Jerárquica: Super Admin -> Clientes -> Dispositivos`);
   console.log(`====================================================`);
 });
