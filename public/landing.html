@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual-FX | Plataforma de Transmisiones Hípicas y Loterías en Vivo</title>
+  
+  <!-- Google Fonts: Barlow Condensed & Oswald for Impact Headlines (Image 1 Style), Plus Jakarta Sans & Inter for UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Oswald:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-white: #ffffff;
+      --bg-light: #f8fafc;
+      --accent-orange: #ff5500;
+      --accent-orange-hover: #e04b00;
+      --accent-orange-soft: #fff3ec;
+      --accent-green: #16a34a;
+      --text-black: #0a0a0a;
+      --text-slate: #334155;
+      --text-muted: #64748b;
+      --border-subtle: #e2e8f0;
+      --border-orange: rgba(255, 85, 0, 0.3);
+      --font-headline: 'Barlow Condensed', 'Oswald', sans-serif;
+      --font-body: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.landing-page-white {
+      font-family: var(--font-body);
+      background-color: var(--bg-white) !important;
+      color: var(--text-black);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* Framing Container perimetral sutil estilo Imagen 1 */
+    .landing-wrapper {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navbar Blanca con Borde Naranja */
+    .landing-nav-white {
+      height: 76px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 2px solid var(--accent-orange);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 36px;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.04);
+    }
+
+    .brand-logo-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-black);
+    }
+
+    .brand-badge-box {
+      width: 42px;
+      height: 42px;
+      background: var(--accent-orange);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(255, 85, 0, 0.35);
+    }
+
+    .brand-title-text {
+      font-family: var(--font-headline);
+      font-size: 1.85rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      line-height: 1;
+      text-transform: uppercase;
+      color: var(--text-black);
+    }
+    .brand-title-text span {
+      color: var(--accent-orange);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-nav-apk {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 8px;
+      background: var(--bg-white);
+      color: var(--text-slate);
+      font-weight: 700;
+      font-size: 0.92rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-nav-apk:hover {
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+      background: var(--accent-orange-soft);
+    }
+
+    .btn-nav-login-orange {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      background: var(--accent-orange);
+      color: #ffffff !important;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.96rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255, 85, 0, 0.35);
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-nav-login-orange:hover {
+      background: var(--accent-orange-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255, 85, 0, 0.45);
+    }
+
+    /* Hero Section Inspirado en Imagen 1 */
+    .hero-split-section {
+      padding: 50px 0 40px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    @media (max-width: 980px) {
+      .hero-split-section {
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+    }
+
+    /* Columna Izquierda: Titulares de Alto Impacto */
+    .hero-left-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-pretitle {
+      font-family: var(--font-headline);
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .hero-main-title {
+      font-family: var(--font-headline);
+      font-size: clamp(3.2rem, 5.8vw, 5.2rem);
+      font-weight: 900;
+      line-height: 0.95;
+      text-transform: uppercase;
+      letter-spacing: -1px;
+      color: var(--text-black);
+      margin-bottom: 18px;
+    }
+
+    /* Caja Naranja Sólida con Texto Blanco Calado (Idéntico a "LA IA" de Imagen 1) */
+    .hero-orange-badge {
+      display: inline-block;
+      background: var(--accent-orange);
+      color: #ffffff !important;
+      padding: 2px 20px 4px 20px;
+      border-radius: 8px;
+      margin: 6px 0;
+      box-shadow: 0 8px 24px rgba(255, 85, 0, 0.35);
+      letter-spacing: 0.5px;
+    }
+
+    .hero-lead-text {
+      font-size: 1.12rem;
+      color: var(--text-slate);
+      line-height: 1.6;
+      max-width: 580px;
+      margin-bottom: 30px;
+    }
+
+    /* Franja de 4 Pilares con Divisores Finos (Idéntico a Imagen 1: IA | Estrategia | Clientes | Ventas) */
+    .hero-pillars-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-white);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 34px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      max-width: 600px;
+    }
+
+    .pillar-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      text-align: center;
+    }
+    .pillar-item .pillar-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .pillar-item .pillar-label {
+      font-family: var(--font-headline);
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-black);
+    }
+    .pillar-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border-subtle);
+    }
+
+    /* Botones de Acción Hero */
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .btn-hero-primary-orange {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent-orange);
+      color: #ffffff;
+      padding: 16px 36px;
+      border-radius: 10px;
+      font-family: var(--font-headline);
+      font-size: 1.35rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(255, 85, 0, 0.4);
+      transition: all 0.25s ease;
+      text-decoration: none;
+    }
+    .btn-hero-primary-orange:hover {
+      background: var(--accent-orange-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(255, 85, 0, 0.55);
+    }
+
+    .btn-hero-secondary-white {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-white);
+      color: var(--text-black);
+      padding: 15px 28px;
+      border-radius: 10px;
+      font-family: var(--font-headline);
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      border: 2px solid var(--text-black);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-hero-secondary-white:hover {
+      background: var(--text-black);
+      color: #ffffff;
+    }
+
+    /* Pie de Hero con Firma y Badge EN VIVO */
+    .hero-footer-bar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding-top: 16px;
+      border-top: 1.5px solid var(--border-subtle);
+      max-width: 600px;
+    }
+    .brand-signature {
+      font-family: var(--font-headline);
+      font-size: 1.1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-black);
+    }
+    .brand-signature span {
+      color: var(--accent-orange);
+    }
+    .live-broadcast-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #dc2626;
+      color: #ffffff;
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      font-family: var(--font-headline);
+      letter-spacing: 0.5px;
+      margin-left: auto;
+    }
+
+    /* Columna Derecha: Widgets de Métricas Estilo Imagen 1 */
+    .hero-right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Card 1: Métricas de Ventas y Rendimiento */
+    .metric-card-white {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card-white::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--accent-orange);
+    }
+
+    .metric-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .metric-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .metric-trend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #dcfce7;
+      color: #15803d;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-weight: 800;
+      font-size: 0.82rem;
+    }
+
+    .metric-big-value {
+      font-family: var(--font-headline);
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--text-black);
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    /* Gráfico Sparkline SVG */
+    .sparkline-svg {
+      width: 100%;
+      height: 48px;
+      display: block;
+    }
+
+    /* Card 2: Asistente Inteligente con Botón Naranja */
+    .assistant-card-white {
+      background: #ffffff;
+      border: 1.5px solid var(--border-orange);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(255, 85, 0, 0.08);
+      background-image: linear-gradient(180deg, #fffaf7 0%, #ffffff 100%);
+    }
+    .assistant-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-orange);
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .assistant-text {
+      font-size: 0.92rem;
+      color: var(--text-slate);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .btn-assistant-action {
+      width: 100%;
+      background: var(--accent-orange);
+      color: #ffffff;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255, 85, 0, 0.3);
+      transition: all 0.2s ease;
+    }
+    .btn-assistant-action:hover {
+      background: var(--accent-orange-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Card 3: Audiencia y Pantallas Conectadas */
+    .audience-card-white {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+    .audience-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    .audience-num {
+      font-family: var(--font-headline);
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--text-black);
+    }
+    .audience-tag {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Features Section en Blanco */
+    .features-section-white {
+      background: var(--bg-light);
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 70px 0;
+      margin-top: 40px;
+    }
+    .features-section-title {
+      text-align: center;
+      font-family: var(--font-headline);
+      font-size: 2.8rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+    .features-section-sub {
+      text-align: center;
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 50px auto;
+    }
+
+    .features-grid-white {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card-white {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 32px 28px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .feature-card-white:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-orange);
+      box-shadow: 0 14px 35px rgba(255, 85, 0, 0.12);
+    }
+    .feature-card-white .feature-icon-box {
+      width: 52px;
+      height: 52px;
+      background: var(--accent-orange-soft);
+      border: 1.5px solid var(--border-orange);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.7rem;
+      margin-bottom: 20px;
+    }
+    .feature-card-white h3 {
+      font-family: var(--font-headline);
+      font-size: 1.45rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      color: var(--text-black);
+    }
+    .feature-card-white p {
+      font-size: 0.95rem;
+      color: var(--text-slate);
+      line-height: 1.6;
+    }
+
+    /* Modal de Login Blanco / Naranja */
+    .landing-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 10, 0.7);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      padding: 20px;
+    }
+
+    .landing-modal-card-white {
+      background: #ffffff;
+      border: 2px solid var(--accent-orange);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      padding: 36px 32px;
+      box-shadow: 0 25px 50px -12px rgba(255, 85, 0, 0.25);
+      position: relative;
+      animation: modalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlideIn {
+      from { transform: translateY(20px) scale(0.96); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .modal-close-btn-orange {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: var(--bg-light);
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .modal-close-btn-orange:hover {
+      background: var(--accent-orange-soft);
+      color: var(--accent-orange);
+    }
+
+    .modal-header-box {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .modal-header-icon {
+      font-size: 2.8rem;
+      margin-bottom: 8px;
+    }
+    .modal-header-title {
+      font-family: var(--font-headline);
+      font-size: 1.85rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--text-black);
+      margin-bottom: 4px;
+    }
+    .modal-header-sub {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+
+    .login-error-msg {
+      background: #fef2f2;
+      border: 1px solid #f87171;
+      color: #b91c1c;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+      display: none;
+      text-align: center;
+    }
+
+    .form-group-landing-white {
+      margin-bottom: 18px;
+    }
+    .form-group-landing-white label {
+      display: block;
+      font-family: var(--font-headline);
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-black);
+      margin-bottom: 6px;
+    }
+    .form-group-landing-white input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--text-black);
+      font-family: var(--font-body);
+      font-size: 0.98rem;
+      transition: all 0.2s;
+    }
+    .form-group-landing-white input:focus {
+      outline: none;
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 0 4px rgba(255, 85, 0, 0.15);
+    }
+
+    .btn-submit-landing-orange {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent-orange);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-headline);
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255, 85, 0, 0.35);
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+    .btn-submit-landing-orange:hover {
+      background: var(--accent-orange-hover);
+      box-shadow: 0 6px 20px rgba(255, 85, 0, 0.5);
+    }
+    .btn-submit-landing-orange:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Footer Blanco */
+    .landing-footer-white {
+      padding: 36px 0;
+      background: #ffffff;
+      border-top: 2px solid var(--accent-orange);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .landing-footer-white a {
+      color: var(--text-black);
+      font-weight: 700;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .landing-footer-white a:hover {
+      color: var(--accent-orange);
+    }
+  </style>
+</head>
+<body class="landing-page-white">
+
+  <!-- Navbar Blanca con Acento Naranja -->
+  <header class="landing-nav-white">
+    <a href="/" class="brand-logo-link">
+      <div class="brand-badge-box">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      </div>
+      <div class="brand-title-text">VISUAL<span>FX</span></div>
+    </a>
+    <div class="nav-actions">
+      <a href="/download" class="btn-nav-apk" title="Descargar APK para TV">
+        📥 APP TV (APK)
+      </a>
+      <button type="button" class="btn-nav-login-orange" onclick="openModal()">
+        🔑 INICIAR SESIÓN
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenido Principal -->
+  <div class="landing-wrapper">
+    
+    <!-- Hero Section Inspirado en Imagen 1 -->
+    <main class="hero-split-section">
+      
+      <!-- Columna Izquierda: Titulares y Pilares -->
+      <div class="hero-left-col">
+        <div class="hero-pretitle">TRANSMISIONES HÍPICAS & LOTERÍAS AUTOMATIZADAS</div>
+        
+        <h1 class="hero-main-title">
+          POTENCIA TU AGENCIA CON <br>
+          <span class="hero-orange-badge">VISUAL FX</span> <br>
+          Y MULTIPLICA TUS VENTAS
+        </h1>
+
+        <p class="hero-lead-text">
+          Conmutación de canales hípicos HLS sin latencia, sincronización en vivo con RTN.tv y carteleras automatizadas de loterías y animalitos con síntesis de voz neuronal.
+        </p>
+
+        <!-- Franja de 4 Pilares (Idéntica a Imagen 1) -->
+        <div class="hero-pillars-row">
+          <div class="pillar-item">
+            <span class="pillar-icon">🏇</span>
+            <span class="pillar-label">HÍPICA</span>
+          </div>
+          <div class="pillar-divider"></div>
+          <div class="pillar-item">
+            <span class="pillar-icon">🎰</span>
+            <span class="pillar-label">LOTERÍAS</span>
+          </div>
+          <div class="pillar-divider"></div>
+          <div class="pillar-item">
+            <span class="pillar-icon">📡</span>
+            <span class="pillar-label">MULTICANAL</span>
+          </div>
+          <div class="pillar-divider"></div>
+          <div class="pillar-item">
+            <span class="pillar-icon">📺</span>
+            <span class="pillar-label">PANTALLAS 4K</span>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="hero-cta-group">
+          <button type="button" class="btn-hero-primary-orange" onclick="openModal()">
+            🚀 INGRESAR A LA PLATAFORMA
+          </button>
+          <a href="/download" class="btn-hero-secondary-white">
+            📥 DESCARGAR APK TV
+          </a>
+        </div>
+
+        <!-- Pie de Hero con Firma y Badge EN VIVO -->
+        <div class="hero-footer-bar">
+          <div class="brand-signature">FENIX <span>ENTERPRISE</span> • BROADCAST SAAS</div>
+          <div class="live-broadcast-pill">🔴 EN VIVO 24/7</div>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Widgets de Métricas Estilo Imagen 1 -->
+      <div class="hero-right-col">
+        
+        <!-- Widget 1: Ventas y Rendimiento -->
+        <div class="metric-card-white">
+          <div class="metric-top-row">
+            <span class="metric-title">Ventas Totales & Tráfico</span>
+            <span class="metric-trend-badge">▲ + 35.8% vs mes anterior</span>
+          </div>
+          <div class="metric-big-value">$ 245,780</div>
+          <svg class="sparkline-svg" viewBox="0 0 300 48" fill="none" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#16a34a" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#16a34a" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,40 Q30,35 60,38 T120,25 T180,20 T240,12 T300,5 L300,48 L0,48 Z" fill="url(#greenGrad)"/>
+            <path d="M0,40 Q30,35 60,38 T120,25 T180,20 T240,12 T300,5" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <!-- Widget 2: Asistente Inteligente con Botón Naranja -->
+        <div class="assistant-card-white">
+          <div class="assistant-header">
+            <span>💡</span> Asistencia Inteligente Visual FX
+          </div>
+          <p class="assistant-text">
+            Recomendación para aumentar tus ventas: Conecta las pantallas principales de tu agencia y activa el modo carrusel automatizado de carreras y loterías.
+          </p>
+          <button type="button" class="btn-assistant-action" onclick="openModal()">
+            ⚡ Conectar Mis Pantallas Ahora
+          </button>
+        </div>
+
+        <!-- Widget 3: Pantallas Conectadas y Gráfico Naranja -->
+        <div class="audience-card-white">
+          <div class="audience-row">
+            <div>
+              <span class="metric-title">Pantallas Activas en Vivo</span>
+              <div class="audience-num">1,248</div>
+            </div>
+            <div class="audience-tag">Transmisión 1080p 60fps</div>
+          </div>
+          <svg class="sparkline-svg" viewBox="0 0 300 48" fill="none" preserveAspectRatio="none" style="margin-top: 8px;">
+            <defs>
+              <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ff5500" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#ff5500" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,42 Q40,38 80,32 T160,26 T240,18 T300,8 L300,48 L0,48 Z" fill="url(#orangeGrad)"/>
+            <path d="M0,42 Q40,38 80,32 T160,26 T240,18 T300,8" stroke="#ff5500" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Features Grid Section -->
+  <section class="features-section-white">
+    <div class="landing-wrapper">
+      <h2 class="features-section-title">Infraestructura de Transmisión Profesional</h2>
+      <p class="features-section-sub">Diseñado exclusivamente para agencias hípicas, salas de juego y administradores de pantallas digitales.</p>
+
+      <div class="features-grid-white">
+        
+        <div class="feature-card-white">
+          <div class="feature-icon-box">🎛️</div>
+          <h3>Multi-Canal 1 a 4 Pantallas</h3>
+          <p>Mosaico dinámico de 1 a 4 hipódromos en simultáneo con selector individual, audio selectivo y reconexión automática sin cortes.</p>
+        </div>
+
+        <div class="feature-card-white">
+          <div class="feature-icon-box">📡</div>
+          <h3>Puente Oficial RTN.tv</h3>
+          <p>Sincronización en tiempo real con la parrilla de carreras activas cada 10 minutos. Conmutación instantánea a hipódromos On-Air.</p>
+        </div>
+
+        <div class="feature-card-white">
+          <div class="feature-icon-box">🎰</div>
+          <h3>Loterías y 1000Resultados</h3>
+          <p>Pizarras oficiales en 4 columnas, sorteos de Animalitos y Triples en vivo con síntesis de voz y estadísticas de 30 días.</p>
+        </div>
+
+        <div class="feature-card-white">
+          <div class="feature-icon-box">📺</div>
+          <h3>Optimizado para Smart TVs</h3>
+          <p>Conexión directa por Usuario y Contraseña para cualquier TV Box o televisor con control de sesión única activa.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal de Login Blanco / Naranja -->
+  <div class="landing-modal-overlay" id="landingModalOverlay">
+    <div class="landing-modal-card-white">
+      <button type="button" class="modal-close-btn-orange" id="btnCloseModal" title="Cerrar">&times;</button>
+      
+      <div class="modal-header-box">
+        <div class="modal-header-icon">🔐</div>
+        <h2 class="modal-header-title">Ingresar a Visual-FX</h2>
+        <p class="modal-header-sub">Introduce tus credenciales de Super Administrador o Pantalla</p>
+      </div>
+
+      <div class="login-error-msg" id="loginErrorMsg"></div>
+
+      <form id="landingLoginForm">
+        <div class="form-group-landing-white">
+          <label for="txtLandingUser">USUARIO / PANTALLA</label>
+          <input type="text" id="txtLandingUser" placeholder="Ej. hector_owner o tv1_fenix" required autocomplete="username">
+        </div>
+
+        <div class="form-group-landing-white">
+          <label for="txtLandingPass">CONTRASEÑA</label>
+          <input type="password" id="txtLandingPass" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn-submit-landing-orange" id="btnLandingSubmit">
+          Ingresar al Sistema
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer Blanco -->
+  <div class="landing-wrapper">
+    <footer class="landing-footer-white">
+      <div>
+        © 2026 Visual-FX SaaS • Transmisiones Hípicas y Pizarras Digitales
+      </div>
+      <div>
+        <a href="/download">App para Smart TV (APK)</a> • 
+        <a href="javascript:void(0)" onclick="openModal()">Acceso al Sistema</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Modal Open & Close logic
+    const modal = document.getElementById('landingModalOverlay');
+    const btnClose = document.getElementById('btnCloseModal');
+    const txtUser = document.getElementById('txtLandingUser');
+    const txtPass = document.getElementById('txtLandingPass');
+    const form = document.getElementById('landingLoginForm');
+    const errorMsg = document.getElementById('loginErrorMsg');
+    const submitBtn = document.getElementById('btnLandingSubmit');
+
+    function openModal() {
+      if (modal) modal.style.display = 'flex';
+      if (errorMsg) errorMsg.style.display = 'none';
+      setTimeout(() => {
+        if (txtUser) txtUser.focus();
+      }, 100);
+    }
+
+    function closeModal() {
+      if (modal) modal.style.display = 'none';
+    }
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+    }
+
+    // Auto-open modal if ?login=true in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('login') === 'true') {
+      openModal();
+    }
+
+    // Login Form Submission
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = txtUser.value.trim();
+        const password = txtPass.value;
+
+        if (!username || !password) return;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Verificando credenciales...';
+        errorMsg.style.display = 'none';
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+
+          const data = await response.json();
+
+          if (data.success && data.token) {
+            localStorage.setItem('visual_fx_token', data.token);
+            localStorage.setItem('visual_fx_user', JSON.stringify(data.user));
+            sessionStorage.removeItem('visual_fx_session_override');
+
+            submitBtn.textContent = '¡Acceso Concedido! Redirigiendo...';
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 300);
+          } else {
+            errorMsg.textContent = data.message || data.error || 'Credenciales incorrectas. Verifique usuario y contraseña.';
+            errorMsg.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Ingresar al Sistema';
+          }
+        } catch (err) {
+          console.error('Error durante el inicio de sesión:', err);
+          errorMsg.textContent = 'Error de conexión con el servidor. Intente nuevamente.';
+          errorMsg.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Ingresar al Sistema';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

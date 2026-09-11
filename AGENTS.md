@@ -22,11 +22,12 @@ Este proyecto es el **Sistema SaaS de Transmisión Visual FX**, diseñado para g
 2. **Puertos por defecto:** 3000 (Servidor principal) / 8080 (RTN WebSocket).
 3. **Persistencia de Canales:** Cualquier cambio en la lista de canales debe actualizar `channels.js` o la fuente de datos correspondiente.
 4. **Despliegue:** Preparado para Render / VPS con `render.yaml`.
-5. **Jerarquía y Separación de Roles:**
-   - **Super Admin (Héctor):** Crea y gestiona organizaciones clientes, define planes, fija cupos máximos de pantallas, administra el catálogo máster de hipódromos y audita la plataforma. **NUNCA** activa pantallas directamente mediante PIN.
-   - **Clientes / Encargados (Fenix, etc.):** Activan de forma autónoma sus pantallas ingresando el PIN numérico de 6 dígitos mostrado en el televisor y asignando un nombre único a cada dispositivo.
+5. **Jerarquía, Roles y Autenticación de Pantallas:**
+   - **Super Admin (Héctor):** Crea y gestiona organizaciones clientes, define planes, fija cupos máximos de pantallas, administra el catálogo máster de hipódromos y audita la plataforma.
+   - **Clientes / Encargados (Fenix, etc.):** Crean y administran de forma autónoma las cuentas de sus pantallas (nombre de pantalla = usuario, contraseña y servicio por defecto) dentro del cupo contratado (`maxDevices`). No se utiliza verificación por código PIN.
+   - **Pantallas / TVs (Conexión Universal y Sesión Única Activa):** Se conectan ingresando usuario y contraseña desde cualquier dispositivo físico (Smart TV, TV Box, PC, etc.). Rige el **Control Estricto de Sesión Única Activa (Single Active Session)**: sólo se permite 1 sesión activa por pantalla. Si se inicia sesión en un nuevo dispositivo, la sesión previa se finaliza de inmediato mostrando el mensaje exacto: *"Se inició sesión en otro dispositivo. Si no lo autorizó, contacte a su administrador."*.
 6. **Persistencia Obligatoria en Disco (`data/`):**
-   - Las organizaciones clientes y las pantallas autorizadas deben sincronizarse en archivos JSON permanentes en el directorio `data/` (`clients.json`, `devices.json`). Ningún cambio de cliente o dispositivo debe mantenerse únicamente en memoria volátil.
+   - Las organizaciones clientes, dispositivos autorizados y cuentas de pantalla deben sincronizarse en archivos JSON permanentes en el directorio `data/` (`clients.json`, `devices.json`, `device_accounts.json`). Ningún cambio de cliente o dispositivo debe mantenerse únicamente en memoria volátil.
    - Los resultados de loterías y el histórico de 30 días deben persistirse obligatoriamente en `data/lottery_results.json` y `data/lottery_history.json`.
 7. **Auto-Autorización y Acceso a Carreras en Vivo:**
    - Las sesiones activas de Super Admin y Clientes deben auto-aprobar la pantalla/consola de gestión para evitar bloqueos por el banner de pantalla no autorizada y permitir la visualización directa e instantánea de transmisiones (`/api/stream/proxy`).

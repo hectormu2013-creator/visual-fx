@@ -141,6 +141,7 @@ function recordDrawsToHistory(gameId, dateStr, draws) {
     name: d.name || null,
     tripleA: d.tripleA || null,
     tripleB: d.tripleB || null,
+    tripleC: d.tripleC || null,
     signo: d.signo || null,
     isManual: Boolean(d.isManual)
   }));
@@ -180,12 +181,13 @@ function getHotNumbers(gameId, limit = 5) {
   return sorted.slice(0, limit);
 }
 
-// 2. Obtener Números Fríos / "Por Reventar" (Mayor atraso / días sin salir)
+// 2. Obtener Números Menos Salidos / Atrasados de los últimos 30 días
 function getColdNumbers(gameId, limit = 5) {
   const gameHistory = historyStore[gameId];
   if (!gameHistory) return [];
 
   const dates = Object.keys(gameHistory).sort().reverse();
+  const occurrencesMap = {};
   const lastSeenDaysAgo = {};
   const names = {};
 
@@ -197,6 +199,18 @@ function getColdNumbers(gameId, limit = 5) {
     for (let i = 0; i <= max; i++) allNumbers.push(i.toString().padStart(2, '0'));
   } else {
     for (let i = 0; i <= 99; i++) allNumbers.push(i.toString().padStart(2, '0'));
+  }
+
+  // Contar ocurrencias totales en los últimos 30 días
+  for (const dateStr of Object.keys(gameHistory)) {
+    const dayDraws = gameHistory[dateStr] || [];
+    for (const d of dayDraws) {
+      if (d.number) {
+        const nKey = d.number.toString().padStart(2, '0');
+        occurrencesMap[nKey] = (occurrencesMap[nKey] || 0) + 1;
+        if (d.name) names[nKey] = d.name;
+      }
+    }
   }
 
   for (const num of allNumbers) {
@@ -221,14 +235,20 @@ function getColdNumbers(gameId, limit = 5) {
     }
   }
 
-  const sorted = Object.entries(lastSeenDaysAgo)
-    .map(([num, days]) => ({
+  // Ordenar por menor cantidad de salidas en 30 días, y en caso de empate, por mayor atraso en días
+  const sorted = allNumbers
+    .map(num => ({
       number: num,
       name: names[num] || '',
-      daysOverdue: days
+      occurrences: occurrencesMap[num] || 0,
+      daysOverdue: lastSeenDaysAgo[num] !== undefined ? lastSeenDaysAgo[num] : 30
     }))
-    .filter(item => item.daysOverdue >= 2)
-    .sort((a, b) => b.daysOverdue - a.daysOverdue);
+    .sort((a, b) => {
+      if (a.occurrences !== b.occurrences) {
+        return a.occurrences - b.occurrences;
+      }
+      return b.daysOverdue - a.daysOverdue;
+    });
 
   return sorted.slice(0, limit);
 }
@@ -245,11 +265,12 @@ function getDailyPredictions(gameId) {
   };
 }
 
-// 4. Generar elementos del Cintillo Desplazable (Marquee Feed)
+// 4. Generar elementos del Cintillo Desplazable (Marquee Feed - Exclusivo Animalitos)
 function generateTickerFeed(top10Games) {
   const items = [];
+  const animalGames = top10Games.filter(g => g.type === 'animalitos');
 
-  for (const game of top10Games) {
+  for (const game of animalGames) {
     const hot = getHotNumbers(game.id, 2);
     const cold = getColdNumbers(game.id, 2);
 
@@ -278,7 +299,7 @@ function generateTickerFeed(top10Games) {
     type: 'prediction',
     gameName: 'Pronósticos Visual-FX',
     badge: '🎯 DATOS CALIENTES DE HOY',
-    text: 'Guácharo Activo: #34 (Venado), #12 (Caballo) • Lotto Activo: #30 (Caimán), #05 (León) • Triple Zulia: 452, 918'
+    text: 'Guácharo Activo: #34 (Venado), #12 (Caballo) • Lotto Activo: #30 (Caimán), #05 (León) • La Granjita: #18 (Burro), #07 (Perico)'
   });
 
   return items;

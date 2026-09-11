@@ -9,14 +9,9 @@ const masterState = {
 
 async function syncRtnStreams(channelsCatalog) {
   try {
-    // 1. Resetear el estado onAir previo
+    // 1. Resetear el estado onAir previo de todos los canales
     channelsCatalog.forEach(c => {
-      // YouTube streams u oficiales siempre permanecen onAir si no son de RTN
-      if (!c.officialSource || !c.officialSource.includes('NYRA') && !c.officialSource.includes('RTN')) {
-        c.onAir = true;
-      } else {
-        c.onAir = false;
-      }
+      c.onAir = false;
     });
 
     const bridgeStreams = await fetchRtnLiveStreams();

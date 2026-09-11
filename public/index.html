@@ -8,7 +8,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   
   <!-- HLS.js for Live Video Streaming -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -41,22 +41,18 @@
     }
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js?v=4.0').catch(err => console.log('SW reg error:', err));
+        navigator.serviceWorker.register('/sw.js?v=4.1').catch(err => console.log('SW reg error:', err));
       });
     }
   </script>
 
   <!-- Custom Stylesheet (Anti-Cache) -->
-  <link rel="stylesheet" href="/styles.css?v=4.0">
+  <link rel="stylesheet" href="/styles.css?v=6.2">
 </head>
 <body class="tv-mode">
   
   <!-- Top Header Hover Trigger Zone (For Auto-Hide Mode) -->
   <div id="topHeaderHoverZone" class="top-header-hover-zone" title="Mover mouse aquí para mostrar controles"></div>
-  <button id="btnShowHeaderFloating" class="btn-floating-header-trigger" title="Mostrar menú y controles">
-    <span>⚡ MENÚ & SERVICIOS</span>
-    <span class="shortcut-tip">[Tecla F: Pantalla Completa]</span>
-  </button>
 
   <!-- Top Navigation Header (Floating / Auto-Hide) -->
   <header class="app-header floating-header" id="appHeader">
@@ -68,7 +64,7 @@
         </div>
         <div class="brand-text">
           <span class="brand-name">VISUAL<span class="highlight">-FX</span></span>
-          <span class="brand-subtitle" id="lblBrandSubtitle">FENIX • PLATAFORMA SAAS</span>
+          <span class="brand-subtitle" id="lblBrandSubtitle" style="display: none;"></span>
         </div>
       </div>
       
@@ -76,72 +72,135 @@
         <span class="status-dot green"></span>
         <span id="deviceBadgeText">TV [AUTORIZADO]</span>
       </div>
-
-      <!-- Direct 1-Click Service Switchers -->
-      <div class="service-quick-bar">
-        <button type="button" class="btn-service-direct active" id="btnDirectHipica" onclick="window.switchDirectService('hipica')" title="Ir a Carreras de Caballos">
-          🏇 Carreras
-        </button>
-        <button type="button" class="btn-service-direct" id="btnDirectLoteria" onclick="window.switchDirectService('loteria')" title="Ir a Resultados de Loterías">
-          🎲 Loterías
-        </button>
-      </div>
     </div>
     
     <div class="header-center">
-      <!-- Grid Layout Controls (Solo Hípica) -->
+      <!-- Selector Desplegable de Vista de Canales: 1, 2, 3, 4 (Requisito 5) -->
       <div class="layout-selector" id="hipicaHeaderControls" role="group" aria-label="Selección de Pantallas">
         <span class="selector-label">VISTA:</span>
-        <button class="layout-btn active" data-grid="1" title="Pantalla Única (Tecla 1)" id="btnGrid1">
-          <span class="icon">🔲</span> 1 CANAL
-        </button>
-        <button class="layout-btn" data-grid="2" title="Dos Pantallas (Tecla 2)" id="btnGrid2">
-          <span class="icon">⏸️</span> 2 CANALES
-        </button>
-        <button class="layout-btn" data-grid="3" title="Tres Pantallas (Tecla 3)" id="btnGrid3">
-          <span class="icon">⏹️</span> 3 CANALES
-        </button>
-        <button class="layout-btn" data-grid="4" title="Cuatro Pantallas 2x2 (Tecla 4)" id="btnGrid4">
-          <span class="icon">⊞</span> 4 MULTICANAL (2x2)
-        </button>
+        <select id="selLayoutGrid" class="header-select layout-select" onchange="window.switchLayoutGrid(parseInt(this.value))" title="Cantidad de Pantallas en Rejilla">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
       </div>
 
-      <!-- Lottery-specific Header Controls (Solo Loterías) -->
+      <!-- Lottery-specific Header Controls (Solo Loterías - Ubicados en la cabecera fija/hover según Imagen 2) -->
       <div class="lottery-header-controls" id="lotteryHeaderControls" style="display: none;">
-        <button class="btn-header-lottery-action" id="btnHeaderViewMode" onclick="window.toggleLotteryViewMode()" title="Alternar entre Carrusel y Pizarra General">
-          📋 Pizarra Resumen
-        </button>
-        <button class="btn-header-lottery-action" id="btnHeaderStats" onclick="window.openLotteryStatsModal()" title="Ver Estadísticas 30D y Pronósticos">
-          📊 Estadísticas 30D
-        </button>
-        <button class="btn-header-lottery-action" id="btnHeaderVoiceToggle" onclick="window.toggleLotteryVoiceAnnouncements()" title="Activar/Desactivar Locución de Voz">
-          🔊 Voz: ON
-        </button>
+        <!-- Controles Ágiles de Navegación del Carrusel de Loterías -->
+        <div class="cintillo-lottery-controls" id="headerLotteryControlsBox">
+          <!-- Primero: icono azul a la izquierda con |<<, texto blanco -->
+          <button type="button" class="btn-cintillo-nav" id="btnHeaderFirst" onclick="window.goToFirstLotteryModule()" title="Ir al Primer Módulo (Inicio)">
+            <span class="cintillo-blue-box">
+              <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
+                <rect x="4" y="5" width="2.5" height="14" rx="0.5"/>
+                <polygon points="12,12 19,5 19,19"/>
+                <polygon points="6.5,12 13.5,5 13.5,19"/>
+              </svg>
+            </span>
+            <span class="btn-cintillo-text">Primero</span>
+          </button>
+
+          <!-- Anterior: icono azul a la izquierda con <|, texto blanco -->
+          <button type="button" class="btn-cintillo-nav" id="btnHeaderPrev" onclick="window.goToPrevLotteryModule()" title="Retroceder Módulo (Flecha Izquierda)">
+            <span class="cintillo-blue-box">
+              <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
+                <polygon points="7,12 18,5 18,19"/>
+                <rect x="5.5" y="5" width="2" height="14" rx="0.5"/>
+              </svg>
+            </span>
+            <span class="btn-cintillo-text">Anterior</span>
+          </button>
+
+          <!-- Pausar: borde y texto verde neón (#00ff66), icono azul con || -->
+          <button type="button" class="btn-cintillo-nav btn-cintillo-pause" id="btnHeaderPause" onclick="window.toggleLotteryCarouselPause()" title="Pausar o Reanudar Carrusel (Espacio)">
+            <span class="cintillo-blue-box" id="headerPauseBlueBox">
+              <svg id="svgHeaderPause" viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
+                <rect x="6" y="5" width="4" height="14" rx="1"/>
+                <rect x="14" y="5" width="4" height="14" rx="1"/>
+              </svg>
+              <svg id="svgHeaderPlay" viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor" style="display:none;">
+                <polygon points="8,5 19,12 8,19"/>
+              </svg>
+            </span>
+            <span class="btn-cintillo-text" id="lblHeaderPauseText">Pausar</span>
+          </button>
+
+          <!-- Siguiente: texto blanco a la izquierda, icono azul a la derecha con |> -->
+          <button type="button" class="btn-cintillo-nav" id="btnHeaderNext" onclick="window.goToNextLotteryModule()" title="Adelantar Módulo (Flecha Derecha)">
+            <span class="btn-cintillo-text">Siguiente</span>
+            <span class="cintillo-blue-box">
+              <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
+                <polygon points="17,12 6,5 6,19"/>
+                <rect x="16.5" y="5" width="2" height="14" rx="0.5"/>
+              </svg>
+            </span>
+          </button>
+
+          <!-- Último: texto blanco a la izquierda, icono azul a la derecha con >>| -->
+          <button type="button" class="btn-cintillo-nav" id="btnHeaderLast" onclick="window.goToLastLotteryModule()" title="Ir al Último Módulo (Fin)">
+            <span class="btn-cintillo-text">Último</span>
+            <span class="cintillo-blue-box">
+              <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
+                <polygon points="12,12 5,5 5,19"/>
+                <polygon points="17.5,12 10.5,5 10.5,19"/>
+                <rect x="17.5" y="5" width="2.5" height="14" rx="0.5"/>
+              </svg>
+            </span>
+          </button>
+
+          <!-- Contador de página estilo pastilla oval verde (1 de 7) -->
+          <div class="cintillo-page-counter" id="lblHeaderPageCounter" title="Página actual de módulos">1 de 7</div>
+        </div>
       </div>
+
+      <!-- Botón de Pantalla Completa Universal (ÚNICA OPCIÓN EN LA CABECERA) -->
+      <button type="button" class="btn-header-fullscreen" id="btnHeaderFullscreen" onclick="window.toggleAppFullscreen(event)" title="Pantalla Completa (Tecla F)">
+        <svg viewBox="0 0 24 24" class="cintillo-fs-svg" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+        <span class="fs-text">Pantalla Completa</span>
+      </button>
     </div>
     
     <div class="header-right">
-      <button class="btn-header-action" id="btnToggleAppFullscreen" onclick="window.toggleAppFullscreen()" title="Pantalla Completa (Tecla F)">
-        <span class="icon">⛶</span> Pantalla Completa
-      </button>
       <button class="btn-pin-header" id="btnPinHeader" onclick="window.toggleHeaderPin()" title="Fijar / Desanclar barra superior">
         📌 <span id="lblPinState">Fijar</span>
       </button>
-      <button class="btn-service-hub" id="btnOpenServiceHub" title="Todos los Servicios">
-        <span class="icon">🎛️</span> <span id="lblActiveService">Carreras</span>
-      </button>
+      
+      <!-- Selector Desplegable Módulos / Servicios (Espacio Optimizado) -->
+      <div class="header-select-box" id="serviceSelectBox">
+        <select id="selServiceModules" class="header-select service-select-dropdown" onchange="window.switchServiceFromSelect(this.value)" title="Cambiar Módulo de Transmisión">
+          <option value="hipica">🏇 Carreras de Caballos</option>
+          <option value="loteria">🎲 Resultados Loterías</option>
+          <option value="deportes">⚽ Marcadores Deportivos</option>
+          <option value="tv_deportes">📺 Juegos y Eventos TV</option>
+          <option value="publicidad">📢 Publicidad</option>
+        </select>
+      </div>
+
       <button class="btn-sidebar-toggle" id="btnToggleSidebar" title="Lista de Canales">
         <span class="icon">📺</span> Hipódromos
       </button>
       <button class="btn-admin-modal" id="btnAdminModal" title="Panel de Administración">
         <span class="icon">⚙️</span>
       </button>
-      <div class="user-profile" id="userProfileArea">
-        <span class="user-name" id="lblUserName">Administrador</span>
-        <button class="btn-logout-header" id="btnLogout" title="Cerrar Sesión">🚪</button>
-      </div>
+
+      <!-- Botón Directo de Cerrar Sesión (Requisito 2) -->
+      <button type="button" class="btn-logout-header" id="btnLogoutHeader" onclick="window.handleLogout()" title="Cerrar Sesión del Sistema">
+        🚪 <span class="logout-text">Cerrar Sesión</span>
+      </button>
     </div>
   </header>
+
+  <!-- Floating Cintillo Bar (Visible de forma no invasiva cuando la cabecera está oculta) -->
+  <div class="floating-cintillo-container" id="floatingCintilloContainer">
+    <button id="btnShowHeaderFloating" class="btn-floating-header-trigger" title="Mostrar menú y controles">
+      <span>⚡ MENÚ & SERVICIOS</span>
+    </button>
+
+  </div>
 
   <!-- Service Selection Hub Modal (Prioridad 4) -->
   <div class="modal-overlay" id="serviceSelectorModal" style="display: none;">
@@ -201,12 +260,12 @@
     </div>
   </div>
 
-  <!-- Modern Clean Login Modal / Screen (Diseño Profesional Azul-Verde) -->
-  <div class="modal-overlay" id="loginModal" style="display: none; z-index: 999999 !important;">
+  <!-- Modern Clean Login Modal / Screen (Diseño Profesional Azul-Verde con Fondo Opaco) -->
+  <div class="modal-overlay login-modal-overlay" id="loginModal" style="display: none; z-index: 999999 !important; background: #030712 !important;">
     <div class="login-card-modern" style="position: relative;">
       <button type="button" class="btn-close-modal-modern" id="btnCloseLoginModal" onclick="window.closeLoginModalSafely()" title="Cerrar" style="display: none;">✕</button>
       
-      <!-- Modern Brand Header (Limpio con tonos azules y verdes) -->
+      <!-- Modern Brand Header -->
       <div class="login-brand-header">
         <div class="login-brand-badge">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -217,15 +276,16 @@
         <p class="login-brand-subtitle">SISTEMA DE TRANSMISIÓN MULTICANAL</p>
       </div>
       
+      <!-- Vista 1: Formulario de Inicio de Sesión -->
       <form id="loginForm" class="login-form-modern">
         <div class="form-group-modern">
           <label for="txtUser">Nombre de usuario</label>
-          <input type="text" id="txtUser" placeholder="" value="" required autocomplete="username" autofocus>
+          <input type="text" id="txtUser" placeholder="Ej. hector_owner, fenix o tu_taquilla" value="" required autocomplete="username" autofocus>
         </div>
         
         <div class="form-group-modern">
           <label for="txtPass">Contraseña</label>
-          <input type="password" id="txtPass" placeholder="" value="" required autocomplete="current-password">
+          <input type="password" id="txtPass" placeholder="••••••••" value="" required autocomplete="current-password">
         </div>
         
         <div class="form-error-modern" id="loginError" style="display: none;"></div>
@@ -236,8 +296,22 @@
       </form>
 
       <div class="login-modern-footer">
-        <span>Plataforma Exclusiva Super Administradores y Clientes</span>
+        <span>Plataforma Exclusiva Super Administradores, Clientes y Pantallas</span>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Informativo de Sesión Concurrente / Desconectada (Single Active Session Enforcement) -->
+  <div class="modal-overlay" id="sessionKickedModal" style="display: none; z-index: 9999999 !important; background: rgba(3, 7, 18, 0.95) !important;">
+    <div class="login-card-modern" style="text-align: center; border: 2px solid #ef4444; box-shadow: 0 0 50px rgba(239, 68, 68, 0.35); max-width: 480px; padding: 32px 28px;">
+      <div style="font-size: 3.8rem; line-height: 1; margin-bottom: 16px;">⚠️</div>
+      <h2 style="color: #f87171; font-weight: 900; font-size: 1.5rem; margin: 0 0 12px 0; letter-spacing: -0.5px;">Sesión Finalizada en esta Pantalla</h2>
+      <p style="color: #e2e8f0; font-size: 1.05rem; line-height: 1.6; margin: 0 0 24px 0; font-weight: 500;" id="lblSessionKickedMessage">
+        Se inició sesión en otro dispositivo. Si no lo autorizó, contacte a su administrador.
+      </p>
+      <button type="button" class="btn-submit-modern" onclick="window.reopenLoginFromKick()" style="background: linear-gradient(135deg, #ef4444, #dc2626); font-weight: 800; font-size: 1.05rem; padding: 14px 28px; width: 100%; border-radius: 10px; cursor: pointer;">
+        🔑 Iniciar Sesión Nuevamente
+      </button>
     </div>
   </div>
 
@@ -270,6 +344,9 @@
         </button>
         <button class="admin-tab-btn" data-tab="tab-devices" id="tabBtnDevices">
           📺 Árbol de Pantallas Autorizadas
+        </button>
+        <button class="admin-tab-btn" data-tab="tab-screen-config" id="tabBtnScreenConfig">
+          🎛️ Configuración de Pantallas
         </button>
         <button class="admin-tab-btn" data-tab="tab-channels" id="tabBtnChannels">
           📡 Master Control (Hipódromos)
@@ -347,26 +424,39 @@
             </div>
           </div>
 
-          <!-- Caja de Activación (EXCLUSIVA PARA EL CLIENTE/ENCARGADO) -->
-          <div class="admin-section-box" id="boxActivateDevice">
+          <!-- Caja de Registro de Credenciales de Pantalla TV (Usuario y Clave) -->
+          <div class="admin-section-box" id="boxCreateDeviceAccount">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
               <div>
-                <h4 style="margin:0;">🔑 Activar Nueva Pantalla de mi Sede</h4>
-                <p class="section-desc" style="margin:4px 0 0 0;">Ingrese el código de 6 dígitos mostrado en el televisor y asígnele un nombre único:</p>
+                <h4 style="margin:0;">🖥️ Registrar Nueva Pantalla TV (Usuario y Clave)</h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">Cree las credenciales de acceso para cada pantalla o Smart TV. Cada pantalla admite 1 sesión simultánea:</p>
               </div>
               <div id="clientQuotaBadge" style="background:rgba(56, 189, 248, 0.15); border:1px solid #38bdf8; color:#38bdf8; padding:6px 16px; border-radius:20px; font-weight:bold; font-size:0.9rem;">
                 📊 Cupo de Pantallas: -- / -- Activas
               </div>
             </div>
 
-            <div class="form-grid-row">
-              <input type="text" id="txtActivationPin" placeholder="Código de 6 dígitos (ej. 718969)" style="flex:1.2; font-size:1.1rem; font-weight:bold; letter-spacing:1px; text-align:center;">
-              <input type="text" id="txtTvName" placeholder="Nombre único (ej. Dispositivo 1, TV Barra)" style="flex:2;">
-              <button class="btn-primary" id="btnSubmitActivation" style="flex:1.3; font-weight:bold; background:linear-gradient(135deg, #059669, #10b981);">
-                ⚡ ACTIVAR PANTALLA
+            <div class="form-grid-row" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <input type="text" id="txtNewDeviceTvName" placeholder="Nombre Pantalla (ej. TV Taquilla 1, TV Barra)" style="flex:1.6; min-width:180px;">
+              <input type="text" id="txtNewDeviceUser" placeholder="Usuario TV (ej. tv1_fenix)" style="flex:1.4; min-width:150px;">
+              <input type="password" id="txtNewDevicePass" placeholder="Contraseña TV" style="flex:1.2; min-width:130px;">
+              <select id="selNewDeviceDefaultService" style="flex:1.2; min-width:140px; background:#0f172a; color:#38bdf8; border:1px solid rgba(56, 189, 248, 0.4); border-radius:6px; padding:6px 10px; font-size:0.85rem; font-weight:700;">
+                <option value="loteria">🎲 Iniciar en Loterías</option>
+                <option value="hipica">🏇 Iniciar en Carreras</option>
+              </select>
+              <button type="button" class="btn-primary" id="btnCreateDeviceAccount" style="flex:1.3; min-width:160px; font-weight:bold; background:linear-gradient(135deg, #0284c7, #10b981);">
+                ➕ CREAR PANTALLA
               </button>
             </div>
-            <div class="form-msg" id="activationMsg" style="margin-top:10px; font-weight:bold;"></div>
+            <div class="form-grid-row" style="margin-top:8px;">
+              <div style="flex: 1; display: flex; align-items: center; gap: 8px;">
+                <label for="selCloneFromDevice" style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">📋 Clonar configuración de:</label>
+                <select id="selCloneFromDevice" style="flex: 1; background: #0f172a; color: #fff; border: 1px solid rgba(56,189,248,0.3); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem;">
+                  <option value="">⚙️ Ninguna (Configuración Estándar por Defecto)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-msg" id="deviceAccountMsg" style="margin-top:10px; font-weight:bold;"></div>
           </div>
 
           <!-- Árbol Jerárquico de Clientes Autorizados y sus Pantallas -->
@@ -378,12 +468,11 @@
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>Nombre del Dispositivo</th>
-                  <th>ID Hardware</th>
-                  <th>Cliente</th>
-                  <th>Servicio de Inicio</th>
-                  <th>Suscripción / Vence</th>
-                  <th>Estado</th>
+                  <th>Pantalla / Dispositivo</th>
+                  <th>Usuario Conexión</th>
+                  <th>Organización</th>
+                  <th>Servicio Inicio</th>
+                  <th>Sesión Activa</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -391,6 +480,309 @@
                 <!-- Rendered via JS -->
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- TAB: CONFIGURACIÓN Y PERSONALIZACIÓN DE PANTALLAS (SAAS CLIENTES & SUPER ADMIN) -->
+        <div class="tab-pane" id="tab-screen-config">
+          <div class="admin-section-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+              <div>
+                <h4 style="margin:0;">🎛️ Configuración y Personalización de Pantallas Digitales</h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">Ajuste transiciones, cintillo inferior, estilos de colores, audio, música de carrusel y módulos de reproducción automática para una, varias o todas sus pantallas.</p>
+              </div>
+              <div style="display:flex; gap:10px; align-items:center;">
+                <button type="button" class="btn-secondary" id="btnSelectAllScreens" style="font-size:0.85rem; padding:6px 12px; cursor:pointer;">
+                  ☑️ Seleccionar Todas
+                </button>
+                <button type="button" class="btn-secondary" id="btnDeselectAllScreens" style="font-size:0.85rem; padding:6px 12px; cursor:pointer;">
+                  ⬜ Deseleccionar
+                </button>
+              </div>
+            </div>
+
+            <!-- Selector de Pantallas Destino -->
+            <div style="background:rgba(15, 23, 42, 0.7); border:1px solid rgba(56, 189, 248, 0.25); border-radius:10px; padding:14px; margin-bottom:18px;">
+              <label style="font-weight:700; color:var(--accent-cyan); font-size:0.92rem; display:block; margin-bottom:8px;">
+                📺 Pantallas a Configurar (Marque una, varias o todas):
+              </label>
+              <div id="screenConfigDeviceList" class="screen-checkbox-grid">
+                <!-- Generado dinámicamente por JS -->
+              </div>
+            </div>
+
+            <!-- Acciones Rápidas: Clonar / Copiar Configuración -->
+            <div style="background:rgba(30, 41, 59, 0.5); border:1px dashed rgba(148, 163, 184, 0.3); border-radius:10px; padding:12px 16px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span style="font-size:0.9rem; font-weight:700; color:#cbd5e1;">📋 Copiar Configuración Existente:</span>
+                <select id="selCopyConfigSource" style="background:#0f172a; color:#fff; border:1px solid rgba(56,189,248,0.3); border-radius:6px; padding:6px 12px; font-size:0.85rem;">
+                  <option value="">Seleccione pantalla origen...</option>
+                </select>
+                <span style="font-size:0.85rem; color:#94a3b8;">➡️ a las pantallas seleccionadas arriba</span>
+              </div>
+              <button type="button" class="btn-secondary" id="btnExecuteCopyConfig" style="background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#38bdf8; font-weight:700; padding:6px 16px; border-radius:8px; cursor:pointer;">
+                ⚡ COPIAR CONFIGURACIÓN
+              </button>
+            </div>
+
+            <!-- Formulario de Configuración en Bloque / Individual -->
+            <div class="config-settings-grid">
+              <!-- Bloque 1: Apariencia, Modo y Colores -->
+              <div class="config-card">
+                <h5 class="config-card-title">🎨 Apariencia y Colores (5 Estilos)</h5>
+                
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">Modo de Pantalla:</label>
+                  <div class="radio-toggle-group">
+                    <label class="radio-pill"><input type="radio" name="cfgThemeMode" value="dark" checked> 🌙 Modo Oscuro (Dark)</label>
+                    <label class="radio-pill"><input type="radio" name="cfgThemeMode" value="light"> ☀️ Modo Día (Light)</label>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label for="cfgColorScheme" style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">Estilo de Color (Paleta Visual):</label>
+                  <select id="cfgColorScheme" class="admin-select-input" style="width:100%; background:#0f172a; color:#fff; border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:8px 12px; font-weight:600;">
+                    <option value="emerald">🟢 Esmeralda Neón & Oro (Fenix Clásico)</option>
+                    <option value="cyan">🔵 Azul Profundo & Cian Cyberpunk</option>
+                    <option value="gold">🟡 Dorado Imperial & Ámbar</option>
+                    <option value="purple">🟣 Púrpura Neón & Magenta</option>
+                    <option value="clean">⚪ Titanio Limpio (Alto Contraste)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="cfgDefaultService" style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">Servicio al Iniciar Pantalla:</label>
+                  <select id="cfgDefaultService" class="admin-select-input" style="width:100%; background:#0f172a; color:#fff; border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:8px 12px; font-weight:600;">
+                    <option value="loteria">🎲 Loterías (Pizarra Digital Automática)</option>
+                    <option value="hipica">🏇 Carreras de Caballos (Hípica)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Bloque 2: Cintillo y Tiempos de Transición -->
+              <div class="config-card">
+                <h5 class="config-card-title">⏱️ Cintillo Inferior & Desplazamiento</h5>
+
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label class="switch-label">
+                    <input type="checkbox" id="cfgTickerActive" checked>
+                    <span>Mostrar Cintillo Inferior de Pronósticos y Estadísticas</span>
+                  </label>
+                </div>
+
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">
+                    Velocidad de Desplazamiento del Cintillo: <strong id="lblCfgTickerSpeed" style="color:var(--accent-cyan);">160s</strong>
+                  </label>
+                  <input type="range" id="cfgTickerSpeed" min="60" max="300" step="10" value="160" style="width:100%;">
+                  <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#64748b; margin-top:4px;">
+                    <span>Rápido (60s)</span>
+                    <span>Recomendado (160s)</span>
+                    <span>Lento (300s)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bloque 3: Audio, Locución y Música de Feria/Circo -->
+              <div class="config-card">
+                <h5 class="config-card-title">🔊 Audio, Locución y Música de Fondo</h5>
+
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="switch-label">
+                    <input type="checkbox" id="cfgVoiceEnabled" checked>
+                    <span>Cantar Resultados con Voz Natural</span>
+                  </label>
+                </div>
+
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">
+                    Volumen de Voz: <strong id="lblCfgVoiceVol" style="color:var(--accent-cyan);">90%</strong>
+                  </label>
+                  <input type="range" id="cfgVoiceVolume" min="0" max="100" value="90" style="width:100%;">
+                </div>
+
+                <div class="form-group" style="margin-bottom:14px;">
+                  <label class="switch-label">
+                    <input type="checkbox" id="cfgAnimalSfx" checked>
+                    <span>Sonidos Cómicos de Animales (Burro, Caballo, Perro, Gato, Gallo, etc.) antes de la voz humana</span>
+                  </label>
+                </div>
+
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:12px 0;">
+
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label class="switch-label">
+                    <input type="checkbox" id="cfgBgMusicEnabled" checked>
+                    <span>Música de Circo / Carrusel en Transiciones Continuas</span>
+                  </label>
+                </div>
+
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label for="cfgBgMusicTrack" style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">Melodía de Circo / Carrusel:</label>
+                  <select id="cfgBgMusicTrack" class="admin-select-input" style="width:100%; background:#0f172a; color:#fff; border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:8px 12px; font-weight:600;">
+                    <option value="circus_waltz">🎠 Melodía 1: Vals Clásico de Circo ("Sobre las Olas")</option>
+                    <option value="carnival_parade">🎪 Melodía 2: Desfile Alegre de Circo ("Gladiadores")</option>
+                    <option value="carousel_magic">🎡 Melodía 3: Polka de Carrusel Mágico</option>
+                    <option value="custom">🎵 Archivo Personalizado o URL MP3</option>
+                  </select>
+                </div>
+
+                <div class="form-group" id="groupCustomMusicUrl" style="display:none; margin-bottom:10px;">
+                  <label for="cfgBgMusicCustomUrl" style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">URL o Cargar Archivo de Audio MP3:</label>
+                  <div style="display:flex; gap:8px;">
+                    <input type="text" id="cfgBgMusicCustomUrl" placeholder="https://.../musica.mp3" style="flex:1; background:#0f172a; color:#fff; border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:6px 12px;">
+                    <input type="file" id="fileCustomMusic" accept="audio/*" style="display:none;">
+                    <button type="button" class="btn-secondary" onclick="document.getElementById('fileCustomMusic').click()" style="padding:6px 14px; font-size:0.82rem; cursor:pointer;">
+                      📁 Subir Audio
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label style="font-weight:700; font-size:0.85rem; color:#cbd5e1; display:block; margin-bottom:6px;">
+                    Volumen de Música de Fondo: <strong id="lblCfgMusicVol" style="color:var(--accent-cyan);">25%</strong>
+                  </label>
+                  <input type="range" id="cfgBgMusicVolume" min="0" max="100" value="25" style="width:100%;">
+                </div>
+              </div>
+
+              <!-- Bloque 4: Módulos del Carrusel & Tiempos Individuales -->
+              <div class="config-card" style="grid-column: 1 / -1;">
+                <h5 class="config-card-title">🎠 Módulos del Carrusel de Reproducción Automática (Sin Intervención Humana)</h5>
+                <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 14px 0;">Configure la rotación continua para los televisores de las agencias. Asigne el tiempo exacto en segundos para cada módulo y seleccione qué sorteos desea incluir:</p>
+
+                <div class="carousel-modules-settings-grid">
+                  <!-- Módulo 1 -->
+                  <div class="module-config-box">
+                    <div class="module-config-header">
+                      <label class="switch-label">
+                        <input type="checkbox" id="modEnabled_top5_animalitos" checked>
+                        <strong>3.1 Top 5 Animalitos Más Vendidos</strong>
+                      </label>
+                      <div class="module-duration-input">
+                        <span>Duración:</span>
+                        <input type="number" id="modDuration_top5_animalitos" value="20" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
+                        <span>seg</span>
+                      </div>
+                    </div>
+                    <p class="module-desc">Pizarra en 5 columnas con los animalitos líderes (Guácharo, Granjita, Lotto Activo...).</p>
+                    <div class="module-lottery-picker" id="picker_top5_animalitos">
+                      <!-- Checkboxes de sorteos generados por JS -->
+                    </div>
+                  </div>
+
+                  <!-- Módulo 2 -->
+                  <div class="module-config-box">
+                    <div class="module-config-header">
+                      <label class="switch-label">
+                        <input type="checkbox" id="modEnabled_top5_triples" checked>
+                        <strong>3.2 Top 5 Triples y Terminales</strong>
+                      </label>
+                      <div class="module-duration-input">
+                        <span>Duración:</span>
+                        <input type="number" id="modDuration_top5_triples" value="20" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
+                        <span>seg</span>
+                      </div>
+                    </div>
+                    <p class="module-desc">Pizarra en 5 columnas con triples (Triple Zulia, Táchira, Chance, Zamorano, Caracas...).</p>
+                    <div class="module-lottery-picker" id="picker_top5_triples">
+                      <!-- Checkboxes de triples -->
+                    </div>
+                  </div>
+
+                  <!-- Módulo 3 -->
+                  <div class="module-config-box">
+                    <div class="module-config-header">
+                      <label class="switch-label">
+                        <input type="checkbox" id="modEnabled_group2_animalitos" checked>
+                        <strong>3.3 Animalitos Grupo 2 (6to lugar en adelante)</strong>
+                      </label>
+                      <div class="module-duration-input">
+                        <span>Duración:</span>
+                        <input type="number" id="modDuration_group2_animalitos" value="18" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
+                        <span>seg</span>
+                      </div>
+                    </div>
+                    <p class="module-desc">Loterías secundarias de animalitos (Selva Plus, Ruleta Activa, Granjita Plus...).</p>
+                    <div class="module-lottery-picker" id="picker_group2_animalitos">
+                      <!-- Checkboxes -->
+                    </div>
+                  </div>
+
+                  <!-- Módulo 4 -->
+                  <div class="module-config-box">
+                    <div class="module-config-header">
+                      <label class="switch-label">
+                        <input type="checkbox" id="modEnabled_pizarra_1000" checked>
+                        <strong>3.4 Pizarra General de Loterías</strong>
+                      </label>
+                      <div class="module-duration-input">
+                        <span>Duración:</span>
+                        <input type="number" id="modDuration_pizarra_1000" value="28" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
+                        <span>seg</span>
+                      </div>
+                    </div>
+                    <p class="module-desc">Pizarra 4 columnas paralelas de sorteos del día + banner publicitario lateral de agencia.</p>
+                  </div>
+
+                  <!-- Módulo 5 -->
+                  <div class="module-config-box">
+                    <div class="module-config-header">
+                      <label class="switch-label">
+                        <input type="checkbox" id="modEnabled_estadisticas" checked>
+                        <strong>3.5 Radiografía Estadística 30D & Pronósticos</strong>
+                      </label>
+                      <div class="module-duration-input">
+                        <span>Duración:</span>
+                        <input type="number" id="modDuration_estadisticas" value="20" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
+                        <span>seg</span>
+                      </div>
+                    </div>
+                    <p class="module-desc">Números más calientes, fríos / atrasados, datos por reventar e invitación a apostar en taquilla.</p>
+                  </div>
+
+                  <!-- Módulo 6 -->
+                  <div class="module-config-box">
+                    <div class="module-config-header">
+                      <label class="switch-label">
+                        <input type="checkbox" id="modEnabled_publicidad" checked>
+                        <strong>3.6 Publicidad Oficial de Loterías (3 Diapositivas)</strong>
+                      </label>
+                      <div class="module-duration-input">
+                        <span>Duración:</span>
+                        <input type="number" id="modDuration_publicidad" value="15" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
+                        <span>seg</span>
+                      </div>
+                    </div>
+                    <p class="module-desc">3 diapositivas promocionales con logos oficiales de los 5 sorteos y llamadas a la acción.</p>
+                  </div>
+
+                  <!-- Módulo 7 -->
+                  <div class="module-config-box">
+                    <div class="module-config-header">
+                      <label class="switch-label">
+                        <input type="checkbox" id="modEnabled_ultimos_5_sorteos" checked>
+                        <strong>3.7 Últimos 5 Sorteos Incorporados (Hero Card)</strong>
+                      </label>
+                      <div class="module-duration-input">
+                        <span>Duración:</span>
+                        <input type="number" id="modDuration_ultimos_5_sorteos" value="25" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
+                        <span>seg</span>
+                      </div>
+                    </div>
+                    <p class="module-desc">Exhibición de máximo impacto de los 5 sorteos más recientes en tarjeta destacada gigante.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botón de Guardado -->
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:12px; align-items:center;">
+              <div id="screenConfigMsg" style="font-weight:700; font-size:0.95rem;"></div>
+              <button type="button" class="btn-primary" id="btnSaveScreenConfig" style="padding:10px 24px; font-size:1.05rem; font-weight:800; background:linear-gradient(135deg, #0284c7, #10b981); cursor:pointer;">
+                💾 GUARDAR Y APLICAR A PANTALLAS
+              </button>
+            </div>
           </div>
         </div>
 
@@ -606,10 +998,11 @@
                 <input type="text" id="txtManualNumber" placeholder="Número (ej. 12)" style="width:100px; text-align:center;">
                 <input type="text" id="txtManualName" placeholder="Animal (ej. Caballo)" style="flex:1;">
               </div>
-              <div id="boxManualTriple" style="display:none; flex:2; gap:8px;">
-                <input type="text" id="txtManualTripleA" placeholder="Triple A (ej. 302)" style="width:110px; text-align:center;">
-                <input type="text" id="txtManualTripleB" placeholder="Triple B (ej. 634)" style="width:110px; text-align:center;">
-                <input type="text" id="txtManualSigno" placeholder="Signo (ej. Libra)" style="flex:1;">
+              <div id="boxManualTriple" style="display:none; flex:2.4; gap:8px;">
+                <input type="text" id="txtManualTripleA" placeholder="Triple A" style="width:85px; text-align:center;">
+                <input type="text" id="txtManualTripleB" placeholder="Triple B" style="width:85px; text-align:center;">
+                <input type="text" id="txtManualTripleC" placeholder="Triple C" style="width:85px; text-align:center;">
+                <input type="text" id="txtManualSigno" placeholder="Signo (ej. Libra)" style="flex:1; min-width:90px;">
               </div>
               <button class="btn-accent" id="btnSubmitManualLottery" style="flex:1.3; min-width:170px; font-weight:bold; background:linear-gradient(135deg, #0284c7, #10b981);">
                 💾 Publicar Resultado
@@ -634,31 +1027,13 @@
         <span class="platform-tag">SISTEMA DE TRANSMISIÓN MULTICANAL</span>
       </div>
 
-      <div class="activation-hero-box">
-        <span class="activation-label">CÓDIGO DE ACTIVACIÓN DE PANTALLA</span>
-        <div class="pin-code-hero">
-          <strong id="lblDevicePin">FX-000000</strong>
-        </div>
-      </div>
-
-      <div class="activation-steps-list">
-        <div class="step-item">
-          <div class="step-num">1</div>
-          <div class="step-text">Envía este código numérico de 6 dígitos al encargado de tu sede.</div>
-        </div>
-        <div class="step-item">
-          <div class="step-num">2</div>
-          <div class="step-text">El encargado registrará el nombre único de este dispositivo en su panel de control.</div>
-        </div>
-        <div class="step-item">
-          <div class="step-num">3</div>
-          <div class="step-text">Al ser activada, la pantalla se conectará de inmediato a las carreras y transmisiones en vivo.</div>
-        </div>
-      </div>
-
-      <div class="activation-actions">
-        <button type="button" class="btn-admin-login-link" id="btnShowLoginFromBanner" onclick="window.openAdminModalDirectly()">
-          🔑 Administrador
+      <div class="activation-hero-box" style="padding: 24px 20px;">
+        <span class="activation-label" style="font-size: 1rem; color: #38bdf8;">PANTALLA NO INICIADA</span>
+        <p style="color: #94a3b8; font-size: 0.95rem; margin: 12px 0 20px 0; line-height: 1.5;">
+          Esta pantalla requiere iniciar sesión con su Usuario y Contraseña asignados para comenzar la transmisión.
+        </p>
+        <button type="button" class="btn-submit-modern" onclick="window.openAdminModalDirectly()" style="background: linear-gradient(135deg, #0284c7, #10b981); font-size: 1.05rem; padding: 12px 28px; width: 100%; font-weight: 700;">
+          🔑 Iniciar Sesión de Pantalla
         </button>
       </div>
 
@@ -671,15 +1046,24 @@
   <!-- Main Container Layout -->
   <main class="main-container">
     
-    <!-- Sidebar: Racetracks Channel Catalog -->
-    <aside class="sidebar-channels" id="sidebarChannels">
+    <!-- Sidebar: Racetracks Channel Catalog (Oculta al inicio - Requisito 6) -->
+    <aside class="sidebar-channels collapsed" id="sidebarChannels">
       <div class="sidebar-header">
-        <h3><span class="icon">🏇</span> Hipódromos en Vivo</h3>
-        <span class="badge-count" id="lblChannelCount">14</span>
+        <h3><span class="icon">🏇</span> Hipódromos</h3>
+        <span class="badge-count" id="lblChannelCount">En Vivo</span>
       </div>
       
       <div class="sidebar-search">
         <input type="text" id="txtSearchChannel" placeholder="Buscar hipódromo (Ej. Gulfstream, Saratoga)...">
+      </div>
+      
+      <div class="sidebar-filter-tabs">
+        <button type="button" class="sidebar-filter-btn active" id="btnFilterActiveOnly" onclick="window.setSidebarFilter('active')">
+          🟢 En Vivo (<span id="lblFilterActiveCount">39</span>)
+        </button>
+        <button type="button" class="sidebar-filter-btn" id="btnFilterAll" onclick="window.setSidebarFilter('all')">
+          ⚪ Todos (<span id="lblFilterAllCount">53</span>)
+        </button>
       </div>
       
       <div class="channel-list" id="channelListContainer">
@@ -690,16 +1074,17 @@
     <!-- Main Viewport: Multi-Channel Grid Matrix -->
     <section class="grid-viewport" id="gridViewport" data-grid="1">
       
-      <!-- Video Cell 1 -->
+      <!-- Video Cell 1 (Requisitos 8 y 9: sin footer, controles en esquina superior) -->
       <div class="video-cell focused" id="cell-1" data-cell="1" tabindex="0">
         <div class="cell-header">
-          <div class="channel-info">
-            <span class="channel-flag" id="cell1Flag">🇺🇸</span>
-            <span class="channel-name" id="cell1Name">Gulfstream Park</span>
+          <div class="cell-header-left">
+            <select class="channel-select-dropdown" data-cell="1" id="selectCell1" title="Seleccionar Hipódromo"></select>
             <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
           </div>
-          <div class="cell-controls">
-            <select class="channel-select-dropdown" data-cell="1" id="selectCell1"></select>
+          <div class="cell-header-right">
+            <button class="btn-cell-fs" data-cell="1" id="btnFullscreen1" title="Pantalla Completa Celda" onclick="window.toggleCellFullscreen(1)">
+              <span class="icon">⛶</span>
+            </button>
           </div>
         </div>
         
@@ -707,90 +1092,62 @@
           <video id="video-1" autoplay muted playsinline></video>
           <div class="video-loader" id="loader-1"><div class="spinner"></div><span>Conectando Señal...</span></div>
         </div>
-
-        <div class="cell-footer">
-          <button class="btn-audio" data-cell="1" id="btnAudio1">
-            <span class="icon">🔇</span> SILENCIADO
-          </button>
-          <span class="cell-status-text" id="cell1StatusText">Carreras en Vivo</span>
-          <button class="btn-fullscreen" data-cell="1" id="btnFullscreen1" title="Pantalla Completa">
-            <span class="icon">⛶</span>
-          </button>
-        </div>
       </div>
 
       <!-- Video Cell 2 -->
       <div class="video-cell" id="cell-2" data-cell="2" tabindex="0" style="display: none;">
         <div class="cell-header">
-          <div class="channel-info">
-            <span class="channel-flag" id="cell2Flag">🇺🇸</span>
-            <span class="channel-name" id="cell2Name">Saratoga</span>
+          <div class="cell-header-left">
+            <select class="channel-select-dropdown" data-cell="2" id="selectCell2" title="Seleccionar Hipódromo"></select>
             <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
           </div>
-          <div class="cell-controls">
-            <select class="channel-select-dropdown" data-cell="2" id="selectCell2"></select>
+          <div class="cell-header-right">
+            <button class="btn-cell-fs" data-cell="2" id="btnFullscreen2" title="Pantalla Completa Celda" onclick="window.toggleCellFullscreen(2)">
+              <span class="icon">⛶</span>
+            </button>
           </div>
         </div>
         <div class="video-wrapper">
           <video id="video-2" autoplay muted playsinline></video>
           <div class="video-loader" id="loader-2"><div class="spinner"></div><span>Conectando Señal...</span></div>
         </div>
-        <div class="cell-footer">
-          <button class="btn-audio" data-cell="2" id="btnAudio2">
-            <span class="icon">🔇</span> SILENCIADO
-          </button>
-          <span class="cell-status-text" id="cell2StatusText">Carreras en Vivo</span>
-          <button class="btn-fullscreen" data-cell="2" id="btnFullscreen2"><span class="icon">⛶</span></button>
-        </div>
       </div>
 
       <!-- Video Cell 3 -->
       <div class="video-cell" id="cell-3" data-cell="3" tabindex="0" style="display: none;">
         <div class="cell-header">
-          <div class="channel-info">
-            <span class="channel-flag" id="cell3Flag">🇺🇸</span>
-            <span class="channel-name" id="cell3Name">Aqueduct Racetrack</span>
+          <div class="cell-header-left">
+            <select class="channel-select-dropdown" data-cell="3" id="selectCell3" title="Seleccionar Hipódromo"></select>
             <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
           </div>
-          <div class="cell-controls">
-            <select class="channel-select-dropdown" data-cell="3" id="selectCell3"></select>
+          <div class="cell-header-right">
+            <button class="btn-cell-fs" data-cell="3" id="btnFullscreen3" title="Pantalla Completa Celda" onclick="window.toggleCellFullscreen(3)">
+              <span class="icon">⛶</span>
+            </button>
           </div>
         </div>
         <div class="video-wrapper">
           <video id="video-3" autoplay muted playsinline></video>
           <div class="video-loader" id="loader-3"><div class="spinner"></div><span>Conectando Señal...</span></div>
         </div>
-        <div class="cell-footer">
-          <button class="btn-audio" data-cell="3" id="btnAudio3">
-            <span class="icon">🔇</span> SILENCIADO
-          </button>
-          <span class="cell-status-text" id="cell3StatusText">Carreras en Vivo</span>
-          <button class="btn-fullscreen" data-cell="3" id="btnFullscreen3"><span class="icon">⛶</span></button>
-        </div>
       </div>
 
       <!-- Video Cell 4 -->
       <div class="video-cell" id="cell-4" data-cell="4" tabindex="0" style="display: none;">
         <div class="cell-header">
-          <div class="channel-info">
-            <span class="channel-flag" id="cell4Flag">🇺🇸</span>
-            <span class="channel-name" id="cell4Name">Parx Racing</span>
+          <div class="cell-header-left">
+            <select class="channel-select-dropdown" data-cell="4" id="selectCell4" title="Seleccionar Hipódromo"></select>
             <span class="badge-live"><span class="live-dot"></span> EN VIVO</span>
           </div>
-          <div class="cell-controls">
-            <select class="channel-select-dropdown" data-cell="4" id="selectCell4"></select>
+          <div class="cell-header-right">
+            <button class="btn-cell-fs" data-cell="4" id="btnFullscreen4" title="Pantalla Completa Celda" onclick="window.toggleCellFullscreen(4)">
+              <span class="icon">⛶</span>
+            </button>
           </div>
         </div>
         <div class="video-wrapper">
           <video id="video-4" autoplay muted playsinline></video>
           <div class="video-loader" id="loader-4"><div class="spinner"></div><span>Conectando Señal...</span></div>
-        </div>
-        <div class="cell-footer">
-          <button class="btn-audio" data-cell="4" id="btnAudio4">
-            <span class="icon">🔇</span> SILENCIADO
-          </button>
-          <span class="cell-status-text" id="cell4StatusText">Carreras en Vivo</span>
-          <button class="btn-fullscreen" data-cell="4" id="btnFullscreen4"><span class="icon">⛶</span></button>
         </div>
       </div>
 
@@ -798,87 +1155,35 @@
 
     <!-- View 2: Lottery Live Board (Pizarra Dinámica Top 10 + Resumen General + Ticker) -->
     <section class="service-view-panel" id="panelLottery" style="display: none;">
-      <!-- Hero Top Bar (Compacto & Optimizado - Petición 2 y 3) -->
-      <div class="lottery-top-bar compact">
+      <!-- Hero Top Bar (1 Sola Línea Completa - Requisito 8) -->
+      <div class="lottery-top-bar compact single-line-bar">
         <div class="lottery-top-bar-left">
-          <!-- Selector Desplegable de Lotería (Petición 2) -->
-          <div class="lottery-select-wrapper">
-            <span class="select-prefix">🎯 Lotería:</span>
-            <select id="selLotteryGameNav" class="lottery-select-nav" onchange="window.selectLotteryGame(this.value, true)" title="Seleccionar Lotería"></select>
-          </div>
           <div class="lottery-date-badge" id="lblLotteryCurrentDate">
-            📅 Sábado, 05 de Septiembre
+            📅 Domingo, 06/09/26
           </div>
-          <!-- Reloj en Tiempo Real (Petición 3) -->
+          <!-- Reloj en Tiempo Real (Venezuela UTC-4) -->
           <div class="lottery-clock-badge" id="lblLotteryLiveClock">
             🕒 --:--:-- --
           </div>
-        </div>
-
-        <div class="lottery-controls-bar">
-          <!-- Modo Selector: Carrusel vs Resumen -->
-          <div class="lottery-mode-pills">
-            <button class="btn-mode-pill active" id="btnModeCarousel" onclick="window.setLotteryDisplayMode('carousel')">
-              🎠 Carrusel
-            </button>
-            <button class="btn-mode-pill" id="btnModeOverview" onclick="window.setLotteryDisplayMode('overview')">
-              📋 Resumen General
-            </button>
-          </div>
-          <button class="btn-mode-pill" id="btnLotteryStatsTrigger" onclick="window.openLotteryStatsModal()">
-            📊 Estadísticas 30D
-          </button>
-          <button class="btn-mode-pill active" id="btnVoiceToggleMain" onclick="window.toggleLotteryVoiceAnnouncements()">
-            <span id="lblVoiceIcon">🔊</span> <span id="lblVoiceText">Voz: ON</span>
-          </button>
-          <button class="btn-carousel-toggle active" id="btnToggleLotteryCarousel" title="Alternar Rotación Automática">
+          <!-- Indicador del Módulo Activo en Pantalla -->
+          <div class="lottery-module-badge" id="lblActiveCarouselModule">
             <span class="carousel-dot pulse"></span>
-            <span id="lblCarouselState">Rotación: ACTIVA (15s)</span>
-          </button>
-          <button class="btn-fullscreen-lottery" id="btnFullscreenLotteryMain" onclick="window.toggleAppFullscreen()" title="Pantalla Completa (Tecla F)">
-            ⛶ Pantalla Completa
-          </button>
-        </div>
-      </div>
-
-      <!-- VISTA A: MODO CARRUSEL DINÁMICO (Con Pizarra Multicolumna Estilo 1000Resultados) -->
-      <div id="lotteryCarouselView">
-        <!-- Main Display Board -->
-        <div class="lottery-main-board" id="lotteryMainBoard">
-          <!-- Left: Hero Card con Barra de Cuenta Regresiva (Petición 5 y 6) -->
-          <div class="lottery-hero-card" id="lotteryHeroCard">
-            <!-- Rendered via JS -->
+            <span id="lblActiveModuleName">Cargando Pizarra Digital...</span>
           </div>
+        </div>
 
-          <!-- Right: Pizarra Multicolumna Estilo 1000Resultados (Petición 4) -->
-          <div class="lottery-timeline-container" id="lotteryTimelineContainer">
-            <div class="timeline-header">
-              <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <h3 id="lblTimelineGameTitle">📊 Pizarra de Resultados Oficiales</h3>
-                <span class="timeline-meta" id="lblTimelineProgress">Sorteos de hoy</span>
-              </div>
-              <div class="timeline-view-switch" id="timelineCategorySwitch">
-                <button class="btn-cat-switch active" id="btnCatAnimalitos" onclick="window.setTimelineCategory('animalitos')">🐾 Animalitos (4 Columnas)</button>
-                <button class="btn-cat-switch" id="btnCatTriples" onclick="window.setTimelineCategory('triples')">🎰 Triples y Signos (4 Columnas)</button>
-              </div>
-            </div>
-            <!-- Multi-column Grid (Pizarra 1000Resultados) -->
-            <div class="pizarra-1000-board" id="pizarra1000Board">
-              <!-- Rendered via JS: 4 columns side by side just like Image 4 -->
-            </div>
+        <div class="lottery-top-bar-right">
+          <!-- Numeración de Páginas Dinámica (Requisito: 1 de 5, 2 de 5) -->
+          <div class="lottery-page-indicator-badge" id="lblLotteryPageBadge" title="Progreso de pantallas del carrusel">
+            <span class="page-badge-icon">📑</span>
+            <span class="page-badge-text" id="lblLotteryPageText">1 de 5</span>
           </div>
         </div>
       </div>
 
-      <!-- VISTA B: MODO RESUMEN GENERAL (TODAS LAS LOTERÍAS EN 1 SOLA PANTALLA) -->
-      <div id="lotteryOverviewView" style="display: none;">
-        <div class="overview-header-bar">
-          <h3>📊 Resumen Consolidado del Día • Todas las Loterías y Ruletas</h3>
-          <span class="overview-badge">Actualización en Vivo • Hora de Venezuela (UTC-4)</span>
-        </div>
-        <div class="lottery-overview-grid" id="lotteryOverviewGrid">
-          <!-- Rendered via JS with all 10 lotteries side-by-side -->
-        </div>
+      <!-- ESCENARIO PRINCIPAL DEL CARRUSEL CONTINUO (7 MÓDULOS EN BUCLE SIN INTERVENCIÓN HUMANA) -->
+      <div class="lottery-carousel-stage" id="lotteryCarouselStage">
+        <!-- Renderizado dinámicamente según el módulo activo del carrusel -->
       </div>
 
       <!-- Cintillo Inferior Desplazable (Live Ticker con Pronósticos y Estadísticas) - Petición 1 -->
@@ -890,9 +1195,6 @@
         <div class="ticker-content-track" id="tickerContentTrack">
           <!-- Marquee items populated via JS -->
         </div>
-        <button class="btn-ticker-fullscreen" onclick="window.toggleAppFullscreen()" title="Ver en Pantalla Completa (Tecla F)">
-          ⛶ PANTALLA COMPLETA
-        </button>
       </div>
     </section>
 
@@ -1032,6 +1334,6 @@
   </script>
 
   <!-- App Logic (Anti-Cache) -->
-  <script src="/app.js?v=4.0"></script>
+  <script src="/app.js?v=6.2"></script>
 </body>
 </html>

@@ -129,6 +129,42 @@ const TOP_10_GAMES = [
     logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplezamorano/logo.png',
     color: '#f97316',
     hours: ['12:00 PM', '04:00 PM', '07:00 PM']
+  },
+  {
+    id: 'triple-caracas',
+    name: 'Triple Caracas',
+    shortName: 'Caracas',
+    type: 'triples',
+    slug1000: 'triple-caracas',
+    tuazarPattern: /triple\s+caracas/i,
+    icon: '🏛️',
+    logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplecaracas/logo.png',
+    color: '#ef4444',
+    hours: ['01:00 PM', '04:30 PM', '07:00 PM']
+  },
+  {
+    id: 'ruleta-activa',
+    name: 'Ruleta Activa',
+    shortName: 'Ruleta Activa',
+    type: 'animalitos',
+    slug1000: 'ruleta-activa',
+    tuazarPattern: /ruleta\s+activa/i,
+    icon: '🎡',
+    logoUrl: 'https://api.1000resultados.com/public/images/animals/ruletaactiva/logo.png',
+    color: '#0ea5e9',
+    hours: ['08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM']
+  },
+  {
+    id: 'granjita-plus',
+    name: 'La Granjita Plus',
+    shortName: 'Granjita Plus',
+    type: 'animalitos',
+    slug1000: 'granjita-plus',
+    tuazarPattern: /granjita\s+plus/i,
+    icon: '🌟',
+    logoUrl: 'https://api.1000resultados.com/public/images/animals/granjitaplus/logo.png',
+    color: '#84cc16',
+    hours: ['08:10 AM', '09:10 AM', '10:10 AM', '11:10 AM', '12:10 PM', '01:10 PM', '02:10 PM', '03:10 PM', '04:10 PM', '05:10 PM', '06:10 PM', '07:10 PM']
   }
 ];
 
@@ -255,7 +291,7 @@ async function scrape1000Resultados(gameSlug) {
       if (!time) continue;
 
       const isPending = /en\s+espera/i.test(art);
-      let number = null, name = null, tripleA = null, tripleB = null, signo = null, image = null;
+      let number = null, name = null, tripleA = null, tripleB = null, tripleC = null, signo = null, image = null;
 
       if (!isPending) {
         // B64 animalitos
@@ -274,6 +310,9 @@ async function scrape1000Resultados(gameSlug) {
           const nums = triplesMatch.map(m => m.replace(/[^0-9]/g, ''));
           tripleA = nums[0];
           tripleB = nums[1];
+          if (nums.length >= 3) {
+            tripleC = nums[2];
+          }
         }
         const signoMatch = art.match(/px-6 py-2 rounded-full border text-sm font-extrabold[^>]*>\s*([A-Za-z]+)\s*<\/span>/i);
         if (signoMatch) {
@@ -300,6 +339,7 @@ async function scrape1000Resultados(gameSlug) {
         name,
         tripleA,
         tripleB,
+        tripleC,
         signo,
         image
       });
@@ -422,6 +462,7 @@ async function scrapeTuAzarTriples() {
           isPending,
           tripleA: nums[0] || null,
           tripleB: nums[1] || null,
+          tripleC: nums[2] || null,
           signo: signo
         });
       }
@@ -521,12 +562,13 @@ async function syncGame(gameId) {
       }
 
       if (!nd.isPending) {
-        if (targetDraw.isPending || targetDraw.number !== nd.number || targetDraw.tripleA !== nd.tripleA) {
+        if (targetDraw.isPending || targetDraw.number !== nd.number || targetDraw.tripleA !== nd.tripleA || targetDraw.tripleC !== nd.tripleC) {
           targetDraw.isPending = false;
           targetDraw.number = nd.number || null;
           targetDraw.name = nd.name || null;
           targetDraw.tripleA = nd.tripleA || null;
           targetDraw.tripleB = nd.tripleB || null;
+          targetDraw.tripleC = nd.tripleC || null;
           targetDraw.signo = nd.signo || null;
           if (nd.image) targetDraw.image = nd.image;
           hasChanges = true;
@@ -581,7 +623,7 @@ function checkScheduledDraws() {
 }
 
 // API de Emergencia Manual
-function setManualResult({ gameId, time, number, name, tripleA, tripleB, signo }) {
+function setManualResult({ gameId, time, number, name, tripleA, tripleB, tripleC, signo }) {
   const game = TOP_10_GAMES.find(g => g.id === gameId);
   if (!game) return { success: false, error: 'Juego no encontrado' };
 
@@ -615,6 +657,7 @@ function setManualResult({ gameId, time, number, name, tripleA, tripleB, signo }
   targetDraw.name = name || null;
   targetDraw.tripleA = tripleA || null;
   targetDraw.tripleB = tripleB || null;
+  targetDraw.tripleC = tripleC || null;
   targetDraw.signo = signo || null;
   targetDraw.isManual = true; // Marca permanente de anulación manual
 

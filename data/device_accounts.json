@@ -1,0 +1,174 @@
+[
+  {
+    "username": "tv1_fenix",
+    "pass": "tv1234",
+    "clientId": "fenix",
+    "clientName": "Fenix",
+    "tvName": "Pantalla 1 (Fenix)",
+    "createdAt": "2026-09-07",
+    "config": {
+      "themeMode": "dark",
+      "colorScheme": "emerald",
+      "tickerSpeed": 160,
+      "tickerActive": true,
+      "voiceEnabled": true,
+      "voiceVolume": 0.9,
+      "animalSfxEnabled": true,
+      "bgMusicEnabled": true,
+      "circusMusicEnabled": true,
+      "bgMusicTrack": "carnival_parade",
+      "circusMusicTrack": "carnival_parade",
+      "bgMusicCustomUrl": "",
+      "customMusicUrl": "",
+      "bgMusicVolume": 0.25,
+      "circusMusicVolume": 0.25,
+      "defaultService": "loteria",
+      "modules": {
+        "top5_animalitos": {
+          "enabled": true,
+          "duration": 20,
+          "title": "Top 5 Animalitos Más Vendidos",
+          "games": [
+            "guacharo-activo",
+            "lotto-activo",
+            "la-granjita",
+            "guacharito-millonario",
+            "la-ricachona"
+          ]
+        },
+        "top5_triples": {
+          "enabled": true,
+          "duration": 20,
+          "title": "Top 5 Triples y Terminales",
+          "games": [
+            "triple-zulia",
+            "triple-tachira",
+            "triple-chance",
+            "triple-zamorano",
+            "triple-caracas"
+          ]
+        },
+        "group2_animalitos": {
+          "enabled": true,
+          "duration": 18,
+          "title": "Animalitos - Grupo 2",
+          "games": [
+            "selva-plus",
+            "ruleta-activa",
+            "granjita-plus"
+          ]
+        },
+        "pizarra_1000": {
+          "enabled": true,
+          "duration": 28,
+          "title": "Pizarra General de Loterías"
+        },
+        "estadisticas": {
+          "enabled": true,
+          "duration": 20,
+          "title": "Estadísticas & Pronósticos 30D"
+        },
+        "publicidad": {
+          "enabled": true,
+          "duration": 15,
+          "title": "Publicidad Oficial de Loterías"
+        },
+        "ultimos_5_sorteos": {
+          "enabled": true,
+          "duration": 25,
+          "title": "Últimos 5 Sorteos Incorporados (Hero Card)"
+        }
+      }
+    },
+    "status": "APPROVED",
+    "defaultService": "loteria",
+    "activeSessionId": null
+  },
+  {
+    "username": "taq_4459",
+    "pass": "taqpass2026",
+    "clientId": "fenix",
+    "clientName": "Fenix",
+    "tvName": "Taquilla Central 3736",
+    "role": "DEVICE",
+    "planType": "MONTHLY",
+    "createdAt": "2026-09-07T19:55:33.739Z",
+    "config": {
+      "themeMode": "dark",
+      "colorScheme": "emerald",
+      "tickerSpeed": 160,
+      "tickerActive": true,
+      "voiceEnabled": true,
+      "voiceVolume": 0.9,
+      "animalSfxEnabled": true,
+      "bgMusicEnabled": true,
+      "circusMusicEnabled": true,
+      "bgMusicTrack": "carnival_parade",
+      "circusMusicTrack": "carnival_parade",
+      "bgMusicCustomUrl": "",
+      "customMusicUrl": "",
+      "bgMusicVolume": 0.25,
+      "circusMusicVolume": 0.25,
+      "defaultService": "loteria",
+      "modules": {
+        "top5_animalitos": {
+          "enabled": true,
+          "duration": 20,
+          "title": "Top 5 Animalitos Más Vendidos",
+          "games": [
+            "guacharo-activo",
+            "lotto-activo",
+            "la-granjita",
+            "guacharito-millonario",
+            "la-ricachona"
+          ]
+        },
+        "top5_triples": {
+          "enabled": true,
+          "duration": 20,
+          "title": "Top 5 Triples y Terminales",
+          "games": [
+            "triple-zulia",
+            "triple-tachira",
+            "triple-chance",
+            "triple-zamorano",
+            "triple-caracas"
+          ]
+        },
+        "group2_animalitos": {
+          "enabled": true,
+          "duration": 18,
+          "title": "Animalitos - Grupo 2",
+          "games": [
+            "selva-plus",
+            "ruleta-activa",
+            "granjita-plus"
+          ]
+        },
+        "pizarra_1000": {
+          "enabled": true,
+          "duration": 28,
+          "title": "Pizarra General de Loterías"
+        },
+        "estadisticas": {
+          "enabled": true,
+          "duration": 20,
+          "title": "Estadísticas & Pronósticos 30D"
+        },
+        "publicidad": {
+          "enabled": true,
+          "duration": 15,
+          "title": "Publicidad Oficial de Loterías"
+        },
+        "ultimos_5_sorteos": {
+          "enabled": true,
+          "duration": 25,
+          "title": "Últimos 5 Sorteos Incorporados (Hero Card)"
+        }
+      }
+    },
+    "status": "APPROVED",
+    "defaultService": "loteria",
+    "activeSessionId": null
+  }
+]

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = 'visual_fx_fenix_secret_key_2026';
@@ -34,14 +35,76 @@ const USERS = {
   }
 };
 
+// Configuración por Defecto para Pizarras Digitales (SaaS Visual-FX)
+const DEFAULT_SCREEN_CONFIG = {
+  themeMode: 'dark', // 'dark' | 'light'
+  colorScheme: 'emerald', // 'emerald' | 'cyan' | 'gold' | 'purple' | 'clean'
+  tickerSpeed: 160, // Segundos para el recorrido del cintillo
+  tickerActive: true,
+  voiceEnabled: true,
+  voiceVolume: 0.9,
+  animalSfxEnabled: true,
+  bgMusicEnabled: true,
+  circusMusicEnabled: true,
+  bgMusicTrack: 'carnival_parade', // 'circus_waltz' | 'carnival_parade' | 'carousel_magic' | 'custom'
+  circusMusicTrack: 'carnival_parade',
+  bgMusicCustomUrl: '',
+  customMusicUrl: '',
+  bgMusicVolume: 0.25,
+  circusMusicVolume: 0.25,
+  defaultService: 'loteria', // 'loteria' | 'hipica'
+  modules: {
+    top5_animalitos: {
+      enabled: true,
+      duration: 20,
+      title: 'Top 5 Animalitos Más Vendidos',
+      games: ['guacharo-activo', 'lotto-activo', 'la-granjita', 'guacharito-millonario', 'la-ricachona']
+    },
+    top5_triples: {
+      enabled: true,
+      duration: 20,
+      title: 'Top 5 Triples y Terminales',
+      games: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-zamorano', 'triple-caracas']
+    },
+    group2_animalitos: {
+      enabled: true,
+      duration: 18,
+      title: 'Animalitos - Grupo 2',
+      games: ['selva-plus', 'ruleta-activa', 'granjita-plus']
+    },
+    pizarra_1000: {
+      enabled: true,
+      duration: 28,
+      title: 'Pizarra General de Loterías'
+    },
+    estadisticas: {
+      enabled: true,
+      duration: 20,
+      title: 'Estadísticas & Pronósticos 30D'
+    },
+    publicidad: {
+      enabled: true,
+      duration: 15,
+      title: 'Publicidad Oficial de Loterías'
+    },
+    ultimos_5_sorteos: {
+      enabled: true,
+      duration: 25,
+      title: 'Últimos 5 Sorteos Incorporados (Hero Card)'
+    }
+  }
+};
+
 // Base de datos en Memoria y Persistencia en Disco
 const DATA_DIR = path.join(__dirname, 'data');
 const CLIENTS_FILE = path.join(DATA_DIR, 'clients.json');
 const DEVICES_FILE = path.join(DATA_DIR, 'devices.json');
+const DEVICE_ACCOUNTS_FILE = path.join(DATA_DIR, 'device_accounts.json');
 
 const CLIENTS = new Map();
 const APPROVED_DEVICES = new Map();
 const PENDING_ACTIVATIONS = new Map();
+const DEVICE_ACCOUNTS = new Map();
 
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {
@@ -61,6 +124,9 @@ function saveDatabase() {
 
     const devicesArr = Array.from(APPROVED_DEVICES.entries());
     fs.writeFileSync(DEVICES_FILE, JSON.stringify(devicesArr, null, 2), 'utf8');
+
+    const deviceAccsArr = Array.from(DEVICE_ACCOUNTS.values());
+    fs.writeFileSync(DEVICE_ACCOUNTS_FILE, JSON.stringify(deviceAccsArr, null, 2), 'utf8');
   } catch (e) {
     console.error('Error guardando base de datos en disco:', e);
   }
@@ -175,18 +241,82 @@ function loadDatabase() {
     });
   }
 
+  // Asegurar que todos los dispositivos cargados tengan su objeto config completo
+  for (const [id, dev] of APPROVED_DEVICES.entries()) {
+    if (!dev.config) {
+      dev.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+    } else {
+      dev.config = { ...DEFAULT_SCREEN_CONFIG, ...dev.config };
+      if (!dev.config.modules) {
+        dev.config.modules = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG.modules));
+      }
+    }
+  }
+
+  // 3. Cargar Cuentas de Dispositivos (Pantallas TV) desde JSON
+  try {
+    if (fs.existsSync(DEVICE_ACCOUNTS_FILE)) {
+      const raw = fs.readFileSync(DEVICE_ACCOUNTS_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        DEVICE_ACCOUNTS.clear();
+        for (const acc of parsed) {
+          if (acc && acc.username) {
+            const cleanKey = acc.username.toLowerCase();
+            acc.username = cleanKey;
+            if (!acc.config) acc.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+            if (!acc.status) acc.status = 'APPROVED';
+            if (!acc.defaultService) acc.defaultService = 'loteria';
+            if (acc.activeSessionId === undefined) acc.activeSessionId = null;
+            DEVICE_ACCOUNTS.set(cleanKey, acc);
+            APPROVED_DEVICES.set(cleanKey, acc);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error leyendo device_accounts.json:', e);
+  }
+
+  // Asegurar al menos una cuenta de pantalla por defecto para Fenix
+  if (!DEVICE_ACCOUNTS.has('tv1_fenix')) {
+    const defaultTv = {
+      username: 'tv1_fenix',
+      pass: 'tv1234',
+      clientId: 'fenix',
+      clientName: 'Fenix',
+      tvName: 'Pantalla 1 (Fenix)',
+      role: 'DEVICE',
+      status: 'APPROVED',
+      activeSessionId: null,
+      defaultService: 'loteria',
+      activeService: 'loteria',
+      config: JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG)),
+      createdAt: '2026-09-07'
+    };
+    DEVICE_ACCOUNTS.set('tv1_fenix', defaultTv);
+    APPROVED_DEVICES.set('tv1_fenix', defaultTv);
+  }
+
+  // Asegurar que los clientes tengan su config inicializada
+  for (const client of CLIENTS.values()) {
+    if (!client.config) {
+      client.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+    }
+  }
+
   saveDatabase();
 }
 
 // Inicializar persistencia de datos
 loadDatabase();
 
-// Inicio de Sesión Multi-Nivel (Super Admin y Clientes)
+// Inicio de Sesión Multi-Nivel (Super Admin, Clientes y Dispositivos)
 function loginUser(username, password) {
   const cleanUser = (username || '').trim().toLowerCase();
   const cleanPass = (password || '').trim();
 
-  // 1. Verificar si es Super Admin o Técnico
+  // 1. Verificar si es Super Admin o Técnico (Humano operador: acceso directo sin PIN)
   if (USERS[cleanUser]) {
     const u = USERS[cleanUser];
     const match = Array.isArray(u.passwords) ? u.passwords.includes(cleanPass) : u.pass === cleanPass;
@@ -210,13 +340,14 @@ function loginUser(username, password) {
           name: u.name,
           role: u.role,
           clientId: null,
-          clientName: 'SaaS Platform Master'
+          clientName: 'SaaS Platform Master',
+          config: DEFAULT_SCREEN_CONFIG
         }
       };
     }
   }
 
-  // 2. Verificar si es un Encargado de Cliente (Fenix, Fenix 2023, etc.)
+  // 2. Verificar si es un Encargado de Cliente (Fenix, Fenix 2023, etc.) (Humano operador: acceso directo sin PIN)
   for (const client of CLIENTS.values()) {
     if (client.managerUsername.toLowerCase() === cleanUser) {
       if (client.pass !== cleanPass) {
@@ -225,6 +356,8 @@ function loginUser(username, password) {
       if (client.status !== 'ACTIVE') {
         return { success: false, error: 'La cuenta de este Cliente está suspendida. Contacte al Super Administrador.' };
       }
+
+      const clientCfg = client.config || JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
 
       const token = jwt.sign(
         {
@@ -250,10 +383,62 @@ function loginUser(username, password) {
           clientId: client.clientId,
           clientName: client.name,
           maxDevices: client.maxDevices,
-          planType: client.planType
+          planType: client.planType,
+          config: clientCfg
         }
       };
     }
+  }
+
+  // 3. Verificar si es una Cuenta de Dispositivo / Pantalla TV (Usuario + Contraseña con Sesión Única)
+  if (DEVICE_ACCOUNTS.has(cleanUser)) {
+    const devAcc = DEVICE_ACCOUNTS.get(cleanUser);
+    if (devAcc.pass !== cleanPass) {
+      return { success: false, error: 'Contraseña de pantalla incorrecta.' };
+    }
+    const client = CLIENTS.get(devAcc.clientId);
+    if (client && client.status !== 'ACTIVE') {
+      return { success: false, error: 'La cuenta del cliente titular está suspendida.' };
+    }
+
+    // Generar nuevo identificador de sesión única para este inicio de sesión
+    const newSessionId = crypto.randomUUID ? crypto.randomUUID() : ('sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+    devAcc.activeSessionId = newSessionId;
+    devAcc.lastSeen = new Date().toISOString();
+    devAcc.status = 'APPROVED';
+    saveDatabase();
+
+    const devCfg = devAcc.config || (client && client.config) || DEFAULT_SCREEN_CONFIG;
+
+    const token = jwt.sign(
+      {
+        username: devAcc.username,
+        name: devAcc.tvName || devAcc.username,
+        role: 'DEVICE',
+        clientId: devAcc.clientId,
+        clientName: devAcc.clientName || client?.name || 'Fenix',
+        tvName: devAcc.tvName || devAcc.username,
+        sessionId: newSessionId
+      },
+      JWT_SECRET,
+      { expiresIn: '365d' }
+    );
+
+    return {
+      success: true,
+      token,
+      user: {
+        username: devAcc.username,
+        name: devAcc.tvName || devAcc.username,
+        role: 'DEVICE',
+        clientId: devAcc.clientId,
+        clientName: devAcc.clientName || client?.name || 'Fenix',
+        tvName: devAcc.tvName || devAcc.username,
+        sessionId: newSessionId,
+        config: devCfg,
+        defaultService: devAcc.defaultService || devCfg.defaultService || 'loteria'
+      }
+    };
   }
 
   return { success: false, error: 'Usuario o contraseña no encontrados.' };
@@ -268,89 +453,60 @@ function verifyToken(token) {
 }
 
 // Verificación de Estado de Dispositivo (Televisor / Pantalla)
-// Admite decodedUser / token para auto-autorizar consolas de Super Admin o Clientes
+// Concurrencia: sólo se permite UNA sesión activa simultánea por cuenta de dispositivo
 function checkDeviceStatus(deviceId, activeService, ipAddress, userToken) {
-  if (!deviceId) return { status: 'MISSING_DEVICE_ID' };
+  let dId = deviceId;
+  let service = activeService;
+  let ip = ipAddress;
+  let effectiveToken = userToken;
 
-  // AUTO-AUTORIZACIÓN: Si el usuario es Super Admin, auto-aprobar su pantalla inmediatamente
-  if (userToken && userToken.role === ROLES.SUPER_ADMIN) {
-    if (!APPROVED_DEVICES.has(deviceId)) {
-      APPROVED_DEVICES.set(deviceId, {
-        clientId: 'hector_owner',
-        clientName: 'Héctor (Super Admin)',
-        tvName: 'Consola Super Admin (Master)',
-        deviceBinding: 'HARDWARE_LOCKED',
-        status: 'APPROVED',
-        registeredAt: new Date().toISOString().split('T')[0],
-        expiresAt: '2030-12-31',
-        planType: 'SUPER_ADMIN',
-        defaultService: 'hipica',
-        activeService: activeService || 'hipica',
-        lastSeen: new Date().toISOString(),
-        uptimeMinutesToday: 0,
-        uptimeMinutesMonth: 0
-      });
-      saveDatabase();
-    }
+  if (typeof deviceId === 'object' && deviceId !== null && !activeService && !ipAddress && !userToken) {
+    dId = deviceId.deviceId;
+    service = deviceId.activeService;
+    ip = deviceId.ipAddress;
+    effectiveToken = deviceId.userToken || deviceId.token || deviceId;
+  } else if (activeService && (typeof activeService === 'object' || typeof activeService === 'string') && !ipAddress && !userToken) {
+    effectiveToken = activeService.token || activeService.userToken || activeService;
+    service = typeof activeService === 'object' ? activeService.activeService : 'loteria';
   }
 
-  // AUTO-AUTORIZACIÓN: Si el usuario es Encargado de Cliente (Fenix, etc.), auto-aprobar su pantalla de gestión
-  if (userToken && userToken.role === ROLES.CLIENT_MANAGER) {
-    if (!APPROVED_DEVICES.has(deviceId)) {
-      const client = CLIENTS.get(userToken.clientId);
-      APPROVED_DEVICES.set(deviceId, {
-        clientId: userToken.clientId,
-        clientName: userToken.clientName || client?.name || 'Fenix',
-        tvName: `Consola ${userToken.clientName || 'Cliente'} (Directo)`,
-        deviceBinding: 'HARDWARE_LOCKED',
-        status: 'APPROVED',
-        registeredAt: new Date().toISOString().split('T')[0],
-        expiresAt: client ? client.expiresAt : '2026-12-31',
-        planType: client ? client.planType : 'MONTHLY',
-        defaultService: 'hipica',
-        activeService: activeService || 'hipica',
-        lastSeen: new Date().toISOString(),
-        uptimeMinutesToday: 0,
-        uptimeMinutesMonth: 0
-      });
-      saveDatabase();
-    }
+  if (typeof effectiveToken === 'string') {
+    effectiveToken = verifyToken(effectiveToken);
   }
 
-  if (APPROVED_DEVICES.has(deviceId)) {
-    const dev = APPROVED_DEVICES.get(deviceId);
+  // 1. REGLA FUNDAMENTAL: Super Admin y Clientes son OPERADORES HUMANOS.
+  // Acceso directo con su configuración guardada.
+  if (effectiveToken && (effectiveToken.role === ROLES.SUPER_ADMIN || effectiveToken.role === ROLES.CLIENT_MANAGER || effectiveToken.role === ROLES.TECH_CHIEF)) {
+    const client = effectiveToken.clientId ? CLIENTS.get(effectiveToken.clientId) : null;
+    const clientCfg = (client && client.config) ? client.config : DEFAULT_SCREEN_CONFIG;
+    return {
+      status: 'APPROVED',
+      isOperator: true,
+      clientName: effectiveToken.clientName || (client ? client.name : 'Fenix'),
+      config: clientCfg,
+      defaultService: clientCfg.defaultService || 'hipica'
+    };
+  }
+
+  // 2. Si el usuario está autenticado como Pantalla / Dispositivo (ROLE: DEVICE)
+  if (effectiveToken && effectiveToken.role === 'DEVICE') {
+    const devUsername = (effectiveToken.username || '').toLowerCase();
+    const dev = DEVICE_ACCOUNTS.get(devUsername) || APPROVED_DEVICES.get(devUsername);
+
+    if (!dev) {
+      return {
+        status: 'UNAUTHORIZED',
+        message: 'Esta pantalla no existe o fue eliminada de la lista del cliente.'
+      };
+    }
+
     const client = CLIENTS.get(dev.clientId);
-
-    // Si el cliente dueño de esta pantalla está suspendido
     if (client && client.status === 'SUSPENDED') {
       return {
         status: 'SUSPENDED',
         message: '⏸️ CLIENTE SUSPENDIDO. Contacte al Administrador.',
         device: dev
       };
-    }
-
-    // Telemetría
-    dev.lastSeen = new Date().toISOString();
-    if (ipAddress) dev.ipAddress = ipAddress;
-    if (activeService) dev.activeService = activeService;
-    dev.uptimeMinutesToday = (dev.uptimeMinutesToday || 0) + 1;
-    dev.uptimeMinutesMonth = (dev.uptimeMinutesMonth || 0) + 1;
-
-    // Vencimiento de suscripción por cliente
-    const expiryDate = client ? client.expiresAt : dev.expiresAt;
-    if (expiryDate) {
-      const now = new Date();
-      const expDate = new Date(expiryDate);
-      if (now > expDate) {
-        dev.status = 'EXPIRED';
-        return {
-          status: 'EXPIRED',
-          message: '⛔ LICENCIA VENCIDA. Contacte a su administrador para renovar su suscripción.',
-          expiresAt: expiryDate,
-          device: dev
-        };
-      }
     }
 
     if (dev.status === 'SUSPENDED') {
@@ -361,26 +517,37 @@ function checkDeviceStatus(deviceId, activeService, ipAddress, userToken) {
       };
     }
 
+    // CONTROL DE CONCURRENCIA ESTRICTO:
+    // Si la sesión activa registrada en el backend es distinta al token de esta pantalla (o fue cerrada),
+    // significa que se inició sesión en otro dispositivo físico o el administrador cerró la sesión remota.
+    if (effectiveToken.sessionId && (!dev.activeSessionId || dev.activeSessionId !== effectiveToken.sessionId)) {
+      return {
+        status: 'SESSION_KICKED',
+        code: 'CONCURRENT_SESSION_DETECTED',
+        message: 'Se inició sesión en otro dispositivo. Si no lo autorizó, contacte a su administrador.'
+      };
+    }
+
+    // Telemetría de la sesión activa
+    dev.lastSeen = new Date().toISOString();
+    if (ip) dev.ipAddress = ip;
+    if (service) dev.activeService = service;
+    dev.uptimeMinutesToday = (dev.uptimeMinutesToday || 0) + 1;
+    dev.uptimeMinutesMonth = (dev.uptimeMinutesMonth || 0) + 1;
+
     return {
       status: 'APPROVED',
       device: dev,
-      defaultService: dev.defaultService || 'hipica',
+      config: dev.config || (client && client.config) || DEFAULT_SCREEN_CONFIG,
+      defaultService: dev.defaultService || (client && client.config && client.config.defaultService) || 'loteria',
       clientName: client ? client.name : (dev.clientName || 'Fenix')
     };
   }
 
-  // Generar o recuperar código numérico aleatorio de 6 dígitos
-  let pin = PENDING_ACTIVATIONS.get(deviceId)?.pin;
-  if (!pin) {
-    pin = Math.floor(100000 + Math.random() * 900000).toString();
-    PENDING_ACTIVATIONS.set(deviceId, { pin, requestedAt: new Date().toISOString() });
-  }
-
+  // 3. Si no hay sesión válida iniciada en la pantalla
   return {
     status: 'UNAUTHORIZED',
-    message: 'Pantalla no autorizada. Proporcione el código numérico a su encargado.',
-    pin,
-    deviceId
+    message: 'Inicie sesión con su usuario y contraseña de pantalla.'
   };
 }
 
@@ -484,7 +651,7 @@ function deleteClient(clientId) {
 // ACTIVACIÓN DE DISPOSITIVOS POR ENCARGADO
 // ==========================================
 
-function authorizeDeviceForClient(clientId, pin, tvName) {
+function authorizeDeviceForClient(clientId, pin, tvName, usernameOrOpts = null, password = null, planType = null, cloneFromDeviceId = null) {
   if (!clientId) {
     return { success: false, error: 'Debe especificar el Cliente que activará este dispositivo.' };
   }
@@ -494,6 +661,24 @@ function authorizeDeviceForClient(clientId, pin, tvName) {
   }
   if (client.status !== 'ACTIVE') {
     return { success: false, error: 'Este cliente se encuentra suspendido. No puede activar pantallas.' };
+  }
+
+  // Normalizar parámetros flexibles
+  let username = null;
+  let pass = null;
+  let plan = planType;
+  let cloneId = cloneFromDeviceId;
+
+  if (typeof usernameOrOpts === 'object' && usernameOrOpts !== null) {
+    username = usernameOrOpts.username;
+    pass = usernameOrOpts.password;
+    plan = usernameOrOpts.planType || plan;
+    cloneId = usernameOrOpts.cloneFromDeviceId || cloneId;
+  } else if (password !== null) {
+    username = usernameOrOpts;
+    pass = password;
+  } else if (typeof usernameOrOpts === 'string' && !password) {
+    cloneId = usernameOrOpts;
   }
 
   // 1. Contar dispositivos activos del cliente y validar cupo
@@ -546,6 +731,37 @@ function authorizeDeviceForClient(clientId, pin, tvName) {
     }
   }
 
+  // Heredar o clonar configuración de pantalla existente si se especificó
+  let baseConfig = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+  if (cloneId && APPROVED_DEVICES.has(cloneId)) {
+    const srcDev = APPROVED_DEVICES.get(cloneId);
+    if (srcDev && srcDev.config) {
+      baseConfig = JSON.parse(JSON.stringify(srcDev.config));
+    }
+  }
+
+  // Calcular expiración según plan asignado (Requisito 4)
+  const assignedPlan = plan || client.planType || 'MONTHLY';
+  let deviceExpiresAt = client.expiresAt;
+  const now = new Date();
+  if (assignedPlan === 'WEEKLY') {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    deviceExpiresAt = d.toISOString().split('T')[0];
+  } else if (assignedPlan === 'DEMO') {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    deviceExpiresAt = d.toISOString().split('T')[0];
+  } else if (assignedPlan === 'ANNUAL') {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    deviceExpiresAt = d.toISOString().split('T')[0];
+  } else if (assignedPlan === 'MONTHLY') {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    deviceExpiresAt = d.toISOString().split('T')[0];
+  }
+
   // 4. Activar formalmente el dispositivo y vincularlo al cliente
   const newDev = {
     clientId: client.clientId,
@@ -554,14 +770,36 @@ function authorizeDeviceForClient(clientId, pin, tvName) {
     deviceBinding: 'HARDWARE_LOCKED',
     status: 'APPROVED',
     registeredAt: new Date().toISOString().split('T')[0],
-    expiresAt: client.expiresAt,
-    planType: client.planType,
-    defaultService: 'hipica',
-    activeService: 'hipica',
+    expiresAt: deviceExpiresAt,
+    planType: assignedPlan,
+    defaultService: baseConfig.defaultService || 'loteria',
+    activeService: baseConfig.defaultService || 'loteria',
+    config: baseConfig,
     lastSeen: new Date().toISOString(),
     uptimeMinutesToday: 0,
     uptimeMinutesMonth: 0
   };
+
+  // Crear o vincular cuenta individual de dispositivo (Usuario y Clave) si se especificaron
+  const cleanUser = (username || '').trim().toLowerCase();
+  const cleanPass = (pass || '').trim();
+  let createdAccount = null;
+
+  if (cleanUser && cleanPass) {
+    const existingAcc = DEVICE_ACCOUNTS.get(cleanUser);
+    createdAccount = {
+      username: cleanUser,
+      pass: cleanPass,
+      clientId: client.clientId,
+      clientName: client.name,
+      tvName: cleanName,
+      role: 'DEVICE',
+      planType: assignedPlan,
+      createdAt: existingAcc ? existingAcc.createdAt : new Date().toISOString()
+    };
+    DEVICE_ACCOUNTS.set(cleanUser, createdAccount);
+    newDev.assignedUsername = cleanUser;
+  }
 
   APPROVED_DEVICES.set(foundDevId, newDev);
   PENDING_ACTIVATIONS.delete(foundDevId);
@@ -571,7 +809,8 @@ function authorizeDeviceForClient(clientId, pin, tvName) {
     success: true,
     deviceId: foundDevId,
     device: newDev,
-    message: `¡Pantalla "${cleanName}" activada con éxito para ${client.name}!`
+    account: createdAccount,
+    message: `¡Pantalla "${cleanName}" activada con éxito para ${client.name}! Plan: ${assignedPlan}${cleanUser ? ` • Usuario: @${cleanUser}` : ''}`
   };
 }
 
@@ -624,12 +863,386 @@ function setDefaultService(deviceId, defaultService) {
   const dev = APPROVED_DEVICES.get(deviceId);
   dev.defaultService = defaultService;
   dev.activeService = defaultService;
+  if (dev.config) {
+    dev.config.defaultService = defaultService;
+  }
   saveDatabase();
   return { success: true, deviceId, defaultService: dev.defaultService, device: dev };
 }
 
+// Obtener Configuración Individual de Pantalla
+function getDeviceConfig(deviceId, requestingClientId, userRole) {
+  if (!APPROVED_DEVICES.has(deviceId)) {
+    return { success: false, error: 'Dispositivo no encontrado.' };
+  }
+  const dev = APPROVED_DEVICES.get(deviceId);
+  if (userRole !== ROLES.SUPER_ADMIN && dev.clientId !== requestingClientId) {
+    return { success: false, error: 'No autorizado para ver la configuración de este dispositivo.' };
+  }
+  return { success: true, deviceId, config: dev.config || DEFAULT_SCREEN_CONFIG, device: dev };
+}
+
+// Modificar Configuración Individual de Pantalla
+function updateDeviceConfig(deviceId, newConfig, requestingClientId, userRole) {
+  if (!APPROVED_DEVICES.has(deviceId)) {
+    return { success: false, error: 'Dispositivo no encontrado.' };
+  }
+  const dev = APPROVED_DEVICES.get(deviceId);
+  if (userRole !== ROLES.SUPER_ADMIN && dev.clientId !== requestingClientId) {
+    return { success: false, error: 'No tienes permiso para configurar esta pantalla.' };
+  }
+
+  const currentCfg = dev.config || JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+  dev.config = {
+    ...currentCfg,
+    ...newConfig,
+    modules: {
+      ...currentCfg.modules,
+      ...(newConfig.modules || {})
+    }
+  };
+
+  if (newConfig.defaultService) {
+    dev.defaultService = newConfig.defaultService;
+    dev.activeService = newConfig.defaultService;
+  }
+
+  saveDatabase();
+  return { success: true, deviceId, config: dev.config, device: dev };
+}
+
+// Modificar Configuración en Lote (Uno, Varios o Todos los Dispositivos de la Organización)
+function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, userRole, applyToAll = false) {
+  const updated = [];
+  let targetIds = [];
+
+  // Persistir la configuración en la ficha de la organización cliente para que jamás se reinicie (Petición 6)
+  let savedClientCfg = null;
+  if (requestingClientId && CLIENTS.has(requestingClientId)) {
+    const client = CLIENTS.get(requestingClientId);
+    const clientCurrentCfg = client.config || JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+    const mergedClientCfg = {
+      ...clientCurrentCfg,
+      ...configUpdates,
+      modules: {
+        ...clientCurrentCfg.modules,
+        ...(configUpdates.modules || {})
+      }
+    };
+    if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
+      const mActive = Boolean(configUpdates.bgMusicEnabled !== undefined ? configUpdates.bgMusicEnabled : configUpdates.circusMusicEnabled);
+      mergedClientCfg.bgMusicEnabled = mActive;
+      mergedClientCfg.circusMusicEnabled = mActive;
+    }
+    if (configUpdates.bgMusicTrack || configUpdates.circusMusicTrack) {
+      const mTrack = configUpdates.bgMusicTrack || configUpdates.circusMusicTrack;
+      mergedClientCfg.bgMusicTrack = mTrack;
+      mergedClientCfg.circusMusicTrack = mTrack;
+    }
+    if (configUpdates.bgMusicVolume !== undefined || configUpdates.circusMusicVolume !== undefined) {
+      const mVol = parseFloat(configUpdates.bgMusicVolume !== undefined ? configUpdates.bgMusicVolume : configUpdates.circusMusicVolume);
+      mergedClientCfg.bgMusicVolume = mVol;
+      mergedClientCfg.circusMusicVolume = mVol;
+    }
+    if (configUpdates.defaultService) {
+      mergedClientCfg.defaultService = configUpdates.defaultService;
+    }
+    client.config = mergedClientCfg;
+    savedClientCfg = mergedClientCfg;
+  }
+
+  if (applyToAll) {
+    for (const [id, dev] of APPROVED_DEVICES.entries()) {
+      if (userRole === ROLES.SUPER_ADMIN || dev.clientId === requestingClientId) {
+        targetIds.push(id);
+      }
+    }
+  } else if (Array.isArray(deviceIds)) {
+    targetIds = deviceIds;
+  }
+
+  for (const id of targetIds) {
+    if (APPROVED_DEVICES.has(id)) {
+      const dev = APPROVED_DEVICES.get(id);
+      if (userRole === ROLES.SUPER_ADMIN || dev.clientId === requestingClientId) {
+        const currentCfg = dev.config || JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+        const mergedCfg = {
+          ...currentCfg,
+          ...configUpdates,
+          modules: {
+            ...currentCfg.modules,
+            ...(configUpdates.modules || {})
+          }
+        };
+
+        // Normalizar alias de música de fondo / circo
+        if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
+          const mActive = Boolean(configUpdates.bgMusicEnabled !== undefined ? configUpdates.bgMusicEnabled : configUpdates.circusMusicEnabled);
+          mergedCfg.bgMusicEnabled = mActive;
+          mergedCfg.circusMusicEnabled = mActive;
+        }
+
+        if (configUpdates.bgMusicTrack || configUpdates.circusMusicTrack) {
+          const mTrack = configUpdates.bgMusicTrack || configUpdates.circusMusicTrack;
+          mergedCfg.bgMusicTrack = mTrack;
+          mergedCfg.circusMusicTrack = mTrack;
+        }
+
+        if (configUpdates.bgMusicVolume !== undefined || configUpdates.circusMusicVolume !== undefined) {
+          const mVol = parseFloat(configUpdates.bgMusicVolume !== undefined ? configUpdates.bgMusicVolume : configUpdates.circusMusicVolume);
+          mergedCfg.bgMusicVolume = mVol;
+          mergedCfg.circusMusicVolume = mVol;
+        }
+
+        dev.config = mergedCfg;
+
+        if (configUpdates.defaultService) {
+          dev.defaultService = configUpdates.defaultService;
+          dev.activeService = configUpdates.defaultService;
+        }
+        updated.push(id);
+      }
+    }
+  }
+
+  saveDatabase();
+  return { success: true, updatedCount: updated.length, updatedDeviceIds: updated, clientConfig: savedClientCfg };
+}
+
+// ==========================================
+// GESTIÓN DE PANTALLAS Y DISPOSITIVOS TV (USUARIO Y CONTRASEÑA)
+// ==========================================
+
+function createDeviceAccount(usernameOrObj, pass, clientId, tvName, defaultService = 'loteria', cloneFromDeviceId = null) {
+  let cleanUser, cleanPass, targetClientId, targetTvName, targetDefService, targetClone;
+  if (typeof usernameOrObj === 'object' && usernameOrObj !== null) {
+    cleanUser = (usernameOrObj.username || '').trim().toLowerCase();
+    cleanPass = (usernameOrObj.pass || usernameOrObj.password || '').trim();
+    targetClientId = usernameOrObj.clientId || usernameOrObj.targetClientId;
+    targetTvName = usernameOrObj.tvName;
+    targetDefService = usernameOrObj.defaultService || 'loteria';
+    targetClone = usernameOrObj.cloneFromDeviceId || null;
+  } else {
+    cleanUser = (usernameOrObj || '').trim().toLowerCase();
+    cleanPass = (pass || '').trim();
+    targetClientId = clientId;
+    targetTvName = tvName;
+    targetDefService = defaultService || 'loteria';
+    targetClone = cloneFromDeviceId || null;
+  }
+
+  if (!cleanUser || !cleanPass) {
+    return { success: false, error: 'Debe especificar usuario y contraseña.' };
+  }
+  if (DEVICE_ACCOUNTS.has(cleanUser) || USERS[cleanUser]) {
+    return { success: false, error: 'El nombre de usuario/dispositivo ya está en uso.' };
+  }
+  const client = CLIENTS.get(targetClientId);
+  if (!client) {
+    return { success: false, error: 'Organización de cliente no encontrada.' };
+  }
+  if (client.status !== 'ACTIVE') {
+    return { success: false, error: 'El cliente se encuentra suspendido.' };
+  }
+
+  // Validar cupo de pantallas del cliente
+  const clientScreensCount = Array.from(DEVICE_ACCOUNTS.values()).filter(a => a.clientId === targetClientId).length;
+  if (clientScreensCount >= (client.maxDevices || 4)) {
+    return {
+      success: false,
+      error: `Ha alcanzado el cupo máximo contratado de pantallas (${clientScreensCount}/${client.maxDevices || 4}). Contacte al Super Administrador para ampliar su cupo.`
+    };
+  }
+
+  // Clonar configuración si se especificó pantalla origen
+  let baseConfig = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+  if (targetClone && APPROVED_DEVICES.has(targetClone)) {
+    const srcDev = APPROVED_DEVICES.get(targetClone);
+    if (srcDev && srcDev.config) {
+      baseConfig = JSON.parse(JSON.stringify(srcDev.config));
+    }
+  } else if (client.config) {
+    baseConfig = JSON.parse(JSON.stringify(client.config));
+  }
+  baseConfig.defaultService = targetDefService || baseConfig.defaultService || 'loteria';
+
+  const newAcc = {
+    username: cleanUser,
+    pass: cleanPass,
+    clientId: targetClientId,
+    clientName: client ? client.name : 'Fenix',
+    tvName: (targetTvName || '').trim() || cleanUser,
+    role: 'DEVICE',
+    status: 'APPROVED',
+    defaultService: targetDefService || 'loteria',
+    activeService: targetDefService || 'loteria',
+    activeSessionId: null,
+    lastSeen: null,
+    ipAddress: null,
+    config: baseConfig,
+    createdAt: new Date().toISOString().split('T')[0]
+  };
+
+  DEVICE_ACCOUNTS.set(cleanUser, newAcc);
+  APPROVED_DEVICES.set(cleanUser, newAcc);
+  saveDatabase();
+  return {
+    success: true,
+    account: {
+      ...newAcc,
+      pass: '••••••••',
+      hasActiveSession: false,
+      isOnline: false
+    }
+  };
+}
+
+function getDeviceAccounts(userRole, clientId) {
+  const list = [];
+  const now = Date.now();
+  for (const acc of DEVICE_ACCOUNTS.values()) {
+    if (userRole === ROLES.SUPER_ADMIN || acc.clientId === clientId) {
+      const lastSeenTime = acc.lastSeen ? new Date(acc.lastSeen).getTime() : 0;
+      const isOnline = (now - lastSeenTime) < 45000;
+      list.push({
+        ...acc,
+        pass: '••••••••',
+        hasActiveSession: Boolean(acc.activeSessionId),
+        isOnline
+      });
+    }
+  }
+  return list;
+}
+
+function updateDevicePassword(usernameOrObj, newPass, requestingClientId, userRole) {
+  let cleanUser, cleanPass, reqClient, role;
+  if (typeof usernameOrObj === 'object' && usernameOrObj !== null) {
+    cleanUser = (usernameOrObj.username || '').trim().toLowerCase();
+    cleanPass = (usernameOrObj.newPass || usernameOrObj.password || '').trim();
+    reqClient = usernameOrObj.clientId || usernameOrObj.requestingClientId;
+    role = usernameOrObj.userRole || usernameOrObj.role;
+  } else {
+    cleanUser = (usernameOrObj || '').trim().toLowerCase();
+    cleanPass = (newPass || '').trim();
+    if (Object.values(ROLES).includes(requestingClientId) || ['SUPER_ADMIN', 'CLIENT_ADMIN', 'CLIENT_MANAGER'].includes(requestingClientId)) {
+      role = requestingClientId;
+      reqClient = userRole;
+    } else {
+      reqClient = requestingClientId;
+      role = userRole;
+    }
+  }
+
+  if (!cleanPass) return { success: false, error: 'La nueva contraseña no puede estar vacía.' };
+  if (!DEVICE_ACCOUNTS.has(cleanUser)) return { success: false, error: 'Pantalla no encontrada.' };
+
+  const dev = DEVICE_ACCOUNTS.get(cleanUser);
+  if (role !== ROLES.SUPER_ADMIN && dev.clientId !== reqClient) {
+    return { success: false, error: 'No autorizado para modificar esta pantalla.' };
+  }
+
+  dev.pass = cleanPass;
+  // Cerrar sesión activa al cambiar la clave para exigir reautenticación
+  dev.activeSessionId = null;
+  saveDatabase();
+  return { success: true, message: `Contraseña actualizada para @${cleanUser}. Sesión anterior invalidada.` };
+}
+
+function kickDeviceSession(usernameOrObj, requestingClientId, userRole) {
+  let cleanUser, reqClient, role;
+  if (typeof usernameOrObj === 'object' && usernameOrObj !== null) {
+    cleanUser = (usernameOrObj.username || '').trim().toLowerCase();
+    reqClient = usernameOrObj.clientId || usernameOrObj.requestingClientId;
+    role = usernameOrObj.userRole || usernameOrObj.role;
+  } else {
+    cleanUser = (usernameOrObj || '').trim().toLowerCase();
+    if (Object.values(ROLES).includes(requestingClientId) || ['SUPER_ADMIN', 'CLIENT_ADMIN', 'CLIENT_MANAGER'].includes(requestingClientId)) {
+      role = requestingClientId;
+      reqClient = userRole;
+    } else {
+      reqClient = requestingClientId;
+      role = userRole;
+    }
+  }
+
+  if (!DEVICE_ACCOUNTS.has(cleanUser)) return { success: false, error: 'Pantalla no encontrada.' };
+
+  const dev = DEVICE_ACCOUNTS.get(cleanUser);
+  if (role !== ROLES.SUPER_ADMIN && dev.clientId !== reqClient) {
+    return { success: false, error: 'No autorizado para desconectar esta pantalla.' };
+  }
+
+  dev.activeSessionId = null;
+  saveDatabase();
+  return { success: true, message: `Sesión remota cerrada para ${dev.tvName || cleanUser}.` };
+}
+
+function deleteDeviceAccount(usernameOrObj, arg2, arg3) {
+  let cleanUser, role, client;
+  if (typeof usernameOrObj === 'object' && usernameOrObj !== null) {
+    cleanUser = (usernameOrObj.username || '').trim().toLowerCase();
+    role = usernameOrObj.userRole || usernameOrObj.role;
+    client = usernameOrObj.clientId;
+  } else {
+    cleanUser = (usernameOrObj || '').trim().toLowerCase();
+    if (arg2 === ROLES.SUPER_ADMIN || arg2 === ROLES.CLIENT_ADMIN || arg2 === 'CLIENT_ADMIN' || arg2 === 'SUPER_ADMIN') {
+      role = arg2;
+      client = arg3;
+    } else {
+      client = arg2;
+      role = arg3;
+    }
+  }
+
+  if (!DEVICE_ACCOUNTS.has(cleanUser)) {
+    return { success: false, error: 'Cuenta de dispositivo no encontrada.' };
+  }
+  const acc = DEVICE_ACCOUNTS.get(cleanUser);
+  if (role !== ROLES.SUPER_ADMIN && acc.clientId !== client) {
+    return { success: false, error: 'No autorizado para eliminar esta cuenta.' };
+  }
+  DEVICE_ACCOUNTS.delete(cleanUser);
+  APPROVED_DEVICES.delete(cleanUser);
+  saveDatabase();
+  return { success: true, username: cleanUser, message: 'Pantalla eliminada y cupo liberado exitosamente.' };
+}
+
+// Clonar / Exportar Configuración de Pantalla a Otras Pantallas
+function cloneDeviceConfig(sourceDeviceId, targetDeviceIds, requestingClientId, userRole) {
+  if (!APPROVED_DEVICES.has(sourceDeviceId)) {
+    return { success: false, error: 'Dispositivo origen no encontrado.' };
+  }
+  const src = APPROVED_DEVICES.get(sourceDeviceId);
+  if (userRole !== ROLES.SUPER_ADMIN && src.clientId !== requestingClientId) {
+    return { success: false, error: 'No autorizado para acceder a la configuración del dispositivo origen.' };
+  }
+
+  const srcConfig = JSON.parse(JSON.stringify(src.config || DEFAULT_SCREEN_CONFIG));
+  const updated = [];
+  const targets = Array.isArray(targetDeviceIds) ? targetDeviceIds : [targetDeviceIds];
+
+  for (const tid of targets) {
+    if (APPROVED_DEVICES.has(tid) && tid !== sourceDeviceId) {
+      const targetDev = APPROVED_DEVICES.get(tid);
+      if (userRole === ROLES.SUPER_ADMIN || targetDev.clientId === requestingClientId) {
+        targetDev.config = JSON.parse(JSON.stringify(srcConfig));
+        if (srcConfig.defaultService) {
+          targetDev.defaultService = srcConfig.defaultService;
+          targetDev.activeService = srcConfig.defaultService;
+        }
+        updated.push(tid);
+      }
+    }
+  }
+
+  saveDatabase();
+  return { success: true, clonedFrom: sourceDeviceId, updatedCount: updated.length, updatedDeviceIds: updated };
+}
+
 function getApprovedDevicesList(userRole, clientId, filterClientId) {
   const list = [];
+  const now = Date.now();
   for (const [id, dev] of APPROVED_DEVICES.entries()) {
     // Si es un encargado de cliente, solo ve sus propios dispositivos
     if (userRole === ROLES.CLIENT_MANAGER && dev.clientId !== clientId) {
@@ -642,9 +1255,15 @@ function getApprovedDevicesList(userRole, clientId, filterClientId) {
     }
 
     const client = CLIENTS.get(dev.clientId);
+    const lastSeenTime = dev.lastSeen ? new Date(dev.lastSeen).getTime() : 0;
+    const isOnline = (now - lastSeenTime) < 45000;
     list.push({
-      deviceId: id,
+      id: dev.username || id,
+      deviceId: dev.username || id,
       ...dev,
+      pass: '••••••••',
+      hasActiveSession: Boolean(dev.activeSessionId),
+      isOnline,
       clientName: client ? client.name : (dev.clientName || 'Fenix')
     });
   }
@@ -786,5 +1405,15 @@ module.exports = {
   getSystemAnalytics,
   getAllUsers,
   createSystemUser,
-  deleteSystemUser
+  deleteSystemUser,
+  DEFAULT_SCREEN_CONFIG,
+  getDeviceConfig,
+  updateDeviceConfig,
+  batchUpdateDeviceConfig,
+  cloneDeviceConfig,
+  createDeviceAccount,
+  getDeviceAccounts,
+  deleteDeviceAccount,
+  updateDevicePassword,
+  kickDeviceSession
 };

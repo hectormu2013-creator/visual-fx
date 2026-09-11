@@ -102,6 +102,8 @@ public class MainActivity extends Activity {
     private void setupWebView() {
         // Aceleración Nativa por Hardware (GPU Direct)
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(true);
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -113,6 +115,7 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setNeedInitialFocus(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
@@ -120,7 +123,7 @@ public class MainActivity extends Activity {
 
         // Identificador de Android TV / FireStick para auto-configuración en el frontend
         String defaultUa = settings.getUserAgentString();
-        settings.setUserAgentString(defaultUa + " VisualFX-AndroidTV/1.0 (Android TV; Leanback)");
+        settings.setUserAgentString(defaultUa + " VisualFX-AndroidTV/1.1 (Android TV; Leanback)");
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -147,6 +150,10 @@ public class MainActivity extends Activity {
                 if (splashLoadingView != null) {
                     splashLoadingView.setVisibility(View.GONE);
                 }
+                // Otorgar foco inmediato al WebView al cargar la pantalla
+                if (webView != null) {
+                    webView.requestFocus();
+                }
             }
 
             @Override
@@ -165,6 +172,9 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
+        // Asegurar que el WebView tenga foco activo
+        webView.requestFocus();
     }
 
     private String getServerUrl() {
@@ -172,71 +182,63 @@ public class MainActivity extends Activity {
         return prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL);
     }
 
-    // Inyectar eventos de teclado al navegador web (Control Remoto D-Pad)
-    private void injectKeyToWeb(String key) {
+    // Inyectar JavaScript de forma segura al WebView
+    private void injectJs(String script) {
         if (webView != null) {
-            String js = "window.dispatchEvent(new KeyboardEvent('keydown', { key: '" + key + "', bubbles: true }));";
-            webView.evaluateJavascript(js, null);
+            webView.evaluateJavascript(script, null);
         }
     }
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN) {
-            int keyCode = event.getKeyCode();
+        int keyCode = event.getKeyCode();
+        int action = event.getAction();
 
-            // Salida protegida para evitar desconexiones accidentales
-            if (keyCode == KeyEvent.KEYCODE_BACK) {
-                if (doubleBackToExitPressedOnce) {
-                    finish();
-                    return true;
-                }
-                this.doubleBackToExitPressedOnce = true;
-                Toast.makeText(this, R.string.press_again_exit, Toast.LENGTH_SHORT).show();
-                new Handler(Looper.getMainLooper()).postDelayed(() -> doubleBackToExitPressedOnce = false, 2000);
+        // 1. Salida protegida para evitar desconexiones accidentales
+        if (keyCode == KeyEvent.KEYCODE_BACK && action == KeyEvent.ACTION_DOWN) {
+            if (doubleBackToExitPressedOnce) {
+                finish();
                 return true;
             }
+            this.doubleBackToExitPressedOnce = true;
+            Toast.makeText(this, R.string.press_again_exit, Toast.LENGTH_SHORT).show();
+            new Handler(Looper.getMainLooper()).postDelayed(() -> doubleBackToExitPressedOnce = false, 2500);
+            return true;
+        }
 
-            // Teclas Numéricas del Control Remoto (1: 1 Canal, 2: 2 Canales, 3: 3 Canales, 4: Matriz 2x2)
-            if (keyCode == KeyEvent.KEYCODE_1 || keyCode == KeyEvent.KEYCODE_NUMPAD_1) {
-                injectKeyToWeb("1");
+        // 2. Teclas multimedia y accesos rápidos de mandos Smart TV / FireStick
+        if (action == KeyEvent.ACTION_DOWN) {
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                injectJs("window.toggleLotteryCarouselPause && window.toggleLotteryCarouselPause();");
                 return true;
             }
-            if (keyCode == KeyEvent.KEYCODE_2 || keyCode == KeyEvent.KEYCODE_NUMPAD_2) {
-                injectKeyToWeb("2");
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD || keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_CHANNEL_UP) {
+                injectJs("window.goToNextLotteryModule && window.goToNextLotteryModule(true);");
                 return true;
             }
-            if (keyCode == KeyEvent.KEYCODE_3 || keyCode == KeyEvent.KEYCODE_NUMPAD_3) {
-                injectKeyToWeb("3");
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS || keyCode == KeyEvent.KEYCODE_CHANNEL_DOWN) {
+                injectJs("window.goToPrevLotteryModule && window.goToPrevLotteryModule(true);");
                 return true;
             }
-            if (keyCode == KeyEvent.KEYCODE_4 || keyCode == KeyEvent.KEYCODE_NUMPAD_4) {
-                injectKeyToWeb("4");
+            if (keyCode == KeyEvent.KEYCODE_MENU) {
+                injectJs("window.showHeaderTemporarily && window.showHeaderTemporarily(8000);");
                 return true;
             }
-
-            // Teclas de Dirección D-Pad
-            if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-                injectKeyToWeb("Enter");
+            if (keyCode == KeyEvent.KEYCODE_PROG_RED) {
+                injectJs("window.switchDirectService && window.switchDirectService('hipica');");
                 return true;
             }
-            if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                injectKeyToWeb("ArrowUp");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                injectKeyToWeb("ArrowDown");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-                injectKeyToWeb("ArrowLeft");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                injectKeyToWeb("ArrowRight");
+            if (keyCode == KeyEvent.KEYCODE_PROG_GREEN) {
+                injectJs("window.switchDirectService && window.switchDirectService('loteria');");
                 return true;
             }
         }
+
+        // 3. Despacho NATIVO al WebView para que Chromium procese navegación espacial D-Pad (Up, Down, Left, Right, Center, Enter, Números)
+        if (webView != null && webView.dispatchKeyEvent(event)) {
+            return true;
+        }
+
         return super.dispatchKeyEvent(event);
     }
 }

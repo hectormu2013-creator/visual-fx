@@ -22,7 +22,17 @@ const {
   getSystemAnalytics,
   getAllUsers,
   createSystemUser,
-  deleteSystemUser
+  deleteSystemUser,
+  DEFAULT_SCREEN_CONFIG,
+  getDeviceConfig,
+  updateDeviceConfig,
+  batchUpdateDeviceConfig,
+  cloneDeviceConfig,
+  createDeviceAccount,
+  getDeviceAccounts,
+  deleteDeviceAccount,
+  updateDevicePassword,
+  kickDeviceSession
 } = require('./auth_device');
 const { initMasterIngest, getMasterState, updateChannelSource } = require('./master_ingest');
 const {
@@ -95,6 +105,11 @@ function requireRoles(...allowedRoles) {
     next();
   };
 }
+
+// Rutas de Landing Page y Acceso
+app.get(['/landing', '/login'], (req, res) => {
+  return res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
 
 // 1. API Autenticación de Usuario (Super Admin & Clientes)
 app.post('/api/auth/login', (req, res) => {
@@ -199,12 +214,14 @@ app.post('/api/client/activate-device', (req, res) => {
   // Si no hay token o no se especificó cliente, por defecto asignar a 'fenix'
   if (!clientId) clientId = 'fenix';
 
-  const { pin, tvName } = req.body;
-  if (!pin || !tvName) {
-    return res.status(400).json({ error: 'El código numérico de pantalla y el nombre del dispositivo son requeridos.' });
+  const { tvName, username, password, defaultService, cloneFromDeviceId } = req.body;
+  const targetUser = username || tvName;
+  const targetPass = password || 'tv1234';
+  if (!targetUser) {
+    return res.status(400).json({ error: 'El nombre o usuario de pantalla es requerido.' });
   }
 
-  const result = authorizeDeviceForClient(clientId, pin, tvName);
+  const result = createDeviceAccount(targetUser, targetPass, clientId, tvName, defaultService, cloneFromDeviceId);
   if (!result.success) return res.status(400).json(result);
   return res.json(result);
 });
@@ -224,6 +241,89 @@ app.get('/api/admin/devices', (req, res) => {
     }
   }
   return res.json({ devices: getApprovedDevicesList(userRole, clientId, filterClientId) });
+});
+
+// Obtener Configuración de una Pantalla
+app.get('/api/device/:id/config', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const result = getDeviceConfig(req.params.id, clientId, userRole);
+  if (!result.success) return res.status(404).json(result);
+  return res.json(result);
+});
+
+// Guardar Configuración de una Pantalla Individual
+app.post('/api/device/:id/config', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const result = updateDeviceConfig(req.params.id, req.body, clientId, userRole);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Guardar Configuración en Lote (Uno, Varios o Todos los Dispositivos)
+app.post('/api/client/devices/batch-config', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const { deviceIds, configUpdates, config, applyToAll } = req.body;
+  const updates = configUpdates || config || {};
+  const result = batchUpdateDeviceConfig(deviceIds, updates, clientId, userRole, Boolean(applyToAll));
+  if (!result.success) return res.status(400).json(result);
+  return res.json({ success: true, message: `Configuración aplicada exitosamente a ${result.updatedCount || 0} pantalla(s).`, ...result });
+});
+
+// Clonar / Exportar Configuración de Pantalla
+app.post('/api/client/devices/clone-config', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const { sourceDeviceId, targetDeviceIds } = req.body;
+  if (!sourceDeviceId || !targetDeviceIds) {
+    return res.status(400).json({ error: 'sourceDeviceId y targetDeviceIds son obligatorios.' });
+  }
+
+  const result = cloneDeviceConfig(sourceDeviceId, targetDeviceIds, clientId, userRole);
+  if (!result.success) return res.status(400).json(result);
+  return res.json({ success: true, message: `Configuración clonada exitosamente a ${result.updatedCount || 0} pantalla(s).`, ...result });
 });
 
 // Renombrar Dispositivo (asegura nombre único)
@@ -261,6 +361,110 @@ app.delete('/api/client/devices/:id', (req, res) => {
   }
 
   const result = deleteDevice(req.params.id, clientId, userRole);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// ==========================================
+// RUTAS DE GESTIÓN DE CUENTAS DE PANTALLAS (Petición 4)
+// ==========================================
+
+// Listar Cuentas de Pantallas
+app.get('/api/client/device-accounts', (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const accounts = getDeviceAccounts(userRole, clientId);
+  return res.json({ accounts });
+});
+
+// Crear Nueva Cuenta para Pantalla / TV
+app.post(['/api/client/device-accounts', '/api/client/devices'], (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const { username, password, tvName, targetClientId, defaultService, cloneFromDeviceId } = req.body;
+  const effectiveClientId = (userRole === ROLES.SUPER_ADMIN && targetClientId) ? targetClientId : clientId;
+  if (!effectiveClientId) {
+    return res.status(400).json({ error: 'Debe especificar el cliente al que pertenecerá la pantalla.' });
+  }
+
+  const result = createDeviceAccount(username, password, effectiveClientId, tvName, defaultService, cloneFromDeviceId);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Cambiar Contraseña de Pantalla
+app.put(['/api/client/device-accounts/:username/password', '/api/client/devices/:username/password'], (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const result = updateDevicePassword(req.params.username, req.body.password, clientId, userRole);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Desconectar / Expulsar Sesión de Pantalla Remotamente (Control de Concurrencia)
+app.post(['/api/client/device-accounts/:username/kick', '/api/client/devices/:username/kick'], (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const result = kickDeviceSession(req.params.username, clientId, userRole);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+// Eliminar Cuenta de Pantalla
+app.delete(['/api/client/device-accounts/:username', '/api/client/devices/:username'], (req, res) => {
+  const authHeader = req.headers.authorization;
+  let userRole = ROLES.SUPER_ADMIN;
+  let clientId = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const decoded = verifyToken(authHeader.split(' ')[1]);
+    if (decoded) {
+      userRole = decoded.role;
+      clientId = decoded.clientId;
+    }
+  }
+
+  const result = deleteDeviceAccount(req.params.username, userRole, clientId);
   if (!result.success) return res.status(400).json(result);
   return res.json(result);
 });
@@ -470,12 +674,13 @@ app.post('/api/admin/lottery/manual', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH
   const name = req.body.name || req.body.result?.name;
   const tripleA = req.body.tripleA || req.body.result?.tripleA;
   const tripleB = req.body.tripleB || req.body.result?.tripleB;
+  const tripleC = req.body.tripleC || req.body.result?.tripleC;
   const signo = req.body.signo || req.body.result?.signo;
 
   if (!gameId || !time) {
     return res.status(400).json({ error: 'gameId y time son obligatorios.' });
   }
-  const result = setManualResult({ gameId, time, number, name, tripleA, tripleB, signo });
+  const result = setManualResult({ gameId, time, number, name, tripleA, tripleB, tripleC, signo });
   if (!result.success) return res.status(400).json(result);
   return res.json(result);
 });
@@ -495,7 +700,8 @@ app.get('/api/lottery/stats', (req, res) => {
   try {
     const ticker = generateTickerFeed(TOP_10_GAMES);
     const summary = {};
-    for (const g of TOP_10_GAMES) {
+    const animalGames = TOP_10_GAMES.filter(g => g.type === 'animalitos');
+    for (const g of animalGames) {
       summary[g.id] = {
         name: g.name,
         logoUrl: g.logoUrl,
