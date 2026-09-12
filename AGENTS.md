@@ -47,5 +47,6 @@ Este proyecto es el **Sistema SaaS de Transmisión Visual FX**, diseñado para g
 12. **Flujo de Despliegue en Render y GitHub:**
     - Proteger contra errores de permisos de GitHub PAT excluyendo `.github/workflows/` si el token no posee ámbito `workflow`.
     - Confirmar despliegues en Render mediante su API REST (`.render_config.json`) verificando estado `live` y respuesta de endpoints de producción.
+    - **Comando Rápido ("subelo"):** Siempre que el usuario escriba *"subelo"* o *"súbelo"*, ejecutar automáticamente el ciclo completo: `git add .` (excluyendo workflows si aplica), `git commit -m "..."`, `git push origin main`, disparar despliegue en Render vía API REST y monitorear hasta confirmar estado `live` y respuesta 200 OK.
 
 
