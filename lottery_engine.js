@@ -368,6 +368,7 @@ function fetchUrl(url) {
 
 // Parser: 1000Resultados
 async function scrape1000Resultados(gameSlug) {
+  if (!gameSlug) return null;
   try {
     const { status, html } = await fetchUrl(`https://1000resultados.com/resultados/${gameSlug}`);
     if (status !== 200) return null;
@@ -378,8 +379,11 @@ async function scrape1000Resultados(gameSlug) {
 
     for (const art of articles) {
       const timeMatch = art.match(/leading-none">(\d{1,2}:\d{2})<\/span>\s*<span[^>]*>([AP]M)<\/span>/i);
-      const time = timeMatch ? `${timeMatch[1]} ${timeMatch[2].toUpperCase()}` : null;
+      let time = timeMatch ? `${timeMatch[1]} ${timeMatch[2].toUpperCase()}` : null;
       if (!time) continue;
+      if (time.indexOf(':') === 1) {
+        time = '0' + time;
+      }
 
       const isPending = /en\s+espera/i.test(art);
       let number = null, name = null, tripleA = null, tripleB = null, tripleC = null, signo = null, image = null;
@@ -458,7 +462,15 @@ async function scrapeTuAzarAnimalitos() {
       const title = titleMatch ? titleMatch[1].trim() : '';
 
       // Buscar cuál de nuestro catálogo coincide
-      const matchedGame = TOP_10_GAMES.find(g => g.type === 'animalitos' && g.tuazarPattern && g.tuazarPattern.test(title));
+      const catalog = getLotteryCatalog();
+      const matchedGame = catalog.find(g => {
+        if (g.type !== 'animalitos') return false;
+        if (g.tuazarPattern && g.tuazarPattern.test(title)) return true;
+        const cleanT = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanN = (g.name || g.id).toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanS = (g.shortName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        return cleanT.includes(cleanN) || cleanN.includes(cleanT) || (cleanS && cleanT.includes(cleanS));
+      }) || TOP_10_GAMES.find(g => g.type === 'animalitos' && g.tuazarPattern && g.tuazarPattern.test(title));
       if (!matchedGame) continue;
 
       const boxRegex = /<div class="col-xs-6 col-sm-3">([\s\S]*?)<\/div>\s*<\/div>/gi;
@@ -518,7 +530,15 @@ async function scrapeTuAzarTriples() {
       const titleMatch = cardContent.match(/<h3 class="lc-title">\s*([^<]+)\s*<\/h3>/i);
       const title = titleMatch ? titleMatch[1].trim() : '';
 
-      const matchedGame = TOP_10_GAMES.find(g => g.type === 'triples' && g.tuazarPattern && g.tuazarPattern.test(title));
+      const catalog = getLotteryCatalog();
+      const matchedGame = catalog.find(g => {
+        if (g.type !== 'triples') return false;
+        if (g.tuazarPattern && g.tuazarPattern.test(title)) return true;
+        const cleanT = title.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanN = (g.name || g.id).toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanS = (g.shortName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        return cleanT.includes(cleanN) || cleanN.includes(cleanT) || (cleanS && cleanT.includes(cleanS));
+      }) || TOP_10_GAMES.find(g => g.type === 'triples' && g.tuazarPattern && g.tuazarPattern.test(title));
       if (!matchedGame) continue;
 
       const rowRegex = /<div class="lc-row"[^>]*>([\s\S]*?)<\/div>/gi;
@@ -572,8 +592,12 @@ async function scrapeTuAzarTriples() {
 
 // Sincronización Unificada con Alternancia y Fallback
 async function syncGame(gameId) {
-  const game = TOP_10_GAMES.find(g => g.id === gameId);
-  if (!game) return;
+  const catalog = getLotteryCatalog();
+  const game = catalog.find(g => g.id === gameId) || TOP_10_GAMES.find(g => g.id === gameId);
+  if (!game) {
+    console.warn(`[LotteryEngine] syncGame: Juego ${gameId} no encontrado en catálogo.`);
+    return;
+  }
 
   const today = getVenezuelaDateString();
   if (!resultsStore[today]) {
@@ -582,18 +606,21 @@ async function syncGame(gameId) {
   if (!resultsStore[today][gameId]) {
     resultsStore[today][gameId] = {
       gameId: game.id,
+      id: game.id,
       name: game.name,
       shortName: game.shortName,
       type: game.type,
       icon: game.icon,
       color: game.color,
+      logoUrl: game.logoUrl || '',
       lastUpdated: new Date().toISOString(),
-      draws: game.hours.map(h => ({ time: h, isPending: true }))
+      draws: (game.hours || []).map(h => ({ time: h, isPending: true }))
     };
   }
 
   const existingGame = resultsStore[today][gameId];
   let newDraws = null;
+  const slug1000 = game.slug1000 || game.id;
 
   // Alternancia de fuentes
   const useTuAzarFirst = (sourceAlternator % 2 === 0);
@@ -611,12 +638,12 @@ async function syncGame(gameId) {
 
     // Fallback Fuente B: 1000Resultados
     if (!newDraws || newDraws.length === 0 || newDraws.every(d => d.isPending)) {
-      const milResDraws = await scrape1000Resultados(game.slug1000);
+      const milResDraws = await scrape1000Resultados(slug1000);
       if (milResDraws && milResDraws.length > 0) newDraws = milResDraws;
     }
   } else {
     // Fuente A: 1000Resultados
-    const milResDraws = await scrape1000Resultados(game.slug1000);
+    const milResDraws = await scrape1000Resultados(slug1000);
     if (milResDraws && milResDraws.length > 0) newDraws = milResDraws;
 
     // Fallback Fuente B: TuAzar
@@ -677,32 +704,36 @@ async function syncGame(gameId) {
 
 // Sincronización Completa Inicial o de Respaldo
 async function syncAllTop10() {
-  console.log('[LotteryEngine] Ejecutando sincronización de catálogo Top 10...');
-  for (const game of TOP_10_GAMES) {
+  const catalog = getLotteryCatalog();
+  console.log(`[LotteryEngine] Ejecutando sincronización de catálogo completo (${catalog.length} loterías)...`);
+  for (const game of catalog) {
     await syncGame(game.id);
-    // Pausa sutil de 1s entre juegos para tráfico orgánico
-    await new Promise(r => setTimeout(r, 1000));
+    // Pausa sutil de 400ms entre juegos para tráfico orgánico
+    await new Promise(r => setTimeout(r, 400));
   }
+  console.log('[LotteryEngine] Sincronización de todas las loterías completada con éxito.');
 }
 
 // Temporizador Inteligente Schedule-Driven (+2 minutos post-sorteo)
 function checkScheduledDraws() {
   const currentMinutes = getVenezuelaTimeMinutes();
+  const catalog = getLotteryCatalog();
 
-  for (const game of TOP_10_GAMES) {
-    for (const hourStr of game.hours) {
+  for (const game of catalog) {
+    const hours = game.hours || [];
+    for (const hourStr of hours) {
       const drawMinutes = parseTimeToMinutes(hourStr);
       if (drawMinutes === -1) continue;
 
       // Regla: Primera consulta a los 2 minutos después del sorteo
-      // Ventana activa: entre drawMinutes + 2 y drawMinutes + 12
+      // Ventana activa: entre drawMinutes + 2 y drawMinutes + 15
       const targetMin = drawMinutes + 2;
       const today = getVenezuelaDateString();
       const existingGame = resultsStore[today]?.[game.id];
       const targetDraw = existingGame?.draws?.find(d => parseTimeToMinutes(d.time) === drawMinutes);
 
       // Si aún está pendiente y estamos en la ventana activa de chequeo
-      if ((!targetDraw || targetDraw.isPending) && currentMinutes >= targetMin && currentMinutes <= (drawMinutes + 12)) {
+      if ((!targetDraw || targetDraw.isPending) && currentMinutes >= targetMin && currentMinutes <= (drawMinutes + 15)) {
         // Chequear en los minutos pares: T+2, T+4, T+6, T+8, T+10
         if ((currentMinutes - targetMin) % 2 === 0) {
           console.log(`[LotteryEngine Schedule] Disparo T+${currentMinutes - drawMinutes}m para ${game.name} (${hourStr})`);
@@ -775,9 +806,9 @@ function notifyListeners(event) {
 function initLotteryEngine() {
   loadCatalogFromDisk();
   loadResultsFromDisk();
-  seedBaselineHistory(TOP_10_GAMES);
   const today = getVenezuelaDateString();
   const catalog = getLotteryCatalog();
+  seedBaselineHistory(catalog);
 
   // Asegurar estructura base para todos los juegos del catálogo
   if (!resultsStore[today]) {
@@ -787,6 +818,7 @@ function initLotteryEngine() {
     if (!resultsStore[today][game.id]) {
       resultsStore[today][game.id] = {
         gameId: game.id,
+        id: game.id,
         name: game.name,
         shortName: game.shortName,
         type: game.type,
@@ -797,6 +829,8 @@ function initLotteryEngine() {
         draws: (game.hours || []).map(h => ({ time: h, isPending: true }))
       };
     } else {
+      resultsStore[today][game.id].id = game.id;
+      resultsStore[today][game.id].gameId = game.id;
       if (game.logoUrl) resultsStore[today][game.id].logoUrl = game.logoUrl;
       if (game.icon) resultsStore[today][game.id].icon = game.icon;
       if (game.color) resultsStore[today][game.id].color = game.color;
@@ -824,6 +858,7 @@ function getTop10Results() {
   return catalog.map(game => {
     const data = todayData[game.id] || {
       gameId: game.id,
+      id: game.id,
       name: game.name,
       shortName: game.shortName,
       type: game.type,
@@ -833,6 +868,8 @@ function getTop10Results() {
       lastUpdated: new Date().toISOString(),
       draws: (game.hours || []).map(h => ({ time: h, isPending: true }))
     };
+    data.id = game.id;
+    data.gameId = game.id;
     data.logoUrl = game.logoUrl || data.logoUrl;
     data.icon = game.icon || data.icon;
     data.color = game.color || data.color;

@@ -4134,9 +4134,37 @@ function renderCustomResultSlide(slideCfg, stage) {
       '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM'
     ];
 
-    const displayRows = scheduledHours.map(hour => {
-      const match = draws.find(d => (d.time === hour || d.hour === hour));
-      return match || { time: hour, isPending: true };
+    // Normalizador de hora seguro (ej: "8:00 AM" -> "08:00 AM")
+    const normH = (t) => {
+      if (!t) return '';
+      t = t.trim().toUpperCase();
+      if (t.indexOf(':') === 1) t = '0' + t;
+      return t;
+    };
+
+    // Unir horarios programados y sorteos con resultados reales
+    const hourMap = new Map();
+    scheduledHours.forEach(h => {
+      const k = normH(h);
+      hourMap.set(k, { time: k, isPending: true });
+    });
+    draws.forEach(d => {
+      const k = normH(d.time || d.hour);
+      if (k) {
+        hourMap.set(k, { ...d, time: k });
+      }
+    });
+
+    const displayRows = Array.from(hourMap.values()).sort((a, b) => {
+      const parseM = (ts) => {
+        const m = (ts || '').match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
+        if (!m) return 0;
+        let hrs = parseInt(m[1], 10);
+        if (m[3].toUpperCase() === 'PM' && hrs < 12) hrs += 12;
+        if (m[3].toUpperCase() === 'AM' && hrs === 12) hrs = 0;
+        return hrs * 60 + parseInt(m[2], 10);
+      };
+      return parseM(a.time) - parseM(b.time);
     });
 
     const rowsHtml = displayRows.map(draw => {

@@ -696,6 +696,11 @@ app.delete('/api/lottery/catalog/:id', requireRoles(ROLES.SUPER_ADMIN, ROLES.CLI
   return res.json(result);
 });
 
+app.post('/api/lottery/sync-all', (req, res) => {
+  syncAllTop10();
+  return res.json({ success: true, message: 'Sincronización completa de loterías en proceso.' });
+});
+
 // 2. Registro Manual de Emergencia (SuperAdmin y Jefe Técnico)
 app.post('/api/admin/lottery/manual', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   const gameId = req.body.gameId;
