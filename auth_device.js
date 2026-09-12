@@ -53,6 +53,51 @@ const DEFAULT_SCREEN_CONFIG = {
   bgMusicVolume: 0.25,
   circusMusicVolume: 0.25,
   defaultService: 'loteria', // 'loteria' | 'hipica'
+  lotterySections: {
+    resultados: {
+      enabled: true,
+      slides: [
+        {
+          id: 'slide_1',
+          name: 'Top 5 Animalitos Principales',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
+        },
+        {
+          id: 'slide_2',
+          name: 'Triples y Terminales Estrella',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-zamorano', 'triple-caliente']
+        }
+      ]
+    },
+    estadisticas: {
+      enabled: true,
+      slides: [
+        {
+          id: 'slide_stats_1',
+          name: 'Radiografía 30D y Pronósticos',
+          enabled: true,
+          duration: 20
+        }
+      ]
+    },
+    publicidad: {
+      enabled: true,
+      slides: [
+        {
+          id: 'slide_pub_1',
+          name: 'Publicidad Oficial de Loterías',
+          enabled: true,
+          duration: 15
+        }
+      ]
+    }
+  },
   modules: {
     top5_animalitos: {
       enabled: true,

@@ -41,7 +41,11 @@ const {
   getTop10Results,
   setManualResult,
   syncAllTop10,
-  getVenezuelaDateString
+  getVenezuelaDateString,
+  getLotteryCatalog,
+  addLotteryToCatalog,
+  updateLotteryInCatalog,
+  deleteLotteryFromCatalog
 } = require('./lottery_engine');
 const {
   getHotNumbers,
@@ -657,13 +661,39 @@ app.get('/api/stream/proxy', (req, res) => {
 // ==========================================
 // RUTAS DE LOTERÍAS Y ANIMALITOS (TOP 10 OFICIAL)
 // ==========================================
-// 1. Obtener Pizarra del Día (Resultados Top 10)
+// 1. Obtener Pizarra del Día (Resultados Top 10 y Catálogo)
 app.get('/api/lottery/top10', (req, res) => {
   return res.json({
     success: true,
     date: getVenezuelaDateString(),
     games: getTop10Results()
   });
+});
+
+// 1.1 Catálogo Maestro de Loterías (Editable)
+app.get('/api/lottery/catalog', (req, res) => {
+  return res.json({
+    success: true,
+    catalog: getLotteryCatalog()
+  });
+});
+
+app.post('/api/lottery/catalog', requireRoles(ROLES.SUPER_ADMIN, ROLES.CLIENT_MANAGER, ROLES.TECH_CHIEF), (req, res) => {
+  const result = addLotteryToCatalog(req.body);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+app.put('/api/lottery/catalog/:id', requireRoles(ROLES.SUPER_ADMIN, ROLES.CLIENT_MANAGER, ROLES.TECH_CHIEF), (req, res) => {
+  const result = updateLotteryInCatalog(req.params.id, req.body);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
+});
+
+app.delete('/api/lottery/catalog/:id', requireRoles(ROLES.SUPER_ADMIN, ROLES.CLIENT_MANAGER, ROLES.TECH_CHIEF), (req, res) => {
+  const result = deleteLotteryFromCatalog(req.params.id);
+  if (!result.success) return res.status(400).json(result);
+  return res.json(result);
 });
 
 // 2. Registro Manual de Emergencia (SuperAdmin y Jefe Técnico)

@@ -83,24 +83,24 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: all;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-}
-
-/* Ocultamiento dinámico cuando no está fijado y el cursor está ausente */
-.app-header.floating-header.header-hidden:not(:hover):not(.header-pinned-active) {
   transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  z-index: 1000;
+}
+
+/* Ocultamiento dinámico suave cuando no está fijado */
+.app-header.floating-header.header-hidden:not(.header-pinned) {
+  transform: translateY(-100%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Visible al pasar el mouse por la parte superior o cuando está fijado con pin */
-.app-header.floating-header:hover,
 .app-header.floating-header.visible,
-.header-pinned-active .app-header.floating-header,
-body.app-fullscreen-mode.header-pinned-active .app-header.floating-header {
+.app-header.floating-header.header-pinned,
+body.header-pinned-active .app-header.floating-header {
   transform: translateY(0) !important;
   opacity: 1 !important;
   pointer-events: all !important;
@@ -205,66 +205,12 @@ body.app-fullscreen-mode.header-pinned-active .app-header.floating-header {
 }
 
 /* Floating Cintillo Bar at Top Center */
+/* Floating Cintillo Bar (Oculto permanentemente para mantener interfaz limpia y despejada) */
 .floating-cintillo-container {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1050;
-  display: inline-flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-  align-items: center;
-  gap: 10px;
-  background: rgba(5, 7, 8, 0.95);
-  backdrop-filter: blur(14px);
-  border: 1.5px solid rgba(0, 255, 102, 0.4);
-  border-top: none;
-  border-radius: 0 0 16px 16px;
-  padding: 4px 14px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85), 0 0 15px rgba(0, 255, 102, 0.15);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  display: none !important;
 }
 
-/* Ocultar el cintillo flotante cuando la cabecera principal está visible o tiene el mouse encima para evitar solapamiento (Petición 2) */
-.app-header:hover + .floating-cintillo-container,
-.app-header.visible + .floating-cintillo-container,
-body.header-pinned-active .floating-cintillo-container,
-body.header-is-visible .floating-cintillo-container,
-body.app-fullscreen-mode.header-pinned-active .floating-cintillo-container {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transform: translate(-50%, -100%) !important;
-}
-
-.floating-cintillo-container .btn-floating-header-trigger {
-  position: static;
-  transform: none;
-  border: none;
-  background: transparent;
-  padding: 4px 10px;
-  color: #94a3b8;
-  font-family: var(--font-main);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: none;
-  border-radius: 8px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.floating-cintillo-container .btn-floating-header-trigger:hover {
-  background: rgba(56, 189, 248, 0.15);
-  color: #ffffff;
-  transform: none;
-}
-
+.btn-header-fullscreen,
 .btn-cintillo-fullscreen {
   display: inline-flex;
   align-items: center;
@@ -287,13 +233,15 @@ body.app-fullscreen-mode.header-pinned-active .floating-cintillo-container {
   text-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
 }
 
+.btn-header-fullscreen .cintillo-fs-svg,
 .btn-cintillo-fullscreen .cintillo-fs-svg {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   color: #38bdf8;
   display: block;
 }
 
+.btn-header-fullscreen:hover,
 .btn-cintillo-fullscreen:hover {
   background: rgba(56, 189, 248, 0.25);
   border-color: #38bdf8;
@@ -302,20 +250,23 @@ body.app-fullscreen-mode.header-pinned-active .floating-cintillo-container {
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
 }
 
+.btn-header-fullscreen:hover .cintillo-fs-svg,
 .btn-cintillo-fullscreen:hover .cintillo-fs-svg {
   color: #ffffff;
 }
 
+.btn-header-fullscreen.active-fullscreen,
 .btn-cintillo-fullscreen.active-fullscreen {
   background: rgba(239, 68, 68, 0.25);
   border-color: #ef4444;
   color: #fca5a5;
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  text-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }
 
-.btn-cintillo-fullscreen.active-fullscreen:hover {
-  background: rgba(239, 68, 68, 0.38);
-  color: #ffffff;
+.btn-header-fullscreen.active-fullscreen .cintillo-fs-svg,
+.btn-cintillo-fullscreen.active-fullscreen .cintillo-fs-svg {
+  color: #fca5a5;
 }
 
 /* ===================================================
@@ -3488,35 +3439,35 @@ kbd {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 42px;
+  height: 52px;
   background: #040607;
-  border-top: 1.5px solid var(--accent-neon);
+  border-top: 2px solid var(--accent-neon);
   border-radius: 0;
   display: flex;
   align-items: center;
   overflow: hidden;
   z-index: 998;
-  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.95), 0 0 15px rgba(0, 255, 102, 0.15);
+  box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.95), 0 0 18px rgba(0, 255, 102, 0.2);
   margin: 0;
 }
 
 #panelLottery {
-  padding-bottom: 60px !important;
+  padding-bottom: 72px !important;
 }
 
 .ticker-label {
   background: var(--accent-neon);
   color: #000000;
   font-family: var(--font-headline);
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   font-weight: 900;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
-  padding: 0 16px;
+  padding: 0 20px;
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
   z-index: 2;
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.6);
@@ -3526,7 +3477,7 @@ kbd {
   display: flex;
   align-items: center;
   white-space: nowrap;
-  gap: 50px;
+  gap: 55px;
   animation: marqueeScroll 160s linear infinite !important;
   padding-left: 20px;
   width: max-content;
@@ -3541,7 +3492,7 @@ kbd {
   100% { transform: translateX(-50%); }
 }
 
-/* Modo Pantalla Completa Universal (Petición 4) */
+/* Modo Pantalla Completa Universal */
 body.app-fullscreen-mode {
   position: fixed !important;
   inset: 0 !important;
@@ -3554,17 +3505,23 @@ body.app-fullscreen-mode {
   background: #020617 !important;
 }
 
-body.app-fullscreen-mode .app-header {
+body.app-fullscreen-mode .tv-control-legend {
+  display: none !important;
+}
+
+body.app-fullscreen-mode .app-header:not(.visible):not(.header-pinned) {
   transform: translateY(-100%) !important;
   opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 body.app-fullscreen-mode .top-header-hover-zone {
   display: block !important;
+  z-index: 1000000 !important;
 }
 
 body.app-fullscreen-mode .service-view-panel {
-  padding: 8px 14px 60px 14px !important;
+  padding: 8px 14px 72px 14px !important;
   height: 100vh !important;
   overflow-y: auto !important;
 }
@@ -3572,8 +3529,8 @@ body.app-fullscreen-mode .service-view-panel {
 .ticker-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
+  gap: 10px;
+  font-size: 1.02rem;
   font-weight: 700;
   color: #e2e8f0;
 }
@@ -3581,27 +3538,31 @@ body.app-fullscreen-mode .service-view-panel {
 .ticker-item .game-tag {
   color: #38bdf8;
   font-weight: 800;
+  font-size: 1.05rem;
 }
 
 .ticker-item .val-hot {
   color: #fbbf24;
-  background: rgba(245, 158, 11, 0.15);
-  padding: 2px 8px;
+  background: rgba(245, 158, 11, 0.18);
+  padding: 3px 10px;
   border-radius: 6px;
+  font-size: 1.05rem;
 }
 
 .ticker-item .val-cold {
   color: #60a5fa;
-  background: rgba(59, 130, 246, 0.15);
-  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.18);
+  padding: 3px 10px;
   border-radius: 6px;
+  font-size: 1.05rem;
 }
 
 .ticker-item .val-winner {
   color: #34d399;
-  background: rgba(16, 185, 129, 0.15);
-  padding: 2px 8px;
+  background: rgba(16, 185, 129, 0.18);
+  padding: 3px 10px;
   border-radius: 6px;
+  font-size: 1.05rem;
 }
 
 .btn-ticker-fullscreen {
@@ -3910,7 +3871,7 @@ body.app-fullscreen-mode .service-view-panel {
 }
 
 body.app-fullscreen-mode #panelLottery {
-  padding-bottom: 50px !important;
+  padding-bottom: 72px !important;
 }
 
 body.app-fullscreen-mode .pizarra-1000-board {
@@ -5296,6 +5257,497 @@ body.app-fullscreen-mode .lottery-carousel-stage {
   outline: 2px solid rgba(0, 255, 102, 0.6) !important;
   outline-offset: 1px !important;
   box-shadow: 0 0 10px rgba(0, 255, 102, 0.5) !important;
+}
+
+/* ===================================================
+   DISEÑO OFICIAL DE RESULTADOS DE LOTERÍAS (IMAGEN 4)
+   =================================================== */
+.result-slide-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 12px 10px 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.result-slide-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--col-count, 5), 1fr);
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  align-items: stretch;
+}
+
+.result-slide-grid[data-cols="1"] {
+  max-width: 540px;
+  margin: 0 auto;
+  grid-template-columns: 1fr;
+}
+
+.result-slide-grid[data-cols="2"] {
+  max-width: 900px;
+  margin: 0 auto;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.result-slide-grid[data-cols="3"] {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.result-slide-grid[data-cols="4"] {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.result-slide-grid[data-cols="5"] {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.result-column-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.result-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 10px;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-height: 42px;
+  max-height: 46px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.result-col-logo-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.result-col-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.result-col-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.result-column-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  padding: 4px 6px;
+  gap: 1px;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.result-draw-row {
+  display: flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-bottom: 1px solid #f1f5f9;
+  min-height: 28px;
+  gap: 6px;
+  box-sizing: border-box;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.result-draw-row:last-child {
+  border-bottom: none;
+}
+
+.result-draw-row.done {
+  background: rgba(248, 250, 252, 0.8);
+}
+
+.result-draw-row.pending {
+  opacity: 0.38;
+}
+
+.result-time {
+  font-size: 0.80rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  min-width: 58px;
+  font-family: var(--font-code, monospace);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.result-avatar-box {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+.result-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.result-avatar-coin {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-num-blue {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #1d4ed8;
+  min-width: 26px;
+  text-align: center;
+  font-family: var(--font-code, monospace);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.result-pipe-red {
+  color: #dc2626;
+  font-weight: 900;
+  font-size: 1.25rem;
+  line-height: 1;
+  margin: 0 2px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.result-animal-name {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: #0f172a;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.4px;
+  flex: 1;
+}
+
+/* Adaptación para Triples en Diapositivas de Resultados */
+.result-triple-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  flex: 1;
+}
+
+.result-triple-pill {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #1d4ed8;
+  font-family: var(--font-code, monospace);
+}
+
+.result-triple-sign {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #7c3aed;
+  text-transform: uppercase;
+}
+
+/* ===================================================
+   PANEL ADMINISTRATIVO: GESTOR DE 3 SECCIONES & SLIDES
+   =================================================== */
+.lottery-sections-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid rgba(56, 189, 248, 0.25);
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.sec-subtab-btn {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.sec-subtab-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.sec-subtab-btn.active {
+  background: rgba(0, 255, 102, 0.18);
+  color: #00ff66;
+  border-color: #00ff66;
+  box-shadow: 0 0 12px rgba(0, 255, 102, 0.3);
+}
+
+.slides-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.slide-editor-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease;
+}
+
+.slide-editor-card:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.slide-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.slide-number-badge {
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 4px 10px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.slide-name-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.slide-name-input {
+  flex: 1;
+  background: #090e17;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 6px 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.slide-name-input:focus {
+  border-color: #00ff66;
+  outline: none;
+}
+
+.btn-clear-name {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.btn-delete-slide {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-delete-slide:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+}
+
+.slide-duration-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: #cbd5e1;
+}
+
+.slide-duration-input {
+  width: 58px;
+  background: #090e17;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: #00ff66;
+  font-weight: 800;
+  text-align: center;
+  padding: 4px;
+}
+
+.lottery-count-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-count-lottery {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-count-lottery:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.btn-count-lottery.active {
+  background: rgba(0, 255, 102, 0.25);
+  border-color: #00ff66;
+  color: #00ff66;
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.35);
+}
+
+.slide-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.slot-item-box {
+  background: rgba(9, 14, 23, 0.7);
+  border: 1px dashed rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slot-label {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.slot-select {
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  width: 100%;
+}
+
+.slot-select:focus {
+  border-color: #00ff66;
+  outline: none;
+}
+
+/* Modal Catálogo Maestro de Loterías */
+.lottery-catalog-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 10px;
+}
+
+.lottery-catalog-table th {
+  background: rgba(30, 41, 59, 0.8);
+  color: #38bdf8;
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  font-weight: 800;
+}
+
+.lottery-catalog-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+}
+
+.lottery-catalog-table tr:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 

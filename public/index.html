@@ -646,131 +646,79 @@
                 </div>
               </div>
 
-              <!-- Bloque 4: Módulos del Carrusel & Tiempos Individuales -->
+              <!-- Bloque 4: Sistema de 3 Secciones de Loterías (Resultados, Estadísticas, Publicidad) -->
               <div class="config-card" style="grid-column: 1 / -1;">
-                <h5 class="config-card-title">🎠 Módulos del Carrusel de Reproducción Automática (Sin Intervención Humana)</h5>
-                <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 14px 0;">Configure la rotación continua para los televisores de las agencias. Asigne el tiempo exacto en segundos para cada módulo y seleccione qué sorteos desea incluir:</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+                  <div>
+                    <h5 class="config-card-title" style="margin:0;">🎰 Módulo de Loterías: 3 Secciones & Diapositivas (1 a 10 por Sección)</h5>
+                    <p style="font-size:0.85rem; color:#94a3b8; margin:4px 0 0 0;">Cada sección puede contener entre 1 y 10 diapositivas autónomas. En la sección de Resultados puede escoger entre 1 y 5 loterías por diapositiva.</p>
+                  </div>
+                  <button type="button" class="btn-secondary" id="btnOpenLotteryCatalogModal" style="background:rgba(245, 158, 11, 0.15); border:1px solid #f59e0b; color:#fbbf24; font-weight:700; font-size:0.85rem; padding:8px 16px; border-radius:8px; cursor:pointer;">
+                    🎰 Gestionar Catálogo Maestro de Loterías
+                  </button>
+                </div>
 
-                <div class="carousel-modules-settings-grid">
-                  <!-- Módulo 1 -->
-                  <div class="module-config-box">
-                    <div class="module-config-header">
-                      <label class="switch-label">
-                        <input type="checkbox" id="modEnabled_top5_animalitos" checked>
-                        <strong>3.1 Top 5 Animalitos Más Vendidos</strong>
-                      </label>
-                      <div class="module-duration-input">
-                        <span>Duración:</span>
-                        <input type="number" id="modDuration_top5_animalitos" value="20" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
-                        <span>seg</span>
-                      </div>
+                <!-- Pestañas de las 3 Secciones -->
+                <div class="lottery-sections-tabs">
+                  <button type="button" class="sec-subtab-btn active" data-sec="resultados" id="btnSecTabResultados" onclick="window.switchLotteryConfigSection('resultados')">
+                    🎯 1. Resultados (1 a 5 Loterías / Diapositiva)
+                  </button>
+                  <button type="button" class="sec-subtab-btn" data-sec="estadisticas" id="btnSecTabEstadisticas" onclick="window.switchLotteryConfigSection('estadisticas')">
+                    📊 2. Estadísticas y/o Pronósticos
+                  </button>
+                  <button type="button" class="sec-subtab-btn" data-sec="publicidad" id="btnSecTabPublicidad" onclick="window.switchLotteryConfigSection('publicidad')">
+                    📢 3. Información y/o Publicidad
+                  </button>
+                </div>
+
+                <!-- Sub-panel 1: SECCIÓN RESULTADOS -->
+                <div id="subpanelSecResultados" class="sec-subpanel-content">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(30,41,59,0.5); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                    <div>
+                      <strong style="color:#38bdf8; font-size:0.92rem;">Diapositivas de Resultados:</strong>
+                      <span id="lblResultadosSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(2 configuradas / máx 10)</span>
                     </div>
-                    <p class="module-desc">Pizarra en 5 columnas con los animalitos líderes (Guácharo, Granjita, Lotto Activo...).</p>
-                    <div class="module-lottery-picker" id="picker_top5_animalitos">
-                      <!-- Checkboxes de sorteos generados por JS -->
-                    </div>
+                    <button type="button" class="btn-primary" id="btnAddResultSlide" onclick="window.addNewResultSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.85rem; padding:6px 16px; font-weight:700; border-radius:6px; cursor:pointer;">
+                      ➕ Agregar Diapositiva (Máx 10)
+                    </button>
                   </div>
 
-                  <!-- Módulo 2 -->
-                  <div class="module-config-box">
-                    <div class="module-config-header">
-                      <label class="switch-label">
-                        <input type="checkbox" id="modEnabled_top5_triples" checked>
-                        <strong>3.2 Top 5 Triples y Terminales</strong>
-                      </label>
-                      <div class="module-duration-input">
-                        <span>Duración:</span>
-                        <input type="number" id="modDuration_top5_triples" value="20" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
-                        <span>seg</span>
-                      </div>
+                  <div id="slidesResultadosContainer" class="slides-list-container">
+                    <!-- Generado dinámicamente por JS con 1 a 10 diapositivas -->
+                  </div>
+                </div>
+
+                <!-- Sub-panel 2: SECCIÓN ESTADÍSTICAS Y PRONÓSTICOS -->
+                <div id="subpanelSecEstadisticas" class="sec-subpanel-content" style="display:none;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(30,41,59,0.5); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                    <div>
+                      <strong style="color:#38bdf8; font-size:0.92rem;">Diapositivas de Estadísticas:</strong>
+                      <span id="lblEstadisticasSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(1 configurada / máx 10)</span>
                     </div>
-                    <p class="module-desc">Pizarra en 5 columnas con triples (Triple Zulia, Táchira, Chance, Zamorano, Caracas...).</p>
-                    <div class="module-lottery-picker" id="picker_top5_triples">
-                      <!-- Checkboxes de triples -->
-                    </div>
+                    <button type="button" class="btn-primary" id="btnAddStatsSlide" onclick="window.addNewStatsSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.85rem; padding:6px 16px; font-weight:700; border-radius:6px; cursor:pointer;">
+                      ➕ Agregar Diapositiva (Máx 10)
+                    </button>
                   </div>
 
-                  <!-- Módulo 3 -->
-                  <div class="module-config-box">
-                    <div class="module-config-header">
-                      <label class="switch-label">
-                        <input type="checkbox" id="modEnabled_group2_animalitos" checked>
-                        <strong>3.3 Animalitos Grupo 2 (6to lugar en adelante)</strong>
-                      </label>
-                      <div class="module-duration-input">
-                        <span>Duración:</span>
-                        <input type="number" id="modDuration_group2_animalitos" value="18" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
-                        <span>seg</span>
-                      </div>
+                  <div id="slidesEstadisticasContainer" class="slides-list-container">
+                    <!-- Generado dinámicamente por JS -->
+                  </div>
+                </div>
+
+                <!-- Sub-panel 3: SECCIÓN INFORMACIÓN Y PUBLICIDAD -->
+                <div id="subpanelSecPublicidad" class="sec-subpanel-content" style="display:none;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(30,41,59,0.5); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                    <div>
+                      <strong style="color:#38bdf8; font-size:0.92rem;">Diapositivas de Información y Publicidad:</strong>
+                      <span id="lblPublicidadSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(1 configurada / máx 10)</span>
                     </div>
-                    <p class="module-desc">Loterías secundarias de animalitos (Selva Plus, Ruleta Activa, Granjita Plus...).</p>
-                    <div class="module-lottery-picker" id="picker_group2_animalitos">
-                      <!-- Checkboxes -->
-                    </div>
+                    <button type="button" class="btn-primary" id="btnAddPubSlide" onclick="window.addNewPubSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.85rem; padding:6px 16px; font-weight:700; border-radius:6px; cursor:pointer;">
+                      ➕ Agregar Diapositiva (Máx 10)
+                    </button>
                   </div>
 
-                  <!-- Módulo 4 -->
-                  <div class="module-config-box">
-                    <div class="module-config-header">
-                      <label class="switch-label">
-                        <input type="checkbox" id="modEnabled_pizarra_1000" checked>
-                        <strong>3.4 Pizarra General de Loterías</strong>
-                      </label>
-                      <div class="module-duration-input">
-                        <span>Duración:</span>
-                        <input type="number" id="modDuration_pizarra_1000" value="28" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
-                        <span>seg</span>
-                      </div>
-                    </div>
-                    <p class="module-desc">Pizarra 4 columnas paralelas de sorteos del día + banner publicitario lateral de agencia.</p>
-                  </div>
-
-                  <!-- Módulo 5 -->
-                  <div class="module-config-box">
-                    <div class="module-config-header">
-                      <label class="switch-label">
-                        <input type="checkbox" id="modEnabled_estadisticas" checked>
-                        <strong>3.5 Radiografía Estadística 30D & Pronósticos</strong>
-                      </label>
-                      <div class="module-duration-input">
-                        <span>Duración:</span>
-                        <input type="number" id="modDuration_estadisticas" value="20" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
-                        <span>seg</span>
-                      </div>
-                    </div>
-                    <p class="module-desc">Números más calientes, fríos / atrasados, datos por reventar e invitación a apostar en taquilla.</p>
-                  </div>
-
-                  <!-- Módulo 6 -->
-                  <div class="module-config-box">
-                    <div class="module-config-header">
-                      <label class="switch-label">
-                        <input type="checkbox" id="modEnabled_publicidad" checked>
-                        <strong>3.6 Publicidad Oficial de Loterías (3 Diapositivas)</strong>
-                      </label>
-                      <div class="module-duration-input">
-                        <span>Duración:</span>
-                        <input type="number" id="modDuration_publicidad" value="15" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
-                        <span>seg</span>
-                      </div>
-                    </div>
-                    <p class="module-desc">3 diapositivas promocionales con logos oficiales de los 5 sorteos y llamadas a la acción.</p>
-                  </div>
-
-                  <!-- Módulo 7 -->
-                  <div class="module-config-box">
-                    <div class="module-config-header">
-                      <label class="switch-label">
-                        <input type="checkbox" id="modEnabled_ultimos_5_sorteos" checked>
-                        <strong>3.7 Últimos 5 Sorteos Incorporados (Hero Card)</strong>
-                      </label>
-                      <div class="module-duration-input">
-                        <span>Duración:</span>
-                        <input type="number" id="modDuration_ultimos_5_sorteos" value="25" min="5" max="120" style="width:60px; text-align:center; font-weight:bold;">
-                        <span>seg</span>
-                      </div>
-                    </div>
-                    <p class="module-desc">Exhibición de máximo impacto de los 5 sorteos más recientes en tarjeta destacada gigante.</p>
+                  <div id="slidesPublicidadContainer" class="slides-list-container">
+                    <!-- Generado dinámicamente por JS -->
                   </div>
                 </div>
               </div>
@@ -1213,6 +1161,73 @@
         </div>
         <div class="stats-modal-body" id="statsModalBody">
           <!-- Rendered via JS: Podio calientes, Atrasados, Pronósticos -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Gestor de Catálogo Maestro de Loterías -->
+    <div class="modal-overlay" id="lotteryCatalogModal" style="display: none; z-index: 1000000;">
+      <div class="stats-modal-card glassmorphism" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="stats-modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+          <div>
+            <h2 style="margin:0; font-size:1.4rem; color:#fbbf24;">🎰 Catálogo Maestro de Loterías Oficiales</h2>
+            <p style="margin:4px 0 0 0; font-size:0.85rem; color:#94a3b8;">Agregue, edite o elimine las loterías que estarán disponibles para las pantallas de su agencia.</p>
+          </div>
+          <button class="btn-modal-close" onclick="window.closeLotteryCatalogModal()">✖️</button>
+        </div>
+
+        <!-- Formulario Rápido para Agregar Lotería -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px; margin-top: 14px;">
+          <h4 style="margin:0 0 10px 0; color:#fbbf24; font-size:0.92rem;">➕ Registrar Nueva Lotería</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: flex-end;">
+            <div>
+              <label style="font-size:0.75rem; color:#94a3b8; font-weight:700;">Nombre del Producto:</label>
+              <input type="text" id="txtNewLotteryName" placeholder="Ej: CHANCE ANIMAL" style="width:100%; background:#0f172a; border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:#fff; padding:6px 8px; font-size:0.82rem; font-weight:700;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:#94a3b8; font-weight:700;">Nombre Corto / Cabecera:</label>
+              <input type="text" id="txtNewLotteryShortName" placeholder="Ej: Chance" style="width:100%; background:#0f172a; border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:#fff; padding:6px 8px; font-size:0.82rem; font-weight:700;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:#94a3b8; font-weight:700;">Tipo de Sorteo:</label>
+              <select id="selNewLotteryType" style="width:100%; background:#0f172a; border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:#fff; padding:6px 8px; font-size:0.82rem; font-weight:700;">
+                <option value="animalitos">🐾 Animalitos (Ruletas)</option>
+                <option value="triples">🎰 Triples / Terminales / Centenas</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:#94a3b8; font-weight:700;">Color Distintivo:</label>
+              <input type="color" id="colNewLotteryColor" value="#10b981" style="width:100%; height:32px; background:transparent; border:1px solid rgba(255,255,255,0.2); border-radius:6px; cursor:pointer;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem; color:#94a3b8; font-weight:700;">URL Logotipo (Opcional):</label>
+              <input type="text" id="txtNewLotteryLogoUrl" placeholder="https://..." style="width:100%; background:#0f172a; border:1px solid rgba(255,255,255,0.2); border-radius:6px; color:#fff; padding:6px 8px; font-size:0.82rem;">
+            </div>
+            <div>
+              <button type="button" class="btn-primary" onclick="window.handleSaveNewCatalogLottery()" style="width:100%; background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; font-weight:800; font-size:0.85rem; padding:8px; border-radius:6px; cursor:pointer;">
+                💾 Agregar Lotería
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de Loterías -->
+        <div style="flex:1; overflow-y:auto; margin-top:14px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; max-height:420px;">
+          <table class="lottery-catalog-table">
+            <thead>
+              <tr>
+                <th style="width:40px;">Color</th>
+                <th style="width:45px;">Logo</th>
+                <th>Nombre Oficial</th>
+                <th>Tipo</th>
+                <th>Horarios</th>
+                <th style="width:110px; text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tblLotteryCatalogBody">
+              <!-- Renderizado dinámicamente por JS -->
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

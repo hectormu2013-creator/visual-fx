@@ -169,10 +169,101 @@ const TOP_10_GAMES = [
 ];
 
 // Estado en memoria
+const CATALOG_FILE = path.join(DATA_DIR, 'lottery_catalog.json');
+let lotteryCatalog = [];
 let resultsStore = {};
 let listeners = [];
 let sourceAlternator = 0; // 0: TuAzar -> 1000Res, 1: 1000Res -> TuAzar
 let schedulerTimer = null;
+
+// Cargar catálogo de loterías desde disco o inicializar con TOP_10_GAMES
+function loadCatalogFromDisk() {
+  ensureDataDir();
+  try {
+    if (fs.existsSync(CATALOG_FILE)) {
+      const raw = fs.readFileSync(CATALOG_FILE, 'utf8');
+      lotteryCatalog = JSON.parse(raw);
+    } else {
+      lotteryCatalog = JSON.parse(JSON.stringify(TOP_10_GAMES));
+      saveCatalogToDisk();
+    }
+  } catch (err) {
+    console.error('[LotteryEngine] Error leyendo lottery_catalog.json:', err);
+    lotteryCatalog = JSON.parse(JSON.stringify(TOP_10_GAMES));
+  }
+}
+
+function saveCatalogToDisk() {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(CATALOG_FILE, JSON.stringify(lotteryCatalog, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[LotteryEngine] Error guardando lottery_catalog.json:', err);
+  }
+}
+
+function getLotteryCatalog() {
+  if (!lotteryCatalog || lotteryCatalog.length === 0) {
+    loadCatalogFromDisk();
+  }
+  return lotteryCatalog;
+}
+
+function addLotteryToCatalog(gameData) {
+  loadCatalogFromDisk();
+  const rawId = (gameData.name || 'nueva-loteria').toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-');
+  let finalId = gameData.id || rawId;
+  let counter = 1;
+  while (lotteryCatalog.some(g => g.id === finalId)) {
+    finalId = `${rawId}-${counter++}`;
+  }
+
+  const newGame = {
+    id: finalId,
+    name: gameData.name ? gameData.name.trim().toUpperCase() : 'NUEVA LOTERÍA',
+    shortName: gameData.shortName ? gameData.shortName.trim() : (gameData.name || 'Lotería'),
+    type: gameData.type === 'triples' ? 'triples' : 'animalitos',
+    icon: gameData.icon || (gameData.type === 'triples' ? '🎰' : '🐾'),
+    color: gameData.color || '#10b981',
+    logoUrl: gameData.logoUrl || '',
+    hours: Array.isArray(gameData.hours) && gameData.hours.length > 0 ? gameData.hours : [
+      "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
+      "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
+    ]
+  };
+
+  lotteryCatalog.push(newGame);
+  saveCatalogToDisk();
+  return { success: true, game: newGame, catalog: lotteryCatalog };
+}
+
+function updateLotteryInCatalog(id, updateData) {
+  loadCatalogFromDisk();
+  const idx = lotteryCatalog.findIndex(g => g.id === id);
+  if (idx === -1) return { success: false, error: 'Lotería no encontrada en el catálogo' };
+
+  if (updateData.name) lotteryCatalog[idx].name = updateData.name.trim().toUpperCase();
+  if (updateData.shortName) lotteryCatalog[idx].shortName = updateData.shortName.trim();
+  if (updateData.type) lotteryCatalog[idx].type = updateData.type;
+  if (updateData.icon) lotteryCatalog[idx].icon = updateData.icon;
+  if (updateData.color) lotteryCatalog[idx].color = updateData.color;
+  if (updateData.logoUrl !== undefined) lotteryCatalog[idx].logoUrl = updateData.logoUrl;
+  if (Array.isArray(updateData.hours)) lotteryCatalog[idx].hours = updateData.hours;
+
+  saveCatalogToDisk();
+  return { success: true, game: lotteryCatalog[idx], catalog: lotteryCatalog };
+}
+
+function deleteLotteryFromCatalog(id) {
+  loadCatalogFromDisk();
+  const initialLen = lotteryCatalog.length;
+  lotteryCatalog = lotteryCatalog.filter(g => g.id !== id);
+  if (lotteryCatalog.length === initialLen) {
+    return { success: false, error: 'Lotería no encontrada en el catálogo' };
+  }
+  saveCatalogToDisk();
+  return { success: true, message: `Lotería ${id} eliminada con éxito`, catalog: lotteryCatalog };
+}
 
 // Obtener fecha actual en formato YYYY-MM-DD en zona horaria de Venezuela (America/Caracas UTC-4)
 function getVenezuelaDateString() {
@@ -624,7 +715,8 @@ function checkScheduledDraws() {
 
 // API de Emergencia Manual
 function setManualResult({ gameId, time, number, name, tripleA, tripleB, tripleC, signo }) {
-  const game = TOP_10_GAMES.find(g => g.id === gameId);
+  const catalog = getLotteryCatalog();
+  const game = catalog.find(g => g.id === gameId) || TOP_10_GAMES.find(g => g.id === gameId);
   if (!game) return { success: false, error: 'Juego no encontrado' };
 
   const today = getVenezuelaDateString();
@@ -637,8 +729,9 @@ function setManualResult({ gameId, time, number, name, tripleA, tripleB, tripleC
       type: game.type,
       icon: game.icon,
       color: game.color,
+      logoUrl: game.logoUrl || '',
       lastUpdated: new Date().toISOString(),
-      draws: game.hours.map(h => ({ time: h, isPending: true }))
+      draws: (game.hours || []).map(h => ({ time: h, isPending: true }))
     };
   }
 
@@ -680,15 +773,17 @@ function notifyListeners(event) {
 }
 
 function initLotteryEngine() {
+  loadCatalogFromDisk();
   loadResultsFromDisk();
   seedBaselineHistory(TOP_10_GAMES);
   const today = getVenezuelaDateString();
+  const catalog = getLotteryCatalog();
 
-  // Asegurar estructura base para el Top 10 si es un nuevo día
+  // Asegurar estructura base para todos los juegos del catálogo
   if (!resultsStore[today]) {
     resultsStore[today] = {};
   }
-  for (const game of TOP_10_GAMES) {
+  for (const game of catalog) {
     if (!resultsStore[today][game.id]) {
       resultsStore[today][game.id] = {
         gameId: game.id,
@@ -696,14 +791,16 @@ function initLotteryEngine() {
         shortName: game.shortName,
         type: game.type,
         icon: game.icon,
-        logoUrl: game.logoUrl,
+        logoUrl: game.logoUrl || '',
         color: game.color,
         lastUpdated: new Date().toISOString(),
-        draws: game.hours.map(h => ({ time: h, isPending: true }))
+        draws: (game.hours || []).map(h => ({ time: h, isPending: true }))
       };
     } else {
-      resultsStore[today][game.id].logoUrl = game.logoUrl;
-      resultsStore[today][game.id].icon = game.icon;
+      if (game.logoUrl) resultsStore[today][game.id].logoUrl = game.logoUrl;
+      if (game.icon) resultsStore[today][game.id].icon = game.icon;
+      if (game.color) resultsStore[today][game.id].color = game.color;
+      if (game.name) resultsStore[today][game.id].name = game.name;
     }
   }
   saveResultsToDisk();
@@ -717,26 +814,29 @@ function initLotteryEngine() {
   if (schedulerTimer) clearInterval(schedulerTimer);
   schedulerTimer = setInterval(checkScheduledDraws, 30000);
 
-  console.log('[LotteryEngine] Motor de Loterías iniciado con éxito. Top 10 activo con logos y estadísticas 30D.');
+  console.log(`[LotteryEngine] Motor de Loterías iniciado con éxito. Catálogo activo con ${catalog.length} loterías registradas.`);
 }
 
 function getTop10Results() {
   const today = getVenezuelaDateString();
   const todayData = resultsStore[today] || {};
-  return TOP_10_GAMES.map(game => {
+  const catalog = getLotteryCatalog();
+  return catalog.map(game => {
     const data = todayData[game.id] || {
       gameId: game.id,
       name: game.name,
       shortName: game.shortName,
       type: game.type,
       icon: game.icon,
-      logoUrl: game.logoUrl,
+      logoUrl: game.logoUrl || '',
       color: game.color,
       lastUpdated: new Date().toISOString(),
-      draws: game.hours.map(h => ({ time: h, isPending: true }))
+      draws: (game.hours || []).map(h => ({ time: h, isPending: true }))
     };
-    data.logoUrl = game.logoUrl;
-    data.icon = game.icon;
+    data.logoUrl = game.logoUrl || data.logoUrl;
+    data.icon = game.icon || data.icon;
+    data.color = game.color || data.color;
+    data.name = game.name || data.name;
     return data;
   });
 }
@@ -749,5 +849,9 @@ module.exports = {
   syncGame,
   syncAllTop10,
   onResultsUpdate,
-  getVenezuelaDateString
+  getVenezuelaDateString,
+  getLotteryCatalog,
+  addLotteryToCatalog,
+  updateLotteryInCatalog,
+  deleteLotteryFromCatalog
 };

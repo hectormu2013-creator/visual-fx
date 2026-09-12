@@ -180,6 +180,9 @@ window.switchDirectService = switchDirectService;
 // ==========================================
 // Floating Header & Auto-Hide Controller (Requisito 7)
 // ==========================================
+// ==========================================
+// Floating Header & Auto-Hide Controller (Requisito 7)
+// ==========================================
 let headerAutoHideTimer = null;
 let isHeaderPinned = localStorage.getItem('visual_fx_header_pinned') === 'true'; // Flotante por defecto
 
@@ -190,22 +193,35 @@ function initFloatingHeader() {
   const pinBtn = document.getElementById('btnPinHeader');
   const pinLbl = document.getElementById('lblPinState');
 
-  if (isHeaderPinned) {
-    document.body.classList.add('header-pinned-active');
-    if (header) {
-      header.classList.remove('header-hidden');
-      header.classList.add('header-pinned');
+  function updatePinUi() {
+    if (isHeaderPinned) {
+      document.body.classList.add('header-pinned-active');
+      if (header) {
+        header.classList.remove('header-hidden');
+        header.classList.add('header-pinned');
+        header.classList.add('visible');
+      }
+      if (pinBtn) pinBtn.classList.add('pinned');
+      if (pinLbl) pinLbl.textContent = 'Fijado';
+    } else {
+      document.body.classList.remove('header-pinned-active');
+      if (header) {
+        header.classList.remove('header-pinned');
+      }
+      if (pinBtn) pinBtn.classList.remove('pinned');
+      if (pinLbl) pinLbl.textContent = 'Fijar';
     }
-    if (pinBtn) pinBtn.classList.add('pinned');
-    if (pinLbl) pinLbl.textContent = 'Fijado';
-  } else {
-    document.body.classList.remove('header-pinned-active');
-    if (header) header.classList.remove('header-pinned');
-    if (pinBtn) pinBtn.classList.remove('pinned');
-    if (pinLbl) pinLbl.textContent = 'Fijar';
+  }
+  updatePinUi();
+
+  function hideHeaderNow() {
+    if (isHeaderPinned || !header) return;
+    header.classList.remove('visible');
+    header.classList.add('header-hidden');
+    document.body.classList.remove('header-is-visible');
   }
 
-  function showHeaderTemporarily(durationMs = 4000) {
+  function showHeaderTemporarily(durationMs = 3500) {
     if (!header) return;
     header.classList.remove('header-hidden');
     header.classList.add('visible');
@@ -213,55 +229,76 @@ function initFloatingHeader() {
     if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
     if (!isHeaderPinned) {
       headerAutoHideTimer = setTimeout(() => {
-        if (!isHeaderPinned && header) {
-          header.classList.remove('visible');
-          header.classList.add('header-hidden');
-          document.body.classList.remove('header-is-visible');
-        }
+        hideHeaderNow();
       }, durationMs);
     }
   }
 
+  // Activar en hover sobre la zona superior (Y <= 35px)
   if (hoverZone) {
-    hoverZone.addEventListener('mouseenter', () => showHeaderTemporarily(5000));
+    hoverZone.addEventListener('mouseenter', () => showHeaderTemporarily(4000));
   }
   if (triggerBtn) {
-    triggerBtn.addEventListener('click', () => showHeaderTemporarily(6000));
+    triggerBtn.addEventListener('click', () => showHeaderTemporarily(5000));
   }
+
+  let isCursorOverHeader = false;
   if (header) {
     header.addEventListener('mouseenter', () => {
+      isCursorOverHeader = true;
       if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
       header.classList.remove('header-hidden');
       header.classList.add('visible');
       document.body.classList.add('header-is-visible');
     });
     header.addEventListener('mouseleave', () => {
+      isCursorOverHeader = false;
       if (!isHeaderPinned) {
+        if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
         headerAutoHideTimer = setTimeout(() => {
-          if (!isHeaderPinned && header) {
-            header.classList.remove('visible');
-            header.classList.add('header-hidden');
-            document.body.classList.remove('header-is-visible');
-          }
+          if (!isCursorOverHeader) hideHeaderNow();
         }, 1500);
       }
     });
   }
 
-  // Activar barra superior al mover el cursor hacia el borde superior (<= 25px)
-  document.addEventListener('mousemove', (e) => {
-    if (!isHeaderPinned && e.clientY <= 25) {
+  // Actividad del usuario:
+  // - Solo cuando el cursor se acerca al borde superior (Y <= 45px) o toca la zona superior se despliega la cabecera.
+  // - Si el cursor se aleja hacia el centro/abajo de la pantalla (Y > 65px), se oculta automáticamente.
+  // - Al presionar teclas de navegación (flechas, Home, End, Espacio), se muestra brevemente (2.5s) y luego se auto-oculta.
+  const onPointerActivity = (e) => {
+    if (isHeaderPinned) return;
+    if (e.clientY !== undefined) {
+      if (e.clientY <= 45) {
+        showHeaderTemporarily(4000);
+      } else if (e.clientY > 65 && !isCursorOverHeader) {
+        if (!headerAutoHideTimer) {
+          headerAutoHideTimer = setTimeout(() => {
+            if (!isCursorOverHeader && !isHeaderPinned) hideHeaderNow();
+          }, 1200);
+        }
+      }
+    }
+  };
+
+  window.addEventListener('mousemove', onPointerActivity, { passive: true });
+  window.addEventListener('touchstart', (e) => {
+    if (isHeaderPinned) return;
+    const touch = e.touches && e.touches[0];
+    if (touch && touch.clientY <= 55) {
       showHeaderTemporarily(4000);
     }
-  });
+  }, { passive: true });
+  window.addEventListener('keydown', (e) => {
+    if (isHeaderPinned) return;
+    if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', ' '].includes(e.key)) {
+      showHeaderTemporarily(2800);
+    }
+  }, { passive: true });
 
-  // Si no está fijada, ocultar suavemente tras 3.5 segundos en el arranque inicial
+  // Mostrar 2.5s al arrancar y luego ocultar suavemente si no está fijada
   if (!isHeaderPinned && header) {
-    setTimeout(() => {
-      if (!isHeaderPinned && header) {
-        header.classList.add('header-hidden');
-      }
-    }, 3500);
+    showHeaderTemporarily(2500);
   }
 }
 
@@ -277,9 +314,11 @@ function toggleHeaderPin() {
     if (header) {
       header.classList.remove('header-hidden');
       header.classList.add('header-pinned');
+      header.classList.add('visible');
     }
     if (pinBtn) pinBtn.classList.add('pinned');
     if (pinLbl) pinLbl.textContent = 'Fijado';
+    if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
   } else {
     document.body.classList.remove('header-pinned-active');
     if (header) {
@@ -288,10 +327,12 @@ function toggleHeaderPin() {
     }
     if (pinBtn) pinBtn.classList.remove('pinned');
     if (pinLbl) pinLbl.textContent = 'Fijar';
-    setTimeout(() => {
+    if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
+    headerAutoHideTimer = setTimeout(() => {
       if (!isHeaderPinned && header) {
         header.classList.remove('visible');
         header.classList.add('header-hidden');
+        document.body.classList.remove('header-is-visible');
       }
     }, 2500);
   }
@@ -307,7 +348,7 @@ function isCurrentlyFullscreen() {
     document.webkitFullscreenElement ||
     document.mozFullScreenElement ||
     document.msFullscreenElement ||
-    (window.innerHeight === screen.height && screen.height > 0)
+    document.body.classList.contains('app-fullscreen-mode')
   );
 }
 
@@ -341,6 +382,19 @@ async function toggleAppFullscreen(e) {
         console.warn('[Fullscreen Native Request Fallback to CSS]', err);
       }
     }
+    // Si no está fijada la cabecera, ocultarla a los 1.5s de entrar a pantalla completa
+    if (!isHeaderPinned) {
+      const header = document.getElementById('appHeader');
+      if (header) {
+        setTimeout(() => {
+          if (!isHeaderPinned && header) {
+            header.classList.add('header-hidden');
+            header.classList.remove('visible');
+            document.body.classList.remove('header-is-visible');
+          }
+        }, 1500);
+      }
+    }
   }
 }
 window.toggleAppFullscreen = toggleAppFullscreen;
@@ -350,17 +404,9 @@ function updateFullscreenButtons(isFs) {
     '#btnToggleAppFullscreen, #btnHeaderFullscreen, .btn-header-fullscreen, #btnCintilloFullscreen, .btn-fullscreen-lottery, #btnFullscreenLotteryMain'
   );
   btns.forEach(b => {
-    if (b.id === 'btnCintilloFullscreen') {
-      const txt = b.querySelector('.cintillo-fs-text');
-      const svg = b.querySelector('.cintillo-fs-svg');
-      if (txt) {
-        txt.textContent = isFs ? 'Salir Pantalla Completa' : 'Pantalla Completa';
-      }
-      if (svg) {
-        svg.innerHTML = isFs
-          ? '<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>'
-          : '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
-      }
+    const fsText = b.querySelector('.fs-text') || b.querySelector('.cintillo-fs-text');
+    if (fsText) {
+      fsText.textContent = isFs ? 'Salir Pantalla Completa' : 'Pantalla Completa';
     } else {
       b.innerHTML = isFs ? '✕ Salir Pantalla Completa' : '<span class="icon">⛶</span> Pantalla Completa';
     }
@@ -1499,6 +1545,61 @@ function setupEventListeners() {
       } catch (err) {
         console.error('Error guardando servicio de inicio:', err);
       }
+    });
+  }
+
+  // Botones de Navegación del Carrusel de Loterías y Pantalla Completa en la Cabecera
+  const btnHFirst = document.getElementById('btnHeaderFirst');
+  if (btnHFirst) {
+    btnHFirst.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goToFirstLotteryModule(true);
+    });
+  }
+
+  const btnHLast = document.getElementById('btnHeaderLast');
+  if (btnHLast) {
+    btnHLast.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goToLastLotteryModule(true);
+    });
+  }
+
+  const btnHPrev = document.getElementById('btnHeaderPrev');
+  if (btnHPrev) {
+    btnHPrev.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goToPrevLotteryModule(true);
+    });
+  }
+
+  const btnHNext = document.getElementById('btnHeaderNext');
+  if (btnHNext) {
+    btnHNext.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      goToNextLotteryModule(true);
+    });
+  }
+
+  const btnHPause = document.getElementById('btnHeaderPause');
+  if (btnHPause) {
+    btnHPause.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleLotteryCarouselPause();
+    });
+  }
+
+  const btnHFs = document.getElementById('btnHeaderFullscreen');
+  if (btnHFs) {
+    btnHFs.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAppFullscreen(e);
     });
   }
 
@@ -2838,6 +2939,51 @@ const DEFAULT_SCREEN_CONFIG = {
   circusMusicVolume: 0.25,
   customMusicUrl: '',
   defaultService: 'loteria',
+  lotterySections: {
+    resultados: {
+      enabled: true,
+      slides: [
+        {
+          id: 'slide_1',
+          name: 'Top 5 Animalitos Principales',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
+        },
+        {
+          id: 'slide_2',
+          name: 'Triples y Terminales Estrella',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-zamorano', 'triple-caliente']
+        }
+      ]
+    },
+    estadisticas: {
+      enabled: true,
+      slides: [
+        {
+          id: 'slide_stats_1',
+          name: 'Radiografía 30D y Pronósticos',
+          enabled: true,
+          duration: 20
+        }
+      ]
+    },
+    publicidad: {
+      enabled: true,
+      slides: [
+        {
+          id: 'slide_pub_1',
+          name: 'Publicidad Oficial de Loterías',
+          enabled: true,
+          duration: 15
+        }
+      ]
+    }
+  },
   modules: {
     top5_animalitos: { enabled: true, duration: 20, games: ['guacharo-activo', 'granjita', 'lotto-activo', 'la-ricachona', 'lotto-rey'] },
     top5_triples: { enabled: true, duration: 20, games: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano'] },
@@ -2850,6 +2996,7 @@ const DEFAULT_SCREEN_CONFIG = {
 };
 
 let currentScreenConfig = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+let lotteryMasterCatalog = [];
 let lotteryTop10 = [];
 let lotteryStatsData = null;
 let lastAnnouncedDrawId = {};
@@ -2887,6 +3034,10 @@ function applyScreenConfig(cfg) {
     currentScreenConfig.bgMusicCustomUrl = mUrl;
   }
   if (cfg.defaultService) currentScreenConfig.defaultService = cfg.defaultService;
+
+  if (cfg.lotterySections) {
+    currentScreenConfig.lotterySections = JSON.parse(JSON.stringify(cfg.lotterySections));
+  }
 
   if (cfg.modules) {
     for (const [k, v] of Object.entries(cfg.modules)) {
@@ -3822,6 +3973,7 @@ function renderModuleEstadisticas(modCfg, stage) {
 }
 
 // Módulo 6 (3.6): Publicidad Oficial de Loterías (3 Diapositivas con Logos Oficiales)
+let adSlideIndex = 0;
 function renderModulePublicidad(modCfg, stage) {
   const slide = adSlideIndex;
   adSlideIndex = (adSlideIndex + 1) % 3;
@@ -3953,52 +4105,193 @@ function renderModuleUltimos5Sorteos(modCfg, stage) {
 }
 
 // ==========================================
-// Bucle de Rotación Continua y Autónoma (Zero-Touch TV Carousel)
+// RENDERIZADOR DE DIAPOSITIVA DE RESULTADOS (IMAGEN 4)
 // ==========================================
-const CAROUSEL_MODULE_ORDER = [
-  'top5_animalitos',
-  'top5_triples',
-  'animalitos_group2',
-  'pizarra_1000',
-  'estadisticas_30d',
-  'publicidad_loteria',
-  'ultimos_5_sorteos'
-];
+function renderCustomResultSlide(slideCfg, stage) {
+  const colCount = Math.min(5, Math.max(1, parseInt(slideCfg.lotteryCount) || 5));
+  let chosenIds = Array.isArray(slideCfg.lotteries) ? slideCfg.lotteries.slice(0, colCount) : [];
 
-const MODULE_TITLES = {
-  top5_animalitos: '🐾 TOP 5 ANIMALITOS MÁS VENDIDOS',
-  top5_triples: '🎰 TOP 5 TRIPLES Y TERMINALES',
-  animalitos_group2: '🐾 ANIMALITOS GRUPO 2',
-  pizarra_1000: '📋 PIZARRA GENERAL DE LOTERÍAS',
-  estadisticas_30d: '📊 RADIOGRAFÍA ESTADÍSTICA 30D',
-  publicidad_loteria: '📢 PUBLICIDAD OFICIAL DE LOTERÍAS',
-  ultimos_5_sorteos: '⭐ ÚLTIMOS 5 SORTEOS EMITIDOS'
-};
+  const defaultFallbackList = ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal'];
+  while (chosenIds.length < colCount) {
+    const nextGame = defaultFallbackList[chosenIds.length] || (lotteryTop10[chosenIds.length] && lotteryTop10[chosenIds.length].id) || 'la-granjita';
+    chosenIds.push(nextGame);
+  }
 
-let currentCarouselModuleIdx = 0;
-let currentActiveModuleKey = 'top5_animalitos';
+  const colsHtml = chosenIds.map(gameId => {
+    let game = lotteryTop10.find(g => (g.id === gameId || g.gameId === gameId));
+    if (!game) {
+      game = lotteryMasterCatalog.find(g => g.id === gameId);
+    }
+    if (!game) {
+      game = { id: gameId, name: gameId.toUpperCase().replace(/-/g, ' '), type: 'animalitos', color: '#0d734d' };
+    }
+
+    const isAnimal = (game.type !== 'triples');
+    const headerColor = game.color || (isAnimal ? '#0d734d' : '#2563eb');
+    const draws = game.draws || game.results || [];
+    const scheduledHours = (game.hours && game.hours.length > 0) ? game.hours : [
+      '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
+      '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM'
+    ];
+
+    const displayRows = scheduledHours.map(hour => {
+      const match = draws.find(d => (d.time === hour || d.hour === hour));
+      return match || { time: hour, isPending: true };
+    });
+
+    const rowsHtml = displayRows.map(draw => {
+      const isDone = !draw.isPending && (draw.number || draw.tripleA);
+      const timeStr = draw.time || draw.hour || '';
+
+      if (isAnimal) {
+        const num = isDone ? draw.number : '--';
+        const name = isDone ? (draw.name || '') : '';
+        const img = isDone ? (draw.image || '') : '';
+        return `
+          <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
+            <span class="result-time">${timeStr}</span>
+            <div class="result-avatar-box">
+              ${img ? `<img src="${img}" class="result-avatar-img" alt="${name}" onerror="this.style.display='none'">` : '<span class="result-avatar-coin">🪙</span>'}
+            </div>
+            <span class="result-num-blue">${num}</span>
+            <span class="result-pipe-red">|</span>
+            <span class="result-animal-name">${name}</span>
+          </div>
+        `;
+      } else {
+        const tA = isDone ? (draw.tripleA || '--') : '--';
+        const tB = isDone ? (draw.tripleB || '--') : '--';
+        const signo = isDone ? (draw.signo || '') : '';
+        const zData = signo ? getZodiacData(signo) : null;
+        return `
+          <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
+            <span class="result-time">${timeStr}</span>
+            <div class="result-avatar-box">
+              ${zData ? `<img src="/images/zodiac/${zData.file}" class="result-avatar-img" alt="${zData.name}">` : '<span class="result-avatar-coin">🎰</span>'}
+            </div>
+            <span class="result-num-blue">${tA}</span>
+            <span class="result-pipe-red">|</span>
+            <div class="result-triple-info">
+              <span class="result-triple-pill">B:${tB}</span>
+              ${signo ? `<span class="result-triple-sign">${signo}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+
+    return `
+      <div class="result-column-card">
+        <div class="result-column-header" style="background-color: ${headerColor};">
+          <div class="result-col-logo-badge">
+            ${game.logoUrl ? `<img src="${game.logoUrl}" class="result-col-logo-img" alt="${game.name}" onerror="this.style.display='none'">` : `<span style="font-size:1.1rem;">${isAnimal ? '🐾' : '🎰'}</span>`}
+          </div>
+          <span class="result-col-title">${game.name}</span>
+        </div>
+        <div class="result-column-body">
+          ${rowsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  stage.innerHTML = `
+    <div class="result-slide-container">
+      <div class="result-slide-grid" data-cols="${colCount}" style="--col-count: ${colCount};">
+        ${colsHtml}
+      </div>
+    </div>
+  `;
+}
+window.renderCustomResultSlide = renderCustomResultSlide;
+
+// ==========================================
+// MOTOR MULTI-SECCIÓN DE DIAPOSITIVAS Y NAVEGACIÓN
+// ==========================================
+let currentCarouselSlideIdx = 0;
 let carouselTransitionTimer = null;
-let adSlideIndex = 0;
 let isCarouselPaused = false;
 
-// Obtener lista ordenada de módulos activos/habilitados para la pantalla
-function getActiveCarouselModules() {
-  const modulesCfg = (currentScreenConfig && currentScreenConfig.modules) ? currentScreenConfig.modules : {};
-  const active = CAROUSEL_MODULE_ORDER.filter(key => {
-    const mod = modulesCfg[key];
-    return !mod || mod.enabled !== false;
-  });
-  return active.length > 0 ? active : ['top5_animalitos'];
+function getActiveCarouselSlides() {
+  const sections = currentScreenConfig.lotterySections;
+  const slidesQueue = [];
+
+  if (sections) {
+    // 1. Sección Resultados (1 a 10 diapositivas)
+    if (sections.resultados && sections.resultados.enabled !== false && Array.isArray(sections.resultados.slides)) {
+      sections.resultados.slides.forEach((s, idx) => {
+        if (s && s.enabled !== false) {
+          slidesQueue.push({
+            type: 'resultados',
+            section: 'resultados',
+            id: s.id || `slide_res_${idx}`,
+            name: s.name || `Resultados - Diapositiva ${idx + 1}`,
+            duration: Math.max(5, parseInt(s.duration) || 20),
+            lotteryCount: Math.min(5, Math.max(1, parseInt(s.lotteryCount) || 5)),
+            lotteries: Array.isArray(s.lotteries) ? s.lotteries : []
+          });
+        }
+      });
+    }
+
+    // 2. Sección Estadísticas (1 a 10 diapositivas)
+    if (sections.estadisticas && sections.estadisticas.enabled !== false && Array.isArray(sections.estadisticas.slides)) {
+      sections.estadisticas.slides.forEach((s, idx) => {
+        if (s && s.enabled !== false) {
+          slidesQueue.push({
+            type: 'estadisticas',
+            section: 'estadisticas',
+            id: s.id || `slide_stat_${idx}`,
+            name: s.name || `Radiografía Estadística 30D & Pronósticos`,
+            duration: Math.max(5, parseInt(s.duration) || 20)
+          });
+        }
+      });
+    }
+
+    // 3. Sección Publicidad (1 a 10 diapositivas)
+    if (sections.publicidad && sections.publicidad.enabled !== false && Array.isArray(sections.publicidad.slides)) {
+      sections.publicidad.slides.forEach((s, idx) => {
+        if (s && s.enabled !== false) {
+          slidesQueue.push({
+            type: 'publicidad',
+            section: 'publicidad',
+            id: s.id || `slide_pub_${idx}`,
+            name: s.name || `Publicidad Oficial de Loterías`,
+            duration: Math.max(5, parseInt(s.duration) || 15)
+          });
+        }
+      });
+    }
+  }
+
+  if (slidesQueue.length === 0) {
+    slidesQueue.push({
+      type: 'resultados',
+      section: 'resultados',
+      id: 'slide_1',
+      name: 'Top 5 Animalitos Principales',
+      duration: 20,
+      lotteryCount: 5,
+      lotteries: ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
+    });
+    slidesQueue.push({
+      type: 'resultados',
+      section: 'resultados',
+      id: 'slide_2',
+      name: 'Triples y Terminales Estrella',
+      duration: 20,
+      lotteryCount: 5,
+      lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-zamorano', 'triple-caliente']
+    });
+  }
+
+  return slidesQueue;
 }
-window.getActiveCarouselModules = getActiveCarouselModules;
+window.getActiveCarouselSlides = getActiveCarouselSlides;
 
-// Actualizar numeración de páginas (ej. 1 de 5, 2 de 5)
-function updateLotteryPageIndicator(currentKey) {
-  const active = getActiveCarouselModules();
-  let currentIdx = active.indexOf(currentKey);
-  if (currentIdx === -1) currentIdx = 0;
-  const pageStr = `${currentIdx + 1} de ${active.length}`;
-
+function updateLotteryPageIndicator(idx, total) {
+  const pageStr = `${idx + 1} de ${total}`;
   const pageEl = document.getElementById('lblLotteryPageText');
   if (pageEl) pageEl.textContent = pageStr;
 
@@ -4007,52 +4300,42 @@ function updateLotteryPageIndicator(currentKey) {
 }
 window.updateLotteryPageIndicator = updateLotteryPageIndicator;
 
-// Renderizar módulo específico por su identificador
-function renderLotteryModuleByKey(foundKey) {
-  currentActiveModuleKey = foundKey;
-  const modCfg = (currentScreenConfig && currentScreenConfig.modules && currentScreenConfig.modules[foundKey]) || { duration: 20 };
-  const durationSec = Math.max(5, parseInt(modCfg.duration) || 20);
+function renderCurrentCarouselSlide() {
+  const slides = getActiveCarouselSlides();
+  if (slides.length === 0) return 20;
+
+  if (currentCarouselSlideIdx >= slides.length) {
+    currentCarouselSlideIdx = 0;
+  } else if (currentCarouselSlideIdx < 0) {
+    currentCarouselSlideIdx = slides.length - 1;
+  }
+
+  const activeSlide = slides[currentCarouselSlideIdx];
+  const stage = document.getElementById('lotteryCarouselStage');
 
   const lblModule = document.getElementById('lblActiveModuleName');
   if (lblModule) {
-    lblModule.textContent = MODULE_TITLES[foundKey] || 'PANTALLA EN VIVO';
+    lblModule.textContent = activeSlide.name || 'RESULTADOS DE LOTERÍAS';
   }
 
-  const stage = document.getElementById('lotteryCarouselStage');
+  updateLotteryPageIndicator(currentCarouselSlideIdx, slides.length);
+
   if (stage) {
-    switch (foundKey) {
-      case 'top5_animalitos':
-        renderModuleTop5Animalitos(modCfg, stage);
-        break;
-      case 'top5_triples':
-        renderModuleTop5Triples(modCfg, stage);
-        break;
-      case 'animalitos_group2':
-        renderModuleAnimalitosGroup2(modCfg, stage);
-        break;
-      case 'pizarra_1000':
-        renderModulePizarra1000(modCfg, stage);
-        break;
-      case 'estadisticas_30d':
-        renderModuleEstadisticas(modCfg, stage);
-        break;
-      case 'publicidad_loteria':
-        renderModulePublicidad(modCfg, stage);
-        break;
-      case 'ultimos_5_sorteos':
-        renderModuleUltimos5Sorteos(modCfg, stage);
-        break;
-      default:
-        renderModuleTop5Animalitos(modCfg, stage);
+    if (activeSlide.type === 'resultados') {
+      renderCustomResultSlide(activeSlide, stage);
+    } else if (activeSlide.type === 'estadisticas') {
+      renderModuleEstadisticas({ duration: activeSlide.duration }, stage);
+    } else if (activeSlide.type === 'publicidad') {
+      renderModulePublicidad({ duration: activeSlide.duration }, stage);
+    } else {
+      renderCustomResultSlide(activeSlide, stage);
     }
   }
 
-  updateLotteryPageIndicator(foundKey);
-  return durationSec;
+  return activeSlide.duration || 20;
 }
-window.renderLotteryModuleByKey = renderLotteryModuleByKey;
+window.renderCurrentCarouselSlide = renderCurrentCarouselSlide;
 
-// Programar siguiente salto del carrusel si no está en pausa
 function scheduleNextCarouselTransition(durationSec) {
   if (carouselTransitionTimer) {
     clearTimeout(carouselTransitionTimer);
@@ -4065,7 +4348,6 @@ function scheduleNextCarouselTransition(durationSec) {
   }
 }
 
-// Pausar / Reanudar Carrusel desde la Cabecera Broadcast o Teclado
 function toggleLotteryCarouselPause() {
   isCarouselPaused = !isCarouselPaused;
 
@@ -4092,73 +4374,49 @@ function toggleLotteryCarouselPause() {
     if (textPause) textPause.textContent = 'Pausar';
 
     console.log('[LotteryCarousel] Carrusel REANUDADO.');
-    const modCfg = (currentScreenConfig && currentScreenConfig.modules && currentScreenConfig.modules[currentActiveModuleKey]) || { duration: 20 };
-    const durSec = Math.max(5, parseInt(modCfg.duration) || 20);
+    const durSec = renderCurrentCarouselSlide();
     scheduleNextCarouselTransition(durSec);
   }
 }
 window.toggleLotteryCarouselPause = toggleLotteryCarouselPause;
 
-// Navegación ágil: Ir al primer módulo
 function goToFirstLotteryModule(isManual = true) {
-  const active = getActiveCarouselModules();
-  const targetKey = active[0];
-  currentCarouselModuleIdx = CAROUSEL_MODULE_ORDER.indexOf(targetKey);
-  const durSec = renderLotteryModuleByKey(targetKey);
+  currentCarouselSlideIdx = 0;
+  const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log(`[LotteryCarousel] Navegación: Ir al primer módulo (${targetKey})`);
+  if (isManual) console.log('[LotteryCarousel] Navegación: Primera diapositiva');
 }
 window.goToFirstLotteryModule = goToFirstLotteryModule;
 
-// Navegación ágil: Ir al último módulo
 function goToLastLotteryModule(isManual = true) {
-  const active = getActiveCarouselModules();
-  const targetKey = active[active.length - 1];
-  currentCarouselModuleIdx = CAROUSEL_MODULE_ORDER.indexOf(targetKey);
-  const durSec = renderLotteryModuleByKey(targetKey);
+  const slides = getActiveCarouselSlides();
+  currentCarouselSlideIdx = Math.max(0, slides.length - 1);
+  const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log(`[LotteryCarousel] Navegación: Ir al último módulo (${targetKey})`);
+  if (isManual) console.log('[LotteryCarousel] Navegación: Última diapositiva');
 }
 window.goToLastLotteryModule = goToLastLotteryModule;
 
-// Navegación ágil: Retroceder un módulo
 function goToPrevLotteryModule(isManual = true) {
-  const active = getActiveCarouselModules();
-  let idx = active.indexOf(currentActiveModuleKey);
-  if (idx === -1) idx = 0;
-  const prevIdx = (idx - 1 + active.length) % active.length;
-  const targetKey = active[prevIdx];
-  currentCarouselModuleIdx = CAROUSEL_MODULE_ORDER.indexOf(targetKey);
-  const durSec = renderLotteryModuleByKey(targetKey);
+  const slides = getActiveCarouselSlides();
+  currentCarouselSlideIdx = (currentCarouselSlideIdx - 1 + slides.length) % slides.length;
+  const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log(`[LotteryCarousel] Navegación: Retroceder módulo (${targetKey})`);
+  if (isManual) console.log(`[LotteryCarousel] Navegación: Diapositiva anterior (${currentCarouselSlideIdx + 1})`);
 }
 window.goToPrevLotteryModule = goToPrevLotteryModule;
 
-// Navegación ágil: Avanzar un módulo
 function goToNextLotteryModule(isManual = true) {
-  const active = getActiveCarouselModules();
-  let idx = active.indexOf(currentActiveModuleKey);
-  if (idx === -1) idx = 0;
-  const nextIdx = (idx + 1) % active.length;
-  const targetKey = active[nextIdx];
-  currentCarouselModuleIdx = CAROUSEL_MODULE_ORDER.indexOf(targetKey);
-  const durSec = renderLotteryModuleByKey(targetKey);
+  const slides = getActiveCarouselSlides();
+  currentCarouselSlideIdx = (currentCarouselSlideIdx + 1) % slides.length;
+  const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log(`[LotteryCarousel] Navegación: Avanzar módulo (${targetKey})`);
+  if (isManual) console.log(`[LotteryCarousel] Navegación: Siguiente diapositiva (${currentCarouselSlideIdx + 1})`);
 }
 window.goToNextLotteryModule = goToNextLotteryModule;
 
-// Bucle autónomo continuo del carrusel
 function runAutonomousCarouselLoop() {
-  const active = getActiveCarouselModules();
-  let key = CAROUSEL_MODULE_ORDER[currentCarouselModuleIdx];
-  if (!active.includes(key)) {
-    key = active[0];
-    currentCarouselModuleIdx = CAROUSEL_MODULE_ORDER.indexOf(key);
-  }
-  const durSec = renderLotteryModuleByKey(key);
-  currentCarouselModuleIdx = (currentCarouselModuleIdx + 1) % CAROUSEL_MODULE_ORDER.length;
+  const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
 }
 
@@ -4203,7 +4461,7 @@ function renderLotteryTicker() {
     return `
       <div class="ticker-item">
         <span class="game-tag">${it.gameName || ''}</span>:
-        <span style="font-size:0.78rem; opacity:0.85;">${it.badge || it.label || ''}</span>
+        <span style="font-size:0.95rem; opacity:0.85;">${it.badge || it.label || ''}</span>
         <strong class="${valClass}">${it.text || it.value || ''}</strong>
       </div>
     `;
@@ -4214,7 +4472,7 @@ function renderLotteryTicker() {
 
 function startLotteryEngineView() {
   startLotteryClock();
-  loadLotteryTop10Data().then(() => {
+  Promise.all([loadLotteryTop10Data(), loadLotteryMasterCatalog()]).then(() => {
     runAutonomousCarouselLoop();
   });
   loadLotteryStats();
@@ -4280,6 +4538,9 @@ async function loadScreenConfigManager() {
         approvedDevicesCache.map(dev => `<option value="${dev.id}">📺 ${dev.tvName || dev.id} (${dev.clientId || 'Fenix'})</option>`).join('');
     }
 
+    // Cargar catálogo maestro antes de inicializar los selectores
+    await loadLotteryMasterCatalog();
+
     // Poblar Selector de Loterías para Módulos 1, 2, 3
     populateModuleLotteryPickers();
 
@@ -4328,6 +4589,489 @@ function populateModuleLotteryPickers() {
   }
 }
 
+// ==========================================
+// GESTOR DE CATÁLOGO MAESTRO DE LOTERÍAS (FRONTEND)
+// ==========================================
+async function loadLotteryMasterCatalog() {
+  try {
+    const res = await fetch('/api/lottery/catalog');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && Array.isArray(data.catalog)) {
+      lotteryMasterCatalog = data.catalog;
+    }
+  } catch (err) {
+    console.warn('[LotteryCatalog] Error cargando catálogo:', err);
+  }
+}
+window.loadLotteryMasterCatalog = loadLotteryMasterCatalog;
+
+function openLotteryCatalogModal() {
+  const modal = document.getElementById('lotteryCatalogModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    renderLotteryCatalogTable();
+  }
+}
+window.openLotteryCatalogModal = openLotteryCatalogModal;
+
+function closeLotteryCatalogModal() {
+  const modal = document.getElementById('lotteryCatalogModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeLotteryCatalogModal = closeLotteryCatalogModal;
+
+function renderLotteryCatalogTable() {
+  const tbody = document.getElementById('tblLotteryCatalogBody');
+  if (!tbody) return;
+
+  if (lotteryMasterCatalog.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:16px;">No hay loterías registradas en el catálogo.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lotteryMasterCatalog.map(g => `
+    <tr>
+      <td>
+        <span style="display:inline-block; width:18px; height:18px; border-radius:4px; background:${g.color || '#10b981'}; vertical-align:middle; border:1px solid rgba(255,255,255,0.3);"></span>
+      </td>
+      <td>
+        ${g.logoUrl ? `<img src="${g.logoUrl}" style="width:24px; height:24px; object-fit:contain; border-radius:50%; background:#fff;" onerror="this.style.display='none'">` : (g.icon || '🎰')}
+      </td>
+      <td>
+        <strong>${g.name}</strong>
+        ${g.shortName ? `<small style="color:#94a3b8; margin-left:6px;">(${g.shortName})</small>` : ''}
+      </td>
+      <td>
+        <span style="background:${g.type === 'animalitos' ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)'}; color:${g.type === 'animalitos' ? '#34d399' : '#60a5fa'}; padding:2px 8px; border-radius:10px; font-weight:800; font-size:0.75rem;">
+          ${g.type === 'animalitos' ? '🐾 Animalitos' : '🎰 Triples'}
+        </span>
+      </td>
+      <td style="font-size:0.78rem; color:#94a3b8;">
+        ${(g.hours && g.hours.length > 0) ? `${g.hours.length} sorteos diarios (${g.hours[0]} - ${g.hours[g.hours.length - 1]})` : 'Horario continuo'}
+      </td>
+      <td style="text-align:center;">
+        <button type="button" onclick="window.handleDeleteCatalogLottery('${g.id}')" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; font-size:0.75rem; font-weight:700; padding:4px 8px; border-radius:4px; cursor:pointer;" title="Eliminar del catálogo">
+          🗑️ Eliminar
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+window.renderLotteryCatalogTable = renderLotteryCatalogTable;
+
+async function handleSaveNewCatalogLottery() {
+  const txtName = document.getElementById('txtNewLotteryName');
+  const txtShort = document.getElementById('txtNewLotteryShortName');
+  const selType = document.getElementById('selNewLotteryType');
+  const colColor = document.getElementById('colNewLotteryColor');
+  const txtLogo = document.getElementById('txtNewLotteryLogoUrl');
+
+  const name = txtName?.value.trim();
+  if (!name) {
+    alert('Ingrese el nombre de la lotería.');
+    return;
+  }
+
+  const payload = {
+    name,
+    shortName: txtShort?.value.trim() || name,
+    type: selType?.value || 'animalitos',
+    color: colColor?.value || '#10b981',
+    logoUrl: txtLogo?.value.trim() || '',
+    icon: (selType?.value === 'triples') ? '🎰' : '🐾'
+  };
+
+  try {
+    const res = await fetch('/api/lottery/catalog', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      alert(`¡Lotería "${name}" agregada exitosamente!`);
+      if (txtName) txtName.value = '';
+      if (txtShort) txtShort.value = '';
+      if (txtLogo) txtLogo.value = '';
+      await loadLotteryMasterCatalog();
+      renderLotteryCatalogTable();
+      renderResultadosSlidesEditor();
+    } else {
+      alert(data.error || 'Error registrando la lotería.');
+    }
+  } catch (err) {
+    alert('Error de conexión al guardar lotería.');
+  }
+}
+window.handleSaveNewCatalogLottery = handleSaveNewCatalogLottery;
+
+async function handleDeleteCatalogLottery(id) {
+  if (!confirm(`¿Está seguro de eliminar la lotería "${id}" del catálogo maestro?`)) return;
+
+  try {
+    const res = await fetch(`/api/lottery/catalog/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      await loadLotteryMasterCatalog();
+      renderLotteryCatalogTable();
+      renderResultadosSlidesEditor();
+    } else {
+      alert(data.error || 'Error al eliminar lotería.');
+    }
+  } catch (err) {
+    alert('Error de conexión al eliminar lotería.');
+  }
+}
+window.handleDeleteCatalogLottery = handleDeleteCatalogLottery;
+
+// ==========================================
+// GESTOR DE 3 SECCIONES & DIAPOSITIVAS (CONFIGURACIÓN)
+// ==========================================
+function switchLotteryConfigSection(secKey) {
+  const tabs = document.querySelectorAll('.sec-subtab-btn');
+  tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-sec') === secKey));
+
+  const pRes = document.getElementById('subpanelSecResultados');
+  const pStat = document.getElementById('subpanelSecEstadisticas');
+  const pPub = document.getElementById('subpanelSecPublicidad');
+
+  if (pRes) pRes.style.display = (secKey === 'resultados') ? 'block' : 'none';
+  if (pStat) pStat.style.display = (secKey === 'estadisticas') ? 'block' : 'none';
+  if (pPub) pPub.style.display = (secKey === 'publicidad') ? 'block' : 'none';
+}
+window.switchLotteryConfigSection = switchLotteryConfigSection;
+
+function ensureLotterySectionsStructure() {
+  if (!currentScreenConfig.lotterySections) {
+    currentScreenConfig.lotterySections = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG.lotterySections));
+  }
+  if (!currentScreenConfig.lotterySections.resultados) {
+    currentScreenConfig.lotterySections.resultados = { enabled: true, slides: [] };
+  }
+  if (!currentScreenConfig.lotterySections.estadisticas) {
+    currentScreenConfig.lotterySections.estadisticas = { enabled: true, slides: [] };
+  }
+  if (!currentScreenConfig.lotterySections.publicidad) {
+    currentScreenConfig.lotterySections.publicidad = { enabled: true, slides: [] };
+  }
+}
+
+function renderResultadosSlidesEditor() {
+  ensureLotterySectionsStructure();
+  const container = document.getElementById('slidesResultadosContainer');
+  const countLabel = document.getElementById('lblResultadosSlideCount');
+  if (!container) return;
+
+  const slides = currentScreenConfig.lotterySections.resultados.slides;
+  if (countLabel) {
+    countLabel.textContent = `(${slides.length} configuradas / máx 10)`;
+  }
+
+  if (slides.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de resultados configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
+    return;
+  }
+
+  const catalog = (lotteryMasterCatalog.length > 0) ? lotteryMasterCatalog : (lotteryTop10.length > 0 ? lotteryTop10 : [
+    { id: 'la-granjita', name: 'LA GRANJITA', type: 'animalitos' },
+    { id: 'guacharo-activo', name: 'GUACHARO ACTIVO', type: 'animalitos' },
+    { id: 'lotto-activo', name: 'LOTTO ACTIVO', type: 'animalitos' },
+    { id: 'guacharito-millonario', name: 'GUACHARITO MILLONARIO', type: 'animalitos' },
+    { id: 'chance-animal', name: 'CHANCE ANIMAL', type: 'animalitos' },
+    { id: 'triple-zulia', name: 'TRIPLE ZULIA', type: 'triples' },
+    { id: 'triple-tachira', name: 'TRIPLE TACHIRA', type: 'triples' },
+    { id: 'triple-chance', name: 'TRIPLE CHANCE', type: 'triples' },
+    { id: 'triple-zamorano', name: 'TRIPLE ZAMORANO', type: 'triples' },
+    { id: 'triple-caliente', name: 'TRIPLE CALIENTE', type: 'triples' }
+  ]);
+
+  container.innerHTML = slides.map((slide, sIdx) => {
+    const lotCount = Math.min(5, Math.max(1, parseInt(slide.lotteryCount) || 5));
+    slide.lotteryCount = lotCount;
+    if (!Array.isArray(slide.lotteries)) slide.lotteries = [];
+
+    const countBtnsHtml = [1, 2, 3, 4, 5].map(n => `
+      <button type="button" class="btn-count-lottery ${n === lotCount ? 'active' : ''}" onclick="window.setSlideLotteryCount('resultados', ${sIdx}, ${n})">
+        ${n} ${n === 1 ? 'Lotería' : 'Loterías'}
+      </button>
+    `).join('');
+
+    let slotsHtml = '';
+    for (let slotIdx = 0; slotIdx < lotCount; slotIdx++) {
+      const selectedGameId = slide.lotteries[slotIdx] || catalog[slotIdx % catalog.length]?.id || '';
+      if (!slide.lotteries[slotIdx]) slide.lotteries[slotIdx] = selectedGameId;
+
+      const optionsHtml = catalog.map(g => `
+        <option value="${g.id}" ${g.id === selectedGameId ? 'selected' : ''}>
+          ${g.type === 'animalitos' ? '🐾' : '🎰'} ${g.name}
+        </option>
+      `).join('');
+
+      slotsHtml += `
+        <div class="slot-item-box">
+          <span class="slot-label">Columna ${slotIdx + 1}:</span>
+          <select class="slot-select" onchange="window.setSlideLotterySlot('resultados', ${sIdx}, ${slotIdx}, this.value)">
+            ${optionsHtml}
+          </select>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="slide-editor-card">
+        <div class="slide-editor-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label class="switch-label" style="margin:0;">
+              <input type="checkbox" ${slide.enabled !== false ? 'checked' : ''} onchange="window.toggleSlideEnabled('resultados', ${sIdx}, this.checked)">
+            </label>
+            <span class="slide-number-badge">Diapositiva #${sIdx + 1}</span>
+          </div>
+
+          <div class="slide-name-input-group">
+            <input type="text" class="slide-name-input" value="${slide.name || ''}" placeholder="Nombre de la diapositiva (ej: Animalitos Líderes)" oninput="window.updateSlideName('resultados', ${sIdx}, this.value)">
+            <button type="button" class="btn-clear-name" onclick="window.clearSlideName('resultados', ${sIdx})" title="Limpiar / Quitar nombre">Limpiar</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="slide-duration-box">
+              <span>Duración:</span>
+              <input type="number" class="slide-duration-input" value="${slide.duration || 20}" min="5" max="180" onchange="window.updateSlideDuration('resultados', ${sIdx}, this.value)">
+              <span>seg</span>
+            </div>
+            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('resultados', ${sIdx})" title="Eliminar diapositiva">
+              🗑️
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">¿Cuántas loterías mostrar en esta diapositiva?</span>
+            <div class="lottery-count-selector-group">
+              ${countBtnsHtml}
+            </div>
+          </div>
+          <div class="slide-slots-grid">
+            ${slotsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderResultadosSlidesEditor = renderResultadosSlidesEditor;
+
+function renderEstadisticasSlidesEditor() {
+  ensureLotterySectionsStructure();
+  const container = document.getElementById('slidesEstadisticasContainer');
+  const countLabel = document.getElementById('lblEstadisticasSlideCount');
+  if (!container) return;
+
+  const slides = currentScreenConfig.lotterySections.estadisticas.slides;
+  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 10)`;
+
+  if (slides.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de estadísticas configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
+    return;
+  }
+
+  container.innerHTML = slides.map((s, idx) => `
+    <div class="slide-editor-card">
+      <div class="slide-editor-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label class="switch-label" style="margin:0;">
+            <input type="checkbox" ${s.enabled !== false ? 'checked' : ''} onchange="window.toggleSlideEnabled('estadisticas', ${idx}, this.checked)">
+          </label>
+          <span class="slide-number-badge">Estadísticas #${idx + 1}</span>
+        </div>
+        <div class="slide-name-input-group">
+          <input type="text" class="slide-name-input" value="${s.name || ''}" placeholder="Nombre de la diapositiva" oninput="window.updateSlideName('estadisticas', ${idx}, this.value)">
+          <button type="button" class="btn-clear-name" onclick="window.clearSlideName('estadisticas', ${idx})">Limpiar</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="slide-duration-box">
+            <span>Duración:</span>
+            <input type="number" class="slide-duration-input" value="${s.duration || 20}" min="5" max="180" onchange="window.updateSlideDuration('estadisticas', ${idx}, this.value)">
+            <span>seg</span>
+          </div>
+          <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('estadisticas', ${idx})">🗑️</button>
+        </div>
+      </div>
+      <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Despliega la radiografía de 30 días de animalitos (más calientes, fríos / por reventar y pronósticos recomendados).</p>
+    </div>
+  `).join('');
+}
+window.renderEstadisticasSlidesEditor = renderEstadisticasSlidesEditor;
+
+function renderPublicidadSlidesEditor() {
+  ensureLotterySectionsStructure();
+  const container = document.getElementById('slidesPublicidadContainer');
+  const countLabel = document.getElementById('lblPublicidadSlideCount');
+  if (!container) return;
+
+  const slides = currentScreenConfig.lotterySections.publicidad.slides;
+  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 10)`;
+
+  if (slides.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de publicidad configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
+    return;
+  }
+
+  container.innerHTML = slides.map((s, idx) => `
+    <div class="slide-editor-card">
+      <div class="slide-editor-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label class="switch-label" style="margin:0;">
+            <input type="checkbox" ${s.enabled !== false ? 'checked' : ''} onchange="window.toggleSlideEnabled('publicidad', ${idx}, this.checked)">
+          </label>
+          <span class="slide-number-badge">Publicidad #${idx + 1}</span>
+        </div>
+        <div class="slide-name-input-group">
+          <input type="text" class="slide-name-input" value="${s.name || ''}" placeholder="Nombre de la diapositiva" oninput="window.updateSlideName('publicidad', ${idx}, this.value)">
+          <button type="button" class="btn-clear-name" onclick="window.clearSlideName('publicidad', ${idx})">Limpiar</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="slide-duration-box">
+            <span>Duración:</span>
+            <input type="number" class="slide-duration-input" value="${s.duration || 15}" min="5" max="180" onchange="window.updateSlideDuration('publicidad', ${idx}, this.value)">
+            <span>seg</span>
+          </div>
+          <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('publicidad', ${idx})">🗑️</button>
+        </div>
+      </div>
+      <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Diapositiva promocional con logos oficiales, llamados a la acción en taquilla y respaldo oficial de la agencia.</p>
+    </div>
+  `).join('');
+}
+window.renderPublicidadSlidesEditor = renderPublicidadSlidesEditor;
+
+function addNewResultSlide() {
+  ensureLotterySectionsStructure();
+  const slides = currentScreenConfig.lotterySections.resultados.slides;
+  if (slides.length >= 10) {
+    alert('Ha alcanzado el límite máximo de 10 diapositivas para la sección Resultados.');
+    return;
+  }
+  const catalog = (lotteryMasterCatalog.length > 0) ? lotteryMasterCatalog : (lotteryTop10.length > 0 ? lotteryTop10 : []);
+  const initialGames = catalog.slice(0, 5).map(g => g.id);
+
+  slides.push({
+    id: `slide_res_${Date.now()}`,
+    name: `Diapositiva ${slides.length + 1}`,
+    enabled: true,
+    duration: 20,
+    lotteryCount: 5,
+    lotteries: initialGames.length > 0 ? initialGames : ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
+  });
+  renderResultadosSlidesEditor();
+}
+window.addNewResultSlide = addNewResultSlide;
+
+function addNewStatsSlide() {
+  ensureLotterySectionsStructure();
+  const slides = currentScreenConfig.lotterySections.estadisticas.slides;
+  if (slides.length >= 10) {
+    alert('Ha alcanzado el límite máximo de 10 diapositivas para la sección Estadísticas.');
+    return;
+  }
+  slides.push({
+    id: `slide_stat_${Date.now()}`,
+    name: `Radiografía Estadística #${slides.length + 1}`,
+    enabled: true,
+    duration: 20
+  });
+  renderEstadisticasSlidesEditor();
+}
+window.addNewStatsSlide = addNewStatsSlide;
+
+function addNewPubSlide() {
+  ensureLotterySectionsStructure();
+  const slides = currentScreenConfig.lotterySections.publicidad.slides;
+  if (slides.length >= 10) {
+    alert('Ha alcanzado el límite máximo de 10 diapositivas para la sección Publicidad.');
+    return;
+  }
+  slides.push({
+    id: `slide_pub_${Date.now()}`,
+    name: `Publicidad Oficial #${slides.length + 1}`,
+    enabled: true,
+    duration: 15
+  });
+  renderPublicidadSlidesEditor();
+}
+window.addNewPubSlide = addNewPubSlide;
+
+function deleteSlide(secKey, idx) {
+  ensureLotterySectionsStructure();
+  const slides = currentScreenConfig.lotterySections[secKey].slides;
+  if (slides.length <= 1) {
+    if (!confirm('Esta es la única diapositiva de esta sección. ¿Desea eliminarla de todos modos?')) return;
+  }
+  slides.splice(idx, 1);
+  if (secKey === 'resultados') renderResultadosSlidesEditor();
+  if (secKey === 'estadisticas') renderEstadisticasSlidesEditor();
+  if (secKey === 'publicidad') renderPublicidadSlidesEditor();
+}
+window.deleteSlide = deleteSlide;
+
+function updateSlideName(secKey, idx, val) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
+  if (slide) slide.name = val;
+}
+window.updateSlideName = updateSlideName;
+
+function clearSlideName(secKey, idx) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
+  if (slide) slide.name = '';
+  if (secKey === 'resultados') renderResultadosSlidesEditor();
+  if (secKey === 'estadisticas') renderEstadisticasSlidesEditor();
+  if (secKey === 'publicidad') renderPublicidadSlidesEditor();
+}
+window.clearSlideName = clearSlideName;
+
+function updateSlideDuration(secKey, idx, val) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
+  if (slide) slide.duration = Math.max(5, parseInt(val) || 20);
+}
+window.updateSlideDuration = updateSlideDuration;
+
+function toggleSlideEnabled(secKey, idx, isChecked) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
+  if (slide) slide.enabled = isChecked;
+}
+window.toggleSlideEnabled = toggleSlideEnabled;
+
+function setSlideLotteryCount(secKey, idx, count) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
+  if (slide) {
+    slide.lotteryCount = count;
+    renderResultadosSlidesEditor();
+  }
+}
+window.setSlideLotteryCount = setSlideLotteryCount;
+
+function setSlideLotterySlot(secKey, sIdx, slotIdx, gameId) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections[secKey].slides[sIdx];
+  if (slide) {
+    if (!Array.isArray(slide.lotteries)) slide.lotteries = [];
+    slide.lotteries[slotIdx] = gameId;
+  }
+}
+window.setSlideLotterySlot = setSlideLotterySlot;
+
 function syncScreenConfigFormWithState(cfg) {
   // Modo de Tema
   const radTheme = document.querySelectorAll('input[name="cfgThemeMode"]');
@@ -4375,7 +5119,12 @@ function syncScreenConfigFormWithState(cfg) {
   if (txtCustom) txtCustom.value = cfg.customMusicUrl || cfg.bgMusicCustomUrl || '';
   if (grpCustom) grpCustom.style.display = ((cfg.circusMusicTrack || cfg.bgMusicTrack) === 'custom') ? 'block' : 'none';
 
-  // Duraciones y estados de los 7 módulos
+  // Renderizar Editores de Diapositivas de las 3 Secciones
+  renderResultadosSlidesEditor();
+  renderEstadisticasSlidesEditor();
+  renderPublicidadSlidesEditor();
+
+  // Duraciones y estados de los 7 módulos (retrocompatibilidad)
   const modules = cfg.modules || {};
   const modMap = {
     top5_animalitos: { chk: 'modEnabled_top5_animalitos', dur: 'modDuration_top5_animalitos' },
@@ -4398,6 +5147,14 @@ function syncScreenConfigFormWithState(cfg) {
 
 // Bindeo de Eventos para el Formulario de Configuración
 function setupScreenConfigEventListeners() {
+  // Botón Abrir Catálogo Máster de Loterías
+  const btnOpenCat = document.getElementById('btnOpenLotteryCatalogModal');
+  if (btnOpenCat) {
+    btnOpenCat.addEventListener('click', () => {
+      openLotteryCatalogModal();
+    });
+  }
+
   // Seleccionar / Deseleccionar todas las pantallas
   const btnSelAll = document.getElementById('btnSelectAllScreens');
   const btnDeselAll = document.getElementById('btnDeselectAllScreens');
@@ -4557,6 +5314,7 @@ function setupScreenConfigEventListeners() {
         circusMusicVolume,
         bgMusicCustomUrl: customMusicUrl,
         customMusicUrl,
+        lotterySections: currentScreenConfig.lotterySections,
         modules: {
           top5_animalitos: {
             enabled: document.getElementById('modEnabled_top5_animalitos')?.checked !== false,
