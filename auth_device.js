@@ -145,6 +145,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const CLIENTS_FILE = path.join(DATA_DIR, 'clients.json');
 const DEVICES_FILE = path.join(DATA_DIR, 'devices.json');
 const DEVICE_ACCOUNTS_FILE = path.join(DATA_DIR, 'device_accounts.json');
+const SYSTEM_USERS_FILE = path.join(DATA_DIR, 'system_users.json');
 
 const CLIENTS = new Map();
 const APPROVED_DEVICES = new Map();
@@ -172,6 +173,17 @@ function saveDatabase() {
 
     const deviceAccsArr = Array.from(DEVICE_ACCOUNTS.values());
     fs.writeFileSync(DEVICE_ACCOUNTS_FILE, JSON.stringify(deviceAccsArr, null, 2), 'utf8');
+
+    // Persistir usuarios del sistema (Super Admin y Soporte) en disco permanentemente
+    const savedUsers = [];
+    const seenUsers = new Set();
+    for (const u of Object.values(USERS)) {
+      if (u && u.username && !seenUsers.has(u.username)) {
+        seenUsers.add(u.username);
+        savedUsers.push(u);
+      }
+    }
+    fs.writeFileSync(SYSTEM_USERS_FILE, JSON.stringify(savedUsers, null, 2), 'utf8');
   } catch (e) {
     console.error('Error guardando base de datos en disco:', e);
   }
@@ -179,6 +191,30 @@ function saveDatabase() {
 
 function loadDatabase() {
   ensureDataDir();
+
+  // 0. Cargar Usuarios del Sistema (Super Admin y Soporte) desde JSON si existe
+  try {
+    if (fs.existsSync(SYSTEM_USERS_FILE)) {
+      const raw = fs.readFileSync(SYSTEM_USERS_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        for (const su of parsed) {
+          if (su && su.username) {
+            const cleanKey = su.username.toLowerCase();
+            USERS[cleanKey] = su;
+            if (cleanKey === 'hector_owner') {
+              USERS['hector_owner'] = su;
+              USERS['hector_superadmin'] = su;
+              USERS['hector'] = su;
+              USERS['superadmin'] = su;
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error leyendo system_users.json:', e);
+  }
 
   // 1. Cargar Clientes desde JSON si existe
   try {
@@ -386,7 +422,7 @@ function loginUser(username, password) {
           role: u.role,
           clientId: null,
           clientName: 'SaaS Platform Master',
-          config: DEFAULT_SCREEN_CONFIG
+          config: u.config || DEFAULT_SCREEN_CONFIG
         }
       };
     }
@@ -974,6 +1010,9 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
         ...(configUpdates.modules || {})
       }
     };
+    if (configUpdates.lotterySections) {
+      mergedClientCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
+    }
     if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
       const mActive = Boolean(configUpdates.bgMusicEnabled !== undefined ? configUpdates.bgMusicEnabled : configUpdates.circusMusicEnabled);
       mergedClientCfg.bgMusicEnabled = mActive;
@@ -994,6 +1033,25 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
     }
     client.config = mergedClientCfg;
     savedClientCfg = mergedClientCfg;
+  }
+
+  // Persistir configuración en perfil de Super Administrador para que perdure permanentemente
+  if (userRole === ROLES.SUPER_ADMIN && USERS['hector_owner']) {
+    const currentSuperCfg = USERS['hector_owner'].config || JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+    const mergedSuperCfg = {
+      ...currentSuperCfg,
+      ...configUpdates,
+      modules: {
+        ...currentSuperCfg.modules,
+        ...(configUpdates.modules || {})
+      }
+    };
+    if (configUpdates.lotterySections) {
+      mergedSuperCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
+    }
+    USERS['hector_owner'].config = mergedSuperCfg;
+    if (USERS['hector']) USERS['hector'].config = mergedSuperCfg;
+    if (USERS['superadmin']) USERS['superadmin'].config = mergedSuperCfg;
   }
 
   if (applyToAll) {
@@ -1019,6 +1077,10 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
             ...(configUpdates.modules || {})
           }
         };
+
+        if (configUpdates.lotterySections) {
+          mergedCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
+        }
 
         // Normalizar alias de música de fondo / circo
         if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
@@ -1411,8 +1473,10 @@ function createSystemUser({ username, name, pass, role, location }) {
     name: name || username,
     passwords: [pass],
     role: role || ROLES.TECH_CHIEF,
-    location: location || 'Oficina Central'
+    location: location || 'Oficina Central',
+    config: JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG))
   };
+  saveDatabase();
   return { success: true, user: USERS[clean] };
 }
 
@@ -1425,6 +1489,7 @@ function deleteSystemUser(username) {
     return { success: false, error: 'Usuario no encontrado.' };
   }
   delete USERS[clean];
+  saveDatabase();
   return { success: true, message: `Usuario @${clean} eliminado.` };
 }
 

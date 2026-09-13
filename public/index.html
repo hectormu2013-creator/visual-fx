@@ -289,15 +289,20 @@
       </div>
       
       <!-- Vista 1: Formulario de Inicio de Sesión -->
-      <form id="loginForm" class="login-form-modern">
+      <form id="loginForm" class="login-form-modern" autocomplete="off">
         <div class="form-group-modern">
           <label for="txtUser">Nombre de usuario</label>
-          <input type="text" id="txtUser" placeholder="Ej. hector_owner, fenix o tu_taquilla" value="" required autocomplete="username" autofocus>
+          <input type="text" id="txtUser" placeholder="" value="" required autocomplete="off" autofocus>
         </div>
         
         <div class="form-group-modern">
           <label for="txtPass">Contraseña</label>
-          <input type="password" id="txtPass" placeholder="••••••••" value="" required autocomplete="current-password">
+          <input type="password" id="txtPass" placeholder="" value="" required autocomplete="new-password">
+        </div>
+
+        <div class="remember-login-row" style="display: flex; align-items: center; gap: 8px; margin: 4px 0 12px 0; cursor: pointer;">
+          <input type="checkbox" id="chkRememberLogin" style="width: 17px; height: 17px; accent-color: #0284c7; cursor: pointer;">
+          <label for="chkRememberLogin" style="font-size: 0.85rem; color: #94a3b8; cursor: pointer; user-select: none; margin: 0;">Recordar usuario y contraseña</label>
         </div>
         
         <div class="form-error-modern" id="loginError" style="display: none;"></div>
@@ -449,9 +454,9 @@
             </div>
 
             <div class="form-grid-row" style="display:flex; gap:10px; flex-wrap:wrap;">
-              <input type="text" id="txtNewDeviceTvName" placeholder="Nombre Pantalla (ej. TV Taquilla 1, TV Barra)" style="flex:1.6; min-width:180px;">
-              <input type="text" id="txtNewDeviceUser" placeholder="Usuario TV (ej. tv1_fenix)" style="flex:1.4; min-width:150px;">
-              <input type="password" id="txtNewDevicePass" placeholder="Contraseña TV" style="flex:1.2; min-width:130px;">
+              <input type="text" id="txtNewDeviceTvName" placeholder="Nombre Pantalla" value="" autocomplete="off" style="flex:1.6; min-width:180px;">
+              <input type="text" id="txtNewDeviceUser" placeholder="Usuario TV" value="" autocomplete="off" style="flex:1.4; min-width:150px;">
+              <input type="password" id="txtNewDevicePass" placeholder="Contraseña TV" value="" autocomplete="new-password" style="flex:1.2; min-width:130px;">
               <select id="selNewDeviceDefaultService" style="flex:1.2; min-width:140px; background:#0f172a; color:#38bdf8; border:1px solid rgba(56, 189, 248, 0.4); border-radius:6px; padding:6px 10px; font-size:0.85rem; font-weight:700;">
                 <option value="loteria">🎲 Iniciar en Loterías</option>
                 <option value="hipica">🏇 Iniciar en Carreras</option>
@@ -688,15 +693,15 @@
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(30,41,59,0.5); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
                     <div>
                       <strong style="color:#38bdf8; font-size:0.92rem;">Diapositivas de Resultados:</strong>
-                      <span id="lblResultadosSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(2 configuradas / máx 10)</span>
+                      <span id="lblResultadosSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(2 configuradas / máx 15)</span>
                     </div>
                     <button type="button" class="btn-primary" id="btnAddResultSlide" onclick="window.addNewResultSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.85rem; padding:6px 16px; font-weight:700; border-radius:6px; cursor:pointer;">
-                      ➕ Agregar Diapositiva (Máx 10)
+                      ➕ Agregar Diapositiva (Máx 15)
                     </button>
                   </div>
 
                   <div id="slidesResultadosContainer" class="slides-list-container">
-                    <!-- Generado dinámicamente por JS con 1 a 10 diapositivas -->
+                    <!-- Generado dinámicamente por JS con 1 a 15 diapositivas -->
                   </div>
                 </div>
 
@@ -705,10 +710,10 @@
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(30,41,59,0.5); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
                     <div>
                       <strong style="color:#38bdf8; font-size:0.92rem;">Diapositivas de Estadísticas:</strong>
-                      <span id="lblEstadisticasSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(1 configurada / máx 10)</span>
+                      <span id="lblEstadisticasSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(1 configurada / máx 15)</span>
                     </div>
                     <button type="button" class="btn-primary" id="btnAddStatsSlide" onclick="window.addNewStatsSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.85rem; padding:6px 16px; font-weight:700; border-radius:6px; cursor:pointer;">
-                      ➕ Agregar Diapositiva (Máx 10)
+                      ➕ Agregar Diapositiva (Máx 15)
                     </button>
                   </div>
 
@@ -722,10 +727,10 @@
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(30,41,59,0.5); padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
                     <div>
                       <strong style="color:#38bdf8; font-size:0.92rem;">Diapositivas de Información y Publicidad:</strong>
-                      <span id="lblPublicidadSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(1 configurada / máx 10)</span>
+                      <span id="lblPublicidadSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(1 configurada / máx 15)</span>
                     </div>
                     <button type="button" class="btn-primary" id="btnAddPubSlide" onclick="window.addNewPubSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.85rem; padding:6px 16px; font-weight:700; border-radius:6px; cursor:pointer;">
-                      ➕ Agregar Diapositiva (Máx 10)
+                      ➕ Agregar Diapositiva (Máx 15)
                     </button>
                   </div>
 
@@ -1368,9 +1373,23 @@
 
         const txtUser = document.getElementById('txtUser');
         const txtPass = document.getElementById('txtPass');
+        const chkRemember = document.getElementById('chkRememberLogin');
         const loginErr = document.getElementById('loginError');
-        if (txtUser) txtUser.value = '';
-        if (txtPass) txtPass.value = '';
+
+        const isRemembered = localStorage.getItem('visual_fx_remember_login') === 'true';
+        const savedUser = localStorage.getItem('visual_fx_saved_username') || '';
+        const savedPass = localStorage.getItem('visual_fx_saved_password') || '';
+
+        if (isRemembered && savedUser) {
+          if (chkRemember) chkRemember.checked = true;
+          if (txtUser) txtUser.value = savedUser;
+          if (txtPass) txtPass.value = savedPass;
+        } else {
+          if (chkRemember) chkRemember.checked = false;
+          if (txtUser) txtUser.value = '';
+          if (txtPass) txtPass.value = '';
+        }
+
         if (loginErr) {
           loginErr.style.display = 'none';
           loginErr.textContent = '';

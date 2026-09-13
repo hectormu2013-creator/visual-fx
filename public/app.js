@@ -966,6 +966,16 @@ function openExecutiveAdminModal() {
 
   elements.deviceModal.style.display = 'flex';
   
+  // Limpiar campos de creación de TV para que no tengan nada preestablecido ni autocompletado
+  const clearDeviceInputs = () => {
+    if (document.getElementById('txtNewDeviceTvName')) document.getElementById('txtNewDeviceTvName').value = '';
+    if (document.getElementById('txtNewDeviceUser')) document.getElementById('txtNewDeviceUser').value = '';
+    if (document.getElementById('txtNewDevicePass')) document.getElementById('txtNewDevicePass').value = '';
+  };
+  clearDeviceInputs();
+  setTimeout(clearDeviceInputs, 60);
+  setTimeout(clearDeviceInputs, 250);
+
   const isSuperAdmin = (currentUser.role === 'SUPER_ADMIN');
   const isTech = isSuperAdmin || (currentUser.role === 'TECH_CHIEF');
   const isClient = (currentUser.role === 'CLIENT_MANAGER');
@@ -1052,11 +1062,32 @@ function openAdminModalDirectly() {
 
   const txtUser = document.getElementById('txtUser');
   const txtPass = document.getElementById('txtPass');
+  const chkRemember = document.getElementById('chkRememberLogin');
   const loginErr = document.getElementById('loginError');
   const btnClose = document.getElementById('btnCloseLoginModal');
 
-  if (txtUser) txtUser.value = '';
-  if (txtPass) txtPass.value = '';
+  const isRemembered = localStorage.getItem('visual_fx_remember_login') === 'true';
+  const savedUser = localStorage.getItem('visual_fx_saved_username') || '';
+  const savedPass = localStorage.getItem('visual_fx_saved_password') || '';
+
+  if (isRemembered && savedUser) {
+    if (chkRemember) chkRemember.checked = true;
+    if (txtUser) txtUser.value = savedUser;
+    if (txtPass) txtPass.value = savedPass;
+  } else {
+    if (chkRemember) chkRemember.checked = false;
+    const forceClear = () => {
+      if (localStorage.getItem('visual_fx_remember_login') !== 'true') {
+        if (txtUser) txtUser.value = '';
+        if (txtPass) txtPass.value = '';
+      }
+    };
+    forceClear();
+    setTimeout(forceClear, 50);
+    setTimeout(forceClear, 150);
+    setTimeout(forceClear, 300);
+  }
+
   if (loginErr) {
     loginErr.style.display = 'none';
     loginErr.textContent = '';
@@ -1068,7 +1099,7 @@ function openAdminModalDirectly() {
   elements.loginModal.style.setProperty('display', 'flex', 'important');
   elements.loginModal.style.setProperty('z-index', '999999', 'important');
   setTimeout(() => {
-    if (txtUser) txtUser.focus();
+    if (txtUser && (!isRemembered || !savedUser)) txtUser.focus();
   }, 100);
 }
 
@@ -1077,8 +1108,11 @@ function closeLoginModalSafely() {
   elements.loginModal.style.display = 'none';
   const txtUser = document.getElementById('txtUser');
   const txtPass = document.getElementById('txtPass');
-  if (txtUser) txtUser.value = '';
-  if (txtPass) txtPass.value = '';
+  const isRemembered = localStorage.getItem('visual_fx_remember_login') === 'true';
+  if (!isRemembered) {
+    if (txtUser) txtUser.value = '';
+    if (txtPass) txtPass.value = '';
+  }
 }
 
 // User Login Submission
@@ -1086,6 +1120,7 @@ elements.loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('txtUser').value.trim();
   const password = document.getElementById('txtPass').value.trim();
+  const chkRemember = document.getElementById('chkRememberLogin');
   
   elements.loginError.style.display = 'none';
   
@@ -1099,6 +1134,16 @@ elements.loginForm.addEventListener('submit', async (e) => {
     const data = await res.json();
     
     if (res.ok && data.success) {
+      if (chkRemember && chkRemember.checked) {
+        localStorage.setItem('visual_fx_remember_login', 'true');
+        localStorage.setItem('visual_fx_saved_username', username);
+        localStorage.setItem('visual_fx_saved_password', password);
+      } else {
+        localStorage.removeItem('visual_fx_remember_login');
+        localStorage.removeItem('visual_fx_saved_username');
+        localStorage.removeItem('visual_fx_saved_password');
+      }
+
       currentToken = data.token;
       currentUser = data.user;
       localStorage.setItem('visual_fx_token', currentToken);
@@ -1781,6 +1826,13 @@ function switchAdminTab(targetTabId) {
   } else if (targetTabId === 'tab-clients') {
     loadClientsList();
   } else if (targetTabId === 'tab-devices') {
+    const clearDeviceInputs = () => {
+      if (document.getElementById('txtNewDeviceTvName')) document.getElementById('txtNewDeviceTvName').value = '';
+      if (document.getElementById('txtNewDeviceUser')) document.getElementById('txtNewDeviceUser').value = '';
+      if (document.getElementById('txtNewDevicePass')) document.getElementById('txtNewDevicePass').value = '';
+    };
+    clearDeviceInputs();
+    setTimeout(clearDeviceInputs, 60);
     const selFilterDev = document.getElementById('selFilterClientDevices');
     loadApprovedDevicesList(selFilterDev ? selFilterDev.value : 'ALL');
     loadDeviceAccounts();
@@ -5390,6 +5442,18 @@ async function loadScreenConfigManager() {
     if (selSource) {
       selSource.innerHTML = '<option value="">Seleccione pantalla origen...</option>' +
         approvedDevicesCache.map(dev => `<option value="${dev.id}">📺 ${dev.tvName || dev.id} (${dev.clientId || 'Fenix'})</option>`).join('');
+
+      if (!selSource.dataset.hasChangeListener) {
+        selSource.dataset.hasChangeListener = 'true';
+        selSource.addEventListener('change', () => {
+          const devId = selSource.value;
+          if (!devId) return;
+          const targetDev = approvedDevicesCache.find(d => d.id === devId);
+          if (targetDev && targetDev.config) {
+            syncScreenConfigFormWithState(targetDev.config);
+          }
+        });
+      }
     }
 
     // Cargar catálogo maestro antes de inicializar los selectores
@@ -5625,7 +5689,7 @@ function renderResultadosSlidesEditor() {
 
   const slides = currentScreenConfig.lotterySections.resultados.slides;
   if (countLabel) {
-    countLabel.textContent = `(${slides.length} configuradas / máx 10)`;
+    countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
   }
 
   if (slides.length === 0) {
@@ -5644,6 +5708,7 @@ function renderResultadosSlidesEditor() {
     { id: 'triple-chance', name: 'TRIPLE CHANCE', type: 'triples' },
     { id: 'triple-chance-1', name: 'TRIPLE CHANCE (9 AM - 2 PM)', type: 'triples' },
     { id: 'triple-chance-2', name: 'TRIPLE CHANCE (3 PM - 7 PM)', type: 'triples' },
+    { id: 'triple-caracas', name: 'TRIPLE CARACAS', type: 'triples' },
     { id: 'triple-zamorano', name: 'TRIPLE ZAMORANO', type: 'triples' },
     { id: 'triple-caliente', name: 'TRIPLE CALIENTE', type: 'triples' }
   ]);
@@ -5731,7 +5796,7 @@ function renderEstadisticasSlidesEditor() {
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.estadisticas.slides;
-  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 10)`;
+  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
 
   if (slides.length === 0) {
     container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de estadísticas configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
@@ -5773,7 +5838,7 @@ function renderPublicidadSlidesEditor() {
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.publicidad.slides;
-  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 10)`;
+  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
 
   if (slides.length === 0) {
     container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de publicidad configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
@@ -5808,11 +5873,69 @@ function renderPublicidadSlidesEditor() {
 }
 window.renderPublicidadSlidesEditor = renderPublicidadSlidesEditor;
 
+// Capturar valores actuales del DOM antes de mutar arrays de diapositivas
+function saveResultadosSlidesFromDOM() {
+  if (!currentScreenConfig.lotterySections?.resultados?.slides) return;
+  const container = document.getElementById('slidesResultadosContainer');
+  if (!container) return;
+  const cards = container.querySelectorAll('.slide-editor-card');
+  cards.forEach((card, idx) => {
+    const slide = currentScreenConfig.lotterySections.resultados.slides[idx];
+    if (!slide) return;
+    const chkEnabled = card.querySelector('input[type="checkbox"]');
+    if (chkEnabled) slide.enabled = chkEnabled.checked;
+    const txtName = card.querySelector('.slide-name-input');
+    if (txtName) slide.name = txtName.value.trim();
+    const numDur = card.querySelector('.slide-duration-input');
+    if (numDur) slide.duration = parseInt(numDur.value) || 20;
+    const selects = card.querySelectorAll('.slot-select');
+    if (selects.length > 0) {
+      slide.lotteries = Array.from(selects).map(s => s.value);
+      slide.lotteryCount = selects.length;
+    }
+  });
+}
+
+function saveEstadisticasSlidesFromDOM() {
+  if (!currentScreenConfig.lotterySections?.estadisticas?.slides) return;
+  const container = document.getElementById('slidesEstadisticasContainer');
+  if (!container) return;
+  const cards = container.querySelectorAll('.slide-editor-card');
+  cards.forEach((card, idx) => {
+    const slide = currentScreenConfig.lotterySections.estadisticas.slides[idx];
+    if (!slide) return;
+    const chkEnabled = card.querySelector('input[type="checkbox"]');
+    if (chkEnabled) slide.enabled = chkEnabled.checked;
+    const txtName = card.querySelector('.slide-name-input');
+    if (txtName) slide.name = txtName.value.trim();
+    const numDur = card.querySelector('.slide-duration-input');
+    if (numDur) slide.duration = parseInt(numDur.value) || 20;
+  });
+}
+
+function savePublicidadSlidesFromDOM() {
+  if (!currentScreenConfig.lotterySections?.publicidad?.slides) return;
+  const container = document.getElementById('slidesPublicidadContainer');
+  if (!container) return;
+  const cards = container.querySelectorAll('.slide-editor-card');
+  cards.forEach((card, idx) => {
+    const slide = currentScreenConfig.lotterySections.publicidad.slides[idx];
+    if (!slide) return;
+    const chkEnabled = card.querySelector('input[type="checkbox"]');
+    if (chkEnabled) slide.enabled = chkEnabled.checked;
+    const txtName = card.querySelector('.slide-name-input');
+    if (txtName) slide.name = txtName.value.trim();
+    const numDur = card.querySelector('.slide-duration-input');
+    if (numDur) slide.duration = parseInt(numDur.value) || 15;
+  });
+}
+
 function addNewResultSlide() {
   ensureLotterySectionsStructure();
+  saveResultadosSlidesFromDOM();
   const slides = currentScreenConfig.lotterySections.resultados.slides;
-  if (slides.length >= 10) {
-    alert('Ha alcanzado el límite máximo de 10 diapositivas para la sección Resultados.');
+  if (slides.length >= 15) {
+    alert('Ha alcanzado el límite máximo de 15 diapositivas para la sección Resultados.');
     return;
   }
   const catalog = (lotteryMasterCatalog.length > 0) ? lotteryMasterCatalog : (lotteryTop10.length > 0 ? lotteryTop10 : []);
@@ -5832,9 +5955,10 @@ window.addNewResultSlide = addNewResultSlide;
 
 function addNewStatsSlide() {
   ensureLotterySectionsStructure();
+  saveEstadisticasSlidesFromDOM();
   const slides = currentScreenConfig.lotterySections.estadisticas.slides;
-  if (slides.length >= 10) {
-    alert('Ha alcanzado el límite máximo de 10 diapositivas para la sección Estadísticas.');
+  if (slides.length >= 15) {
+    alert('Ha alcanzado el límite máximo de 15 diapositivas para la sección Estadísticas.');
     return;
   }
   slides.push({
@@ -5849,9 +5973,10 @@ window.addNewStatsSlide = addNewStatsSlide;
 
 function addNewPubSlide() {
   ensureLotterySectionsStructure();
+  savePublicidadSlidesFromDOM();
   const slides = currentScreenConfig.lotterySections.publicidad.slides;
-  if (slides.length >= 10) {
-    alert('Ha alcanzado el límite máximo de 10 diapositivas para la sección Publicidad.');
+  if (slides.length >= 15) {
+    alert('Ha alcanzado el límite máximo de 15 diapositivas para la sección Publicidad.');
     return;
   }
   slides.push({
@@ -5929,6 +6054,21 @@ function setSlideLotterySlot(secKey, sIdx, slotIdx, gameId) {
 window.setSlideLotterySlot = setSlideLotterySlot;
 
 function syncScreenConfigFormWithState(cfg) {
+  if (!cfg) return;
+
+  // Sincronizar secciones y módulos en el estado global activo
+  if (cfg.lotterySections) {
+    currentScreenConfig.lotterySections = JSON.parse(JSON.stringify(cfg.lotterySections));
+  }
+  if (cfg.modules) {
+    currentScreenConfig.modules = JSON.parse(JSON.stringify(cfg.modules));
+  }
+  if (cfg.themeMode) currentScreenConfig.themeMode = cfg.themeMode;
+  if (cfg.colorStyle || cfg.colorScheme) currentScreenConfig.colorStyle = cfg.colorStyle || cfg.colorScheme;
+  if (cfg.defaultService) currentScreenConfig.defaultService = cfg.defaultService;
+  if (cfg.tickerActive !== undefined) currentScreenConfig.tickerActive = Boolean(cfg.tickerActive);
+  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = parseInt(cfg.tickerSpeed) || 160;
+
   // Modo de Tema
   const radTheme = document.querySelectorAll('input[name="cfgThemeMode"]');
   radTheme.forEach(r => { r.checked = (r.value === cfg.themeMode); });
@@ -6147,6 +6287,10 @@ function setupScreenConfigEventListeners() {
       const circusMusicTrack = document.getElementById('cfgBgMusicTrack')?.value || 'circus_waltz';
       const circusMusicVolume = (parseInt(document.getElementById('cfgBgMusicVolume')?.value) || 25) / 100;
       const customMusicUrl = document.getElementById('cfgBgMusicCustomUrl')?.value.trim() || '';
+
+      saveResultadosSlidesFromDOM();
+      saveEstadisticasSlidesFromDOM();
+      savePublicidadSlidesFromDOM();
 
       const anim1Games = Array.from(document.querySelectorAll('.chk-lottery-anim1:checked')).map(c => c.value);
       const tripGames = Array.from(document.querySelectorAll('.chk-lottery-trip:checked')).map(c => c.value);

@@ -229,5 +229,15 @@
     "color": "#2563eb",
     "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplezulia/logo.png",
     "hours": ["12:45 PM", "04:45 PM", "07:05 PM"]
+  },
+  {
+    "id": "triple-caracas",
+    "name": "TRIPLE CARACAS",
+    "shortName": "Triple Caracas",
+    "type": "triples",
+    "icon": "🏛️",
+    "color": "#ef4444",
+    "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplecaracas/logo.png",
+    "hours": ["01:00 PM", "04:30 PM", "07:00 PM"]
   }
 ]

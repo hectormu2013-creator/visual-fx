@@ -913,15 +913,20 @@
 
       <div class="login-error-msg" id="loginErrorMsg"></div>
 
-      <form id="landingLoginForm">
+      <form id="landingLoginForm" autocomplete="off">
         <div class="form-group-landing-white">
           <label for="txtLandingUser">USUARIO / PANTALLA</label>
-          <input type="text" id="txtLandingUser" placeholder="Ej. hector_owner o tv1_fenix" required autocomplete="username">
+          <input type="text" id="txtLandingUser" placeholder="" value="" required autocomplete="off">
         </div>
 
         <div class="form-group-landing-white">
           <label for="txtLandingPass">CONTRASEÑA</label>
-          <input type="password" id="txtLandingPass" placeholder="••••••••" required autocomplete="current-password">
+          <input type="password" id="txtLandingPass" placeholder="" value="" required autocomplete="new-password">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; margin: 4px 0 14px 0; cursor: pointer;">
+          <input type="checkbox" id="chkLandingRememberLogin" style="width: 17px; height: 17px; accent-color: #f97316; cursor: pointer;">
+          <label for="chkLandingRememberLogin" style="font-size: 0.85rem; color: #64748b; cursor: pointer; user-select: none; margin: 0;">Recordar usuario y contraseña</label>
         </div>
 
         <button type="submit" class="btn-submit-landing-orange" id="btnLandingSubmit">
@@ -950,6 +955,7 @@
     const btnClose = document.getElementById('btnCloseModal');
     const txtUser = document.getElementById('txtLandingUser');
     const txtPass = document.getElementById('txtLandingPass');
+    const chkRemember = document.getElementById('chkLandingRememberLogin');
     const form = document.getElementById('landingLoginForm');
     const errorMsg = document.getElementById('loginErrorMsg');
     const submitBtn = document.getElementById('btnLandingSubmit');
@@ -957,6 +963,21 @@
     function openModal() {
       if (modal) modal.style.display = 'flex';
       if (errorMsg) errorMsg.style.display = 'none';
+
+      const isRemembered = localStorage.getItem('visual_fx_remember_login') === 'true';
+      const savedUser = localStorage.getItem('visual_fx_saved_username') || '';
+      const savedPass = localStorage.getItem('visual_fx_saved_password') || '';
+
+      if (isRemembered && savedUser) {
+        if (chkRemember) chkRemember.checked = true;
+        if (txtUser) txtUser.value = savedUser;
+        if (txtPass) txtPass.value = savedPass;
+      } else {
+        if (chkRemember) chkRemember.checked = false;
+        if (txtUser) txtUser.value = '';
+        if (txtPass) txtPass.value = '';
+      }
+
       setTimeout(() => {
         if (txtUser) txtUser.focus();
       }, 100);
@@ -1003,6 +1024,16 @@
           const data = await response.json();
 
           if (data.success && data.token) {
+            if (chkRemember && chkRemember.checked) {
+              localStorage.setItem('visual_fx_remember_login', 'true');
+              localStorage.setItem('visual_fx_saved_username', username);
+              localStorage.setItem('visual_fx_saved_password', password);
+            } else {
+              localStorage.removeItem('visual_fx_remember_login');
+              localStorage.removeItem('visual_fx_saved_username');
+              localStorage.removeItem('visual_fx_saved_password');
+            }
+
             localStorage.setItem('visual_fx_token', data.token);
             localStorage.setItem('visual_fx_user', JSON.stringify(data.user));
             sessionStorage.removeItem('visual_fx_session_override');

@@ -2406,69 +2406,13 @@
     "2026-09-13": [
       {
         "time": "09:15 AM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "10:15 AM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
-      },
-      {
-        "time": "11:15 AM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
-      },
-      {
-        "time": "12:15 PM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
-      },
-      {
-        "time": "01:15 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "02:15 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "03:15 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "04:15 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "05:15 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "06:15 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "07:15 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
+        "number": "95",
+        "name": "Sagitario",
+        "tripleA": "95",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Sagitario",
+        "isManual": false
       }
     ]
   },
@@ -5119,6 +5063,16 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "157",
+        "name": null,
+        "tripleA": "157",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -7397,6 +7351,26 @@
         "number": "05",
         "name": "LEON",
         "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:10 AM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:10 AM",
+        "number": "13",
+        "name": "MONO",
+        "tripleA": "13",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -9693,6 +9667,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "15",
+        "name": "Zorro",
+        "tripleA": "15",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "28",
+        "name": "Zamuro",
+        "tripleA": "28",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -11985,6 +11979,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "09:15 AM",
+        "number": "02",
+        "name": "Toro",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:15 AM",
+        "number": "33",
+        "name": "Pescado",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -14069,6 +14083,16 @@
         "number": "33",
         "name": "Pescado",
         "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "51",
+        "name": "Buho",
+        "tripleA": "51",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -16335,6 +16359,16 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "51",
+        "name": "Buho",
+        "tripleA": "51",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -18589,76 +18623,24 @@
     ],
     "2026-09-13": [
       {
-        "time": "08:10 AM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
+        "time": "09:00 AM",
+        "number": "33",
+        "name": "Pescado",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
-        "time": "09:10 AM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "10:10 AM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
-      },
-      {
-        "time": "11:10 AM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
-      },
-      {
-        "time": "12:10 PM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
-      },
-      {
-        "time": "01:10 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "02:10 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "03:10 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "04:10 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "05:10 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "06:10 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "07:10 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
+        "time": "10:00 AM",
+        "number": "51",
+        "name": "Buho",
+        "tripleA": "51",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -20937,6 +20919,16 @@
         "number": "70",
         "name": "Bisonte",
         "tripleA": "70",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:30 AM",
+        "number": "40",
+        "name": "Avispa",
+        "tripleA": "40",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -23223,6 +23215,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "45",
+        "name": "Garza",
+        "tripleA": "45",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "49",
+        "name": "Pereza",
+        "tripleA": "49",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -25501,6 +25513,26 @@
         "number": "05",
         "name": "Leon",
         "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "30",
+        "name": "Caiman",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "06",
+        "name": "Rana",
+        "tripleA": "06",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -27787,6 +27819,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "09:10 AM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:10 AM",
+        "number": "13",
+        "name": "MONO",
+        "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -30065,6 +30117,26 @@
         "number": "27",
         "name": "Perro",
         "tripleA": "27",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "16",
+        "name": "Oso",
+        "tripleA": "16",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -32351,6 +32423,16 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "10",
+        "name": "Tigre",
+        "tripleA": "10",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -34465,6 +34547,16 @@
         "number": "50",
         "name": "Canario",
         "tripleA": "50",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:15 AM",
+        "number": "77",
+        "name": "Pingüino",
+        "tripleA": "77",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -37099,6 +37191,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "09:05 AM",
+        "number": "26",
+        "name": null,
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:05 AM",
+        "number": "19",
+        "name": null,
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -38811,32 +38923,24 @@
     ],
     "2026-09-13": [
       {
-        "time": "01:00 PM",
-        "tripleA": "370",
-        "tripleB": "992",
-        "signo": "Capricornio",
-        "isPending": false
+        "time": "09:00 AM",
+        "number": "095",
+        "name": "Tauro",
+        "tripleA": "095",
+        "tripleB": "719",
+        "tripleC": "321",
+        "signo": "Tauro",
+        "isManual": false
       },
       {
-        "time": "04:30 PM",
-        "tripleA": "246",
-        "tripleB": "992",
-        "signo": "Capricornio",
-        "isPending": false
-      },
-      {
-        "time": "07:00 PM",
-        "tripleA": "119",
-        "tripleB": "992",
-        "signo": "Capricornio",
-        "isPending": false
-      },
-      {
-        "time": "08:00 PM",
-        "tripleA": "867",
-        "tripleB": "992",
-        "signo": "Capricornio",
-        "isPending": false
+        "time": "10:00 AM",
+        "number": "856",
+        "name": "Leo",
+        "tripleA": "856",
+        "tripleB": "206",
+        "tripleC": "745",
+        "signo": "Leo",
+        "isManual": false
       }
     ]
   },
@@ -41246,45 +41350,23 @@
     "2026-09-13": [
       {
         "time": "09:00 AM",
-        "tripleA": "908",
-        "tripleB": "992",
-        "signo": "Capricornio",
-        "isPending": false
+        "number": "095",
+        "name": "Tauro",
+        "tripleA": "095",
+        "tripleB": "719",
+        "tripleC": "321",
+        "signo": "Tauro",
+        "isManual": false
       },
       {
         "time": "10:00 AM",
-        "tripleA": "675",
-        "tripleB": "992",
-        "signo": "Piscis",
-        "isPending": false
-      },
-      {
-        "time": "11:00 AM",
-        "tripleA": "370",
-        "tripleB": "992",
-        "signo": "Piscis",
-        "isPending": false
-      },
-      {
-        "time": "12:00 PM",
-        "tripleA": "967",
-        "tripleB": "992",
-        "signo": "Piscis",
-        "isPending": false
-      },
-      {
-        "time": "01:00 PM",
-        "tripleA": "370",
-        "tripleB": "992",
-        "signo": "Capricornio",
-        "isPending": false
-      },
-      {
-        "time": "02:00 PM",
-        "tripleA": "967",
-        "tripleB": "992",
-        "signo": "Capricornio",
-        "isPending": false
+        "number": "856",
+        "name": "Leo",
+        "tripleA": "856",
+        "tripleB": "206",
+        "tripleC": "745",
+        "signo": "Leo",
+        "isManual": false
       }
     ],
     "2026-09-12": [
@@ -43663,6 +43745,698 @@
       {
         "time": "06:00 PM",
         "tripleA": "836",
+        "tripleB": "107",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "931",
+        "tripleB": "107",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ]
+  },
+  "triple-caracas": {
+    "2026-09-13": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "370",
+        "tripleB": "992",
+        "signo": "Capricornio",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "246",
+        "tripleB": "992",
+        "signo": "Capricornio",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "119",
+        "tripleB": "992",
+        "signo": "Capricornio",
+        "isPending": false
+      }
+    ],
+    "2026-09-12": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "867",
+        "tripleB": "203",
+        "signo": "Leo",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "793",
+        "tripleB": "203",
+        "signo": "Leo",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "705",
+        "tripleB": "203",
+        "signo": "Leo",
+        "isPending": false
+      }
+    ],
+    "2026-09-11": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "986",
+        "tripleB": "993",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "998",
+        "tripleB": "993",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "993",
+        "tripleB": "993",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ],
+    "2026-09-10": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "669",
+        "tripleB": "195",
+        "signo": "Géminis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "761",
+        "tripleB": "195",
+        "signo": "Géminis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "841",
+        "tripleB": "195",
+        "signo": "Géminis",
+        "isPending": false
+      }
+    ],
+    "2026-09-09": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "127",
+        "tripleB": "994",
+        "signo": "Acuario",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "199",
+        "tripleB": "994",
+        "signo": "Acuario",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "324",
+        "tripleB": "994",
+        "signo": "Acuario",
+        "isPending": false
+      }
+    ],
+    "2026-09-08": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "711",
+        "tripleB": "187",
+        "signo": "Sagitario",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "612",
+        "tripleB": "187",
+        "signo": "Sagitario",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "502",
+        "tripleB": "187",
+        "signo": "Sagitario",
+        "isPending": false
+      }
+    ],
+    "2026-09-07": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "993",
+        "tripleB": "995",
+        "signo": "Libra",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "971",
+        "tripleB": "995",
+        "signo": "Libra",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "931",
+        "tripleB": "995",
+        "signo": "Libra",
+        "isPending": false
+      }
+    ],
+    "2026-09-06": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "836",
+        "tripleB": "179",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "901",
+        "tripleB": "179",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "951",
+        "tripleB": "179",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ],
+    "2026-09-05": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "316",
+        "tripleB": "995",
+        "signo": "Aries",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "437",
+        "tripleB": "995",
+        "signo": "Aries",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "551",
+        "tripleB": "995",
+        "signo": "Aries",
+        "isPending": false
+      }
+    ],
+    "2026-09-04": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "509",
+        "tripleB": "171",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "392",
+        "tripleB": "171",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "270",
+        "tripleB": "171",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ],
+    "2026-09-03": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "934",
+        "tripleB": "996",
+        "signo": "Libra",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "879",
+        "tripleB": "996",
+        "signo": "Libra",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "808",
+        "tripleB": "996",
+        "signo": "Libra",
+        "isPending": false
+      }
+    ],
+    "2026-09-02": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "948",
+        "tripleB": "163",
+        "signo": "Escorpio",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "982",
+        "tripleB": "163",
+        "signo": "Escorpio",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "997",
+        "tripleB": "163",
+        "signo": "Escorpio",
+        "isPending": false
+      }
+    ],
+    "2026-09-01": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "544",
+        "tripleB": "997",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "650",
+        "tripleB": "997",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "745",
+        "tripleB": "997",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ],
+    "2026-08-31": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "277",
+        "tripleB": "155",
+        "signo": "Tauro",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "151",
+        "tripleB": "155",
+        "signo": "Tauro",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "175",
+        "tripleB": "155",
+        "signo": "Tauro",
+        "isPending": false
+      }
+    ],
+    "2026-08-30": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "813",
+        "tripleB": "997",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "728",
+        "tripleB": "997",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "631",
+        "tripleB": "997",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ],
+    "2026-08-29": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "997",
+        "tripleB": "147",
+        "signo": "Virgo",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "996",
+        "tripleB": "147",
+        "signo": "Virgo",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "977",
+        "tripleB": "147",
+        "signo": "Virgo",
+        "isPending": false
+      }
+    ],
+    "2026-08-28": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "739",
+        "tripleB": "997",
+        "signo": "Sagitario",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "822",
+        "tripleB": "997",
+        "signo": "Sagitario",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "890",
+        "tripleB": "997",
+        "signo": "Sagitario",
+        "isPending": false
+      }
+    ],
+    "2026-08-27": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "167",
+        "tripleB": "139",
+        "signo": "Acuario",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "293",
+        "tripleB": "139",
+        "signo": "Acuario",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "415",
+        "tripleB": "139",
+        "signo": "Acuario",
+        "isPending": false
+      }
+    ],
+    "2026-08-26": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "638",
+        "tripleB": "998",
+        "signo": "Géminis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "531",
+        "tripleB": "998",
+        "signo": "Géminis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "415",
+        "tripleB": "998",
+        "signo": "Géminis",
+        "isPending": false
+      }
+    ],
+    "2026-08-25": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "978",
+        "tripleB": "131",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "943",
+        "tripleB": "131",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "890",
+        "tripleB": "131",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ],
+    "2026-08-24": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "887",
+        "tripleB": "998",
+        "signo": "Leo",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "940",
+        "tripleB": "998",
+        "signo": "Leo",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "977",
+        "tripleB": "998",
+        "signo": "Leo",
+        "isPending": false
+      }
+    ],
+    "2026-08-23": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "407",
+        "tripleB": "123",
+        "signo": "Capricornio",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "523",
+        "tripleB": "123",
+        "signo": "Capricornio",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "631",
+        "tripleB": "123",
+        "signo": "Capricornio",
+        "isPending": false
+      }
+    ],
+    "2026-08-22": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "422",
+        "tripleB": "998",
+        "signo": "Capricornio",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "301",
+        "tripleB": "998",
+        "signo": "Capricornio",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "175",
+        "tripleB": "998",
+        "signo": "Capricornio",
+        "isPending": false
+      }
+    ],
+    "2026-08-21": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "894",
+        "tripleB": "115",
+        "signo": "Leo",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "827",
+        "tripleB": "115",
+        "signo": "Leo",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "745",
+        "tripleB": "115",
+        "signo": "Leo",
+        "isPending": false
+      }
+    ],
+    "2026-08-20": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "975",
+        "tripleB": "998",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "995",
+        "tripleB": "998",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "997",
+        "tripleB": "998",
+        "signo": "Piscis",
+        "isPending": false
+      }
+    ],
+    "2026-08-19": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "625",
+        "tripleB": "107",
+        "signo": "Géminis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "722",
+        "tripleB": "107",
+        "signo": "Géminis",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "808",
+        "tripleB": "107",
+        "signo": "Géminis",
+        "isPending": false
+      }
+    ],
+    "2026-08-18": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "183",
+        "tripleB": "998",
+        "signo": "Acuario",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "143",
+        "tripleB": "998",
+        "signo": "Acuario",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "270",
+        "tripleB": "998",
+        "signo": "Acuario",
+        "isPending": false
+      }
+    ],
+    "2026-08-17": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "750",
+        "tripleB": "100",
+        "signo": "Sagitario",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "656",
+        "tripleB": "100",
+        "signo": "Sagitario",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "551",
+        "tripleB": "100",
+        "signo": "Sagitario",
+        "isPending": false
+      }
+    ],
+    "2026-08-16": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "998",
+        "tripleB": "998",
+        "signo": "Virgo",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "983",
+        "tripleB": "998",
+        "signo": "Virgo",
+        "isPending": false
+      },
+      {
+        "time": "07:00 PM",
+        "tripleA": "951",
+        "tripleB": "998",
+        "signo": "Virgo",
+        "isPending": false
+      }
+    ],
+    "2026-08-15": [
+      {
+        "time": "01:00 PM",
+        "tripleA": "803",
+        "tripleB": "107",
+        "signo": "Piscis",
+        "isPending": false
+      },
+      {
+        "time": "04:30 PM",
+        "tripleA": "875",
         "tripleB": "107",
         "signo": "Piscis",
         "isPending": false
