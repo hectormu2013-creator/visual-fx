@@ -147,6 +147,8 @@ const DEVICES_FILE = path.join(DATA_DIR, 'devices.json');
 const DEVICE_ACCOUNTS_FILE = path.join(DATA_DIR, 'device_accounts.json');
 const SYSTEM_USERS_FILE = path.join(DATA_DIR, 'system_users.json');
 
+const supabaseSync = require('./supabase_sync');
+
 const CLIENTS = new Map();
 const APPROVED_DEVICES = new Map();
 const PENDING_ACTIVATIONS = new Map();
@@ -184,6 +186,17 @@ function saveDatabase() {
       }
     }
     fs.writeFileSync(SYSTEM_USERS_FILE, JSON.stringify(savedUsers, null, 2), 'utf8');
+
+    // PERSISTENCIA PERMANENTE EN NUBE (SUPABASE)
+    // Se ejecuta de manera asíncrona no bloqueante para no demorar la respuesta de la API
+    Promise.all([
+      supabaseSync.saveToCloud('clients', clientsArr),
+      supabaseSync.saveToCloud('devices', devicesArr),
+      supabaseSync.saveToCloud('device_accounts', deviceAccsArr),
+      supabaseSync.saveToCloud('system_users', savedUsers)
+    ]).catch(err => {
+      console.warn('[SupabaseSync] Error en guardado en segundo plano:', err.message);
+    });
   } catch (e) {
     console.error('Error guardando base de datos en disco:', e);
   }
@@ -389,8 +402,124 @@ function loadDatabase() {
   saveDatabase();
 }
 
-// Inicializar persistencia de datos
+/**
+ * Sincroniza y restaura el estado completo desde Supabase.
+ * Permite que todas las pantallas, configuraciones y usuarios sobrevivan a
+ * los reinicios o despliegues en contenedores efímeros de Render.
+ */
+async function syncDatabaseWithCloud() {
+  try {
+    console.log('[SupabaseSync] Consultando persistencia en la nube (Supabase)...');
+    const cloudData = await supabaseSync.loadAllFromCloud();
+    let hasRestoredAny = false;
+
+    // 1. Restaurar o respaldar Clientes
+    if (cloudData.clients && Array.isArray(cloudData.clients) && cloudData.clients.length > 0) {
+      CLIENTS.clear();
+      for (const item of cloudData.clients) {
+        if (item && item.clientId) CLIENTS.set(item.clientId, item);
+      }
+      hasRestoredAny = true;
+      console.log(`[SupabaseSync] Restauradas ${CLIENTS.size} organización(es) cliente(s) desde Supabase.`);
+    } else {
+      const localClients = Array.from(CLIENTS.values());
+      if (localClients.length > 0) {
+        supabaseSync.saveToCloud('clients', localClients);
+      }
+    }
+
+    // 2. Restaurar o respaldar Dispositivos Autorizados
+    if (cloudData.devices && Array.isArray(cloudData.devices) && cloudData.devices.length > 0) {
+      APPROVED_DEVICES.clear();
+      for (const [id, dev] of cloudData.devices) {
+        if (id && dev) APPROVED_DEVICES.set(id, dev);
+      }
+      hasRestoredAny = true;
+      console.log(`[SupabaseSync] Restaurados ${APPROVED_DEVICES.size} dispositivo(s) autorizados desde Supabase.`);
+    } else {
+      const localDevs = Array.from(APPROVED_DEVICES.entries());
+      if (localDevs.length > 0) {
+        supabaseSync.saveToCloud('devices', localDevs);
+      }
+    }
+
+    // 3. Restaurar o respaldar Cuentas de Pantalla TV
+    if (cloudData.device_accounts && Array.isArray(cloudData.device_accounts) && cloudData.device_accounts.length > 0) {
+      DEVICE_ACCOUNTS.clear();
+      for (const acc of cloudData.device_accounts) {
+        if (acc && acc.username) {
+          const cleanKey = acc.username.toLowerCase();
+          DEVICE_ACCOUNTS.set(cleanKey, acc);
+          APPROVED_DEVICES.set(cleanKey, acc);
+        }
+      }
+      hasRestoredAny = true;
+      console.log(`[SupabaseSync] Restauradas ${DEVICE_ACCOUNTS.size} cuenta(s) de pantalla TV desde Supabase.`);
+    } else {
+      const localAccs = Array.from(DEVICE_ACCOUNTS.values());
+      if (localAccs.length > 0) {
+        supabaseSync.saveToCloud('device_accounts', localAccs);
+      }
+    }
+
+    // 4. Restaurar o respaldar Usuarios del Sistema (Super Admin y Soporte)
+    if (cloudData.system_users && Array.isArray(cloudData.system_users) && cloudData.system_users.length > 0) {
+      for (const su of cloudData.system_users) {
+        if (su && su.username) {
+          const cleanKey = su.username.toLowerCase();
+          USERS[cleanKey] = su;
+          if (cleanKey === 'hector_owner') {
+            USERS['hector_owner'] = su;
+            USERS['hector_superadmin'] = su;
+            USERS['hector'] = su;
+            USERS['superadmin'] = su;
+          }
+        }
+      }
+      hasRestoredAny = true;
+      console.log('[SupabaseSync] Restaurados usuarios del sistema desde Supabase.');
+    } else {
+      const savedUsers = [];
+      const seenUsers = new Set();
+      for (const u of Object.values(USERS)) {
+        if (u && u.username && !seenUsers.has(u.username)) {
+          seenUsers.add(u.username);
+          savedUsers.push(u);
+        }
+      }
+      if (savedUsers.length > 0) {
+        supabaseSync.saveToCloud('system_users', savedUsers);
+      }
+    }
+
+    // Si se restauró información desde Supabase, actualizar los archivos locales en disco
+    if (hasRestoredAny) {
+      try {
+        fs.writeFileSync(CLIENTS_FILE, JSON.stringify(Array.from(CLIENTS.values()), null, 2), 'utf8');
+        fs.writeFileSync(DEVICES_FILE, JSON.stringify(Array.from(APPROVED_DEVICES.entries()), null, 2), 'utf8');
+        fs.writeFileSync(DEVICE_ACCOUNTS_FILE, JSON.stringify(Array.from(DEVICE_ACCOUNTS.values()), null, 2), 'utf8');
+        const savedUsers = [];
+        const seenUsers = new Set();
+        for (const u of Object.values(USERS)) {
+          if (u && u.username && !seenUsers.has(u.username)) {
+            seenUsers.add(u.username);
+            savedUsers.push(u);
+          }
+        }
+        fs.writeFileSync(SYSTEM_USERS_FILE, JSON.stringify(savedUsers, null, 2), 'utf8');
+        console.log('[SupabaseSync] Archivos locales data/*.json actualizados con datos de la nube.');
+      } catch (e) {
+        console.warn('[SupabaseSync] No se pudieron escribir archivos locales:', e.message);
+      }
+    }
+  } catch (err) {
+    console.warn('[SupabaseSync] Error durante sincronización con Supabase:', err.message);
+  }
+}
+
+// Inicializar persistencia de datos (Local + Nube)
 loadDatabase();
+syncDatabaseWithCloud();
 
 // Inicio de Sesión Multi-Nivel (Super Admin, Clientes y Dispositivos)
 function loginUser(username, password) {
@@ -1525,5 +1654,6 @@ module.exports = {
   getDeviceAccounts,
   deleteDeviceAccount,
   updateDevicePassword,
-  kickDeviceSession
+  kickDeviceSession,
+  syncDatabaseWithCloud
 };

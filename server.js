@@ -32,7 +32,8 @@ const {
   getDeviceAccounts,
   deleteDeviceAccount,
   updateDevicePassword,
-  kickDeviceSession
+  kickDeviceSession,
+  syncDatabaseWithCloud
 } = require('./auth_device');
 const { initMasterIngest, getMasterState, updateChannelSource } = require('./master_ingest');
 const {
@@ -863,9 +864,15 @@ app.get('*', (req, res) => {
   return res.status(404).send('Visual-FX UI no encontrada.');
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`====================================================`);
   console.log(`🚀 Servidor Visual-FX activo en el puerto ${PORT}`);
   console.log(`👑 Estructura Jerárquica: Super Admin -> Clientes -> Dispositivos`);
+  console.log(`☁️ Persistencia Cloud: Supabase sincronizado automáticamente`);
   console.log(`====================================================`);
+  try {
+    await syncDatabaseWithCloud();
+  } catch (err) {
+    console.warn('[Server] Error en sync inicial de Supabase:', err.message);
+  }
 });

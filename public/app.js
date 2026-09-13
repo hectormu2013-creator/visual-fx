@@ -5052,7 +5052,7 @@ function renderCustomResultSlide(slideCfg, stage) {
               : '<span class="result-avatar-coin">🎰</span>'));
 
         // Solo juegos de terminales puros de 1 número usan una sola línea
-        if (!isMultiTripleGame && !hasB && !hasC && !signo) {
+        if (!isMultiTripleGame && !gameHasB && !gameHasC && !signo) {
           return `
             <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
               <span class="result-time">${timeStr}</span>
@@ -5232,14 +5232,28 @@ function renderCurrentCarouselSlide() {
   updateLotteryPageIndicator(currentCarouselSlideIdx, slides.length);
 
   if (stage) {
-    if (activeSlide.type === 'resultados') {
-      renderCustomResultSlide(activeSlide, stage);
-    } else if (activeSlide.type === 'estadisticas') {
-      renderModuleEstadisticas({ duration: activeSlide.duration }, stage);
-    } else if (activeSlide.type === 'publicidad') {
-      renderModulePublicidad({ duration: activeSlide.duration }, stage);
-    } else {
-      renderCustomResultSlide(activeSlide, stage);
+    try {
+      if (activeSlide.type === 'resultados') {
+        renderCustomResultSlide(activeSlide, stage);
+      } else if (activeSlide.type === 'estadisticas') {
+        renderModuleEstadisticas({ duration: activeSlide.duration }, stage);
+      } else if (activeSlide.type === 'publicidad') {
+        renderModulePublicidad({ duration: activeSlide.duration }, stage);
+      } else {
+        renderCustomResultSlide(activeSlide, stage);
+      }
+    } catch (slideErr) {
+      console.error('[LotteryCarousel] Error renderizando diapositiva activa:', slideErr);
+      if (stage) {
+        stage.innerHTML = `
+          <div style="display:flex; justify-content:center; align-items:center; height:320px; color:#cbd5e1; font-weight:700;">
+            <div style="text-align:center;">
+              <div style="font-size:2rem; margin-bottom:8px;">🎰</div>
+              <div>Cargando sorteos de ${activeSlide.name || 'Loterías'}...</div>
+            </div>
+          </div>
+        `;
+      }
     }
   }
 
@@ -5668,6 +5682,11 @@ window.handleDeleteCatalogLottery = handleDeleteCatalogLottery;
 // GESTOR DE 3 SECCIONES & DIAPOSITIVAS (CONFIGURACIÓN)
 // ==========================================
 function switchLotteryConfigSection(secKey) {
+  // 1. Guardar cambios en caliente del DOM actual antes de alternar pestaña
+  saveResultadosSlidesFromDOM();
+  saveEstadisticasSlidesFromDOM();
+  savePublicidadSlidesFromDOM();
+
   const tabs = document.querySelectorAll('.sec-subtab-btn');
   tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-sec') === secKey));
 
@@ -5680,6 +5699,38 @@ function switchLotteryConfigSection(secKey) {
   if (pPub) pPub.style.display = (secKey === 'publicidad') ? 'block' : 'none';
 }
 window.switchLotteryConfigSection = switchLotteryConfigSection;
+
+/**
+ * Desplaza suavemente el scroll hasta la tarjeta de la diapositiva solicitada
+ * y le aplica un brillo temporal para que el usuario la identifique al instante.
+ */
+function scrollToSlideEditor(secKey, idx) {
+  let containerId = 'slidesResultadosContainer';
+  if (secKey === 'estadisticas') containerId = 'slidesEstadisticasContainer';
+  if (secKey === 'publicidad') containerId = 'slidesPublicidadContainer';
+
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const cards = container.querySelectorAll('.slide-editor-card');
+  const targetCard = cards[idx];
+  if (targetCard) {
+    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    targetCard.classList.remove('slide-card-new-highlight');
+    void targetCard.offsetWidth; // reiniciar animación css
+    targetCard.classList.add('slide-card-new-highlight');
+    setTimeout(() => {
+      targetCard.classList.remove('slide-card-new-highlight');
+    }, 2200);
+
+    const nameInput = targetCard.querySelector('.slide-name-input');
+    if (nameInput) {
+      nameInput.focus();
+      nameInput.select();
+    }
+  }
+}
+window.scrollToSlideEditor = scrollToSlideEditor;
 
 function ensureLotterySectionsStructure() {
   if (!currentScreenConfig.lotterySections) {
@@ -5700,11 +5751,28 @@ function renderResultadosSlidesEditor() {
   ensureLotterySectionsStructure();
   const container = document.getElementById('slidesResultadosContainer');
   const countLabel = document.getElementById('lblResultadosSlideCount');
+  const quickNav = document.getElementById('quickNavResultados');
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.resultados.slides;
   if (countLabel) {
     countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
+  }
+
+  // Renderizar píldoras de navegación rápida en la cabecera sticky
+  if (quickNav) {
+    if (slides.length > 0) {
+      quickNav.innerHTML = `
+        <span class="slides-quick-nav-label">Ir a:</span>
+        ${slides.map((s, i) => `
+          <button type="button" class="btn-quick-slide-jump" onclick="window.scrollToSlideEditor('resultados', ${i})" title="${s.name || `Diapositiva #${i + 1}`}">
+            #${i + 1}
+          </button>
+        `).join('')}
+      `;
+    } else {
+      quickNav.innerHTML = '';
+    }
   }
 
   if (slides.length === 0) {
@@ -5728,7 +5796,7 @@ function renderResultadosSlidesEditor() {
     { id: 'triple-caliente', name: 'TRIPLE CALIENTE', type: 'triples' }
   ]);
 
-  container.innerHTML = slides.map((slide, sIdx) => {
+  const cardsHtml = slides.map((slide, sIdx) => {
     const lotCount = Math.min(5, Math.max(1, parseInt(slide.lotteryCount) || 5));
     slide.lotteryCount = lotCount;
     if (!Array.isArray(slide.lotteries)) slide.lotteries = [];
@@ -5761,7 +5829,7 @@ function renderResultadosSlidesEditor() {
     }
 
     return `
-      <div class="slide-editor-card">
+      <div class="slide-editor-card" id="slideCard_res_${sIdx}">
         <div class="slide-editor-header">
           <div style="display:flex; align-items:center; gap:8px;">
             <label class="switch-label" style="margin:0;">
@@ -5814,7 +5882,8 @@ function renderResultadosSlidesEditor() {
       ✅ Límite máximo de 15 diapositivas alcanzado para la sección Resultados.
     </div>
   `;
-  container.innerHTML += addBtnHtml;
+
+  container.innerHTML = cardsHtml + addBtnHtml;
 }
 window.renderResultadosSlidesEditor = renderResultadosSlidesEditor;
 
@@ -5822,18 +5891,35 @@ function renderEstadisticasSlidesEditor() {
   ensureLotterySectionsStructure();
   const container = document.getElementById('slidesEstadisticasContainer');
   const countLabel = document.getElementById('lblEstadisticasSlideCount');
+  const quickNav = document.getElementById('quickNavEstadisticas');
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.estadisticas.slides;
   if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
+
+  // Barra de navegación rápida
+  if (quickNav) {
+    if (slides.length > 0) {
+      quickNav.innerHTML = `
+        <span class="slides-quick-nav-label">Ir a:</span>
+        ${slides.map((s, i) => `
+          <button type="button" class="btn-quick-slide-jump" onclick="window.scrollToSlideEditor('estadisticas', ${i})" title="${s.name || `Estadísticas #${i + 1}`}">
+            #${i + 1}
+          </button>
+        `).join('')}
+      `;
+    } else {
+      quickNav.innerHTML = '';
+    }
+  }
 
   if (slides.length === 0) {
     container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de estadísticas configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
     return;
   }
 
-  container.innerHTML = slides.map((s, idx) => `
-    <div class="slide-editor-card">
+  const cardsHtml = slides.map((s, idx) => `
+    <div class="slide-editor-card" id="slideCard_stat_${idx}">
       <div class="slide-editor-header">
         <div style="display:flex; align-items:center; gap:8px;">
           <label class="switch-label" style="margin:0;">
@@ -5860,12 +5946,17 @@ function renderEstadisticasSlidesEditor() {
 
   const addBtnStatsHtml = (slides.length < 15) ? `
     <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
-      <button type="button" onclick="window.addNewStatsSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
+      <button type="button" id="btnBottomAddStatsSlide" onclick="window.addNewStatsSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
         ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
       </button>
     </div>
-  ` : '';
-  container.innerHTML += addBtnStatsHtml;
+  ` : `
+    <div style="margin-top:16px; text-align:center; color:#94a3b8; font-size:0.88rem; font-weight:700;">
+      ✅ Límite máximo de 15 diapositivas alcanzado para la sección Estadísticas.
+    </div>
+  `;
+
+  container.innerHTML = cardsHtml + addBtnStatsHtml;
 }
 window.renderEstadisticasSlidesEditor = renderEstadisticasSlidesEditor;
 
@@ -5873,18 +5964,35 @@ function renderPublicidadSlidesEditor() {
   ensureLotterySectionsStructure();
   const container = document.getElementById('slidesPublicidadContainer');
   const countLabel = document.getElementById('lblPublicidadSlideCount');
+  const quickNav = document.getElementById('quickNavPublicidad');
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.publicidad.slides;
   if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
+
+  // Barra de navegación rápida
+  if (quickNav) {
+    if (slides.length > 0) {
+      quickNav.innerHTML = `
+        <span class="slides-quick-nav-label">Ir a:</span>
+        ${slides.map((s, i) => `
+          <button type="button" class="btn-quick-slide-jump" onclick="window.scrollToSlideEditor('publicidad', ${i})" title="${s.name || `Publicidad #${i + 1}`}">
+            #${i + 1}
+          </button>
+        `).join('')}
+      `;
+    } else {
+      quickNav.innerHTML = '';
+    }
+  }
 
   if (slides.length === 0) {
     container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de publicidad configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
     return;
   }
 
-  container.innerHTML = slides.map((s, idx) => `
-    <div class="slide-editor-card">
+  const cardsHtml = slides.map((s, idx) => `
+    <div class="slide-editor-card" id="slideCard_pub_${idx}">
       <div class="slide-editor-header">
         <div style="display:flex; align-items:center; gap:8px;">
           <label class="switch-label" style="margin:0;">
@@ -5911,12 +6019,17 @@ function renderPublicidadSlidesEditor() {
 
   const addBtnPubHtml = (slides.length < 15) ? `
     <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
-      <button type="button" onclick="window.addNewPubSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
+      <button type="button" id="btnBottomAddPubSlide" onclick="window.addNewPubSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
         ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
       </button>
     </div>
-  ` : '';
-  container.innerHTML += addBtnPubHtml;
+  ` : `
+    <div style="margin-top:16px; text-align:center; color:#94a3b8; font-size:0.88rem; font-weight:700;">
+      ✅ Límite máximo de 15 diapositivas alcanzado para la sección Publicidad.
+    </div>
+  `;
+
+  container.innerHTML = cardsHtml + addBtnPubHtml;
 }
 window.renderPublicidadSlidesEditor = renderPublicidadSlidesEditor;
 
@@ -5996,7 +6109,12 @@ function addNewResultSlide() {
     lotteryCount: 5,
     lotteries: initialGames.length > 0 ? initialGames : ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
   });
+
+  const newIdx = slides.length - 1;
   renderResultadosSlidesEditor();
+  setTimeout(() => {
+    window.scrollToSlideEditor('resultados', newIdx);
+  }, 60);
 }
 window.addNewResultSlide = addNewResultSlide;
 
@@ -6014,7 +6132,12 @@ function addNewStatsSlide() {
     enabled: true,
     duration: 20
   });
+
+  const newIdx = slides.length - 1;
   renderEstadisticasSlidesEditor();
+  setTimeout(() => {
+    window.scrollToSlideEditor('estadisticas', newIdx);
+  }, 60);
 }
 window.addNewStatsSlide = addNewStatsSlide;
 
@@ -6032,12 +6155,21 @@ function addNewPubSlide() {
     enabled: true,
     duration: 15
   });
+
+  const newIdx = slides.length - 1;
   renderPublicidadSlidesEditor();
+  setTimeout(() => {
+    window.scrollToSlideEditor('publicidad', newIdx);
+  }, 60);
 }
 window.addNewPubSlide = addNewPubSlide;
 
 function deleteSlide(secKey, idx) {
   ensureLotterySectionsStructure();
+  if (secKey === 'resultados') saveResultadosSlidesFromDOM();
+  if (secKey === 'estadisticas') saveEstadisticasSlidesFromDOM();
+  if (secKey === 'publicidad') savePublicidadSlidesFromDOM();
+
   const slides = currentScreenConfig.lotterySections[secKey].slides;
   if (slides.length <= 1) {
     if (!confirm('Esta es la única diapositiva de esta sección. ¿Desea eliminarla de todos modos?')) return;
@@ -6058,6 +6190,10 @@ window.updateSlideName = updateSlideName;
 
 function clearSlideName(secKey, idx) {
   ensureLotterySectionsStructure();
+  if (secKey === 'resultados') saveResultadosSlidesFromDOM();
+  if (secKey === 'estadisticas') saveEstadisticasSlidesFromDOM();
+  if (secKey === 'publicidad') savePublicidadSlidesFromDOM();
+
   const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
   if (slide) slide.name = '';
   if (secKey === 'resultados') renderResultadosSlidesEditor();
@@ -6082,6 +6218,7 @@ window.toggleSlideEnabled = toggleSlideEnabled;
 
 function setSlideLotteryCount(secKey, idx, count) {
   ensureLotterySectionsStructure();
+  saveResultadosSlidesFromDOM();
   const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
   if (slide) {
     slide.lotteryCount = count;
@@ -6411,7 +6548,9 @@ function setupScreenConfigEventListeners() {
           if (msg) {
             msg.style.color = '#34d399';
             const resSlidesCount = assembledConfig.lotterySections?.resultados?.slides?.length || 0;
-            msg.textContent = `¡Configuración guardada y sincronizada en ${checkedBoxes.length} televisor(es) físico(s) de agencia! (${resSlidesCount} diapositiva(s) de resultados guardadas)`;
+            const statSlidesCount = assembledConfig.lotterySections?.estadisticas?.slides?.length || 0;
+            const pubSlidesCount = assembledConfig.lotterySections?.publicidad?.slides?.length || 0;
+            msg.textContent = `¡Configuración guardada y sincronizada en ${checkedBoxes.length} televisor(es) de agencia! (${resSlidesCount} Resultados, ${statSlidesCount} Estadísticas, ${pubSlidesCount} Publicidad)`;
           }
           applyScreenConfig(assembledConfig);
           if (currentUser) {

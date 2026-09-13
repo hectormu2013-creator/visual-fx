@@ -1,172 +1,71 @@
 [
   {
-    "clientId": "fenix",
     "name": "Fenix",
-    "managerUsername": "fenix",
-    "managerName": "Encargado Fenix",
     "pass": "fenix123",
-    "maxDevices": 10,
-    "planType": "MONTHLY",
-    "expiresAt": "2026-12-31",
-    "status": "ACTIVE",
-    "createdAt": "2026-08-28",
     "config": {
-      "themeMode": "dark",
-      "colorStyle": "emerald",
-      "colorScheme": "emerald",
-      "tickerSpeed": 160,
-      "tickerActive": true,
-      "voiceEnabled": true,
-      "voiceVolume": 0.85,
-      "animalSfxEnabled": true,
-      "bgMusicEnabled": false,
-      "circusMusicEnabled": false,
-      "bgMusicTrack": "circus_waltz",
-      "circusMusicTrack": "circus_waltz",
-      "bgMusicCustomUrl": "",
-      "customMusicUrl": "",
-      "bgMusicVolume": 0.2,
-      "circusMusicVolume": 0.2,
-      "defaultService": "hipica",
       "modules": {
-        "top5_animalitos": {
+        "pizarra_1000": {
           "enabled": true,
-          "duration": 20,
-          "games": [
-            "guacharo-activo",
-            "granjita",
-            "lotto-activo",
-            "la-ricachona",
-            "lotto-rey"
-          ]
+          "duration": 28
         },
         "top5_triples": {
-          "enabled": true,
-          "duration": 20,
           "games": [
             "triple-zulia",
             "triple-tachira",
             "triple-chance",
             "triple-caracas",
             "triple-zamorano"
-          ]
-        },
-        "animalitos_group2": {
+          ],
           "enabled": true,
-          "duration": 18,
+          "duration": 20
+        },
+        "top5_animalitos": {
           "games": [
-            "selva-plus",
-            "ruleta-activa",
-            "granjita-plus"
-          ]
-        },
-        "pizarra_1000": {
+            "guacharo-activo",
+            "granjita",
+            "lotto-activo",
+            "la-ricachona",
+            "lotto-rey"
+          ],
           "enabled": true,
-          "duration": 28
+          "duration": 20
         },
         "estadisticas_30d": {
           "enabled": true,
           "duration": 20
         },
-        "publicidad_loteria": {
+        "animalitos_group2": {
+          "games": [
+            "selva-plus",
+            "ruleta-activa",
+            "granjita-plus"
+          ],
           "enabled": true,
-          "duration": 15
+          "duration": 18
         },
         "ultimos_5_sorteos": {
           "enabled": true,
           "duration": 25
+        },
+        "publicidad_loteria": {
+          "enabled": true,
+          "duration": 15
         }
       },
+      "themeMode": "dark",
+      "colorStyle": "emerald",
+      "colorScheme": "emerald",
+      "tickerSpeed": 160,
+      "voiceVolume": 0.85,
+      "bgMusicTrack": "circus_waltz",
+      "tickerActive": true,
+      "voiceEnabled": true,
+      "bgMusicVolume": 0.2,
+      "bgMusicEnabled": false,
+      "customMusicUrl": "",
+      "defaultService": "hipica",
       "lotterySections": {
-        "resultados": {
-          "enabled": true,
-          "slides": [
-            {
-              "id": "slide_1",
-              "name": "Loterias favoritas de animalitos",
-              "enabled": true,
-              "duration": 20,
-              "lotteryCount": 5,
-              "lotteries": [
-                "guacharo-activo",
-                "lotto-activo",
-                "la-granjita",
-                "guacharito-millonario",
-                "chance-animal"
-              ]
-            },
-            {
-              "id": "slide_2",
-              "name": "Triples y Terminales tradicionales",
-              "enabled": true,
-              "duration": 20,
-              "lotteryCount": 4,
-              "lotteries": [
-                "triple-zulia",
-                "triple-tachira",
-                "triple-chance-1",
-                "triple-chance-2",
-                "triple-zamorano",
-                "triple-caliente"
-              ]
-            },
-            {
-              "id": "slide_res_1789177346979",
-              "name": "Animalitos",
-              "enabled": true,
-              "duration": 20,
-              "lotteryCount": 4,
-              "lotteries": [
-                "animalitos-la-ricachona",
-                "centena-animalitos",
-                "centena-plus",
-                "la-ruca",
-                "el-ruco"
-              ]
-            },
-            {
-              "id": "slide_res_1789177347923",
-              "name": "triples y terminales",
-              "enabled": true,
-              "duration": 20,
-              "lotteryCount": 3,
-              "lotteries": [
-                "terminal-la-granjita",
-                "triple-caliente",
-                "triple-centena",
-                "chance-animal",
-                "el-ruco"
-              ]
-            },
-            {
-              "id": "slide_res_1789177352180",
-              "name": "mas animalitos",
-              "enabled": true,
-              "duration": 20,
-              "lotteryCount": 3,
-              "lotteries": [
-                "granjita-plus",
-                "mega-animal-40",
-                "selva-plus",
-                "chance-animal",
-                "el-ruco"
-              ]
-            }
-          ]
-        },
-        "estadisticas": {
-          "enabled": true,
-          "slides": [
-            {
-              "id": "slide_stats_1",
-              "name": "Radiografía 30D y Pronósticos",
-              "enabled": true,
-              "duration": 20
-            }
-          ]
-        },
         "publicidad": {
-          "enabled": true,
           "slides": [
             {
               "id": "slide_pub_1",
@@ -174,40 +73,141 @@
               "enabled": true,
               "duration": 15
             }
-          ]
+          ],
+          "enabled": true
+        },
+        "resultados": {
+          "slides": [
+            {
+              "id": "slide_1",
+              "name": "Loterias favoritas de animalitos",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "guacharo-activo",
+                "lotto-activo",
+                "la-granjita",
+                "guacharito-millonario",
+                "chance-animal"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_2",
+              "name": "Triples y Terminales tradicionales",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "triple-zulia",
+                "triple-tachira",
+                "triple-chance-1",
+                "triple-chance-2",
+                "triple-zamorano",
+                "triple-caliente"
+              ],
+              "lotteryCount": 4
+            },
+            {
+              "id": "slide_res_1789177346979",
+              "name": "Animalitos",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "animalitos-la-ricachona",
+                "centena-animalitos",
+                "centena-plus",
+                "la-ruca",
+                "el-ruco"
+              ],
+              "lotteryCount": 4
+            },
+            {
+              "id": "slide_res_1789177347923",
+              "name": "triples y terminales",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "terminal-la-granjita",
+                "triple-caliente",
+                "triple-centena",
+                "chance-animal",
+                "el-ruco"
+              ],
+              "lotteryCount": 3
+            },
+            {
+              "id": "slide_res_1789177352180",
+              "name": "mas animalitos",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "granjita-plus",
+                "mega-animal-40",
+                "selva-plus",
+                "chance-animal",
+                "el-ruco"
+              ],
+              "lotteryCount": 3
+            }
+          ],
+          "enabled": true
+        },
+        "estadisticas": {
+          "slides": [
+            {
+              "id": "slide_stats_1",
+              "name": "Radiografía 30D y Pronósticos",
+              "enabled": true,
+              "duration": 20
+            }
+          ],
+          "enabled": true
         }
-      }
-    }
+      },
+      "animalSfxEnabled": true,
+      "bgMusicCustomUrl": "",
+      "circusMusicTrack": "circus_waltz",
+      "circusMusicVolume": 0.2,
+      "circusMusicEnabled": false
+    },
+    "status": "ACTIVE",
+    "clientId": "fenix",
+    "planType": "MONTHLY",
+    "createdAt": "2026-08-28",
+    "expiresAt": "2026-12-31",
+    "maxDevices": 10,
+    "managerName": "Encargado Fenix",
+    "managerUsername": "fenix"
   },
   {
-    "clientId": "fenix2023",
     "name": "Fenix 2023",
-    "managerUsername": "fenix2023",
-    "managerName": "Encargado Fenix 2023",
     "pass": "fenix2023",
-    "maxDevices": 4,
-    "planType": "MONTHLY",
-    "expiresAt": "2026-12-31",
-    "status": "ACTIVE",
-    "createdAt": "2026-08-28",
     "config": {
       "themeMode": "dark",
       "colorStyle": "emerald",
       "colorScheme": "emerald",
       "tickerSpeed": 160,
+      "voiceVolume": 0.9,
+      "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
       "voiceEnabled": true,
-      "voiceVolume": 0.9,
-      "animalSfxEnabled": true,
-      "bgMusicEnabled": false,
-      "circusMusicEnabled": false,
-      "bgMusicTrack": "circus_waltz",
-      "circusMusicTrack": "circus_waltz",
-      "bgMusicCustomUrl": "",
-      "customMusicUrl": "",
       "bgMusicVolume": 0.25,
+      "bgMusicEnabled": false,
+      "customMusicUrl": "",
+      "defaultService": "hipica",
+      "animalSfxEnabled": true,
+      "bgMusicCustomUrl": "",
+      "circusMusicTrack": "circus_waltz",
       "circusMusicVolume": 0.25,
-      "defaultService": "hipica"
-    }
+      "circusMusicEnabled": false
+    },
+    "status": "ACTIVE",
+    "clientId": "fenix2023",
+    "planType": "MONTHLY",
+    "createdAt": "2026-08-28",
+    "expiresAt": "2026-12-31",
+    "maxDevices": 4,
+    "managerName": "Encargado Fenix 2023",
+    "managerUsername": "fenix2023"
   }
 ]

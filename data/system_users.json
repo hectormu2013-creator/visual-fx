@@ -1,76 +1,71 @@
 [
   {
-    "username": "hector_owner",
     "name": "Héctor (Super Administrador)",
-    "passwords": [
-      "admin2026",
-      "fenix2026"
-    ],
     "role": "SUPER_ADMIN",
-    "location": "Sede Principal",
     "config": {
+      "modules": {
+        "pizarra_1000": {
+          "enabled": true,
+          "duration": 28
+        },
+        "top5_triples": {
+          "games": [
+            "triple-zulia",
+            "triple-tachira",
+            "triple-chance",
+            "triple-caracas",
+            "triple-zamorano"
+          ],
+          "enabled": true,
+          "duration": 20
+        },
+        "top5_animalitos": {
+          "games": [
+            "guacharo-activo",
+            "granjita",
+            "lotto-activo",
+            "la-ricachona",
+            "lotto-rey"
+          ],
+          "enabled": true,
+          "duration": 20
+        },
+        "estadisticas_30d": {
+          "enabled": true,
+          "duration": 20
+        },
+        "animalitos_group2": {
+          "games": [
+            "selva-plus",
+            "ruleta-activa",
+            "granjita-plus"
+          ],
+          "enabled": true,
+          "duration": 18
+        },
+        "ultimos_5_sorteos": {
+          "enabled": true,
+          "duration": 25
+        },
+        "publicidad_loteria": {
+          "enabled": true,
+          "duration": 15
+        }
+      },
       "themeMode": "dark",
       "colorStyle": "emerald",
       "colorScheme": "emerald",
       "tickerSpeed": 160,
+      "voiceVolume": 0.9,
+      "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
       "voiceEnabled": true,
-      "voiceVolume": 0.9,
-      "animalSfxEnabled": true,
-      "bgMusicEnabled": false,
-      "circusMusicEnabled": false,
-      "bgMusicTrack": "circus_waltz",
-      "circusMusicTrack": "circus_waltz",
       "bgMusicVolume": 0.25,
-      "circusMusicVolume": 0.25,
+      "bgMusicEnabled": false,
+      "customMusicUrl": "",
       "defaultService": "loteria",
       "lotterySections": {
-        "resultados": {
-          "enabled": true,
-          "slides": [
-            {
-              "id": "slide_1",
-              "name": "Top 5 Animalitos Principales",
-              "enabled": true,
-              "duration": 20,
-              "lotteryCount": 5,
-              "lotteries": [
-                "la-granjita",
-                "guacharo-activo",
-                "lotto-activo",
-                "guacharito-millonario",
-                "chance-animal"
-              ]
-            },
-            {
-              "id": "slide_2",
-              "name": "Triples y Terminales Estrella",
-              "enabled": true,
-              "duration": 20,
-              "lotteryCount": 5,
-              "lotteries": [
-                "triple-zulia",
-                "triple-tachira",
-                "triple-chance",
-                "triple-caracas",
-                "triple-zamorano"
-              ]
-            }
-          ]
-        },
-        "estadisticas": {
-          "enabled": true,
-          "slides": [
-            {
-              "id": "slide_stats_1",
-              "name": "Radiografía 30D y Pronósticos",
-              "enabled": true,
-              "duration": 20
-            }
-          ]
-        },
         "publicidad": {
-          "enabled": true,
           "slides": [
             {
               "id": "slide_pub_1",
@@ -78,69 +73,74 @@
               "enabled": true,
               "duration": 15
             }
-          ]
+          ],
+          "enabled": true
+        },
+        "resultados": {
+          "slides": [
+            {
+              "id": "slide_1",
+              "name": "Top 5 Animalitos Principales",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "la-granjita",
+                "guacharo-activo",
+                "lotto-activo",
+                "guacharito-millonario",
+                "chance-animal"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_2",
+              "name": "Triples y Terminales Estrella",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "triple-zulia",
+                "triple-tachira",
+                "triple-chance",
+                "triple-caracas",
+                "triple-zamorano"
+              ],
+              "lotteryCount": 5
+            }
+          ],
+          "enabled": true
+        },
+        "estadisticas": {
+          "slides": [
+            {
+              "id": "slide_stats_1",
+              "name": "Radiografía 30D y Pronósticos",
+              "enabled": true,
+              "duration": 20
+            }
+          ],
+          "enabled": true
         }
       },
+      "animalSfxEnabled": true,
       "bgMusicCustomUrl": "",
-      "customMusicUrl": "",
-      "modules": {
-        "top5_animalitos": {
-          "enabled": true,
-          "duration": 20,
-          "games": [
-            "guacharo-activo",
-            "granjita",
-            "lotto-activo",
-            "la-ricachona",
-            "lotto-rey"
-          ]
-        },
-        "top5_triples": {
-          "enabled": true,
-          "duration": 20,
-          "games": [
-            "triple-zulia",
-            "triple-tachira",
-            "triple-chance",
-            "triple-caracas",
-            "triple-zamorano"
-          ]
-        },
-        "animalitos_group2": {
-          "enabled": true,
-          "duration": 18,
-          "games": [
-            "selva-plus",
-            "ruleta-activa",
-            "granjita-plus"
-          ]
-        },
-        "pizarra_1000": {
-          "enabled": true,
-          "duration": 28
-        },
-        "estadisticas_30d": {
-          "enabled": true,
-          "duration": 20
-        },
-        "publicidad_loteria": {
-          "enabled": true,
-          "duration": 15
-        },
-        "ultimos_5_sorteos": {
-          "enabled": true,
-          "duration": 25
-        }
-      }
-    }
+      "circusMusicTrack": "circus_waltz",
+      "circusMusicVolume": 0.25,
+      "circusMusicEnabled": false
+    },
+    "location": "Sede Principal",
+    "username": "hector_owner",
+    "passwords": [
+      "admin2026",
+      "fenix2026"
+    ]
   },
   {
-    "username": "jefe_tecnico",
     "name": "Soporte Técnico Visual-FX",
+    "role": "TECH_CHIEF",
+    "location": "Centro de Operaciones",
+    "username": "jefe_tecnico",
     "passwords": [
       "soporte2026"
-    ],
-    "role": "TECH_CHIEF",
-    "location": "Centro de Operaciones"
+    ]
   }
 ]
