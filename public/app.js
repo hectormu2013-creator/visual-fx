@@ -4169,24 +4169,39 @@ function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
     window.speechSynthesis.cancel();
     
     // Normalización fonética para pronunciación fluida y natural:
-    // 1. Convertir mayúsculas a minúsculas/título para evitar que el sintetizador las deletree como siglas
-    let cleanGameName = (gameName || '').replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-    let cleanResult = (resultText || '').replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-    
-    // 2. Corregir específicamente "ricachona" para que se pronuncie como palabra completa y nunca deletreada
-    cleanGameName = cleanGameName.replace(/la\s+ricachona/gi, 'la rica chona').replace(/ricachona/gi, 'rica chona');
-    cleanResult = cleanResult.replace(/la\s+ricachona/gi, 'la rica chona').replace(/ricachona/gi, 'rica chona');
+    // 1. Quitar paréntesis o aclaratorias de horarios en el nombre hablado (ej: "Triple Chance (9 AM - 2 PM)" -> "Triple Chance")
+    let cleanGameName = (gameName || '').replace(/\s*\([^)]*\)/g, '').trim();
+    let cleanResult = (resultText || '').trim();
 
-    // 3. Corregir fonética de "Chance" para evitar pronunciación en inglés sin 'e' (pronunciar "Chanse" con 'e' clara)
-    cleanGameName = cleanGameName.replace(/\bchance\b/gi, 'Chanse');
+    // 2. Convertir mayúsculas continuas a minúsculas/título para evitar que el sintetizador las deletree
+    cleanGameName = cleanGameName.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    cleanResult = cleanResult.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+    // 3. Corregir Triples de Chance: locución limpia como "Chance" (pronunciado "Chanse" en español) seguido de la hora
+    if (/\btriple\s+chance\b/i.test(cleanGameName) || cleanGameName.toLowerCase() === 'chance') {
+      cleanGameName = 'Chanse';
+    } else {
+      cleanGameName = cleanGameName.replace(/\bchance\b/gi, 'Chanse');
+    }
     cleanResult = cleanResult.replace(/\bchance\b/gi, 'Chanse');
 
-    // 4. Corregir fonética de "Táchira" para forzar acento esdrújulo en la primera 'a' (TÁ-chi-ra)
+    // 4. Corregir fonética de "Guácharo" para forzar acento esdrújulo en la primera 'a' (Guá-cha-ro)
+    cleanGameName = cleanGameName.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
+    cleanResult = cleanResult.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
+
+    // 5. Corregir específicamente "Rícachona" para que se pronuncie como una sola palabra corrida con acento en la 'i' (Rí-ca-cho-na)
+    cleanGameName = cleanGameName
+      .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
+      .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
+      .replace(/\br[ií]cachona\b/gi, 'Rícachona');
+    cleanResult = cleanResult
+      .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
+      .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
+      .replace(/\br[ií]cachona\b/gi, 'Rícachona');
+
+    // 6. Corregir fonética de "Táchira" para forzar acento esdrújulo en la primera 'a' (TÁ-chi-ra)
     cleanGameName = cleanGameName.replace(/\bt[aá]chira\b/gi, 'Táchira');
     cleanResult = cleanResult.replace(/\bt[aá]chira\b/gi, 'Táchira');
-
-    // 5. Quitar paréntesis o aclaratorias de horarios en el nombre hablado (ej: "Triple Chance (9 AM - 2 PM)" -> "Triple Chanse")
-    cleanGameName = cleanGameName.replace(/\s*\([^)]*\)/g, '').trim();
 
     const utterance = new SpeechSynthesisUtterance(`Atención. Resultado oficial de ${cleanGameName}, sorteo de las ${drawTime}: ${cleanResult}.`);
     utterance.lang = 'es-VE';
@@ -4366,7 +4381,7 @@ function processNextAnnouncement() {
       setTimeout(() => {
         isAnnouncementPlaying = false;
         processNextAnnouncement();
-      }, 800);
+      }, 3000); // 3 segundos de espera estricta entre cada anuncio (Requisito 1)
     });
   }, 1200);
 }
@@ -5786,6 +5801,20 @@ function renderResultadosSlidesEditor() {
       </div>
     `;
   }).join('');
+
+  // Botón siempre visible al final de la lista para agregar diapositiva #4, #5, etc.
+  const addBtnHtml = (slides.length < 15) ? `
+    <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
+      <button type="button" id="btnBottomAddResultSlide" onclick="window.addNewResultSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
+        ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
+      </button>
+    </div>
+  ` : `
+    <div style="margin-top:16px; text-align:center; color:#94a3b8; font-size:0.88rem; font-weight:700;">
+      ✅ Límite máximo de 15 diapositivas alcanzado para la sección Resultados.
+    </div>
+  `;
+  container.innerHTML += addBtnHtml;
 }
 window.renderResultadosSlidesEditor = renderResultadosSlidesEditor;
 
@@ -5828,6 +5857,15 @@ function renderEstadisticasSlidesEditor() {
       <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Despliega la radiografía de 30 días de animalitos (más calientes, fríos / por reventar y pronósticos recomendados).</p>
     </div>
   `).join('');
+
+  const addBtnStatsHtml = (slides.length < 15) ? `
+    <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
+      <button type="button" onclick="window.addNewStatsSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
+        ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
+      </button>
+    </div>
+  ` : '';
+  container.innerHTML += addBtnStatsHtml;
 }
 window.renderEstadisticasSlidesEditor = renderEstadisticasSlidesEditor;
 
@@ -5870,6 +5908,15 @@ function renderPublicidadSlidesEditor() {
       <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Diapositiva promocional con logos oficiales, llamados a la acción en taquilla y respaldo oficial de la agencia.</p>
     </div>
   `).join('');
+
+  const addBtnPubHtml = (slides.length < 15) ? `
+    <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
+      <button type="button" onclick="window.addNewPubSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
+        ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
+      </button>
+    </div>
+  ` : '';
+  container.innerHTML += addBtnPubHtml;
 }
 window.renderPublicidadSlidesEditor = renderPublicidadSlidesEditor;
 
@@ -6363,7 +6410,8 @@ function setupScreenConfigEventListeners() {
         if (res.ok && data.success) {
           if (msg) {
             msg.style.color = '#34d399';
-            msg.textContent = `¡Configuración guardada y sincronizada en ${checkedBoxes.length} pantalla(s)!`;
+            const resSlidesCount = assembledConfig.lotterySections?.resultados?.slides?.length || 0;
+            msg.textContent = `¡Configuración guardada y sincronizada en ${checkedBoxes.length} televisor(es) físico(s) de agencia! (${resSlidesCount} diapositiva(s) de resultados guardadas)`;
           }
           applyScreenConfig(assembledConfig);
           if (currentUser) {

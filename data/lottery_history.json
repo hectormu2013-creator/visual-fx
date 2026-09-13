@@ -2413,6 +2413,26 @@
         "tripleC": null,
         "signo": "Sagitario",
         "isManual": false
+      },
+      {
+        "time": "10:15 AM",
+        "number": "24",
+        "name": "Libra",
+        "tripleA": "24",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Libra",
+        "isManual": false
+      },
+      {
+        "time": "11:15 AM",
+        "number": "62",
+        "name": "Leo",
+        "tripleA": "62",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Leo",
+        "isManual": false
       }
     ]
   },
@@ -5073,6 +5093,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "723",
+        "name": null,
+        "tripleA": "723",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "231",
+        "name": null,
+        "tripleA": "231",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -7371,6 +7411,16 @@
         "number": "13",
         "name": "MONO",
         "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:10 AM",
+        "number": "07",
+        "name": "PERICO",
+        "tripleA": "07",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -9687,6 +9737,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "07",
+        "name": "Perico",
+        "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "16",
+        "name": "Oso",
+        "tripleA": "16",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -11999,6 +12069,16 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:15 AM",
+        "number": "92",
+        "name": "Plaga",
+        "tripleA": "92",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -14093,6 +14173,26 @@
         "number": "51",
         "name": "Buho",
         "tripleA": "51",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "05",
+        "name": "Leon",
+        "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "38",
+        "name": "Flamenco",
+        "tripleA": "38",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -16369,6 +16469,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "05",
+        "name": "Leon",
+        "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "38",
+        "name": "Flamenco",
+        "tripleA": "38",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -18637,6 +18757,16 @@
         "number": "51",
         "name": "Buho",
         "tripleA": "51",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "05",
+        "name": "Leon",
+        "tripleA": "05",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -20929,6 +21059,26 @@
         "number": "40",
         "name": "Avispa",
         "tripleA": "40",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:30 AM",
+        "number": "09",
+        "name": "Aguila",
+        "tripleA": "09",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:30 AM",
+        "number": "86",
+        "name": "Buey",
+        "tripleA": "86",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -23235,6 +23385,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "24",
+        "name": "Iguana",
+        "tripleA": "24",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -25533,6 +25703,16 @@
         "number": "06",
         "name": "Rana",
         "tripleA": "06",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "16",
+        "name": "Oso",
+        "tripleA": "16",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -27839,6 +28019,16 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:10 AM",
+        "number": "07",
+        "name": "PERICO",
+        "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -30141,6 +30331,16 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "08",
+        "name": "Ratón",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -32433,6 +32633,26 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "21",
+        "name": "Gallo",
+        "tripleA": "21",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "26",
+        "name": "Vaca",
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -34557,6 +34777,26 @@
         "number": "77",
         "name": "Pingüino",
         "tripleA": "77",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:15 AM",
+        "number": "56",
+        "name": "Tiburón",
+        "tripleA": "56",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:15 AM",
+        "number": "53",
+        "name": "Caracol",
+        "tripleA": "53",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -37211,6 +37451,16 @@
         "tripleC": null,
         "signo": null,
         "isManual": false
+      },
+      {
+        "time": "11:05 AM",
+        "number": "82",
+        "name": null,
+        "tripleA": "82",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -38940,6 +39190,16 @@
         "tripleB": "206",
         "tripleC": "745",
         "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "849",
+        "name": "Libra",
+        "tripleA": "849",
+        "tripleB": "162",
+        "tripleC": "692",
+        "signo": "Libra",
         "isManual": false
       }
     ]
@@ -41366,6 +41626,16 @@
         "tripleB": "206",
         "tripleC": "745",
         "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "849",
+        "name": "Libra",
+        "tripleA": "849",
+        "tripleB": "162",
+        "tripleC": "692",
+        "signo": "Libra",
         "isManual": false
       }
     ],

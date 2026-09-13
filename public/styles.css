@@ -6301,4 +6301,23 @@ body.app-fullscreen-mode .lottery-carousel-stage {
   }
 }
 
-
+/* ===================================================
+   CABECERA STICKY PARA GESTOR DE DIAPOSITIVAS
+   =================================================== */
+.slides-subpanel-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.96) !important;
+  backdrop-filter: blur(16px);
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  margin-bottom: 14px;
+}

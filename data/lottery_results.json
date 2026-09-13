@@ -3154,7 +3154,7 @@
       "icon": "💰",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/laricachona/logo.png",
       "color": "#ec4899",
-      "lastUpdated": "2026-09-13T14:16:14.962Z",
+      "lastUpdated": "2026-09-13T15:16:16.030Z",
       "draws": [
         {
           "time": "08:10 AM",
@@ -3191,7 +3191,14 @@
         },
         {
           "time": "11:10 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "07",
+          "name": "PERICO",
+          "tripleA": "07",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/laricachona/07.png"
         },
         {
           "time": "12:10 PM",
@@ -3250,7 +3257,7 @@
       "icon": "💯",
       "logoUrl": "",
       "color": "#6366f1",
-      "lastUpdated": "2026-09-13T14:02:17.825Z",
+      "lastUpdated": "2026-09-13T16:02:20.641Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -3287,11 +3294,25 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "07",
+          "name": "Perico",
+          "tripleA": "07",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/centenaanimalitos/07.png"
         },
         {
           "time": "12:00 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "16",
+          "name": "Oso",
+          "tripleA": "16",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/centenaanimalitos/16.png"
         },
         {
           "time": "01:00 PM",
@@ -3350,7 +3371,7 @@
       "icon": "✨",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/centenaplus/logo.png",
       "color": "#8b5cf6",
-      "lastUpdated": "2026-09-13T14:17:15.143Z",
+      "lastUpdated": "2026-09-13T15:17:15.866Z",
       "draws": [
         {
           "time": "08:15 AM",
@@ -3387,7 +3408,14 @@
         },
         {
           "time": "11:15 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "92",
+          "name": "Plaga",
+          "tripleA": "92",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/centenaplus/92.png"
         },
         {
           "time": "12:15 PM",
@@ -3450,7 +3478,7 @@
       "icon": "🎲",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/chanceanimal/logo.png",
       "color": "#b85918",
-      "lastUpdated": "2026-09-13T14:02:15.708Z",
+      "lastUpdated": "2026-09-13T16:02:18.514Z",
       "draws": [
         {
           "time": "09:00 AM",
@@ -3476,11 +3504,25 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "05",
+          "name": "Leon",
+          "tripleA": "05",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/zoologicoactivo/05.png"
         },
         {
           "time": "12:00 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "38",
+          "name": "Flamenco",
+          "tripleA": "38",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/zoologicoactivo/38.png"
         },
         {
           "time": "01:00 PM",
@@ -3534,7 +3576,7 @@
       "icon": "🤠",
       "logoUrl": "",
       "color": "#78350f",
-      "lastUpdated": "2026-09-13T14:02:16.880Z",
+      "lastUpdated": "2026-09-13T16:02:21.092Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -3564,11 +3606,25 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "05",
+          "name": "Leon",
+          "tripleA": "05",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/zoologicoactivo/05.png"
         },
         {
           "time": "12:00 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "38",
+          "name": "Flamenco",
+          "tripleA": "38",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/zoologicoactivo/38.png"
         },
         {
           "time": "01:00 PM",
@@ -3623,7 +3679,7 @@
       "icon": "🌟",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/granjitaplus/logo.png",
       "color": "#84cc16",
-      "lastUpdated": "2026-09-13T14:12:14.937Z",
+      "lastUpdated": "2026-09-13T15:12:16.230Z",
       "draws": [
         {
           "time": "08:10 AM",
@@ -3661,7 +3717,14 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "05",
+          "name": "Leon",
+          "tripleA": "05",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/zoologicoactivo/05.png"
         },
         {
           "time": "11:10 AM",
@@ -3752,7 +3815,7 @@
       "icon": "🐥",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/guacharitomillonario/logo.png",
       "color": "#5b2b73",
-      "lastUpdated": "2026-09-13T13:32:49.368Z",
+      "lastUpdated": "2026-09-13T15:34:46.355Z",
       "draws": [
         {
           "time": "08:30 AM",
@@ -3778,11 +3841,25 @@
         },
         {
           "time": "10:30 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "09",
+          "name": "Aguila",
+          "tripleA": "09",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/guacharitomillonario/09.png"
         },
         {
           "time": "11:30 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "86",
+          "name": "Buey",
+          "tripleA": "86",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/guacharitomillonario/86.png"
         },
         {
           "time": "12:30 PM",
@@ -3841,7 +3918,7 @@
       "icon": "🦜",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/guacharoactivo/logo.png",
       "color": "#802334",
-      "lastUpdated": "2026-09-13T14:04:16.199Z",
+      "lastUpdated": "2026-09-13T16:02:46.693Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -3878,11 +3955,25 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "01",
+          "name": "Carnero",
+          "tripleA": "01",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/guacharoactivo/01.png"
         },
         {
           "time": "12:00 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "24",
+          "name": "Iguana",
+          "tripleA": "24",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/guacharoactivo/24.png"
         },
         {
           "time": "01:00 PM",
@@ -3937,7 +4028,7 @@
       "icon": "🐸",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/granjita/logo.png",
       "color": "#0d734d",
-      "lastUpdated": "2026-09-13T14:06:15.105Z",
+      "lastUpdated": "2026-09-13T15:04:15.789Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -3974,7 +4065,14 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "16",
+          "name": "Oso",
+          "tripleA": "16",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/granjita/16.png"
         },
         {
           "time": "12:00 PM",
@@ -4033,7 +4131,7 @@
       "icon": "💎",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/laricachona/logo.png",
       "color": "#db2777",
-      "lastUpdated": "2026-09-13T14:16:14.962Z",
+      "lastUpdated": "2026-09-13T15:16:16.030Z",
       "draws": [
         {
           "time": "08:10 AM",
@@ -4070,7 +4168,14 @@
         },
         {
           "time": "11:10 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "07",
+          "name": "PERICO",
+          "tripleA": "07",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/laricachona/07.png"
         },
         {
           "time": "12:10 PM",
@@ -4129,7 +4234,7 @@
       "icon": "🐎",
       "logoUrl": "https://api.1000resultados.com/public/images/lottery/laruca/logo.png",
       "color": "#92400e",
-      "lastUpdated": "2026-09-13T13:25:19.723Z",
+      "lastUpdated": "2026-09-13T15:23:45.970Z",
       "draws": [
         {
           "time": "09:15 AM",
@@ -4143,11 +4248,23 @@
         },
         {
           "time": "10:15 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "24",
+          "name": "Libra",
+          "tripleA": "24",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": "Libra"
         },
         {
           "time": "11:15 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "62",
+          "name": "Leo",
+          "tripleA": "62",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": "Leo"
         },
         {
           "time": "12:15 PM",
@@ -4205,7 +4322,7 @@
       "icon": "🐾",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/lottoactivo/logo.png",
       "color": "#0d5e67",
-      "lastUpdated": "2026-09-13T14:04:45.237Z",
+      "lastUpdated": "2026-09-13T15:06:16.093Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -4242,7 +4359,14 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "08",
+          "name": "Ratón",
+          "tripleA": "08",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/lottoactivo/08.png"
         },
         {
           "time": "12:00 PM",
@@ -4301,7 +4425,7 @@
       "icon": "🦁",
       "logoUrl": "",
       "color": "#ea580c",
-      "lastUpdated": "2026-09-13T14:02:16.370Z",
+      "lastUpdated": "2026-09-13T16:02:19.683Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -4331,11 +4455,25 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "21",
+          "name": "Gallo",
+          "tripleA": "21",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/megaanimal/21.png"
         },
         {
           "time": "12:00 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "26",
+          "name": "Vaca",
+          "tripleA": "26",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/megaanimal/26.png"
         },
         {
           "time": "01:00 PM",
@@ -4394,7 +4532,7 @@
       "icon": "🌿",
       "logoUrl": "https://api.1000resultados.com/public/images/animals/selvaplus/logo.png",
       "color": "#0f766e",
-      "lastUpdated": "2026-09-13T13:32:19.597Z",
+      "lastUpdated": "2026-09-13T15:32:16.114Z",
       "draws": [
         {
           "time": "08:15 AM",
@@ -4424,7 +4562,14 @@
         },
         {
           "time": "10:15 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "56",
+          "name": "Tiburón",
+          "tripleA": "56",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/selvaplus/56.png"
         },
         {
           "time": "10:30 AM",
@@ -4432,7 +4577,14 @@
         },
         {
           "time": "11:15 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "53",
+          "name": "Caracol",
+          "tripleA": "53",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null,
+          "image": "https://api.1000resultados.com/public/images/animals/selvaplus/53.png"
         },
         {
           "time": "11:30 AM",
@@ -4530,7 +4682,7 @@
       "icon": "🎯",
       "logoUrl": "https://cdns2.premierpluss.com/assets_webpages/granjita/logoLagraTerminal.webp",
       "color": "#4d7c0f",
-      "lastUpdated": "2026-09-13T14:14:44.611Z",
+      "lastUpdated": "2026-09-13T16:04:17.310Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -4580,7 +4732,13 @@
         },
         {
           "time": "11:05 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "82",
+          "name": null,
+          "tripleA": "82",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null
         },
         {
           "time": "12:00 PM",
@@ -4701,7 +4859,7 @@
       "icon": "⚡",
       "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplecentena/logo.png",
       "color": "#7c3aed",
-      "lastUpdated": "2026-09-13T14:02:15.245Z",
+      "lastUpdated": "2026-09-13T16:02:19.154Z",
       "draws": [
         {
           "time": "08:00 AM",
@@ -4735,11 +4893,23 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "723",
+          "name": null,
+          "tripleA": "723",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null
         },
         {
           "time": "12:00 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "231",
+          "name": null,
+          "tripleA": "231",
+          "tripleB": null,
+          "tripleC": null,
+          "signo": null
         },
         {
           "time": "01:00 PM",
@@ -4798,7 +4968,7 @@
       "icon": "🎲",
       "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
       "color": "#8b5cf6",
-      "lastUpdated": "2026-09-13T14:08:14.999Z",
+      "lastUpdated": "2026-09-13T16:02:17.837Z",
       "draws": [
         {
           "time": "09:00 AM",
@@ -4822,7 +4992,13 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "849",
+          "name": "Libra",
+          "tripleA": "849",
+          "tripleB": "162",
+          "tripleC": "692",
+          "signo": "Libra"
         },
         {
           "time": "12:00 PM",
@@ -4918,7 +5094,15 @@
       "lastUpdated": "2026-09-13T12:06:44.430Z",
       "draws": [
         {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
           "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
           "isPending": true
         },
         {
@@ -4975,7 +5159,7 @@
       "icon": "🎲",
       "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
       "color": "#8b5cf6",
-      "lastUpdated": "2026-09-13T14:08:14.999Z",
+      "lastUpdated": "2026-09-13T16:02:17.837Z",
       "draws": [
         {
           "time": "09:00 AM",
@@ -4999,7 +5183,13 @@
         },
         {
           "time": "11:00 AM",
-          "isPending": true
+          "isPending": false,
+          "number": "849",
+          "name": "Libra",
+          "tripleA": "849",
+          "tripleB": "162",
+          "tripleC": "692",
+          "signo": "Libra"
         },
         {
           "time": "12:00 PM",
@@ -5032,7 +5222,7 @@
       "icon": "🎲",
       "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
       "color": "#8b5cf6",
-      "lastUpdated": "2026-09-13T14:08:14.999Z",
+      "lastUpdated": "2026-09-13T16:02:17.837Z",
       "draws": [
         {
           "time": "03:00 PM",
