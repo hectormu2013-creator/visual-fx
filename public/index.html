@@ -47,7 +47,7 @@
   </script>
 
   <!-- Custom Stylesheet (Anti-Cache) -->
-  <link rel="stylesheet" href="/styles.css?v=6.2">
+  <link rel="stylesheet" href="/styles.css?v=6.3">
 </head>
 <body class="tv-mode">
   
@@ -84,6 +84,18 @@
           <option value="3">3</option>
           <option value="4">4</option>
         </select>
+
+        <!-- Selector Adaptativo de Hardware y Calidad de Streaming -->
+        <div class="stream-quality-container" id="streamQualityContainer" title="Optimización de transmisión adaptativa por hardware">
+          <span class="selector-label">CALIDAD:</span>
+          <select id="selStreamQuality" class="header-select quality-select" onchange="window.setStreamQualityMode(this.value)" title="Ajuste de calidad HLS por hardware">
+            <option value="AUTO">⚡ Auto (Hardware)</option>
+            <option value="LIGHT">🍃 Liviano (TV Box / 360p-480p)</option>
+            <option value="MEDIUM">⚖️ Equilibrado (720p HD)</option>
+            <option value="FULL">💎 Full HD (1080p Máx)</option>
+          </select>
+          <span id="hardwareTierBadge" class="hardware-tier-badge tier-full" title="Capacidades de hardware detectadas">⚡ Auto</span>
+        </div>
       </div>
 
       <!-- Lottery-specific Header Controls (Solo Loterías - Ubicados en la cabecera fija/hover según Imagen 2) -->
@@ -1101,6 +1113,11 @@
 
     </section>
 
+    <!-- Botón Flotante para Volver a Vista Multicanal al Maximizar una Carrera -->
+    <button class="btn-return-multicanal" id="btnReturnMulticanal" onclick="window.exitCellMaximized()" title="Volver a Multicanal" style="display: none;">
+      <span class="btn-icon">↩</span> Volver a Multicanal
+    </button>
+
     <!-- View 2: Lottery Live Board (Pizarra Dinámica Top 10 + Resumen General + Ticker) -->
     <section class="service-view-panel" id="panelLottery" style="display: none;">
       <!-- Hero Top Bar (1 Sola Línea Completa - Requisito 8) -->
@@ -1293,6 +1310,40 @@
     </section>
   </main>
 
+  <!-- Modal / Banner Flotante Pop-Up de Nuevo Resultado Oficial (Requisito 6) -->
+  <div id="lotteryNewResultPopup" class="lottery-new-result-popup" style="display: none;">
+    <div class="popup-card-glass">
+      <div class="popup-top-tag">
+        <span class="popup-live-pulse"></span>
+        <span class="popup-tag-text">¡NUEVO RESULTADO EN VIVO!</span>
+        <span class="popup-draw-time" id="popupDrawTime">--:--</span>
+      </div>
+      <div class="popup-lottery-info">
+        <img id="popupLotteryLogo" class="popup-lottery-logo" src="" alt="" style="display: none;">
+        <h2 id="popupLotteryName" class="popup-lottery-title">LOTERÍA</h2>
+      </div>
+      <div class="popup-main-content">
+        <div class="popup-media-box" id="popupMediaBox">
+          <img id="popupAnimalImg" class="popup-animal-img" src="" alt="">
+        </div>
+        <div class="popup-result-badge-box">
+          <div class="popup-number-display" id="popupNumberDisplay">--</div>
+          <div class="popup-name-display" id="popupNameDisplay">--</div>
+        </div>
+      </div>
+      <!-- Triples Extra Box (Solo para sorteos de triples) -->
+      <div class="popup-triples-box" id="popupTriplesBox" style="display: none;">
+        <span class="popup-triple-pill" id="popupTripleA">A: ---</span>
+        <span class="popup-triple-pill" id="popupTripleB">B: ---</span>
+        <span class="popup-triple-pill" id="popupTripleC">C: ---</span>
+        <span class="popup-triple-sign" id="popupSigno"></span>
+      </div>
+      <div class="popup-timer-bar-container">
+        <div class="popup-timer-bar-fill" id="popupTimerBarFill"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- TV Remote Control Legend Footer -->
   <footer class="tv-control-legend">
     <div class="legend-item"><kbd>1</kbd> - <kbd>4</kbd> Cambiar Grilla (1 a 4 Canales)</div>
@@ -1349,6 +1400,6 @@
   </script>
 
   <!-- App Logic (Anti-Cache) -->
-  <script src="/app.js?v=6.2"></script>
+  <script src="/app.js?v=6.3"></script>
 </body>
 </html>

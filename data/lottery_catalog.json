@@ -2,12 +2,13 @@
   {
     "id": "animalitos-la-ricachona",
     "name": "ANIMALITOS LA RICACHONA",
-    "shortName": "Ricachona Anim",
+    "shortName": "La Ricachona",
+    "slug1000": "la-ricachona",
     "type": "animalitos",
     "icon": "💰",
     "color": "#ec4899",
     "logoUrl": "https://api.1000resultados.com/public/images/animals/laricachona/logo.png",
-    "hours": ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"]
+    "hours": ["08:10 AM", "09:10 AM", "10:10 AM", "11:10 AM", "12:10 PM", "01:10 PM", "02:10 PM", "03:10 PM", "04:10 PM", "05:10 PM", "06:10 PM", "07:10 PM"]
   },
   {
     "id": "centena-animalitos",
@@ -23,11 +24,11 @@
     "id": "centena-plus",
     "name": "CENTENA PLUS",
     "shortName": "Centena Plus",
-    "type": "triples",
+    "type": "animalitos",
     "icon": "✨",
     "color": "#8b5cf6",
-    "logoUrl": "",
-    "hours": ["12:00 PM", "04:00 PM", "07:00 PM"]
+    "logoUrl": "https://api.1000resultados.com/public/images/animals/centenaplus/logo.png",
+    "hours": ["08:15 AM", "09:15 AM", "10:15 AM", "11:15 AM", "12:15 PM", "01:15 PM", "02:15 PM", "03:15 PM", "04:15 PM", "05:15 PM", "06:15 PM", "07:15 PM"]
   },
   {
     "id": "chance-animal",
@@ -106,8 +107,8 @@
     "type": "animalitos",
     "icon": "🐎",
     "color": "#92400e",
-    "logoUrl": "",
-    "hours": ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"]
+    "logoUrl": "https://api.1000resultados.com/public/images/lottery/laruca/logo.png",
+    "hours": ["09:15 AM", "10:15 AM", "11:15 AM", "12:15 PM", "01:15 PM", "02:15 PM", "03:15 PM", "04:15 PM", "05:15 PM", "06:15 PM", "07:15 PM"]
   },
   {
     "id": "lotto-activo",
@@ -146,8 +147,8 @@
     "type": "triples",
     "icon": "🎯",
     "color": "#4d7c0f",
-    "logoUrl": "",
-    "hours": ["08:00 AM", "10:00 AM", "12:00 PM", "02:00 PM", "04:00 PM", "06:00 PM", "07:00 PM"]
+    "logoUrl": "https://cdns2.premierpluss.com/assets_webpages/granjita/logoLagraTerminal.webp",
+    "hours": ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"]
   },
   {
     "id": "triple-caliente",
@@ -166,8 +167,8 @@
     "type": "triples",
     "icon": "⚡",
     "color": "#7c3aed",
-    "logoUrl": "",
-    "hours": ["12:30 PM", "04:30 PM", "07:30 PM"]
+    "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplecentena/logo.png",
+    "hours": ["08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"]
   },
   {
     "id": "triple-chance",
@@ -177,11 +178,31 @@
     "icon": "🎲",
     "color": "#8b5cf6",
     "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
-    "hours": ["01:00 PM", "04:30 PM", "07:00 PM", "08:00 PM"]
+    "hours": ["09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"]
+  },
+  {
+    "id": "triple-chance-1",
+    "name": "TRIPLE CHANCE (9 AM - 2 PM)",
+    "shortName": "Chance 1",
+    "type": "triples",
+    "icon": "🎲",
+    "color": "#8b5cf6",
+    "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
+    "hours": ["09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "01:00 PM", "02:00 PM"]
+  },
+  {
+    "id": "triple-chance-2",
+    "name": "TRIPLE CHANCE (3 PM - 7 PM)",
+    "shortName": "Chance 2",
+    "type": "triples",
+    "icon": "🎲",
+    "color": "#8b5cf6",
+    "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
+    "hours": ["03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"]
   },
   {
     "id": "triple-tachira",
-    "name": "TRIPLE TACHIRA",
+    "name": "TRIPLE TÁCHIRA",
     "shortName": "Triple Táchira",
     "type": "triples",
     "icon": "🎯",

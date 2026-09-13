@@ -321,6 +321,116 @@ function getFullGameAnalytics(gameId) {
   };
 }
 
+// 6. Obtener historial detallado de un juego por días o fecha específica
+function getGameHistory(gameId, options = {}) {
+  loadHistoryFromDisk();
+  const gameHistory = historyStore[gameId];
+  if (!gameHistory) return { gameId, dates: [], totalDraws: 0, history: {} };
+
+  if (options.date) {
+    const singleDayDraws = gameHistory[options.date] || [];
+    return {
+      gameId,
+      date: options.date,
+      totalDraws: singleDayDraws.length,
+      draws: singleDayDraws
+    };
+  }
+
+  const daysLimit = Math.min(90, Math.max(1, parseInt(options.days) || 30));
+  const sortedDates = Object.keys(gameHistory).sort().reverse().slice(0, daysLimit);
+  const resultHistory = {};
+  let totalDraws = 0;
+
+  for (const d of sortedDates) {
+    resultHistory[d] = gameHistory[d] || [];
+    totalDraws += resultHistory[d].length;
+  }
+
+  return {
+    gameId,
+    daysRequested: daysLimit,
+    daysAvailable: sortedDates.length,
+    totalDraws,
+    dates: sortedDates,
+    history: resultHistory
+  };
+}
+
+// 7. Buscador de sorteos históricos por número o rango de fechas
+function queryHistoricalDraws({ gameId, number, dateFrom, dateTo, limit = 50 }) {
+  loadHistoryFromDisk();
+  const results = [];
+  const targetGames = gameId ? [gameId] : Object.keys(historyStore);
+  const normNum = number ? number.toString().trim() : null;
+
+  for (const gId of targetGames) {
+    const gHistory = historyStore[gId] || {};
+    const dates = Object.keys(gHistory).sort().reverse();
+
+    for (const dStr of dates) {
+      if (dateFrom && dStr < dateFrom) continue;
+      if (dateTo && dStr > dateTo) continue;
+
+      const dayDraws = gHistory[dStr] || [];
+      for (const d of dayDraws) {
+        let match = false;
+        if (normNum) {
+          if (d.number && (d.number === normNum || parseInt(d.number) === parseInt(normNum))) match = true;
+          if (d.tripleA && (d.tripleA === normNum || d.tripleA.slice(-2) === normNum)) match = true;
+          if (d.tripleB && (d.tripleB === normNum || d.tripleB.slice(-2) === normNum)) match = true;
+          if (d.tripleC && (d.tripleC === normNum || d.tripleC.slice(-2) === normNum)) match = true;
+        } else {
+          match = true;
+        }
+
+        if (match) {
+          results.push({
+            gameId: gId,
+            date: dStr,
+            time: d.time,
+            number: d.number,
+            name: d.name,
+            tripleA: d.tripleA,
+            tripleB: d.tripleB,
+            tripleC: d.tripleC,
+            signo: d.signo
+          });
+          if (results.length >= limit) return results;
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
+// 8. Resumen global del Almacén Histórico
+function getHistoryOverview() {
+  loadHistoryFromDisk();
+  const gamesList = Object.keys(historyStore);
+  const overview = {};
+  let globalTotalDraws = 0;
+
+  for (const gId of gamesList) {
+    const dates = Object.keys(historyStore[gId] || {}).sort().reverse();
+    const drawsCount = dates.reduce((acc, dt) => acc + (historyStore[gId][dt]?.length || 0), 0);
+    globalTotalDraws += drawsCount;
+    overview[gId] = {
+      daysTracked: dates.length,
+      latestDate: dates[0] || null,
+      oldestDate: dates[dates.length - 1] || null,
+      totalDraws: drawsCount
+    };
+  }
+
+  return {
+    totalGames: gamesList.length,
+    globalTotalDraws,
+    games: overview
+  };
+}
+
 module.exports = {
   seedBaselineHistory,
   recordDrawsToHistory,
@@ -328,5 +438,8 @@ module.exports = {
   getColdNumbers,
   getDailyPredictions,
   generateTickerFeed,
-  getFullGameAnalytics
+  getFullGameAnalytics,
+  getGameHistory,
+  queryHistoricalDraws,
+  getHistoryOverview
 };

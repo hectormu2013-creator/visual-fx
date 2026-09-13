@@ -206,35 +206,104 @@ public class MainActivity extends Activity {
             return true;
         }
 
-        // 2. Teclas multimedia y accesos rápidos de mandos Smart TV / FireStick
+        // 2. Intercepción prioritaria de todas las teclas del control remoto físico en ACTION_DOWN
         if (action == KeyEvent.ACTION_DOWN) {
-            if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
-                injectJs("window.toggleLotteryCarouselPause && window.toggleLotteryCarouselPause();");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD || keyCode == KeyEvent.KEYCODE_MEDIA_NEXT || keyCode == KeyEvent.KEYCODE_CHANNEL_UP) {
-                injectJs("window.goToNextLotteryModule && window.goToNextLotteryModule(true);");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS || keyCode == KeyEvent.KEYCODE_CHANNEL_DOWN) {
-                injectJs("window.goToPrevLotteryModule && window.goToPrevLotteryModule(true);");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_MENU) {
-                injectJs("window.showHeaderTemporarily && window.showHeaderTemporarily(8000);");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_PROG_RED) {
-                injectJs("window.switchDirectService && window.switchDirectService('hipica');");
-                return true;
-            }
-            if (keyCode == KeyEvent.KEYCODE_PROG_GREEN) {
-                injectJs("window.switchDirectService && window.switchDirectService('loteria');");
-                return true;
+            switch (keyCode) {
+                // Navegación D-Pad Derecha / Siguiente Módulo o Canal
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                case KeyEvent.KEYCODE_MEDIA_NEXT:
+                case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
+                case KeyEvent.KEYCODE_CHANNEL_UP:
+                case KeyEvent.KEYCODE_PAGE_DOWN:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('ArrowRight');");
+                    return true;
+
+                // Navegación D-Pad Izquierda / Anterior Módulo o Canal
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                case KeyEvent.KEYCODE_MEDIA_REWIND:
+                case KeyEvent.KEYCODE_CHANNEL_DOWN:
+                case KeyEvent.KEYCODE_PAGE_UP:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('ArrowLeft');");
+                    return true;
+
+                // Navegación D-Pad Arriba
+                case KeyEvent.KEYCODE_DPAD_UP:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('ArrowUp');");
+                    return true;
+
+                // Navegación D-Pad Abajo
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('ArrowDown');");
+                    return true;
+
+                // Botón Central OK / Enter
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                case KeyEvent.KEYCODE_ENTER:
+                case KeyEvent.KEYCODE_NUMPAD_ENTER:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('Enter');");
+                    return true;
+
+                // Tecla Play/Pausa y Espacio
+                case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                case KeyEvent.KEYCODE_MEDIA_PLAY:
+                case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                case KeyEvent.KEYCODE_SPACE:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('Space');");
+                    return true;
+
+                // Acceso directo a Módulo / Grid 1
+                case KeyEvent.KEYCODE_1:
+                case KeyEvent.KEYCODE_NUMPAD_1:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('1');");
+                    return true;
+
+                // Acceso directo a Módulo / Grid 2
+                case KeyEvent.KEYCODE_2:
+                case KeyEvent.KEYCODE_NUMPAD_2:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('2');");
+                    return true;
+
+                // Acceso directo a Módulo / Grid 3
+                case KeyEvent.KEYCODE_3:
+                case KeyEvent.KEYCODE_NUMPAD_3:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('3');");
+                    return true;
+
+                // Acceso directo a Módulo / Grid 4
+                case KeyEvent.KEYCODE_4:
+                case KeyEvent.KEYCODE_NUMPAD_4:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('4');");
+                    return true;
+
+                // Menú, Guía e Información
+                case KeyEvent.KEYCODE_MENU:
+                case KeyEvent.KEYCODE_INFO:
+                case KeyEvent.KEYCODE_GUIDE:
+                case KeyEvent.KEYCODE_SETTINGS:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('Menu');");
+                    return true;
+
+                // Botones de colores
+                case KeyEvent.KEYCODE_PROG_RED:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('Red');");
+                    return true;
+
+                case KeyEvent.KEYCODE_PROG_GREEN:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('Green');");
+                    return true;
+
+                case KeyEvent.KEYCODE_PROG_YELLOW:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('Yellow');");
+                    return true;
+
+                case KeyEvent.KEYCODE_PROG_BLUE:
+                    injectJs("window.handleTvRemoteKey && window.handleTvRemoteKey('Blue');");
+                    return true;
             }
         }
 
-        // 3. Despacho NATIVO al WebView para que Chromium procese navegación espacial D-Pad (Up, Down, Left, Right, Center, Enter, Números)
+        // 3. Despacho residual al WebView para cualquier otra tecla no mapeada
         if (webView != null && webView.dispatchKeyEvent(event)) {
             return true;
         }

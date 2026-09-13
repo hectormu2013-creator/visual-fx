@@ -106,13 +106,13 @@ body.header-pinned-active .app-header.floating-header {
   pointer-events: all !important;
 }
 
-/* Hover Zone en el borde superior de la pantalla */
+/* Hover Zone en el borde superior de la pantalla (Centrada para no tapar los selectores de hipódromos) */
 .top-header-hover-zone {
   position: fixed;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 22px;
+  left: 280px;
+  right: 220px;
+  height: 12px;
   z-index: 999;
   background: transparent;
   cursor: pointer;
@@ -176,6 +176,84 @@ body.header-pinned-active .app-header.floating-header {
   border: 1px solid rgba(0, 255, 102, 0.4);
   font-size: 0.84rem;
   font-weight: 700;
+}
+
+/* Stream Quality & Hardware Performance Selector */
+.stream-quality-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.quality-select {
+  background: #020304;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quality-select:focus,
+.quality-select:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.hardware-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.hardware-tier-badge.tier-light {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.2);
+}
+
+.hardware-tier-badge.tier-medium {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.hardware-tier-badge.tier-full {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(192, 132, 252, 0.35);
+  box-shadow: 0 0 8px rgba(192, 132, 252, 0.2);
+}
+
+/* Modo Liviano de Alto Rendimiento para Hardware de Bajos Recursos (Smart TV / TV Box) */
+body.mode-light-performance * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body.mode-light-performance .video-cell {
+  border-color: #1e293b !important;
+  background: #000000 !important;
+}
+
+body.mode-light-performance .video-cell video {
+  image-rendering: optimizeSpeed;
 }
 
 /* Botón de Cerrar Sesión en Header */
@@ -1209,6 +1287,8 @@ optgroup {
   max-width: 220px;
   cursor: pointer;
   outline: none;
+  position: relative;
+  z-index: 1005;
 }
 
 .btn-audio-header {
@@ -4301,6 +4381,41 @@ body.app-fullscreen-mode .lottery-carousel-stage {
   text-overflow: ellipsis;
 }
 
+/* Aumento del 20% para tarjetas con pocos sorteos en Módulos de Pizarra */
+.board-col-card.few-draws .board-draw-row {
+  grid-template-columns: 66px 1fr 36px;
+  min-height: 42px;
+  padding: 4px 10px;
+}
+
+.board-col-card.few-draws .board-draw-row.triple-2lines {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 6px 10px;
+}
+
+.board-col-card.few-draws .draw-time-cell {
+  font-size: 0.94rem;
+  font-weight: 900;
+}
+
+.board-col-card.few-draws .draw-num-badge {
+  font-size: 1.62rem;
+}
+
+.board-col-card.few-draws .draw-triple-badge {
+  font-size: 1.26rem;
+}
+
+.board-col-card.few-draws .draw-sign-label {
+  font-size: 0.89rem;
+}
+
+.board-col-card.few-draws .draw-name-label {
+  font-size: 0.94rem;
+}
+
 .draw-pending-txt {
   font-size: 0.78rem;
   color: #64748b;
@@ -5393,7 +5508,7 @@ body.app-fullscreen-mode .lottery-carousel-stage {
 }
 
 .result-draw-row.done {
-  background: rgba(248, 250, 252, 0.8);
+  background: rgba(248, 250, 252, 0.85);
 }
 
 .result-draw-row.pending {
@@ -5469,7 +5584,7 @@ body.app-fullscreen-mode .lottery-carousel-stage {
   flex: 1;
 }
 
-/* Adaptación para Triples en Diapositivas de Resultados */
+/* Adaptación para Triples en Diapositivas de Resultados - Alto Contraste y Mismo Formato para A, B y C */
 .result-triple-info {
   display: flex;
   align-items: center;
@@ -5480,17 +5595,166 @@ body.app-fullscreen-mode .lottery-carousel-stage {
 }
 
 .result-triple-pill {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 900;
-  color: #1d4ed8;
   font-family: var(--font-code, monospace);
+  padding: 2px 6px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.3px;
+  line-height: 1.15;
+  box-sizing: border-box;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+}
+
+.result-triple-pill.triple-a {
+  color: #1e40af;
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.result-triple-pill.triple-b {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #0284c7;
+}
+
+.result-triple-pill.triple-c {
+  color: #047857;
+  background: #d1fae5;
+  border-color: #10b981;
 }
 
 .result-triple-sign {
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #7c3aed;
+  font-size: 0.80rem;
+  font-weight: 900;
+  color: #6d28d9;
+  background: #f3e8ff;
+  border: 1.5px solid #a855f7;
+  padding: 2px 6px;
+  border-radius: 5px;
   text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.15;
+}
+
+.result-triple-name {
+  font-size: 0.80rem;
+  font-weight: 900;
+  color: #0f172a;
+  background: #f1f5f9;
+  border: 1.5px solid #cbd5e1;
+  padding: 2px 6px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.15;
+}
+
+/* Disposición especial en 2 líneas para Triples con pocos sorteos (Línea 1: A y B / Línea 2: C y Signo) */
+.result-draw-row.triple-2lines,
+.board-draw-row.triple-2lines {
+  display: flex;
+  align-items: center;
+  padding: 5px 8px;
+  min-height: 50px;
+  gap: 10px;
+}
+
+.result-draw-left,
+.board-draw-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.result-triple-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.result-triple-subline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ===================================================
+   AUMENTO EXCLUSIVO DEL 20% PARA SECCIONES CON POCOS SORTEOS
+   =================================================== */
+.result-column-card.few-draws .result-column-body {
+  padding: 6px 8px;
+  justify-content: space-evenly;
+  gap: 4px;
+}
+
+.result-column-card.few-draws .result-draw-row {
+  min-height: 36px;
+  padding: 4px 8px;
+  gap: 8px;
+}
+
+.result-column-card.few-draws .result-draw-row.triple-2lines {
+  min-height: 54px;
+  padding: 6px 10px;
+  gap: 10px;
+}
+
+.result-column-card.few-draws .result-time {
+  font-size: 0.96rem;
+  min-width: 66px;
+  font-weight: 900;
+}
+
+.result-column-card.few-draws .result-avatar-box {
+  width: 32px;
+  height: 32px;
+}
+
+.result-column-card.few-draws .result-avatar-coin {
+  font-size: 0.90rem;
+}
+
+.result-column-card.few-draws .result-num-blue {
+  font-size: 1.62rem;
+  min-width: 30px;
+}
+
+.result-column-card.few-draws .result-pipe-red {
+  font-size: 1.50rem;
+  margin: 0 3px;
+}
+
+.result-column-card.few-draws .result-animal-name {
+  font-size: 1.03rem;
+}
+
+.result-column-card.few-draws .result-triple-pill {
+  font-size: 1.00rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.result-column-card.few-draws .result-triple-sign,
+.result-column-card.few-draws .result-triple-name {
+  font-size: 0.94rem;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
 /* ===================================================
@@ -5748,6 +6012,293 @@ body.app-fullscreen-mode .lottery-carousel-stage {
 
 .lottery-catalog-table tr:hover {
   background: rgba(255, 255, 255, 0.04);
+}
+
+/* ===================================================
+   CELDA MAXIMIZADA EN VENTANA (CSS VIEWPORT MAXIMIZE)
+   =================================================== */
+.video-cell.cell-maximized {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9990 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: #000000 !important;
+}
+
+.video-cell.cell-maximized .video-wrapper {
+  height: calc(100vh - 44px) !important;
+}
+
+.video-cell.cell-maximized .cell-header {
+  background: rgba(15, 23, 42, 0.98);
+  border-bottom: 2px solid rgba(0, 255, 102, 0.4);
+}
+
+.btn-return-multicanal {
+  position: fixed;
+  top: 10px;
+  right: 20px;
+  z-index: 99995;
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid #00ff66;
+  color: #00ff66;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-family: var(--font-headline, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 255, 102, 0.45), 0 6px 18px rgba(0,0,0,0.8);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.5px;
+}
+
+.btn-return-multicanal:hover {
+  background: #00ff66;
+  color: #020617;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 25px rgba(0, 255, 102, 0.7);
+}
+
+/* ===================================================
+   POP-UP NOTIFICACIÓN NUEVO RESULTADO EN VIVO (5 SEGUNDOS)
+   =================================================== */
+.lottery-new-result-popup {
+  position: fixed;
+  bottom: 45px;
+  right: 35px;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  max-width: 440px;
+  width: calc(100vw - 70px);
+}
+
+.popup-card-glass {
+  background: rgba(4, 9, 20, 0.96);
+  border: 2px solid #00ff66;
+  box-shadow: 0 0 35px rgba(0, 255, 102, 0.4), 0 20px 50px rgba(0, 0, 0, 0.9);
+  border-radius: 16px;
+  padding: 16px 20px 12px 20px;
+  width: 100%;
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.popup-fade-in {
+  animation: popupSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.popup-fade-out {
+  animation: popupSlideOut 0.4s ease forwards;
+}
+
+@keyframes popupSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popupSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(40px) scale(0.92);
+  }
+}
+
+.popup-top-tag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
+}
+
+.popup-live-pulse {
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ef4444;
+  animation: pulseLive 1s infinite alternate;
+}
+
+.popup-tag-text {
+  font-family: var(--font-headline, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #00ff66;
+  letter-spacing: 1px;
+}
+
+.popup-draw-time {
+  font-family: var(--font-code, monospace);
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.popup-lottery-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.popup-lottery-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.popup-lottery-title {
+  font-family: var(--font-headline, sans-serif);
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.popup-main-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.popup-media-box {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f59e0b 0%, #b45309 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.5);
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid #fbbf24;
+}
+
+.popup-animal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.popup-result-badge-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.popup-number-display {
+  font-family: var(--font-headline, sans-serif);
+  font-size: 3.2rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(0, 255, 102, 0.8), 2px 2px 0 #000;
+  letter-spacing: 1px;
+}
+
+.popup-name-display {
+  font-family: var(--font-headline, sans-serif);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #00ff66;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.popup-triples-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.popup-triple-pill {
+  font-family: var(--font-code, monospace);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.popup-triple-sign {
+  font-family: var(--font-headline, sans-serif);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #a855f7;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+.popup-timer-bar-container {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.popup-timer-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #00ff66, #38bdf8);
+  transform-origin: left center;
+}
+
+@keyframes popupCountdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 

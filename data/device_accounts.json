@@ -120,7 +120,8 @@
               "lotteries": [
                 "triple-zulia",
                 "triple-tachira",
-                "triple-chance",
+                "triple-chance-1",
+                "triple-chance-2",
                 "triple-zamorano",
                 "triple-caliente"
               ]
@@ -321,7 +322,8 @@
               "lotteries": [
                 "triple-zulia",
                 "triple-tachira",
-                "triple-chance",
+                "triple-chance-1",
+                "triple-chance-2",
                 "triple-zamorano",
                 "triple-caliente"
               ]

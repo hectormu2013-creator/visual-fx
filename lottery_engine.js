@@ -80,7 +80,7 @@ const TOP_10_GAMES = [
     icon: '💰',
     logoUrl: 'https://api.1000resultados.com/public/images/animals/laricachona/logo.png',
     color: '#ec4899',
-    hours: ['08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM']
+    hours: ['08:10 AM', '09:10 AM', '10:10 AM', '11:10 AM', '12:10 PM', '01:10 PM', '02:10 PM', '03:10 PM', '04:10 PM', '05:10 PM', '06:10 PM', '07:10 PM']
   },
   {
     id: 'triple-tachira',
@@ -116,7 +116,31 @@ const TOP_10_GAMES = [
     icon: '🎲',
     logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplechance/logo.png',
     color: '#8b5cf6',
-    hours: ['01:00 PM', '04:30 PM', '07:00 PM', '08:00 PM']
+    hours: ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM']
+  },
+  {
+    id: 'triple-chance-1',
+    name: 'TRIPLE CHANCE (9 AM - 2 PM)',
+    shortName: 'Chance 1',
+    type: 'triples',
+    slug1000: 'triple-chance',
+    tuazarPattern: /chance/i,
+    icon: '🎲',
+    logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplechance/logo.png',
+    color: '#8b5cf6',
+    hours: ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM']
+  },
+  {
+    id: 'triple-chance-2',
+    name: 'TRIPLE CHANCE (3 PM - 7 PM)',
+    shortName: 'Chance 2',
+    type: 'triples',
+    slug1000: 'triple-chance',
+    tuazarPattern: /chance/i,
+    icon: '🎲',
+    logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplechance/logo.png',
+    color: '#8b5cf6',
+    hours: ['03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM']
   },
   {
     id: 'triple-zamorano',
@@ -399,20 +423,23 @@ async function scrape1000Resultados(gameSlug) {
           try { name = Buffer.from(b64NameMatch[1], 'base64').toString('utf8').trim(); } catch(e){}
         }
 
-        // Triples
+        // Triples / Terminales: A, B, C (Soporta loterías con 1, 2 o 3 triples/terminales)
         const triplesMatch = art.match(/class="text-xl font-black leading-tight">\s*([0-9]{2,4})\s*<\/div>/gi);
-        if (triplesMatch && triplesMatch.length >= 2) {
+        if (triplesMatch && triplesMatch.length >= 1) {
           const nums = triplesMatch.map(m => m.replace(/[^0-9]/g, ''));
           tripleA = nums[0];
-          tripleB = nums[1];
-          if (nums.length >= 3) {
-            tripleC = nums[2];
-          }
+          if (nums.length >= 2) tripleB = nums[1];
+          if (nums.length >= 3) tripleC = nums[2];
         }
         const signoMatch = art.match(/px-6 py-2 rounded-full border text-sm font-extrabold[^>]*>\s*([A-Za-z]+)\s*<\/span>/i);
         if (signoMatch) {
           signo = signoMatch[1].trim();
         }
+
+        // Compatibilidad cruzada: si solo vino number, asignar como tripleA; si solo vino tripleA, asignar como number
+        if (!tripleA && number) tripleA = number;
+        if (!number && tripleA) number = tripleA;
+        if (!name && signo) name = signo;
 
         // Imagen
         const imgMatch = art.match(/<img[^>]+src="([^">]+)"/i);
@@ -443,6 +470,42 @@ async function scrape1000Resultados(gameSlug) {
     return draws;
   } catch (err) {
     console.warn(`[LotteryEngine] 1000Resultados (${gameSlug}) error:`, err.message);
+    return null;
+  }
+}
+
+// Parser: Lagranjita.com Terminal Granjita Oficial
+async function scrapeLagranjitaTerminal() {
+  try {
+    const { status, html } = await fetchUrl('https://lagranjita.com/terminalgranjita');
+    if (status !== 200) return null;
+    const decoded = html.replace(/&quot;/g, '"');
+    const blockRegex = /\{"result_id"[\s\S]*?"lotery_hour":\[\d+,"([^"]+)"\][\s\S]*?"lotery_type":\[\d+,"TERMINALES"\][\s\S]*?\}/g;
+    let match;
+    const draws = [];
+    while ((match = blockRegex.exec(decoded)) !== null) {
+      const b = match[0];
+      const hourM = b.match(/"lotery_hour":\[\d+,"([^"]+)"\]/);
+      const valM = b.match(/"result_value":\[\d+,([^,\]]+)\]/);
+      const nameM = b.match(/"result_name":\[\d+,([^,\]]+)\]/);
+      const val = (valM && valM[1] !== 'null') ? valM[1].replace(/"/g, '').trim() : null;
+      const name = (nameM && nameM[1] !== 'null') ? nameM[1].replace(/"/g, '').trim() : null;
+      if (hourM) {
+        let time = hourM[1].trim();
+        if (time.indexOf(':') === 1) time = '0' + time;
+        const isDone = Boolean(val);
+        draws.push({
+          time,
+          isPending: !isDone,
+          number: val || null,
+          tripleA: val || null,
+          name: name || null
+        });
+      }
+    }
+    return draws.length > 0 ? draws : null;
+  } catch (err) {
+    console.warn('[LotteryEngine] lagranjita.com terminal error:', err.message);
     return null;
   }
 }
@@ -592,6 +655,12 @@ async function scrapeTuAzarTriples() {
 
 // Sincronización Unificada con Alternancia y Fallback
 async function syncGame(gameId) {
+  // Si se solicita sincronizar una de las mitades de Triple Chance, derivar desde triple-chance
+  if (gameId === 'triple-chance-1' || gameId === 'triple-chance-2') {
+    await syncGame('triple-chance');
+    return;
+  }
+
   const catalog = getLotteryCatalog();
   const game = catalog.find(g => g.id === gameId) || TOP_10_GAMES.find(g => g.id === gameId);
   if (!game) {
@@ -620,13 +689,31 @@ async function syncGame(gameId) {
 
   const existingGame = resultsStore[today][gameId];
   let newDraws = null;
-  const slug1000 = game.slug1000 || game.id;
+  let slug1000 = game.slug1000 || game.id;
+  if (gameId === 'animalitos-la-ricachona' || gameId === 'la-ricachona') {
+    slug1000 = 'la-ricachona';
+  }
 
   // Alternancia de fuentes
   const useTuAzarFirst = (sourceAlternator % 2 === 0);
   sourceAlternator++;
 
-  if (useTuAzarFirst) {
+  if (gameId === 'terminal-la-granjita') {
+    const termDraws = await scrapeLagranjitaTerminal();
+    if (termDraws && termDraws.length > 0 && !termDraws.every(d => d.isPending)) {
+      newDraws = termDraws;
+    } else {
+      // Fallback: Tomar números oficiales de La Granjita
+      const granjitaDraws = await scrape1000Resultados('la-granjita');
+      if (granjitaDraws && granjitaDraws.length > 0) {
+        newDraws = granjitaDraws.map(d => ({
+          ...d,
+          tripleA: d.number || d.tripleA,
+          isPending: d.isPending
+        }));
+      }
+    }
+  } else if (useTuAzarFirst) {
     // Fuente A: TuAzar
     if (game.type === 'animalitos') {
       const tuAzarMap = await scrapeTuAzarAnimalitos();
@@ -680,10 +767,10 @@ async function syncGame(gameId) {
       }
 
       if (!nd.isPending) {
-        if (targetDraw.isPending || targetDraw.number !== nd.number || targetDraw.tripleA !== nd.tripleA || targetDraw.tripleC !== nd.tripleC) {
+        if (targetDraw.isPending || targetDraw.number !== nd.number || targetDraw.tripleA !== nd.tripleA || targetDraw.tripleC !== nd.tripleC || (!targetDraw.name && (nd.name || nd.signo))) {
           targetDraw.isPending = false;
           targetDraw.number = nd.number || null;
-          targetDraw.name = nd.name || null;
+          targetDraw.name = nd.name || nd.signo || null;
           targetDraw.tripleA = nd.tripleA || null;
           targetDraw.tripleB = nd.tripleB || null;
           targetDraw.tripleC = nd.tripleC || null;
@@ -696,6 +783,43 @@ async function syncGame(gameId) {
 
     if (hasChanges) {
       existingGame.lastUpdated = new Date().toISOString();
+      if (gameId === 'la-ricachona' && resultsStore[today]?.['animalitos-la-ricachona']) {
+        resultsStore[today]['animalitos-la-ricachona'].draws = JSON.parse(JSON.stringify(existingGame.draws));
+        resultsStore[today]['animalitos-la-ricachona'].hours = JSON.parse(JSON.stringify(existingGame.hours || []));
+        resultsStore[today]['animalitos-la-ricachona'].lastUpdated = existingGame.lastUpdated;
+      } else if (gameId === 'animalitos-la-ricachona' && resultsStore[today]?.['la-ricachona']) {
+        resultsStore[today]['la-ricachona'].draws = JSON.parse(JSON.stringify(existingGame.draws));
+        resultsStore[today]['la-ricachona'].hours = JSON.parse(JSON.stringify(existingGame.hours || []));
+        resultsStore[today]['la-ricachona'].lastUpdated = existingGame.lastUpdated;
+      } else if (gameId === 'triple-chance') {
+        const h1Cutoff = 14 * 60; // 02:00 PM (840 mins)
+        const draws1 = existingGame.draws.filter(d => parseTimeToMinutes(d.time) <= h1Cutoff);
+        const draws2 = existingGame.draws.filter(d => parseTimeToMinutes(d.time) > h1Cutoff);
+
+        if (!resultsStore[today]['triple-chance-1']) {
+          const cat1 = catalog.find(g => g.id === 'triple-chance-1') || {};
+          resultsStore[today]['triple-chance-1'] = {
+            gameId: 'triple-chance-1', id: 'triple-chance-1',
+            name: cat1.name || 'TRIPLE CHANCE (9 AM - 2 PM)', shortName: cat1.shortName || 'Chance 1',
+            type: 'triples', icon: '🎲', color: '#8b5cf6', logoUrl: cat1.logoUrl || existingGame.logoUrl || '',
+            draws: [], hours: cat1.hours || []
+          };
+        }
+        resultsStore[today]['triple-chance-1'].draws = JSON.parse(JSON.stringify(draws1));
+        resultsStore[today]['triple-chance-1'].lastUpdated = existingGame.lastUpdated;
+
+        if (!resultsStore[today]['triple-chance-2']) {
+          const cat2 = catalog.find(g => g.id === 'triple-chance-2') || {};
+          resultsStore[today]['triple-chance-2'] = {
+            gameId: 'triple-chance-2', id: 'triple-chance-2',
+            name: cat2.name || 'TRIPLE CHANCE (3 PM - 7 PM)', shortName: cat2.shortName || 'Chance 2',
+            type: 'triples', icon: '🎲', color: '#8b5cf6', logoUrl: cat2.logoUrl || existingGame.logoUrl || '',
+            draws: [], hours: cat2.hours || []
+          };
+        }
+        resultsStore[today]['triple-chance-2'].draws = JSON.parse(JSON.stringify(draws2));
+        resultsStore[today]['triple-chance-2'].lastUpdated = existingGame.lastUpdated;
+      }
       saveResultsToDisk();
       notifyListeners({ type: 'DRAW_UPDATE', gameId, game: existingGame });
     }
@@ -837,6 +961,21 @@ function initLotteryEngine() {
       if (game.name) resultsStore[today][game.id].name = game.name;
     }
   }
+
+  // Sincronizar mitades de Triple Chance al iniciar si existe el padre
+  if (resultsStore[today]?.['triple-chance']?.draws) {
+    const parentDraws = resultsStore[today]['triple-chance'].draws;
+    const h1Cutoff = 14 * 60; // 02:00 PM
+    if (resultsStore[today]['triple-chance-1']) {
+      const p1 = parentDraws.filter(d => parseTimeToMinutes(d.time) <= h1Cutoff);
+      if (p1.length > 0) resultsStore[today]['triple-chance-1'].draws = JSON.parse(JSON.stringify(p1));
+    }
+    if (resultsStore[today]['triple-chance-2']) {
+      const p2 = parentDraws.filter(d => parseTimeToMinutes(d.time) > h1Cutoff && parseTimeToMinutes(d.time) <= 19 * 60 + 30);
+      if (p2.length > 0) resultsStore[today]['triple-chance-2'].draws = JSON.parse(JSON.stringify(p2));
+    }
+  }
+
   saveResultsToDisk();
 
   // Ejecutar primera carga silenciosa al iniciar
@@ -870,6 +1009,9 @@ function getTop10Results() {
     };
     data.id = game.id;
     data.gameId = game.id;
+    data.type = game.type || data.type;
+    data.hours = (game.hours && game.hours.length > 0) ? game.hours : (data.hours || []);
+    data.shortName = game.shortName || data.shortName;
     data.logoUrl = game.logoUrl || data.logoUrl;
     data.icon = game.icon || data.icon;
     data.color = game.color || data.color;

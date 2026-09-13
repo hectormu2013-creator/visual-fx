@@ -7,18 +7,241 @@ let activeGridMode = 1;
 let activeAudioCell = null;
 let focusedCellIndex = 1;
 
-// Smart TV Detection for Ultra-Low Memory & Hardware Decoding Optimization
-function detectSmartTv() {
-  const ua = navigator.userAgent.toLowerCase();
-  return /smarttv|tizen|webos|hbbtv|netcast|vizio|opera tv|appletv|firetv|roku|android tv|googletv|smart-tv/i.test(ua);
+// =========================================================================
+// Advanced Hardware Profiling & Adaptive Streaming Optimizer
+// =========================================================================
+const HARDWARE_TIERS = {
+  LIGHT: 'LIGHT',     // TV Box, Smart TV, <=2 Cores, <=2GB RAM
+  MEDIUM: 'MEDIUM',   // 3-4 Cores, <=4GB RAM, Firestick 4K, laptops
+  FULL: 'FULL'        // >=6 Cores, >=6GB RAM, PCs potentes
+};
+
+function profileDeviceHardware() {
+  const ua = (navigator.userAgent || '').toLowerCase();
+  const isSmartTv = /smarttv|tizen|webos|hbbtv|netcast|vizio|opera tv|appletv|firetv|roku|android tv|googletv|smart-tv|tv box|mibox|chromecast/i.test(ua);
+  const cores = navigator.hardwareConcurrency || (isSmartTv ? 2 : 4);
+  const memory = navigator.deviceMemory || (isSmartTv ? 1.5 : (cores <= 2 ? 2 : 4));
+  
+  let detectedTier = HARDWARE_TIERS.FULL;
+  let summary = '';
+
+  if (isSmartTv || cores <= 2 || memory <= 2) {
+    detectedTier = HARDWARE_TIERS.LIGHT;
+    summary = isSmartTv ? 'Smart TV / TV Box' : (cores <= 2 ? `${cores} Cores CPU` : `${memory}GB RAM`);
+  } else if (cores <= 4 || memory <= 4) {
+    detectedTier = HARDWARE_TIERS.MEDIUM;
+    summary = `${cores} Cores · ${memory}GB RAM`;
+  } else {
+    detectedTier = HARDWARE_TIERS.FULL;
+    summary = `${cores} Cores · Alta Potencia`;
+  }
+
+  return {
+    isSmartTv,
+    cores,
+    memory,
+    detectedTier,
+    summary
+  };
 }
-const IS_SMART_TV = detectSmartTv();
+
+const hardwareProfile = profileDeviceHardware();
+const IS_SMART_TV = hardwareProfile.isSmartTv;
+
+let selectedQualityMode = localStorage.getItem('vfx_stream_quality_mode') || 'AUTO';
+
+function getEffectiveQualityTier() {
+  if (selectedQualityMode === 'AUTO') {
+    return hardwareProfile.detectedTier;
+  }
+  return selectedQualityMode;
+}
+
+function updateQualityBadgeUi() {
+  const sel = document.getElementById('selStreamQuality');
+  if (sel) sel.value = selectedQualityMode;
+
+  const badge = document.getElementById('hardwareTierBadge');
+  const effectiveTier = getEffectiveQualityTier();
+  
+  if (badge) {
+    badge.className = 'hardware-tier-badge';
+    if (effectiveTier === HARDWARE_TIERS.LIGHT) {
+      badge.classList.add('tier-light');
+      badge.textContent = selectedQualityMode === 'AUTO' 
+        ? `⚡ Auto: 🍃 Liviano (${hardwareProfile.summary})` 
+        : `🍃 Modo Liviano`;
+    } else if (effectiveTier === HARDWARE_TIERS.MEDIUM) {
+      badge.classList.add('tier-medium');
+      badge.textContent = selectedQualityMode === 'AUTO' 
+        ? `⚡ Auto: ⚖️ Equilibrado (${hardwareProfile.summary})` 
+        : `⚖️ Equilibrado (720p)`;
+    } else {
+      badge.classList.add('tier-full');
+      badge.textContent = selectedQualityMode === 'AUTO' 
+        ? `⚡ Auto: 💎 Full HD (${hardwareProfile.summary})` 
+        : `💎 Full HD (1080p)`;
+    }
+  }
+
+  // Activar o desactivar optimizaciones CSS para hardware modesto
+  document.body.classList.toggle('mode-light-performance', effectiveTier === HARDWARE_TIERS.LIGHT);
+}
+
+function tuneHlsBuffers(hls, effectiveTier, gridMode) {
+  if (!hls || !hls.config) return;
+  const isMulti = gridMode > 1;
+  const isUltraMulti = gridMode >= 3;
+
+  if (effectiveTier === HARDWARE_TIERS.LIGHT) {
+    hls.config.backBufferLength = 0;
+    hls.config.maxBufferLength = isUltraMulti ? 2 : (isMulti ? 3 : 4);
+    hls.config.maxMaxBufferLength = isUltraMulti ? 4 : (isMulti ? 5 : 7);
+    hls.config.maxBufferSize = isUltraMulti ? 1.5 * 1024 * 1024 : (isMulti ? 2.5 * 1024 * 1024 : 4 * 1024 * 1024);
+  } else if (effectiveTier === HARDWARE_TIERS.MEDIUM) {
+    hls.config.backBufferLength = 10;
+    hls.config.maxBufferLength = isUltraMulti ? 5 : (isMulti ? 8 : 12);
+    hls.config.maxMaxBufferLength = isUltraMulti ? 8 : (isMulti ? 12 : 18);
+    hls.config.maxBufferSize = isMulti ? 6 * 1024 * 1024 : 12 * 1024 * 1024;
+  } else {
+    hls.config.backBufferLength = 30;
+    hls.config.maxBufferLength = isMulti ? 12 : 25;
+    hls.config.maxMaxBufferLength = isMulti ? 20 : 40;
+    hls.config.maxBufferSize = 30 * 1024 * 1024;
+  }
+}
+
+function applyResolutionCap(cellNum, hls, gridMode, isMaximized) {
+  if (!hls || !hls.levels || hls.levels.length === 0) return;
+
+  const effectiveTier = getEffectiveQualityTier();
+  const levels = hls.levels;
+
+  let maxAllowedHeight = 1080;
+
+  if (effectiveTier === HARDWARE_TIERS.LIGHT) {
+    if (gridMode >= 3 && !isMaximized) {
+      hls.autoLevelCappedAt = 0;
+      hls.currentLevel = 0;
+      console.log(`[Stream Optimizer Celda ${cellNum}] LIGHT + Multicanal ${gridMode}: Nivel mínimo forzado (${levels[0].height || 360}p)`);
+      return;
+    } else if (gridMode === 2 && !isMaximized) {
+      maxAllowedHeight = 480;
+    } else {
+      maxAllowedHeight = 480;
+    }
+  } else if (effectiveTier === HARDWARE_TIERS.MEDIUM) {
+    if (gridMode >= 3 && !isMaximized) {
+      maxAllowedHeight = 480;
+    } else if (gridMode === 2 && !isMaximized) {
+      maxAllowedHeight = 720;
+    } else {
+      maxAllowedHeight = 720;
+    }
+  } else {
+    // FULL
+    if (gridMode >= 3 && !isMaximized) {
+      maxAllowedHeight = 720;
+    } else {
+      maxAllowedHeight = 1080;
+    }
+  }
+
+  const safeLevels = levels
+    .map((lvl, index) => ({ ...lvl, index }))
+    .filter(lvl => (lvl.height <= maxAllowedHeight));
+
+  if (safeLevels.length > 0) {
+    const highestSafe = safeLevels[safeLevels.length - 1];
+    hls.autoLevelCappedAt = highestSafe.index;
+    console.log(`[Stream Optimizer Celda ${cellNum}] Tier ${effectiveTier} -> Nivel máximo permitido: ${highestSafe.height}p (Índice ${highestSafe.index})`);
+  } else {
+    hls.autoLevelCappedAt = 0;
+    console.log(`[Stream Optimizer Celda ${cellNum}] Tier ${effectiveTier} -> Nivel 0 forzado (${levels[0].height}p)`);
+  }
+}
+
+// Watchdog Dinámico de Caída de Fotogramas (Frame Drop Watchdog)
+const watchdogTimers = { 1: null, 2: null, 3: null, 4: null };
+const lastPlaybackQuality = { 1: null, 2: null, 3: null, 4: null };
+
+function startFrameDropWatchdog(cellNum, video, hls) {
+  stopFrameDropWatchdog(cellNum);
+  lastPlaybackQuality[cellNum] = null;
+
+  watchdogTimers[cellNum] = setInterval(() => {
+    if (!video || video.paused || !hls || !hls.levels) return;
+
+    let totalFrames = 0;
+    let droppedFrames = 0;
+
+    if (typeof video.getVideoPlaybackQuality === 'function') {
+      const q = video.getVideoPlaybackQuality();
+      totalFrames = q.totalVideoFrames;
+      droppedFrames = q.droppedVideoFrames;
+    } else if (video.webkitDecodedFrameCount !== undefined) {
+      totalFrames = video.webkitDecodedFrameCount;
+      droppedFrames = video.webkitDroppedFrameCount;
+    } else {
+      return;
+    }
+
+    const prev = lastPlaybackQuality[cellNum];
+    lastPlaybackQuality[cellNum] = { totalFrames, droppedFrames };
+
+    if (!prev || totalFrames <= prev.totalFrames) return;
+
+    const deltaTotal = totalFrames - prev.totalFrames;
+    const deltaDropped = droppedFrames - prev.droppedFrames;
+
+    if (deltaTotal >= 20) {
+      const dropRatio = deltaDropped / deltaTotal;
+      if (dropRatio > 0.15) {
+        const currentCap = (hls.autoLevelCappedAt !== -1) ? hls.autoLevelCappedAt : (hls.levels.length - 1);
+        if (currentCap > 0) {
+          const newCap = currentCap - 1;
+          hls.autoLevelCappedAt = newCap;
+          hls.currentLevel = newCap;
+          console.warn(`[Hardware Watchdog Celda ${cellNum}] ⚠️ Pérdida de frames detectada (${(dropRatio * 100).toFixed(1)}%). Bajando resolución a nivel ${newCap} (${hls.levels[newCap].height}p) para evitar tirones.`);
+        }
+      }
+    }
+  }, 5000);
+}
+
+function stopFrameDropWatchdog(cellNum) {
+  if (watchdogTimers[cellNum]) {
+    clearInterval(watchdogTimers[cellNum]);
+    watchdogTimers[cellNum] = null;
+  }
+  lastPlaybackQuality[cellNum] = null;
+}
+
+function setStreamQualityMode(mode) {
+  if (!['AUTO', 'LIGHT', 'MEDIUM', 'FULL'].includes(mode)) mode = 'AUTO';
+  selectedQualityMode = mode;
+  localStorage.setItem('vfx_stream_quality_mode', mode);
+  console.log(`[Stream Optimizer] Modo de calidad seleccionado: ${mode} (Efectivo: ${getEffectiveQualityTier()})`);
+  
+  updateQualityBadgeUi();
+
+  // Re-aplicar límites de resolución y memoria a todos los reproductores activos en tiempo real
+  [1, 2, 3, 4].forEach(cellNum => {
+    const hls = hlsPlayers[cellNum];
+    if (hls) {
+      applyResolutionCap(cellNum, hls, activeGridMode, currentMaximizedCellNum === cellNum);
+      tuneHlsBuffers(hls, getEffectiveQualityTier(), activeGridMode);
+    }
+  });
+}
+window.setStreamQualityMode = setStreamQualityMode;
 
 // HLS Player Instances
 const hlsPlayers = { 1: null, 2: null, 3: null, 4: null };
 
 // Strict Player Cleanup & Hardware Memory Release
 function stopAndDestroyPlayer(cellNum) {
+  stopFrameDropWatchdog(cellNum);
   if (hlsPlayers[cellNum]) {
     try {
       hlsPlayers[cellNum].stopLoad();
@@ -83,8 +306,17 @@ const elements = {
   lblChannelCount: document.getElementById('lblChannelCount')
 };
 
+const urlParams = new URLSearchParams(window.location.search);
+const queryService = urlParams.get('service');
+if (queryService && ['hipica', 'loteria', 'deportes', 'tv_deportes', 'publicidad'].includes(queryService)) {
+  sessionStorage.setItem('visual_fx_session_override', 'true');
+  localStorage.setItem('visual_fx_service', queryService);
+}
+
 // Selected Service State (Prioridad 4)
-let selectedService = localStorage.getItem('visual_fx_service') || 'hipica';
+let selectedService = (queryService && ['hipica', 'loteria', 'deportes', 'tv_deportes', 'publicidad'].includes(queryService))
+  ? queryService
+  : (localStorage.getItem('visual_fx_service') || 'hipica');
 
 const SERVICES_MAP = {
   'hipica': { name: 'Carreras', panelId: null },
@@ -186,6 +418,15 @@ window.switchDirectService = switchDirectService;
 let headerAutoHideTimer = null;
 let isHeaderPinned = localStorage.getItem('visual_fx_header_pinned') === 'true'; // Flotante por defecto
 
+let showHeaderTemporarily = (durationMs = 3500) => {
+  if (window._showHeaderTemporarily) window._showHeaderTemporarily(durationMs);
+};
+let hideHeaderNow = () => {
+  if (window._hideHeaderNow) window._hideHeaderNow();
+};
+window.showHeaderTemporarily = showHeaderTemporarily;
+window.hideHeaderNow = hideHeaderNow;
+
 function initFloatingHeader() {
   const header = document.getElementById('appHeader');
   const triggerBtn = document.getElementById('btnShowHeaderFloating');
@@ -214,14 +455,16 @@ function initFloatingHeader() {
   }
   updatePinUi();
 
-  function hideHeaderNow() {
+  hideHeaderNow = function() {
     if (isHeaderPinned || !header) return;
     header.classList.remove('visible');
     header.classList.add('header-hidden');
     document.body.classList.remove('header-is-visible');
-  }
+  };
+  window._hideHeaderNow = hideHeaderNow;
+  window.hideHeaderNow = hideHeaderNow;
 
-  function showHeaderTemporarily(durationMs = 3500) {
+  showHeaderTemporarily = function(durationMs = 3500) {
     if (!header) return;
     header.classList.remove('header-hidden');
     header.classList.add('visible');
@@ -232,19 +475,42 @@ function initFloatingHeader() {
         hideHeaderNow();
       }, durationMs);
     }
+  };
+  window._showHeaderTemporarily = showHeaderTemporarily;
+  window.showHeaderTemporarily = showHeaderTemporarily;
+
+  let headerHoverTriggerTimer = null;
+
+  function cancelHoverTriggerTimer() {
+    if (headerHoverTriggerTimer) {
+      clearTimeout(headerHoverTriggerTimer);
+      headerHoverTriggerTimer = null;
+    }
   }
 
-  // Activar en hover sobre la zona superior (Y <= 35px)
+  // Activar en hover sobre la zona superior (con retardo de 2 segundos para no tapar los selectores de hipódromos)
   if (hoverZone) {
-    hoverZone.addEventListener('mouseenter', () => showHeaderTemporarily(4000));
+    hoverZone.addEventListener('mouseenter', () => {
+      cancelHoverTriggerTimer();
+      headerHoverTriggerTimer = setTimeout(() => {
+        showHeaderTemporarily(4000);
+      }, 2000);
+    });
+    hoverZone.addEventListener('mouseleave', () => {
+      cancelHoverTriggerTimer();
+    });
   }
   if (triggerBtn) {
-    triggerBtn.addEventListener('click', () => showHeaderTemporarily(5000));
+    triggerBtn.addEventListener('click', () => {
+      cancelHoverTriggerTimer();
+      showHeaderTemporarily(5000);
+    });
   }
 
   let isCursorOverHeader = false;
   if (header) {
     header.addEventListener('mouseenter', () => {
+      cancelHoverTriggerTimer();
       isCursorOverHeader = true;
       if (headerAutoHideTimer) clearTimeout(headerAutoHideTimer);
       header.classList.remove('header-hidden');
@@ -263,19 +529,33 @@ function initFloatingHeader() {
   }
 
   // Actividad del usuario:
-  // - Solo cuando el cursor se acerca al borde superior (Y <= 45px) o toca la zona superior se despliega la cabecera.
+  // - Solo cuando el cursor permanece al menos 2.0 segundos en el borde superior se despliega la cabecera.
+  // - Si el cursor se ubica sobre el selector de hipódromo (.channel-select-dropdown), se cancela de inmediato para no estorbar.
   // - Si el cursor se aleja hacia el centro/abajo de la pantalla (Y > 65px), se oculta automáticamente.
-  // - Al presionar teclas de navegación (flechas, Home, End, Espacio), se muestra brevemente (2.5s) y luego se auto-oculta.
   const onPointerActivity = (e) => {
     if (isHeaderPinned) return;
     if (e.clientY !== undefined) {
-      if (e.clientY <= 45) {
-        showHeaderTemporarily(4000);
-      } else if (e.clientY > 65 && !isCursorOverHeader) {
-        if (!headerAutoHideTimer) {
-          headerAutoHideTimer = setTimeout(() => {
-            if (!isCursorOverHeader && !isHeaderPinned) hideHeaderNow();
-          }, 1200);
+      const target = e.target;
+      const isOverDropdown = target && (target.closest('.channel-select-dropdown') || target.closest('.cell-header'));
+      if (isOverDropdown) {
+        cancelHoverTriggerTimer();
+        return;
+      }
+
+      if (e.clientY <= 28) {
+        if (!headerHoverTriggerTimer && header && !header.classList.contains('visible')) {
+          headerHoverTriggerTimer = setTimeout(() => {
+            showHeaderTemporarily(4000);
+          }, 2000);
+        }
+      } else {
+        cancelHoverTriggerTimer();
+        if (e.clientY > 65 && !isCursorOverHeader) {
+          if (!headerAutoHideTimer) {
+            headerAutoHideTimer = setTimeout(() => {
+              if (!isCursorOverHeader && !isHeaderPinned) hideHeaderNow();
+            }, 1200);
+          }
         }
       }
     }
@@ -469,6 +749,7 @@ window.addEventListener('keydown', (e) => {
 document.addEventListener('DOMContentLoaded', async () => {
   initDeviceId();
   initFloatingHeader();
+  updateQualityBadgeUi();
   setupEventListeners();
   setupKeyboardNavigation();
   setupAdminTabs();
@@ -920,20 +1201,28 @@ async function loadChannelCatalog() {
     if (lblAct) lblAct.textContent = activeCount;
     if (lblAll) lblAll.textContent = channelCatalog.length;
     
-    // Reasignar hipódromos activos a las 4 celdas si la celda tiene un canal inactivo o nulo
-    if (activeChannels.length > 0) {
-      [1, 2, 3, 4].forEach((num, idx) => {
-        if (!activeChannels.some(c => c.id === cellChannels[num])) {
-          cellChannels[num] = activeChannels[idx % activeChannels.length].id;
-        }
-      });
-    }
+    const isInitialCatalogLoad = !window._catalogHasLoadedOnce;
+    window._catalogHasLoadedOnce = true;
 
-    // Filtrar y renderizar según pestaña activa (por defecto: solo los que tienen carreras en vivo)
-    filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.trim().toLowerCase() : '');
-    populateSelectDropdowns();
-    
-    updateGridView(activeGridMode);
+    if (isInitialCatalogLoad) {
+      // Solo en la carga inicial de inicio asignar canales por defecto si las celdas están vacías
+      if (activeChannels.length > 0) {
+        [1, 2, 3, 4].forEach((num, idx) => {
+          if (!cellChannels[num]) {
+            cellChannels[num] = activeChannels[idx % activeChannels.length].id;
+          }
+        });
+      }
+      filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.trim().toLowerCase() : '');
+      populateSelectDropdowns();
+      updateGridView(activeGridMode);
+    } else {
+      // En refrescos periódicos subsecuentes (cada 10 min):
+      // NUNCA reiniciar reproductores de video ni sobrescribir canales en curso
+      filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.trim().toLowerCase() : '');
+      populateSelectDropdowns();
+      console.log('[Visual-FX] Catálogo de hipódromos actualizado en segundo plano sin interrumpir transmisiones activas.');
+    }
   } catch (err) {
     console.error('Error cargando canales:', err);
   }
@@ -1161,19 +1450,23 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
     if (Hls.isSupported()) {
       const isMultiCell = activeGridMode > 1;
       const isUltraMulti = activeGridMode >= 3;
+      const effectiveTier = getEffectiveQualityTier();
+      const isLight = (effectiveTier === HARDWARE_TIERS.LIGHT);
+      const isMedium = (effectiveTier === HARDWARE_TIERS.MEDIUM);
+      const isFull = (effectiveTier === HARDWARE_TIERS.FULL);
       
       const hls = new Hls({
-        enableWorker: !IS_SMART_TV, // Web Workers deshabilitado en Smart TVs para no bloquear hilos del navegador
+        enableWorker: isFull || (isMedium && hardwareProfile.cores >= 4),
         lowLatencyMode: false,
-        capLevelToPlayerSize: true, // Escala la resolución al tamaño real del contenedor
-        backBufferLength: IS_SMART_TV ? 0 : 30, // En Smart TV libera memoria RAM de inmediato
-        maxBufferLength: IS_SMART_TV ? (isUltraMulti ? 3 : (isMultiCell ? 4 : 8)) : (isMultiCell ? 10 : 25),
-        maxMaxBufferLength: IS_SMART_TV ? (isUltraMulti ? 5 : (isMultiCell ? 7 : 15)) : (isMultiCell ? 20 : 40),
-        maxBufferSize: IS_SMART_TV ? (isUltraMulti ? 2 * 1024 * 1024 : (isMultiCell ? 4 * 1024 * 1024 : 8 * 1024 * 1024)) : 30 * 1024 * 1024,
+        capLevelToPlayerSize: !isFull,
+        backBufferLength: isLight ? 0 : (isMedium ? 10 : 30),
+        maxBufferLength: isLight ? (isUltraMulti ? 2 : (isMultiCell ? 3 : 4)) : (isMedium ? (isUltraMulti ? 5 : (isMultiCell ? 8 : 12)) : (isMultiCell ? 12 : 25)),
+        maxMaxBufferLength: isLight ? (isUltraMulti ? 4 : (isMultiCell ? 5 : 7)) : (isMedium ? (isUltraMulti ? 8 : (isMultiCell ? 12 : 18)) : (isMultiCell ? 20 : 40)),
+        maxBufferSize: isLight ? (isUltraMulti ? 1.5 * 1024 * 1024 : (isMultiCell ? 2.5 * 1024 * 1024 : 4 * 1024 * 1024)) : (isMedium ? (isMultiCell ? 6 * 1024 * 1024 : 12 * 1024 * 1024) : 30 * 1024 * 1024),
         maxBufferHole: 0.5,
         highBufferWatchdogPeriod: 2,
         nudgeMaxRetries: 5,
-        startLevel: (IS_SMART_TV && isUltraMulti) ? 0 : -1,
+        startLevel: isLight ? 0 : -1,
         testBandwidth: true
       });
 
@@ -1183,33 +1476,8 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
       hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
         if (loader) loader.style.display = 'none';
 
-        // Limitación inteligente de resolución para Smart TV:
-        if (IS_SMART_TV && data.levels && data.levels.length > 1) {
-          if (activeGridMode >= 3) {
-            // En 3 o 4 pantallas en Smart TV: forzar el nivel más liviano (360p/480p) para ahorrar 75% CPU/RAM
-            hls.autoLevelCappedAt = 0;
-            hls.currentLevel = 0;
-          } else if (activeGridMode === 2) {
-            // En 2 pantallas: permitir hasta 480p
-            const safeLevels = data.levels
-              .map((lvl, index) => ({ ...lvl, index }))
-              .filter(lvl => (lvl.height <= 480));
-            if (safeLevels.length > 0) {
-              hls.autoLevelCappedAt = safeLevels[safeLevels.length - 1].index;
-            } else {
-              hls.autoLevelCappedAt = 0;
-            }
-          } else {
-            // En 1 sola pantalla: permitir hasta 720p HD
-            const safeLevels = data.levels
-              .map((lvl, index) => ({ ...lvl, index }))
-              .filter(lvl => (lvl.height <= 720));
-            if (safeLevels.length > 0) {
-              const maxSafeIndex = safeLevels[safeLevels.length - 1].index;
-              hls.autoLevelCappedAt = maxSafeIndex;
-            }
-          }
-        }
+        applyResolutionCap(cellNum, hls, activeGridMode, currentMaximizedCellNum === cellNum);
+        startFrameDropWatchdog(cellNum, video, hls);
 
         video.play().catch(e => console.log('Auto-play defer:', e));
       });
@@ -1278,6 +1546,14 @@ function updateGridView(gridCount) {
     }
   });
 
+  // Re-aplicar límites de resolución y buffers según la nueva cantidad de pantallas
+  [1, 2, 3, 4].forEach(num => {
+    if (hlsPlayers[num]) {
+      applyResolutionCap(num, hlsPlayers[num], gridCount, currentMaximizedCellNum === num);
+      tuneHlsBuffers(hlsPlayers[num], getEffectiveQualityTier(), gridCount);
+    }
+  });
+
   if (focusedCellIndex > gridCount) {
     setFocusedCell(1);
   }
@@ -1330,18 +1606,148 @@ function setAudioFocus(targetCellNum) {
 }
 window.setAudioFocus = setAudioFocus;
 
+let currentMaximizedCellNum = null;
+let savedMulticanalGridMode = null;
+let raceAutoRestoreTimer = null;
+
+function maximizeCellCss(cellNum) {
+  const cell = document.getElementById(`cell-${cellNum}`);
+  if (!cell) return;
+
+  if (activeGridMode > 1) {
+    savedMulticanalGridMode = activeGridMode;
+  }
+
+  [1, 2, 3, 4].forEach(n => {
+    const c = document.getElementById(`cell-${n}`);
+    if (c) c.classList.remove('cell-maximized');
+  });
+
+  cell.classList.add('cell-maximized');
+  currentMaximizedCellNum = cellNum;
+
+  // Optimización dinámica de resolución: al maximizar, desbloquear resolución de pantalla completa en esta celda
+  if (hlsPlayers[cellNum]) {
+    applyResolutionCap(cellNum, hlsPlayers[cellNum], 1, true);
+    tuneHlsBuffers(hlsPlayers[cellNum], getEffectiveQualityTier(), 1);
+  }
+
+  // Enfocar audio automáticamente en la celda maximizada
+  setAudioFocus(cellNum);
+
+  const btnReturn = document.getElementById('btnReturnMulticanal');
+  if (btnReturn) {
+    const gridLabel = savedMulticanalGridMode ? ` (${savedMulticanalGridMode} Pantallas)` : '';
+    btnReturn.innerHTML = `<span class="btn-icon">↩</span> Volver a Multicanal${gridLabel}`;
+    btnReturn.style.display = 'inline-flex';
+  }
+  console.log(`[Visual-FX] Celda ${cellNum} maximizada en pantalla completa universal.`);
+}
+window.maximizeCellCss = maximizeCellCss;
+
+function exitCellMaximized() {
+  if (raceAutoRestoreTimer) {
+    clearTimeout(raceAutoRestoreTimer);
+    raceAutoRestoreTimer = null;
+  }
+
+  [1, 2, 3, 4].forEach(n => {
+    const c = document.getElementById(`cell-${n}`);
+    if (c) c.classList.remove('cell-maximized');
+  });
+
+  currentMaximizedCellNum = null;
+
+  // Restaurar límites de resolución y buffers para la vista multicanal activa
+  [1, 2, 3, 4].forEach(n => {
+    if (hlsPlayers[n]) {
+      applyResolutionCap(n, hlsPlayers[n], activeGridMode, false);
+      tuneHlsBuffers(hlsPlayers[n], getEffectiveQualityTier(), activeGridMode);
+    }
+  });
+
+  const btnReturn = document.getElementById('btnReturnMulticanal');
+  if (btnReturn) btnReturn.style.display = 'none';
+
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    try {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    } catch (e) {}
+  }
+
+  console.log('[Visual-FX] Salida de celda maximizada. Regresando a multicanal.');
+}
+window.exitCellMaximized = exitCellMaximized;
+
+// Auto-Maximización al darse la Partida en Multicanal
+function triggerRaceStartAutoZoom(cellNum, trackName) {
+  if (activeGridMode <= 1 || currentMaximizedCellNum !== null) return;
+  console.log(`[Visual-FX] 🏇 ¡Partida detectada en ${trackName}! Maximizando celda ${cellNum} automáticamente...`);
+  maximizeCellCss(cellNum);
+
+  if (raceAutoRestoreTimer) clearTimeout(raceAutoRestoreTimer);
+  // Regresar automáticamente a multicanal tras 2.5 minutos (tiempo promedio de carrera)
+  raceAutoRestoreTimer = setTimeout(() => {
+    console.log(`[Visual-FX] Carrera finalizada en ${trackName}. Restaurando vista multicanal.`);
+    exitCellMaximized();
+  }, 150000);
+}
+window.triggerRaceStartAutoZoom = triggerRaceStartAutoZoom;
+
 function toggleCellFullscreen(cellNum) {
   const cell = document.getElementById(`cell-${cellNum}`);
   if (!cell) return;
-  if (!document.fullscreenElement) {
-    if (cell.requestFullscreen) cell.requestFullscreen();
-    else if (cell.webkitRequestFullscreen) cell.webkitRequestFullscreen();
-  } else {
-    if (document.exitFullscreen) document.exitFullscreen();
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+
+  if (cell.classList.contains('cell-maximized')) {
+    exitCellMaximized();
+    return;
   }
+
+  // Intentar primero fullscreen nativo si es soportado y permitido
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    try {
+      const p = cell.requestFullscreen ? cell.requestFullscreen() : (cell.webkitRequestFullscreen ? cell.webkitRequestFullscreen() : null);
+      if (p && p.catch) {
+        p.catch(() => {
+          maximizeCellCss(cellNum);
+        });
+      }
+    } catch (e) {
+      maximizeCellCss(cellNum);
+      return;
+    }
+  }
+
+  // Siempre asegurar cobertura 100vw x 100vh mediante clase CSS universal
+  maximizeCellCss(cellNum);
 }
 window.toggleCellFullscreen = toggleCellFullscreen;
+
+// Salir de pantalla maximizada con tecla Escape
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && currentMaximizedCellNum !== null) {
+    exitCellMaximized();
+  }
+});
+
+function checkActiveCellsForPartida() {
+  if (activeGridMode <= 1 || currentMaximizedCellNum !== null) return;
+  for (let num = 1; num <= activeGridMode; num++) {
+    const chId = cellChannels[num];
+    if (!chId) continue;
+    const ch = channelCatalog.find(c => c.id === chId);
+    if (ch && ch.onAir && ch.nextRace) {
+      const nr = ch.nextRace.toUpperCase();
+      if (nr.includes('MTP 0') || nr.includes('MTP :0') || nr.includes('POST') || nr.includes('OFF') || nr.includes('RUNNING') || nr.includes('PARTIDA')) {
+        triggerRaceStartAutoZoom(num, ch.name);
+        break;
+      }
+    }
+  }
+}
+window.checkActiveCellsForPartida = checkActiveCellsForPartida;
+setInterval(checkActiveCellsForPartida, 25000);
 
 function setFocusedCell(index) {
   focusedCellIndex = index;
@@ -1427,6 +1833,11 @@ function setupEventListeners() {
         setFocusedCell(num);
         if (e.target.closest('.btn-audio-header')) {
           setAudioFocus(num);
+        }
+      });
+      cell.addEventListener('dblclick', (e) => {
+        if (!e.target.closest('select') && !e.target.closest('button')) {
+          toggleCellFullscreen(num);
         }
       });
     }
@@ -1994,17 +2405,6 @@ function setupEventListeners() {
   });
 }
 
-function toggleCellFullscreen(cellNum) {
-  const cell = document.getElementById(`cell-${cellNum}`);
-  if (!cell) return;
-
-  if (!document.fullscreenElement) {
-    if (cell.requestFullscreen) cell.requestFullscreen();
-    else if (cell.webkitRequestFullscreen) cell.webkitRequestFullscreen();
-  } else {
-    if (document.exitFullscreen) document.exitFullscreen();
-  }
-}
 
 // Monitor de Previsualización en Vivo de Canales
 let testHlsPlayer = null;
@@ -3170,24 +3570,28 @@ const AnimalSFXEngine = {
       this.synthesizeDonkey(ctx, now);
     } else if (name.includes('caballo') || name.includes('yegua')) {
       this.synthesizeHorse(ctx, now);
-    } else if (name.includes('perro') || name.includes('chivo') || name.includes('zorro')) {
+    } else if (name.includes('perro') || name.includes('zorro') || name.includes('lobo') || name.includes('chivo')) {
       this.synthesizeDog(ctx, now);
-    } else if (name.includes('gato') || name.includes('tigre') || name.includes('leona') || name.includes('pantera')) {
+    } else if (name.includes('gato') || name.includes('tigre') || name.includes('leona') || name.includes('pantera') || name.includes('leon') || name.includes('jaguar')) {
       this.synthesizeCat(ctx, now);
     } else if (name.includes('gallo') || name.includes('gallina') || name.includes('pavo')) {
       this.synthesizeRooster(ctx, now);
     } else if (name.includes('toro') || name.includes('buey') || name.includes('vaca')) {
       this.synthesizeBull(ctx, now);
-    } else if (name.includes('cochino') || name.includes('cerdo') || name.includes('jabali')) {
+    } else if (name.includes('cochino') || name.includes('cerdo') || name.includes('jabali') || name.includes('puerco')) {
       this.synthesizePig(ctx, now);
     } else if (name.includes('mono')) {
       this.synthesizeMonkey(ctx, now);
     } else if (name.includes('elefante')) {
       this.synthesizeElephant(ctx, now);
-    } else if (name.includes('pajaro') || name.includes('canario') || name.includes('aguila') || name.includes('paloma') || name.includes('zamuro')) {
+    } else if (name.includes('pajaro') || name.includes('canario') || name.includes('aguila') || name.includes('paloma') || name.includes('zamuro') || name.includes('guacharo') || name.includes('loro') || name.includes('perico')) {
       this.synthesizeBird(ctx, now);
+    } else if (name.includes('rana') || name.includes('sapo')) {
+      this.synthesizeFrog(ctx, now);
     } else {
-      playChimeAlert();
+      // Animales que no emiten sonidos característicos (delfín, ballena, iguana, culebra, ardilla, mariposa, pescado, caimán, venado, oso, camello, alacrán, ciempiés, etc.):
+      // Sonido de selva tropical exótica
+      this.synthesizeJungleAmbient(ctx, now);
     }
   },
 
@@ -3378,6 +3782,102 @@ const AnimalSFXEngine = {
       gain.connect(ctx.destination);
       osc.start(t);
       osc.stop(t + 0.12);
+    });
+  },
+
+  synthesizeFrog(ctx, now) {
+    [0, 0.18, 0.36].forEach(offset => {
+      const t = now + offset;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(160, t);
+      osc.frequency.exponentialRampToValueAtTime(75, t + 0.12);
+      gain.gain.setValueAtTime(0.35, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.14);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.15);
+    });
+  },
+
+  synthesizeJungleAmbient(ctx, now) {
+    // 1. Brisa tropical / susurro de selva
+    try {
+      const bufferSize = ctx.sampleRate * 1.5;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1400, now);
+      filter.Q.setValueAtTime(2.5, now);
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.01, now);
+      noiseGain.gain.linearRampToValueAtTime(0.14, now + 0.35);
+      noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 1.4);
+
+      whiteNoise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+
+      whiteNoise.start(now);
+      whiteNoise.stop(now + 1.5);
+    } catch(e) {}
+
+    // 2. Grillos / Cigarras rítmicas de selva tropical
+    try {
+      const cricketOsc = ctx.createOscillator();
+      const cricketGain = ctx.createGain();
+      cricketOsc.type = 'sine';
+      cricketOsc.frequency.setValueAtTime(5200, now);
+
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.frequency.setValueAtTime(28, now);
+      lfoGain.gain.setValueAtTime(0.6, now);
+      lfo.connect(cricketGain.gain);
+
+      cricketGain.gain.setValueAtTime(0.09, now);
+      cricketGain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
+
+      cricketOsc.connect(cricketGain);
+      cricketGain.connect(ctx.destination);
+
+      lfo.start(now);
+      cricketOsc.start(now);
+      lfo.stop(now + 1.3);
+      cricketOsc.stop(now + 1.3);
+    } catch(e) {}
+
+    // 3. Trinos de aves tropicales exóticas
+    [0.08, 0.42, 0.76].forEach((delay, idx) => {
+      const t = now + delay;
+      const bird = ctx.createOscillator();
+      const birdGain = ctx.createGain();
+      bird.type = 'sine';
+
+      const baseFreq = idx === 1 ? 2600 : 2100;
+      bird.frequency.setValueAtTime(baseFreq, t);
+      bird.frequency.exponentialRampToValueAtTime(baseFreq * 1.45, t + 0.08);
+      bird.frequency.exponentialRampToValueAtTime(baseFreq * 0.9, t + 0.18);
+
+      birdGain.gain.setValueAtTime(0.01, t);
+      birdGain.gain.linearRampToValueAtTime(0.20, t + 0.05);
+      birdGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+      bird.connect(birdGain);
+      birdGain.connect(ctx.destination);
+
+      bird.start(t);
+      bird.stop(t + 0.24);
     });
   }
 };
@@ -3604,56 +4104,256 @@ function getBestSpanishVoice() {
   return voices.find(v => (v.lang || '').toLowerCase().startsWith('es')) || null;
 }
 
-function speakLotteryDraw(gameName, drawTime, resultText) {
-  if (!lotteryVoiceEnabled) return;
-  if (!('speechSynthesis' in window)) return;
+function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
+  if (!lotteryVoiceEnabled) {
+    if (onEndCallback) onEndCallback();
+    return;
+  }
+  if (!('speechSynthesis' in window)) {
+    if (onEndCallback) onEndCallback();
+    return;
+  }
   try {
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(`Atención. Resultado oficial de ${gameName}, sorteo de las ${drawTime}: ${resultText}.`);
+    
+    // Normalización fonética para pronunciación fluida y natural:
+    // 1. Convertir mayúsculas a minúsculas/título para evitar que el sintetizador las deletree como siglas
+    let cleanGameName = (gameName || '').replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    let cleanResult = (resultText || '').replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    
+    // 2. Corregir específicamente "ricachona" para que se pronuncie como palabra completa y nunca deletreada
+    cleanGameName = cleanGameName.replace(/la\s+ricachona/gi, 'la rica chona').replace(/ricachona/gi, 'rica chona');
+    cleanResult = cleanResult.replace(/la\s+ricachona/gi, 'la rica chona').replace(/ricachona/gi, 'rica chona');
+
+    // 3. Corregir fonética de "Chance" para evitar pronunciación en inglés sin 'e' (pronunciar "Chanse" con 'e' clara)
+    cleanGameName = cleanGameName.replace(/\bchance\b/gi, 'Chanse');
+    cleanResult = cleanResult.replace(/\bchance\b/gi, 'Chanse');
+
+    // 4. Corregir fonética de "Táchira" para forzar acento esdrújulo en la primera 'a' (TÁ-chi-ra)
+    cleanGameName = cleanGameName.replace(/\bt[aá]chira\b/gi, 'Táchira');
+    cleanResult = cleanResult.replace(/\bt[aá]chira\b/gi, 'Táchira');
+
+    // 5. Quitar paréntesis o aclaratorias de horarios en el nombre hablado (ej: "Triple Chance (9 AM - 2 PM)" -> "Triple Chanse")
+    cleanGameName = cleanGameName.replace(/\s*\([^)]*\)/g, '').trim();
+
+    const utterance = new SpeechSynthesisUtterance(`Atención. Resultado oficial de ${cleanGameName}, sorteo de las ${drawTime}: ${cleanResult}.`);
     utterance.lang = 'es-VE';
     utterance.rate = 0.90;
     utterance.pitch = 1.02;
     utterance.volume = currentScreenConfig.voiceVolume || 0.90;
     const bestVoice = getBestSpanishVoice();
     if (bestVoice) utterance.voice = bestVoice;
+
+    let callbackFired = false;
+    const fireCallbackOnce = () => {
+      if (!callbackFired && onEndCallback) {
+        callbackFired = true;
+        onEndCallback();
+      }
+    };
+
+    utterance.onend = fireCallbackOnce;
+    utterance.onerror = fireCallbackOnce;
+    setTimeout(fireCallbackOnce, 9000);
+
     window.speechSynthesis.speak(utterance);
   } catch (e) {
     console.warn('[SpeechSynthesis]', e);
+    if (onEndCallback) onEndCallback();
   }
+}
+
+// ==========================================
+// Modal Pop-Up de Nuevo Resultado Oficial (10 Segundos - Requisito Solicitado)
+// ==========================================
+let popupDismissTimer = null;
+
+function showNewResultPopup(game, draw) {
+  const popup = document.getElementById('lotteryNewResultPopup');
+  if (!popup) return;
+
+  const isAnimal = game.type === 'animalitos';
+  const logoEl = document.getElementById('popupLotteryLogo');
+  const titleEl = document.getElementById('popupLotteryName');
+  const timeEl = document.getElementById('popupDrawTime');
+  const mediaBox = document.getElementById('popupMediaBox');
+  const animalImg = document.getElementById('popupAnimalImg');
+  const numDisplay = document.getElementById('popupNumberDisplay');
+  const nameDisplay = document.getElementById('popupNameDisplay');
+  const triplesBox = document.getElementById('popupTriplesBox');
+  const timerFill = document.getElementById('popupTimerBarFill');
+
+  if (timeEl) timeEl.textContent = draw.time || draw.hour || '';
+  if (titleEl) titleEl.textContent = game.name || 'LOTERÍA';
+
+  if (logoEl) {
+    if (game.logoUrl) {
+      logoEl.src = game.logoUrl;
+      logoEl.style.display = 'block';
+    } else {
+      logoEl.style.display = 'none';
+    }
+  }
+
+  if (isAnimal) {
+    if (triplesBox) triplesBox.style.display = 'none';
+    if (numDisplay) {
+      numDisplay.textContent = draw.number || '--';
+      numDisplay.style.display = 'block';
+    }
+    if (nameDisplay) {
+      nameDisplay.textContent = draw.name || '';
+      nameDisplay.style.display = 'block';
+    }
+    if (animalImg && mediaBox) {
+      if (draw.image) {
+        animalImg.src = draw.image;
+        animalImg.style.display = 'block';
+      } else {
+        animalImg.style.display = 'none';
+      }
+      mediaBox.style.display = 'flex';
+    }
+  } else {
+    // Triples
+    if (numDisplay) numDisplay.style.display = 'none';
+    if (nameDisplay) nameDisplay.style.display = 'none';
+    if (triplesBox) {
+      triplesBox.style.display = 'flex';
+      const elA = document.getElementById('popupTripleA');
+      const elB = document.getElementById('popupTripleB');
+      const elC = document.getElementById('popupTripleC');
+      const elSign = document.getElementById('popupSigno');
+      if (elA) elA.textContent = `A: ${draw.tripleA || '--'}`;
+      if (elB) elB.textContent = `B: ${draw.tripleB || '--'}`;
+      if (elC) elC.textContent = `C: ${draw.tripleC || '--'}`;
+      if (elSign) {
+        const zData = draw.signo ? getZodiacData(draw.signo) : null;
+        elSign.textContent = zData ? `${zData.symbol} ${zData.name}` : (draw.signo || '');
+      }
+    }
+    if (mediaBox && animalImg) {
+      const zData = draw.signo ? getZodiacData(draw.signo) : null;
+      if (zData) {
+        animalImg.src = `/images/zodiac/${zData.file}`;
+        animalImg.style.display = 'block';
+        mediaBox.style.display = 'flex';
+      } else {
+        mediaBox.style.display = 'none';
+      }
+    }
+  }
+
+  // Reiniciar barra regresiva de 10 segundos
+  if (timerFill) {
+    timerFill.style.animation = 'none';
+    void timerFill.offsetWidth;
+    timerFill.style.animation = 'popupCountdown 10s linear forwards';
+  }
+
+  popup.style.display = 'flex';
+  popup.classList.remove('popup-fade-out');
+  popup.classList.add('popup-fade-in');
+
+  if (popupDismissTimer) clearTimeout(popupDismissTimer);
+  popupDismissTimer = setTimeout(() => {
+    popup.classList.remove('popup-fade-in');
+    popup.classList.add('popup-fade-out');
+    setTimeout(() => {
+      popup.style.display = 'none';
+      popup.classList.remove('popup-fade-out');
+    }, 450);
+  }, 10000);
+}
+window.showNewResultPopup = showNewResultPopup;
+
+// ==========================================
+// Cola Secuencial de Anuncios de Nuevos Resultados (Requisito 5)
+// ==========================================
+const knownAnnouncedDrawKeys = new Set();
+let isAnnounceSystemInitialized = false;
+const announcementQueue = [];
+let isAnnouncementPlaying = false;
+
+function enqueueDrawAnnouncements(items) {
+  announcementQueue.push(...items);
+  processNextAnnouncement();
+}
+
+function processNextAnnouncement() {
+  if (isAnnouncementPlaying || announcementQueue.length === 0) return;
+  isAnnouncementPlaying = true;
+
+  const { game, draw } = announcementQueue.shift();
+  const isAnimal = game.type === 'animalitos';
+
+  console.log(`[Visual-FX] 📢 Anunciando nuevo resultado: ${game.name} - ${draw.time || draw.hour}`);
+
+  // 1. Mostrar Pop-Up de 5 segundos con imagen y número (Requisito 6)
+  showNewResultPopup(game, draw);
+
+  // 2. Reproducir Efecto de Sonido: Animal específico o Selva Tropical (Requisito 5)
+  if (isAnimal) {
+    if (currentScreenConfig.animalSfxEnabled) {
+      AnimalSFXEngine.playAnimalSound(draw.name);
+    }
+  } else {
+    playChimeAlert();
+  }
+
+  // 3. Síntesis de Voz Humana tras concluir el sonido (~1.2s)
+  setTimeout(() => {
+    let resultDesc = '';
+    if (isAnimal) {
+      resultDesc = `Número ${draw.number || ''}, ${draw.name || ''}`;
+    } else {
+      resultDesc = `Triple A ${draw.tripleA || '--'}, Triple B ${draw.tripleB || '--'}, Triple C ${draw.tripleC || '--'}${draw.signo ? ', Signo ' + draw.signo : ''}`;
+    }
+
+    speakLotteryDraw(game.name, draw.time || draw.hour, resultDesc, () => {
+      setTimeout(() => {
+        isAnnouncementPlaying = false;
+        processNextAnnouncement();
+      }, 800);
+    });
+  }, 1200);
 }
 
 function checkForNewDrawAnnouncements(games) {
   if (!games || games.length === 0) return;
+
+  const newDrawsDetected = [];
+
   games.forEach(game => {
     const draws = game.draws || game.results || [];
-    const completed = draws.filter(d => !d.isPending && (d.number || d.tripleA));
-    if (completed.length > 0) {
-      const latest = completed[completed.length - 1];
-      const drawId = `${game.id || game.gameId}-${latest.time || latest.hour}-${latest.number || latest.tripleA}`;
-      const gKey = game.id || game.gameId;
+    draws.forEach(d => {
+      const isDone = !d.isPending && (d.number || d.tripleA || d.tripleB || d.tripleC);
+      if (!isDone) return;
 
-      if (!lastAnnouncedDrawId[gKey]) {
-        lastAnnouncedDrawId[gKey] = drawId;
-      } else if (lastAnnouncedDrawId[gKey] !== drawId) {
-        lastAnnouncedDrawId[gKey] = drawId;
-        const resultDesc = game.type === 'animalitos'
-          ? `Número ${latest.number}, ${latest.name}`
-          : `Triple A ${latest.tripleA}, Triple B ${latest.tripleB}${latest.signo ? ', Signo ' + latest.signo : ''}`;
+      const rawGId = game.id || game.gameId;
+      const gId = (rawGId === 'animalitos-la-ricachona') ? 'la-ricachona' : rawGId;
+      const t = d.time || d.hour || '';
+      const drawKey = `${gId}__${t}__${d.number || ''}_${d.tripleA || ''}_${d.tripleB || ''}_${d.tripleC || ''}`;
 
-        if (game.type === 'animalitos' && currentScreenConfig.animalSfxEnabled) {
-          AnimalSFXEngine.playAnimalSound(latest.name);
-          setTimeout(() => {
-            speakLotteryDraw(game.name, latest.time || latest.hour, resultDesc);
-          }, 950);
-        } else {
-          playChimeAlert();
-          setTimeout(() => {
-            speakLotteryDraw(game.name, latest.time || latest.hour, resultDesc);
-          }, 350);
+      if (!knownAnnouncedDrawKeys.has(drawKey)) {
+        knownAnnouncedDrawKeys.add(drawKey);
+        if (isAnnounceSystemInitialized) {
+          newDrawsDetected.push({ game, draw: d });
         }
       }
-    }
+    });
   });
+
+  if (!isAnnounceSystemInitialized) {
+    isAnnounceSystemInitialized = true;
+    console.log(`[Visual-FX] Sistema de anuncios y pop-ups inicializado con ${knownAnnouncedDrawKeys.size} sorteos registrados previos.`);
+    return;
+  }
+
+  if (newDrawsDetected.length > 0) {
+    console.log(`[Visual-FX] ¡Detectados ${newDrawsDetected.length} nuevos resultados para anunciar y mostrar pop-up!`);
+    enqueueDrawAnnouncements(newDrawsDetected);
+  }
 }
 
 // ==========================================
@@ -3690,8 +4390,9 @@ function renderModuleTop5Animalitos(modCfg, stage) {
       `;
     }).join('');
 
+    const isFewDraws = draws.length <= 6;
     return `
-      <div class="board-col-card">
+      <div class="board-col-card ${isFewDraws ? 'few-draws' : ''}">
         <div class="board-col-header animal">
           <div class="board-col-header-left">
             ${game.logoUrl ? `<img src="${game.logoUrl}" class="board-col-logo" alt="${game.name}" onerror="this.style.display='none'">` : ''}
@@ -3709,40 +4410,57 @@ function renderModuleTop5Animalitos(modCfg, stage) {
 
 // Módulo 2 (3.2): Top 5 Triples y Terminales Más Vendidos
 function renderModuleTop5Triples(modCfg, stage) {
-  const allowedGames = modCfg.games || ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano'];
+  let allowedGames = modCfg.games || ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano'];
+  if (allowedGames.includes('triple-chance')) {
+    const idx = allowedGames.indexOf('triple-chance');
+    allowedGames.splice(idx, 1, 'triple-chance-1', 'triple-chance-2');
+  }
   let games = lotteryTop10.filter(g => allowedGames.includes(g.id || g.gameId));
   if (games.length === 0) {
     games = lotteryTop10.filter(g => g.type === 'triples').slice(0, 5);
   }
 
   const colsHtml = games.map(game => {
-    const draws = game.draws || game.results || [];
+    let draws = game.draws || game.results || [];
     const completed = draws.filter(d => !d.isPending && (d.tripleA || d.tripleB || d.tripleC));
+    const isFewDraws = draws.length <= 6;
+    const gameHasB = draws.some(d => d.tripleB && d.tripleB !== '--');
+    const gameHasC = draws.some(d => d.tripleC && d.tripleC !== '--');
+
     const rowsHtml = draws.map(draw => {
-      const isDone = !draw.isPending && (draw.tripleA || draw.tripleB || draw.tripleC);
-      const tripleA = isDone ? (draw.tripleA || '--') : '--';
+      const isDone = !draw.isPending && (draw.tripleA || draw.tripleB || draw.tripleC || draw.number);
+      const tripleA = isDone ? (draw.tripleA || draw.number || '--') : '--';
       const tripleB = isDone ? (draw.tripleB || '--') : '--';
-      const tripleC = isDone ? (draw.tripleC || '') : '';
-      const cStr = tripleC ? ` C:${tripleC}` : '';
+      const tripleC = isDone ? (draw.tripleC || '--') : '--';
       const signo = isDone ? (draw.signo || '') : '';
       const zData = getZodiacData(signo);
+      const hasB = (tripleB !== '--' || gameHasB);
+      const hasC = (tripleC !== '--' || gameHasC);
 
       return `
-        <div class="board-draw-row ${isDone ? 'done' : 'pending'}">
-          <span class="draw-time-cell">${draw.time || draw.hour}</span>
-          <div class="draw-info-cell">
-            <span class="draw-triple-badge">A:${tripleA} B:${tripleB}${cStr}</span>
-            ${signo ? `<span class="draw-sign-label">${zData ? `${zData.symbol} ${zData.name}` : signo}</span>` : ''}
+        <div class="board-draw-row triple-2lines ${isDone ? 'done' : 'pending'}">
+          <div class="board-draw-left">
+            <span class="draw-time-cell">${draw.time || draw.hour}</span>
+            <div class="draw-avatar-cell">
+              ${zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}" title="${zData.name}">` : (signo ? '<span style="font-size:1rem;">♈</span>' : (isDone ? '<span style="font-size:0.85rem;">⭐</span>' : '<span class="draw-pending-icon">⏳</span>'))}
+            </div>
           </div>
-          <div class="draw-avatar-cell">
-            ${zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}" title="${zData.name}">` : (signo ? '<span style="font-size:1rem;">♈</span>' : (isDone ? '<span style="font-size:0.85rem;">⭐</span>' : '<span class="draw-pending-icon">⏳</span>'))}
+          <div class="result-triple-block">
+            <div class="result-triple-subline">
+              <span class="result-triple-pill triple-a" title="Triple A">A: ${tripleA}</span>
+              ${hasB ? `<span class="result-triple-pill triple-b" title="Triple B">B: ${tripleB}</span>` : ''}
+            </div>
+            <div class="result-triple-subline">
+              ${hasC ? `<span class="result-triple-pill triple-c" title="Triple C">C: ${tripleC}</span>` : ''}
+              ${signo ? `<span class="result-triple-sign">${zData ? `${zData.symbol} ${signo}` : signo}</span>` : (isDone && draw.name ? `<span class="result-triple-name">${draw.name}</span>` : (isDone ? '' : '<span class="result-triple-sign" style="opacity:0.6;">⏳ Por Jugar</span>'))}
+            </div>
           </div>
         </div>
       `;
     }).join('');
 
     return `
-      <div class="board-col-card">
+      <div class="board-col-card ${isFewDraws ? 'few-draws' : ''}">
         <div class="board-col-header triple">
           <div class="board-col-header-left">
             ${game.logoUrl ? `<img src="${game.logoUrl}" class="board-col-logo" alt="${game.name}" onerror="this.style.display='none'">` : ''}
@@ -3789,8 +4507,9 @@ function renderModuleAnimalitosGroup2(modCfg, stage) {
       `;
     }).join('');
 
+    const isFewDraws = draws.length <= 6;
     return `
-      <div class="board-col-card">
+      <div class="board-col-card ${isFewDraws ? 'few-draws' : ''}">
         <div class="board-col-header animal">
           <div class="board-col-header-left">
             ${game.logoUrl ? `<img src="${game.logoUrl}" class="board-col-logo" alt="${game.name}" onerror="this.style.display='none'">` : ''}
@@ -3812,15 +4531,14 @@ function renderModulePizarra1000(modCfg, stage) {
   const games = lotteryTop10.slice(0, 4);
 
   const colsHtml = games.map(game => {
+    const isAnimal = game.type === 'animalitos';
     const draws = game.draws || game.results || [];
     const completed = draws.filter(d => !d.isPending && (d.number || d.tripleA || d.tripleB || d.tripleC));
 
     const rowsHtml = draws.map(draw => {
       const isDone = !draw.isPending && (draw.number || draw.tripleA || draw.tripleB || draw.tripleC);
-      const isAnimal = game.type === 'animalitos';
-      const cStr = (!isAnimal && draw.tripleC) ? ` C:${draw.tripleC}` : '';
       const num = isDone ? (isAnimal ? draw.number : `A:${draw.tripleA || '--'}`) : '--';
-      const name = isDone ? (isAnimal ? (draw.name || '') : `B:${draw.tripleB || '--'}${cStr} ${draw.signo || ''}`) : 'Esperando...';
+      const name = isDone ? (isAnimal ? (draw.name || '') : `B:${draw.tripleB || '--'} C:${draw.tripleC || '--'} ${draw.signo || ''}`) : 'Esperando...';
       const img = isDone ? (draw.image || '') : '';
       const zData = (!isAnimal && isDone && draw.signo) ? getZodiacData(draw.signo) : null;
 
@@ -3838,8 +4556,9 @@ function renderModulePizarra1000(modCfg, stage) {
       `;
     }).join('');
 
+    const isFewDraws = draws.length <= 6;
     return `
-      <div class="board-col-card">
+      <div class="board-col-card ${isFewDraws ? 'few-draws' : ''}">
         <div class="board-col-header ${game.type === 'animalitos' ? 'animal' : 'triple'}">
           <div class="board-col-header-left">
             ${game.logoUrl ? `<img src="${game.logoUrl}" class="board-col-logo" alt="${game.name}" onerror="this.style.display='none'">` : ''}
@@ -4067,8 +4786,9 @@ function renderModuleUltimos5Sorteos(modCfg, stage) {
   const cardsHtml = latestFive.map(item => {
     const { game, draw } = item;
     const isAnimal = game.type === 'animalitos';
-    const num = isAnimal ? (draw.number || '--') : `A: ${draw.tripleA || '--'}`;
-    const name = isAnimal ? (draw.name || '') : `B: ${draw.tripleB || '--'}${draw.tripleC ? ` • C: ${draw.tripleC}` : ''}`;
+    const hasTriplesBC = !!(draw.tripleB || draw.tripleC);
+    const num = isAnimal ? (draw.number || '--') : (hasTriplesBC ? `A: ${draw.tripleA || '--'}` : (draw.tripleA || draw.number || '--'));
+    const name = isAnimal ? (draw.name || '') : (hasTriplesBC ? `B: ${draw.tripleB || '--'}${draw.tripleC ? ` • C: ${draw.tripleC}` : ''}` : (draw.signo || draw.name || ''));
     const signo = (!isAnimal && draw.signo) ? draw.signo : '';
     const zData = signo ? getZodiacData(signo) : null;
     const img = draw.image || '';
@@ -4108,8 +4828,16 @@ function renderModuleUltimos5Sorteos(modCfg, stage) {
 // RENDERIZADOR DE DIAPOSITIVA DE RESULTADOS (IMAGEN 4)
 // ==========================================
 function renderCustomResultSlide(slideCfg, stage) {
+  let chosenIds = Array.isArray(slideCfg.lotteries) ? slideCfg.lotteries.slice() : [];
+
+  // Si la diapositiva incluye 'triple-chance' general, expandir a las 2 mitades oficiales de sorteos
+  if (chosenIds.includes('triple-chance')) {
+    const idx = chosenIds.indexOf('triple-chance');
+    chosenIds.splice(idx, 1, 'triple-chance-1', 'triple-chance-2');
+  }
+
   const colCount = Math.min(5, Math.max(1, parseInt(slideCfg.lotteryCount) || 5));
-  let chosenIds = Array.isArray(slideCfg.lotteries) ? slideCfg.lotteries.slice(0, colCount) : [];
+  chosenIds = chosenIds.slice(0, colCount);
 
   const defaultFallbackList = ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal'];
   while (chosenIds.length < colCount) {
@@ -4122,17 +4850,62 @@ function renderCustomResultSlide(slideCfg, stage) {
     if (!game) {
       game = lotteryMasterCatalog.find(g => g.id === gameId);
     }
+    // Fallback dinámico para mitades de Triple Chance
+    if (!game && (gameId === 'triple-chance-1' || gameId === 'triple-chance-2')) {
+      const isPart1 = (gameId === 'triple-chance-1');
+      const parent = lotteryTop10.find(g => (g.id === 'triple-chance' || g.gameId === 'triple-chance')) || {};
+      game = {
+        id: gameId,
+        gameId: gameId,
+        name: isPart1 ? 'TRIPLE CHANCE (9 AM - 2 PM)' : 'TRIPLE CHANCE (3 PM - 7 PM)',
+        shortName: isPart1 ? 'Chance 1' : 'Chance 2',
+        type: 'triples',
+        color: '#8b5cf6',
+        logoUrl: parent.logoUrl || 'https://api.1000resultados.com/public/images/lottery/triplechance/logo.png',
+        icon: '🎲',
+        hours: isPart1 
+          ? ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM']
+          : ['03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM']
+      };
+    }
     if (!game) {
       game = { id: gameId, name: gameId.toUpperCase().replace(/-/g, ' '), type: 'animalitos', color: '#0d734d' };
     }
 
     const isAnimal = (game.type !== 'triples');
     const headerColor = game.color || (isAnimal ? '#0d734d' : '#2563eb');
-    const draws = game.draws || game.results || [];
-    const scheduledHours = (game.hours && game.hours.length > 0) ? game.hours : [
-      '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-      '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM'
-    ];
+    let draws = game.draws || game.results || [];
+
+    // Derivar sorteos si es una mitad de Triple Chance y aún no tiene draws propios
+    if ((!draws || draws.length === 0) && (gameId === 'triple-chance-1' || gameId === 'triple-chance-2')) {
+      const parent = lotteryTop10.find(g => (g.id === 'triple-chance' || g.gameId === 'triple-chance')) || {};
+      const parentDraws = parent.draws || parent.results || [];
+      const parseM = (ts) => {
+        const m = (ts || '').match(/(\d{1,2}):(\d{2})\s*([AP]M)/i);
+        if (!m) return 0;
+        let hrs = parseInt(m[1], 10);
+        if (m[3].toUpperCase() === 'PM' && hrs < 12) hrs += 12;
+        if (m[3].toUpperCase() === 'AM' && hrs === 12) hrs = 0;
+        return hrs * 60 + parseInt(m[2], 10);
+      };
+      const cutoff = 14 * 60; // 02:00 PM
+      if (gameId === 'triple-chance-1') {
+        draws = parentDraws.filter(d => parseM(d.time || d.hour) <= cutoff);
+      } else {
+        draws = parentDraws.filter(d => parseM(d.time || d.hour) > cutoff && parseM(d.time || d.hour) <= 19 * 60 + 30);
+      }
+    }
+
+    // Obtener SOLO los horarios programados oficiales de este juego (sin inventar horas inexistentes)
+    let scheduledHours = [];
+    if (Array.isArray(game.hours) && game.hours.length > 0) {
+      scheduledHours = game.hours;
+    } else {
+      const cat = lotteryMasterCatalog.find(cg => (cg.id === gameId || cg.gameId === gameId));
+      if (cat && Array.isArray(cat.hours) && cat.hours.length > 0) {
+        scheduledHours = cat.hours;
+      }
+    }
 
     // Normalizador de hora seguro (ej: "8:00 AM" -> "08:00 AM")
     const normH = (t) => {
@@ -4142,16 +4915,19 @@ function renderCustomResultSlide(slideCfg, stage) {
       return t;
     };
 
-    // Unir horarios programados y sorteos con resultados reales
+    // Unir horarios programados oficiales y sorteos con resultados reales (estrictamente solo horas con sorteos)
     const hourMap = new Map();
-    scheduledHours.forEach(h => {
-      const k = normH(h);
-      hourMap.set(k, { time: k, isPending: true });
-    });
+    if (scheduledHours.length > 0) {
+      scheduledHours.forEach(h => {
+        const k = normH(h);
+        if (k) hourMap.set(k, { time: k, isPending: true });
+      });
+    }
     draws.forEach(d => {
       const k = normH(d.time || d.hour);
       if (k) {
-        hourMap.set(k, { ...d, time: k });
+        const existing = hourMap.get(k) || {};
+        hourMap.set(k, { ...existing, ...d, time: k });
       }
     });
 
@@ -4167,19 +4943,24 @@ function renderCustomResultSlide(slideCfg, stage) {
       return parseM(a.time) - parseM(b.time);
     });
 
+    const isFewDraws = displayRows.length <= 6;
+    const gameHasB = displayRows.some(d => d.tripleB && d.tripleB !== '--');
+    const gameHasC = displayRows.some(d => d.tripleC && d.tripleC !== '--');
+
     const rowsHtml = displayRows.map(draw => {
-      const isDone = !draw.isPending && (draw.number || draw.tripleA);
+      const isDone = !draw.isPending && (draw.number || draw.tripleA || draw.tripleB || draw.tripleC);
       const timeStr = draw.time || draw.hour || '';
 
       if (isAnimal) {
-        const num = isDone ? draw.number : '--';
-        const name = isDone ? (draw.name || '') : '';
+        const num = isDone ? (draw.number || draw.tripleA || '--') : '--';
+        const zData = draw.signo ? getZodiacData(draw.signo) : null;
+        const name = isDone ? (draw.name || (draw.signo ? (zData ? `${zData.symbol} ${draw.signo}` : draw.signo) : '')) : '';
         const img = isDone ? (draw.image || '') : '';
         return `
           <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
             <span class="result-time">${timeStr}</span>
             <div class="result-avatar-box">
-              ${img ? `<img src="${img}" class="result-avatar-img" alt="${name}" onerror="this.style.display='none'">` : '<span class="result-avatar-coin">🪙</span>'}
+              ${img ? `<img src="${img}" class="result-avatar-img" alt="${name}" onerror="this.style.display='none'">` : (zData ? `<img src="/images/zodiac/${zData.file}" class="result-avatar-img" alt="${draw.signo}">` : '<span class="result-avatar-coin">🐾</span>')}
             </div>
             <span class="result-num-blue">${num}</span>
             <span class="result-pipe-red">|</span>
@@ -4187,21 +4968,56 @@ function renderCustomResultSlide(slideCfg, stage) {
           </div>
         `;
       } else {
-        const tA = isDone ? (draw.tripleA || '--') : '--';
+        const tA = isDone ? (draw.tripleA || draw.number || '--') : '--';
         const tB = isDone ? (draw.tripleB || '--') : '--';
+        const tC = isDone ? (draw.tripleC || '--') : '--';
         const signo = isDone ? (draw.signo || '') : '';
+        const extraName = isDone ? (draw.name || '') : '';
         const zData = signo ? getZodiacData(signo) : null;
-        return `
-          <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
-            <span class="result-time">${timeStr}</span>
-            <div class="result-avatar-box">
-              ${zData ? `<img src="/images/zodiac/${zData.file}" class="result-avatar-img" alt="${zData.name}">` : '<span class="result-avatar-coin">🎰</span>'}
+        const isMultiTripleGame = (gameId.includes('chance') || gameId.includes('zulia') || gameId.includes('tachira') || gameId.includes('zamorano') || gameId.includes('caliente') || gameHasB || gameHasC);
+
+        const avatarImgHtml = draw.image 
+          ? `<img src="${draw.image}" class="result-avatar-img" alt="${extraName || ''}" onerror="this.style.display='none'">` 
+          : (zData 
+            ? `<img src="/images/zodiac/${zData.file}" class="result-avatar-img" alt="${zData.name}">` 
+            : (game.logoUrl 
+              ? `<img src="${game.logoUrl}" class="result-avatar-img" alt="${game.name}" onerror="this.style.display='none'">` 
+              : '<span class="result-avatar-coin">🎰</span>'));
+
+        // Solo juegos de terminales puros de 1 número usan una sola línea
+        if (!isMultiTripleGame && !hasB && !hasC && !signo) {
+          return `
+            <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
+              <span class="result-time">${timeStr}</span>
+              <div class="result-avatar-box">
+                ${avatarImgHtml}
+              </div>
+              <span class="result-num-blue ${isFewDraws ? 'few-scale' : ''}">${tA}</span>
+              ${extraName ? `<span class="result-pipe-red">|</span><span class="result-animal-name">${extraName}</span>` : ''}
             </div>
-            <span class="result-num-blue">${tA}</span>
-            <span class="result-pipe-red">|</span>
-            <div class="result-triple-info">
-              <span class="result-triple-pill">B:${tB}</span>
-              ${signo ? `<span class="result-triple-sign">${signo}</span>` : ''}
+          `;
+        }
+
+        // Diseño Oficial en 2 Líneas para Triples (Requisito 1):
+        // Línea 1: Triples A y B
+        // Línea 2: Triple C con su signo zodiacal
+        return `
+          <div class="result-draw-row triple-2lines ${isDone ? 'done' : 'pending'}">
+            <div class="result-draw-left">
+              <span class="result-time">${timeStr}</span>
+              <div class="result-avatar-box">
+                ${avatarImgHtml}
+              </div>
+            </div>
+            <div class="result-triple-block">
+              <div class="result-triple-subline">
+                <span class="result-triple-pill triple-a" title="Triple A">A: ${tA}</span>
+                <span class="result-triple-pill triple-b" title="Triple B">B: ${tB}</span>
+              </div>
+              <div class="result-triple-subline">
+                <span class="result-triple-pill triple-c" title="Triple C">C: ${tC}</span>
+                ${signo ? `<span class="result-triple-sign">${zData ? `${zData.symbol} ${signo}` : signo}</span>` : (extraName ? `<span class="result-triple-name">${extraName}</span>` : (isDone ? '' : '<span class="result-triple-sign" style="opacity:0.6;">⏳ Por Jugar</span>'))}
+              </div>
             </div>
           </div>
         `;
@@ -4209,7 +5025,7 @@ function renderCustomResultSlide(slideCfg, stage) {
     }).join('');
 
     return `
-      <div class="result-column-card">
+      <div class="result-column-card ${isFewDraws ? 'few-draws' : ''}">
         <div class="result-column-header" style="background-color: ${headerColor};">
           <div class="result-col-logo-badge">
             ${game.logoUrl ? `<img src="${game.logoUrl}" class="result-col-logo-img" alt="${game.name}" onerror="this.style.display='none'">` : `<span style="font-size:1.1rem;">${isAnimal ? '🐾' : '🎰'}</span>`}
@@ -4442,6 +5258,16 @@ function goToNextLotteryModule(isManual = true) {
   if (isManual) console.log(`[LotteryCarousel] Navegación: Siguiente diapositiva (${currentCarouselSlideIdx + 1})`);
 }
 window.goToNextLotteryModule = goToNextLotteryModule;
+
+function goToLotteryModuleByIndex(index, isManual = true) {
+  const slides = getActiveCarouselSlides();
+  if (!slides || slides.length === 0) return;
+  currentCarouselSlideIdx = Math.max(0, Math.min(index, slides.length - 1));
+  const durSec = renderCurrentCarouselSlide();
+  scheduleNextCarouselTransition(durSec);
+  if (isManual) console.log(`[LotteryCarousel] Navegación directa: Diapositiva ${currentCarouselSlideIdx + 1}`);
+}
+window.goToLotteryModuleByIndex = goToLotteryModuleByIndex;
 
 function runAutonomousCarouselLoop() {
   const durSec = renderCurrentCarouselSlide();
@@ -4814,8 +5640,10 @@ function renderResultadosSlidesEditor() {
     { id: 'guacharito-millonario', name: 'GUACHARITO MILLONARIO', type: 'animalitos' },
     { id: 'chance-animal', name: 'CHANCE ANIMAL', type: 'animalitos' },
     { id: 'triple-zulia', name: 'TRIPLE ZULIA', type: 'triples' },
-    { id: 'triple-tachira', name: 'TRIPLE TACHIRA', type: 'triples' },
+    { id: 'triple-tachira', name: 'TRIPLE TÁCHIRA', type: 'triples' },
     { id: 'triple-chance', name: 'TRIPLE CHANCE', type: 'triples' },
+    { id: 'triple-chance-1', name: 'TRIPLE CHANCE (9 AM - 2 PM)', type: 'triples' },
+    { id: 'triple-chance-2', name: 'TRIPLE CHANCE (3 PM - 7 PM)', type: 'triples' },
     { id: 'triple-zamorano', name: 'TRIPLE ZAMORANO', type: 'triples' },
     { id: 'triple-caliente', name: 'TRIPLE CALIENTE', type: 'triples' }
   ]);
@@ -5491,6 +6319,188 @@ function openLotteryStatsModal() {}
 function closeLotteryStatsModal() {}
 function selectStatsGame() {}
 
+// ==========================================
+// Gestor Universal de Control Remoto para Smart TV, FireStick y Android TV (APK)
+// ==========================================
+function handleTvRemoteKey(keyName) {
+  console.log(`[TvRemote] Tecla procesada: "${keyName}" | Servicio: ${selectedService}`);
+
+  const activeEl = document.activeElement;
+  const isInputActive = activeEl && ['INPUT', 'TEXTAREA'].includes(activeEl.tagName);
+
+  // 1. Si hay un campo de texto activo (ej. login o cambio de nombre):
+  if (isInputActive) {
+    if (keyName >= '0' && keyName <= '9') {
+      const start = activeEl.selectionStart || activeEl.value.length;
+      const end = activeEl.selectionEnd || activeEl.value.length;
+      activeEl.value = activeEl.value.slice(0, start) + keyName + activeEl.value.slice(end);
+      activeEl.selectionStart = activeEl.selectionEnd = start + 1;
+      activeEl.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    }
+    if (keyName === 'Enter' || keyName === 'Center') {
+      const form = activeEl.closest('form') || activeEl.closest('.modal-content') || activeEl.closest('.modal-card');
+      const submitBtn = form ? form.querySelector('button[type="submit"], button.btn-primary, button:not([disabled])') : null;
+      if (submitBtn) {
+        submitBtn.click();
+      } else {
+        activeEl.blur();
+      }
+      return true;
+    }
+    if (keyName === 'ArrowDown' || keyName === 'ArrowUp') {
+      const form = activeEl.closest('form') || document;
+      const inputs = Array.from(form.querySelectorAll('input, button, select'));
+      const currentIndex = inputs.indexOf(activeEl);
+      if (currentIndex !== -1) {
+        const nextIndex = keyName === 'ArrowDown'
+          ? (currentIndex + 1) % inputs.length
+          : (currentIndex - 1 + inputs.length) % inputs.length;
+        inputs[nextIndex]?.focus();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // 2. Si hay un botón o enlace enfocado en un modal y se presiona Enter, ejecutar clic
+  if (activeEl && (activeEl.tagName === 'BUTTON' || activeEl.tagName === 'A') && (keyName === 'Enter' || keyName === 'Center')) {
+    if (activeEl !== document.body && !activeEl.classList.contains('btn-cintillo-nav')) {
+      activeEl.click();
+      return true;
+    }
+  }
+
+  // 3. Procesar acciones universales de navegación de pantalla
+  switch (keyName) {
+    case 'ArrowRight':
+    case 'Next':
+    case 'ChannelUp':
+    case 'PageDown':
+      if (selectedService === 'loteria') {
+        goToNextLotteryModule(true);
+      } else if (selectedService === 'hipica') {
+        if (focusedCellIndex < activeGridMode) {
+          setFocusedCell(focusedCellIndex + 1);
+        } else {
+          setFocusedCell(1);
+        }
+      }
+      showHeaderTemporarily(2500);
+      break;
+
+    case 'ArrowLeft':
+    case 'Prev':
+    case 'ChannelDown':
+    case 'PageUp':
+      if (selectedService === 'loteria') {
+        goToPrevLotteryModule(true);
+      } else if (selectedService === 'hipica') {
+        if (focusedCellIndex > 1) {
+          setFocusedCell(focusedCellIndex - 1);
+        } else {
+          setFocusedCell(activeGridMode);
+        }
+      }
+      showHeaderTemporarily(2500);
+      break;
+
+    case 'ArrowUp':
+      if (selectedService === 'hipica') {
+        if (activeGridMode >= 3 && focusedCellIndex > 2) {
+          setFocusedCell(focusedCellIndex - 2);
+        }
+      } else if (selectedService === 'loteria') {
+        showHeaderTemporarily(3500);
+      }
+      break;
+
+    case 'ArrowDown':
+      if (selectedService === 'hipica') {
+        if (activeGridMode >= 3 && focusedCellIndex <= 2) {
+          setFocusedCell(focusedCellIndex + 2 <= activeGridMode ? focusedCellIndex + 2 : activeGridMode);
+        }
+      } else if (selectedService === 'loteria') {
+        showHeaderTemporarily(3500);
+      }
+      break;
+
+    case 'Enter':
+    case 'Center':
+    case 'Space':
+    case ' ':
+      if (selectedService === 'loteria') {
+        toggleLotteryCarouselPause();
+      } else if (selectedService === 'hipica') {
+        setAudioFocus(focusedCellIndex);
+      }
+      break;
+
+    case '1':
+      if (selectedService === 'hipica') {
+        updateGridView(1);
+      } else if (selectedService === 'loteria') {
+        goToLotteryModuleByIndex(0);
+      }
+      showHeaderTemporarily(2000);
+      break;
+
+    case '2':
+      if (selectedService === 'hipica') {
+        updateGridView(2);
+      } else if (selectedService === 'loteria') {
+        goToLotteryModuleByIndex(1);
+      }
+      showHeaderTemporarily(2000);
+      break;
+
+    case '3':
+      if (selectedService === 'hipica') {
+        updateGridView(3);
+      } else if (selectedService === 'loteria') {
+        goToLotteryModuleByIndex(2);
+      }
+      showHeaderTemporarily(2000);
+      break;
+
+    case '4':
+      if (selectedService === 'hipica') {
+        updateGridView(4);
+      } else if (selectedService === 'loteria') {
+        goToLotteryModuleByIndex(3);
+      }
+      showHeaderTemporarily(2000);
+      break;
+
+    case 'Menu':
+    case 'Info':
+    case 'Guide':
+    case 'Settings':
+      showHeaderTemporarily(8000);
+      break;
+
+    case 'Red':
+      switchDirectService('hipica');
+      break;
+
+    case 'Green':
+      switchDirectService('loteria');
+      break;
+
+    case 'Yellow':
+    case 'Blue':
+      toggleAppFullscreen();
+      break;
+
+    case 'f':
+    case 'F':
+      toggleAppFullscreen();
+      break;
+  }
+  return true;
+}
+window.handleTvRemoteKey = handleTvRemoteKey;
+
 // D-Pad Remote Navigation & Universal Shortcuts para Smart TV y PC
 function setupKeyboardNavigation() {
   document.addEventListener('keydown', (e) => {
@@ -5506,84 +6516,26 @@ function setupKeyboardNavigation() {
       }
     }
 
-    switch (e.key) {
-      case '1':
-        if (selectedService === 'hipica') updateGridView(1);
-        break;
-      case '2':
-        if (selectedService === 'hipica') updateGridView(2);
-        break;
-      case '3':
-        if (selectedService === 'hipica') updateGridView(3);
-        break;
-      case '4':
-        if (selectedService === 'hipica') updateGridView(4);
-        break;
-      case 'ArrowRight':
-        if (selectedService === 'loteria') {
-          // Si no hay botón enfocado, avanzar módulo en carrusel
-          if (!document.activeElement || document.activeElement === document.body) {
-            goToNextLotteryModule(true);
-          }
-        } else if (focusedCellIndex < activeGridMode) {
-          setFocusedCell(focusedCellIndex + 1);
-        }
-        break;
-      case 'ArrowLeft':
-        if (selectedService === 'loteria') {
-          if (!document.activeElement || document.activeElement === document.body) {
-            goToPrevLotteryModule(true);
-          }
-        } else if (focusedCellIndex > 1) {
-          setFocusedCell(focusedCellIndex - 1);
-        }
-        break;
-      case 'ArrowDown':
-        if (selectedService === 'hipica') {
-          if (activeGridMode >= 3 && focusedCellIndex <= 2) {
-            setFocusedCell(focusedCellIndex + 2 <= activeGridMode ? focusedCellIndex + 2 : activeGridMode);
-          }
-        }
-        break;
-      case 'ArrowUp':
-        if (selectedService === 'hipica') {
-          if (activeGridMode >= 3 && focusedCellIndex > 2) {
-            setFocusedCell(focusedCellIndex - 2);
-          }
-        }
-        break;
-      case 'Enter':
-        if (selectedService === 'loteria') {
-          toggleLotteryCarouselPause();
-        } else {
-          setAudioFocus(focusedCellIndex);
-        }
-        break;
-      case ' ':
-        if (selectedService === 'loteria') {
-          e.preventDefault();
-          toggleLotteryCarouselPause();
-        }
-        break;
-      case 'f':
-      case 'F':
-        e.preventDefault();
-        toggleAppFullscreen();
-        break;
-      case 'h':
-      case 'H':
-      case 'm':
-      case 'M':
-        e.preventDefault();
-        showHeaderTemporarily(8000);
-        break;
-      case 'a':
-      case 'A':
-        if (e.shiftKey) {
-          e.preventDefault();
-          openAdminModalDirectly();
-        }
-        break;
+    if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      toggleAppFullscreen();
+      return;
+    }
+    if (e.key === 'h' || e.key === 'H' || e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      showHeaderTemporarily(8000);
+      return;
+    }
+    if ((e.key === 'a' || e.key === 'A') && e.shiftKey) {
+      e.preventDefault();
+      openAdminModalDirectly();
+      return;
+    }
+
+    // Teclas estándar procesadas a través del gestor universal
+    if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Enter', ' ', '1', '2', '3', '4', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
+      e.preventDefault();
+      handleTvRemoteKey(e.key);
     }
   });
 }
@@ -5632,5 +6584,7 @@ window.requestDeviceActivation = function() {
 window.showLoginFormView = function() {
   if (elements.loginModal) elements.loginModal.style.setProperty('display', 'flex', 'important');
 };
+window.handleTvRemoteKey = handleTvRemoteKey;
+window.goToLotteryModuleByIndex = goToLotteryModuleByIndex;
 
 

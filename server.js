@@ -52,7 +52,10 @@ const {
   getColdNumbers,
   getDailyPredictions,
   generateTickerFeed,
-  getFullGameAnalytics
+  getFullGameAnalytics,
+  getGameHistory,
+  queryHistoricalDraws,
+  getHistoryOverview
 } = require('./lottery_stats');
 
 const app = express();
@@ -82,6 +85,21 @@ possiblePublicDirs.forEach(dir => {
   if (fs.existsSync(dir)) {
     app.use(express.static(dir, { etag: false, lastModified: false }));
   }
+});
+
+// Endpoint de Descarga Directa para la APK Android TV / FireStick (/app)
+app.get(['/app', '/download/apk', '/visual-fx-tv.apk'], (req, res) => {
+  const possibleApkPaths = [
+    path.join(__dirname, 'public', 'visual-fx-tv.apk'),
+    path.join(__dirname, 'android-tv-app', 'app', 'build', 'outputs', 'apk', 'release', 'visual-fx-tv.apk'),
+    path.join(process.cwd(), 'android-tv-app', 'app', 'build', 'outputs', 'apk', 'release', 'visual-fx-tv.apk')
+  ];
+  for (const apkPath of possibleApkPaths) {
+    if (fs.existsSync(apkPath)) {
+      return res.download(apkPath, 'visual-fx-tv.apk');
+    }
+  }
+  return res.redirect('https://github.com/hectormu2013-creator/visual-fx/releases/download/v1.0-tv/visual-fx-tv.apk');
 });
 
 // Inicializar Ingestor Máster y Motor de Loterías
@@ -730,15 +748,16 @@ app.post('/api/admin/lottery/sync-now', requireRoles(ROLES.SUPER_ADMIN, ROLES.TE
   }
 });
 
-// 4. Estadísticas y Pronósticos 30 Días & Ticker Feed
+// 4. Estadísticas y Pronósticos 30 Días & Ticker Feed (Catálogo Completo)
 app.get('/api/lottery/stats', (req, res) => {
   try {
-    const ticker = generateTickerFeed(TOP_10_GAMES);
+    const catalog = getLotteryCatalog();
+    const ticker = generateTickerFeed(catalog);
     const summary = {};
-    const animalGames = TOP_10_GAMES.filter(g => g.type === 'animalitos');
-    for (const g of animalGames) {
+    for (const g of catalog) {
       summary[g.id] = {
         name: g.name,
+        shortName: g.shortName,
         logoUrl: g.logoUrl,
         icon: g.icon,
         type: g.type,
@@ -753,11 +772,51 @@ app.get('/api/lottery/stats', (req, res) => {
   }
 });
 
+// 4.1 Análisis Estadístico Profundo de una Lotería
 app.get('/api/lottery/stats/:gameId', (req, res) => {
   try {
     const { gameId } = req.params;
     const analytics = getFullGameAnalytics(gameId);
     return res.json({ success: true, analytics });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 4.2 Resumen Global de la Base de Datos Histórica (30 Días Persistidos)
+app.get('/api/lottery/history', (req, res) => {
+  try {
+    const overview = getHistoryOverview();
+    return res.json({ success: true, ...overview });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 4.3 Consultas Avanzadas al Histórico (Por Número, Fechas, Sorteos)
+app.get('/api/lottery/history/query', (req, res) => {
+  try {
+    const { gameId, number, dateFrom, dateTo, limit } = req.query;
+    const results = queryHistoricalDraws({
+      gameId,
+      number,
+      dateFrom,
+      dateTo,
+      limit: parseInt(limit) || 50
+    });
+    return res.json({ success: true, count: results.length, query: req.query, results });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 4.4 Historial Cronológico Detallado de una Lotería
+app.get('/api/lottery/history/:gameId', (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const { days, date } = req.query;
+    const historyData = getGameHistory(gameId, { days, date });
+    return res.json({ success: true, ...historyData });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
