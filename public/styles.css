@@ -44,20 +44,63 @@ body {
   border: 1px solid var(--bg-card-border);
 }
 
-/* Header: Barra Superior Flotante Broadcast (Estilo Imagen 2 UNGAMBLED) */
+/* Header: Barra Superior Flotante Broadcast (Estilo Imagen 2 UNGAMBLED / 2 Filas Responsivas) */
 .app-header {
-  height: 60px;
+  min-height: 56px;
+  height: auto;
   background: #050708;
   border-bottom: 2px solid var(--accent-neon);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  z-index: 1000;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  z-index: 99999 !important;
   box-shadow: 0 4px 25px rgba(0, 0, 0, 0.95), 0 0 15px rgba(0, 255, 102, 0.15);
   backdrop-filter: blur(16px);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+}
+
+/* Filas Responsivas del Cintillo Desplegable */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.header-row-top {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.header-row-bottom {
+  padding-top: 2px;
+}
+
+.header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.header-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
 }
 
 /* Decoración de líneas de velocidad deportivas anguladas estilo Imagen 2 */
@@ -87,7 +130,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-  z-index: 1000;
+  z-index: 99999 !important;
 }
 
 /* Ocultamiento dinámico suave cuando no está fijado */
@@ -1288,7 +1331,7 @@ optgroup {
   cursor: pointer;
   outline: none;
   position: relative;
-  z-index: 1005;
+  z-index: 10;
 }
 
 .btn-audio-header {
@@ -5820,6 +5863,44 @@ body.app-fullscreen-mode .lottery-carousel-stage {
   border-color: rgba(56, 189, 248, 0.5);
 }
 
+.slide-editor-card.slide-deactivated {
+  opacity: 0.65;
+  border-style: dashed;
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.slide-editor-card.slide-deactivated:hover {
+  opacity: 0.92;
+  border-color: rgba(148, 163, 184, 0.65);
+}
+
+.slide-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.slide-status-pill.active {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
+  color: #34d399;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+}
+
+.slide-status-pill.inactive {
+  background: rgba(100, 116, 139, 0.2);
+  border: 1px solid #64748b;
+  color: #94a3b8;
+}
+
 .slide-editor-header {
   display: flex;
   align-items: center;
@@ -6378,3 +6459,17 @@ body.app-fullscreen-mode .lottery-carousel-stage {
   color: #fff;
   transform: translateY(-1px);
 }
+
+.btn-quick-slide-jump.inactive {
+  opacity: 0.55;
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.btn-quick-slide-jump.inactive:hover {
+  opacity: 0.9;
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #cbd5e1;
+}
+

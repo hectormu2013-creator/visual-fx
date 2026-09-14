@@ -99,7 +99,7 @@
           "slides": [
             {
               "id": "slide_1",
-              "name": "Top 5 Animalitos Principales",
+              "name": "Pizarra 1: Animalitos Líderes",
               "enabled": true,
               "duration": 20,
               "lotteries": [
@@ -113,15 +113,57 @@
             },
             {
               "id": "slide_2",
-              "name": "Triples y Terminales Estrella",
+              "name": "Pizarra 2: Triples y Terminales Estrella",
               "enabled": true,
               "duration": 20,
               "lotteries": [
                 "triple-zulia",
                 "triple-tachira",
-                "triple-chance",
-                "triple-caracas",
-                "triple-zamorano"
+                "triple-chance-1",
+                "triple-chance-2",
+                "triple-caracas"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_3",
+              "name": "Pizarra 3: Animalitos y Ruletas 2",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "animalitos-la-ricachona",
+                "centena-animalitos",
+                "centena-plus",
+                "chance-animal",
+                "el-ruco"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_4",
+              "name": "Pizarra 4: Triples Complementarios",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "triple-zamorano",
+                "triple-caliente",
+                "triple-tachira",
+                "triple-zulia",
+                "triple-caracas"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_5",
+              "name": "Pizarra 5: Sorteos Especiales y Ruletas",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "granjita-plus",
+                "guacharito-millonario",
+                "la-granjita",
+                "lotto-activo",
+                "guacharo-activo"
               ],
               "lotteryCount": 5
             }
@@ -257,7 +299,7 @@
           "slides": [
             {
               "id": "slide_1",
-              "name": "Top 5 Animalitos Principales",
+              "name": "Pizarra 1: Animalitos Líderes",
               "enabled": true,
               "duration": 20,
               "lotteries": [
@@ -271,15 +313,57 @@
             },
             {
               "id": "slide_2",
-              "name": "Triples y Terminales Estrella",
+              "name": "Pizarra 2: Triples y Terminales Estrella",
               "enabled": true,
               "duration": 20,
               "lotteries": [
                 "triple-zulia",
                 "triple-tachira",
-                "triple-chance",
-                "triple-caracas",
-                "triple-zamorano"
+                "triple-chance-1",
+                "triple-chance-2",
+                "triple-caracas"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_3",
+              "name": "Pizarra 3: Animalitos y Ruletas 2",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "animalitos-la-ricachona",
+                "centena-animalitos",
+                "centena-plus",
+                "chance-animal",
+                "el-ruco"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_4",
+              "name": "Pizarra 4: Triples Complementarios",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "triple-zamorano",
+                "triple-caliente",
+                "triple-tachira",
+                "triple-zulia",
+                "triple-caracas"
+              ],
+              "lotteryCount": 5
+            },
+            {
+              "id": "slide_5",
+              "name": "Pizarra 5: Sorteos Especiales y Ruletas",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "granjita-plus",
+                "guacharito-millonario",
+                "la-granjita",
+                "lotto-activo",
+                "guacharo-activo"
               ],
               "lotteryCount": 5
             }

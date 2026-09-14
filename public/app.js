@@ -3397,19 +3397,43 @@ const DEFAULT_SCREEN_CONFIG = {
       slides: [
         {
           id: 'slide_1',
-          name: 'Top 5 Animalitos Principales',
+          name: 'Pizarra 1: Animalitos Líderes',
           enabled: true,
           duration: 20,
           lotteryCount: 5,
-          lotteries: ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
+          lotteries: ['guacharo-activo', 'lotto-activo', 'la-granjita', 'guacharito-millonario', 'chance-animal']
         },
         {
           id: 'slide_2',
-          name: 'Triples y Terminales Estrella',
+          name: 'Pizarra 2: Triples y Terminales Estrella',
           enabled: true,
           duration: 20,
           lotteryCount: 5,
-          lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-zamorano', 'triple-caliente']
+          lotteries: ['triple-zulia', 'triple-tachira', 'triple-caracas', 'triple-chance-1', 'triple-chance-2']
+        },
+        {
+          id: 'slide_3',
+          name: 'Pizarra 3: Animalitos y Ruletas 2',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['animalitos-la-ricachona', 'centena-animalitos', 'centena-plus', 'chance-animal', 'el-ruco']
+        },
+        {
+          id: 'slide_4',
+          name: 'Pizarra 4: Triples Complementarios',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['triple-zamorano', 'triple-caliente', 'triple-tachira', 'triple-zulia', 'triple-caracas']
+        },
+        {
+          id: 'slide_5',
+          name: 'Pizarra 5: Sorteos Especiales y Ruletas',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['granjita-plus', 'guacharito-millonario', 'la-granjita', 'lotto-activo', 'guacharo-activo']
         }
       ]
     },
@@ -5745,6 +5769,19 @@ function ensureLotterySectionsStructure() {
   if (!currentScreenConfig.lotterySections.publicidad) {
     currentScreenConfig.lotterySections.publicidad = { enabled: true, slides: [] };
   }
+
+  // Garantizar de forma predeterminada las 5 pizarras para la sección Resultados
+  const res = currentScreenConfig.lotterySections.resultados;
+  const defSlides = DEFAULT_SCREEN_CONFIG.lotterySections.resultados.slides;
+  if (!Array.isArray(res.slides) || res.slides.length === 0) {
+    res.slides = JSON.parse(JSON.stringify(defSlides));
+  } else if (res.slides.length < 5) {
+    for (let i = res.slides.length; i < 5; i++) {
+      if (defSlides[i]) {
+        res.slides.push(JSON.parse(JSON.stringify(defSlides[i])));
+      }
+    }
+  }
 }
 
 function renderResultadosSlidesEditor() {
@@ -5755,20 +5792,24 @@ function renderResultadosSlidesEditor() {
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.resultados.slides;
+  const activeCount = slides.filter(s => s && s.enabled !== false).length;
   if (countLabel) {
-    countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
+    countLabel.textContent = `(${activeCount} activas de ${slides.length} pizarras / máx 15)`;
   }
 
-  // Renderizar píldoras de navegación rápida en la cabecera sticky
+  // Renderizar píldoras de navegación rápida en la cabecera sticky con estado activo/inactivo
   if (quickNav) {
     if (slides.length > 0) {
       quickNav.innerHTML = `
         <span class="slides-quick-nav-label">Ir a:</span>
-        ${slides.map((s, i) => `
-          <button type="button" class="btn-quick-slide-jump" onclick="window.scrollToSlideEditor('resultados', ${i})" title="${s.name || `Diapositiva #${i + 1}`}">
-            #${i + 1}
-          </button>
-        `).join('')}
+        ${slides.map((s, i) => {
+          const isAct = s.enabled !== false;
+          return `
+            <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('resultados', ${i})" title="${s.name || `Pizarra #${i + 1}`} (${isAct ? 'Activa' : 'Desactivada'})">
+              ${isAct ? '●' : '○'} #${i + 1}
+            </button>
+          `;
+        }).join('')}
       `;
     } else {
       quickNav.innerHTML = '';
@@ -5776,7 +5817,7 @@ function renderResultadosSlidesEditor() {
   }
 
   if (slides.length === 0) {
-    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de resultados configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
+    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay pizarras de resultados configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
     return;
   }
 
@@ -5793,10 +5834,16 @@ function renderResultadosSlidesEditor() {
     { id: 'triple-chance-2', name: 'TRIPLE CHANCE (3 PM - 7 PM)', type: 'triples' },
     { id: 'triple-caracas', name: 'TRIPLE CARACAS', type: 'triples' },
     { id: 'triple-zamorano', name: 'TRIPLE ZAMORANO', type: 'triples' },
-    { id: 'triple-caliente', name: 'TRIPLE CALIENTE', type: 'triples' }
+    { id: 'triple-caliente', name: 'TRIPLE CALIENTE', type: 'triples' },
+    { id: 'animalitos-la-ricachona', name: 'ANIMALITOS LA RICACHONA', type: 'animalitos' },
+    { id: 'centena-animalitos', name: 'CENTENA ANIMALITOS', type: 'animalitos' },
+    { id: 'centena-plus', name: 'CENTENA PLUS', type: 'animalitos' },
+    { id: 'el-ruco', name: 'EL RUCO', type: 'animalitos' },
+    { id: 'granjita-plus', name: 'GRANJITA PLUS', type: 'animalitos' }
   ]);
 
   const cardsHtml = slides.map((slide, sIdx) => {
+    const isAct = slide.enabled !== false;
     const lotCount = Math.min(5, Math.max(1, parseInt(slide.lotteryCount) || 5));
     slide.lotteryCount = lotCount;
     if (!Array.isArray(slide.lotteries)) slide.lotteries = [];
@@ -5829,17 +5876,20 @@ function renderResultadosSlidesEditor() {
     }
 
     return `
-      <div class="slide-editor-card" id="slideCard_res_${sIdx}">
+      <div class="slide-editor-card ${isAct ? '' : 'slide-deactivated'}" id="slideCard_res_${sIdx}">
         <div class="slide-editor-header">
           <div style="display:flex; align-items:center; gap:8px;">
-            <label class="switch-label" style="margin:0;">
-              <input type="checkbox" ${slide.enabled !== false ? 'checked' : ''} onchange="window.toggleSlideEnabled('resultados', ${sIdx}, this.checked)">
+            <label class="switch-label" style="margin:0;" title="${isAct ? 'Pizarra ACTIVA (clic para desactivar)' : 'Pizarra DESACTIVADA (clic para activar)'}">
+              <input type="checkbox" id="chkSlideRes_${sIdx}" ${isAct ? 'checked' : ''} onchange="window.toggleSlideEnabled('resultados', ${sIdx}, this.checked)">
             </label>
-            <span class="slide-number-badge">Diapositiva #${sIdx + 1}</span>
+            <span class="slide-number-badge">Pizarra #${sIdx + 1}</span>
+            <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('resultados', ${sIdx})" title="Clic para alternar activación">
+              ${isAct ? '✅ ACTIVA' : '⏸️ DESACTIVADA'}
+            </span>
           </div>
 
           <div class="slide-name-input-group">
-            <input type="text" class="slide-name-input" value="${slide.name || ''}" placeholder="Nombre de la diapositiva (ej: Animalitos Líderes)" oninput="window.updateSlideName('resultados', ${sIdx}, this.value)">
+            <input type="text" class="slide-name-input" value="${slide.name || ''}" placeholder="Nombre de la pizarra (ej: Animalitos Líderes)" oninput="window.updateSlideName('resultados', ${sIdx}, this.value)">
             <button type="button" class="btn-clear-name" onclick="window.clearSlideName('resultados', ${sIdx})" title="Limpiar / Quitar nombre">Limpiar</button>
           </div>
 
@@ -5849,7 +5899,7 @@ function renderResultadosSlidesEditor() {
               <input type="number" class="slide-duration-input" value="${slide.duration || 20}" min="5" max="180" onchange="window.updateSlideDuration('resultados', ${sIdx}, this.value)">
               <span>seg</span>
             </div>
-            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('resultados', ${sIdx})" title="Eliminar diapositiva">
+            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('resultados', ${sIdx})" title="Eliminar pizarra">
               🗑️
             </button>
           </div>
@@ -5857,7 +5907,7 @@ function renderResultadosSlidesEditor() {
 
         <div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
-            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">¿Cuántas loterías mostrar en esta diapositiva?</span>
+            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">¿Cuántas loterías mostrar en esta pizarra?</span>
             <div class="lottery-count-selector-group">
               ${countBtnsHtml}
             </div>
@@ -5870,16 +5920,16 @@ function renderResultadosSlidesEditor() {
     `;
   }).join('');
 
-  // Botón siempre visible al final de la lista para agregar diapositiva #4, #5, etc.
+  // Botón siempre visible al final de la lista para agregar diapositiva #6, etc.
   const addBtnHtml = (slides.length < 15) ? `
     <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
       <button type="button" id="btnBottomAddResultSlide" onclick="window.addNewResultSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
-        ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
+        ➕ AGREGAR NUEVA PIZARRA #${slides.length + 1} (Hasta 15)
       </button>
     </div>
   ` : `
     <div style="margin-top:16px; text-align:center; color:#94a3b8; font-size:0.88rem; font-weight:700;">
-      ✅ Límite máximo de 15 diapositivas alcanzado para la sección Resultados.
+      ✅ Límite máximo de 15 pizarras alcanzado para la sección Resultados.
     </div>
   `;
 
@@ -6211,10 +6261,56 @@ window.updateSlideDuration = updateSlideDuration;
 
 function toggleSlideEnabled(secKey, idx, isChecked) {
   ensureLotterySectionsStructure();
-  const slide = currentScreenConfig.lotterySections[secKey].slides[idx];
+  const slide = currentScreenConfig.lotterySections[secKey]?.slides?.[idx];
   if (slide) slide.enabled = isChecked;
+
+  // Actualización visual en caliente para Resultados sin recargar inputs
+  if (secKey === 'resultados') {
+    const card = document.getElementById(`slideCard_res_${idx}`);
+    if (card) {
+      card.classList.toggle('slide-deactivated', !isChecked);
+      const pill = card.querySelector('.slide-status-pill');
+      if (pill) {
+        pill.className = `slide-status-pill ${isChecked ? 'active' : 'inactive'}`;
+        pill.textContent = isChecked ? '✅ ACTIVA' : '⏸️ DESACTIVADA';
+      }
+      const chk = document.getElementById(`chkSlideRes_${idx}`);
+      if (chk && chk.checked !== isChecked) chk.checked = isChecked;
+    }
+    const slides = currentScreenConfig.lotterySections.resultados.slides;
+    const activeCount = slides.filter(s => s && s.enabled !== false).length;
+    const countLabel = document.getElementById('lblResultadosSlideCount');
+    if (countLabel) countLabel.textContent = `(${activeCount} activas de ${slides.length} pizarras / máx 15)`;
+
+    const quickNav = document.getElementById('quickNavResultados');
+    if (quickNav && slides.length > 0) {
+      quickNav.innerHTML = `
+        <span class="slides-quick-nav-label">Ir a:</span>
+        ${slides.map((s, i) => {
+          const isAct = s.enabled !== false;
+          return `
+            <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('resultados', ${i})" title="${s.name || `Pizarra #${i + 1}`} (${isAct ? 'Activa' : 'Desactivada'})">
+              ${isAct ? '●' : '○'} #${i + 1}
+            </button>
+          `;
+        }).join('')}
+      `;
+    }
+  } else if (secKey === 'estadisticas') {
+    renderEstadisticasSlidesEditor();
+  } else if (secKey === 'publicidad') {
+    renderPublicidadSlidesEditor();
+  }
 }
 window.toggleSlideEnabled = toggleSlideEnabled;
+
+function toggleSlideEnabledFromPill(secKey, idx) {
+  const slide = currentScreenConfig.lotterySections?.[secKey]?.slides?.[idx];
+  if (!slide) return;
+  const newEnabled = !(slide.enabled !== false);
+  toggleSlideEnabled(secKey, idx, newEnabled);
+}
+window.toggleSlideEnabledFromPill = toggleSlideEnabledFromPill;
 
 function setSlideLotteryCount(secKey, idx, count) {
   ensureLotterySectionsStructure();

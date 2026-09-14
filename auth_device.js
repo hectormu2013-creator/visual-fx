@@ -59,19 +59,43 @@ const DEFAULT_SCREEN_CONFIG = {
       slides: [
         {
           id: 'slide_1',
-          name: 'Top 5 Animalitos Principales',
+          name: 'Pizarra 1: Animalitos Líderes',
           enabled: true,
           duration: 20,
           lotteryCount: 5,
-          lotteries: ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
+          lotteries: ['guacharo-activo', 'lotto-activo', 'la-granjita', 'guacharito-millonario', 'chance-animal']
         },
         {
           id: 'slide_2',
-          name: 'Triples y Terminales Estrella',
+          name: 'Pizarra 2: Triples y Terminales Estrella',
           enabled: true,
           duration: 20,
           lotteryCount: 5,
-          lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-zamorano', 'triple-caliente']
+          lotteries: ['triple-zulia', 'triple-tachira', 'triple-caracas', 'triple-chance-1', 'triple-chance-2']
+        },
+        {
+          id: 'slide_3',
+          name: 'Pizarra 3: Animalitos y Ruletas 2',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['animalitos-la-ricachona', 'centena-animalitos', 'centena-plus', 'chance-animal', 'el-ruco']
+        },
+        {
+          id: 'slide_4',
+          name: 'Pizarra 4: Triples Complementarios',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['triple-zamorano', 'triple-caliente', 'triple-tachira', 'triple-zulia', 'triple-caracas']
+        },
+        {
+          id: 'slide_5',
+          name: 'Pizarra 5: Sorteos Especiales y Ruletas',
+          enabled: true,
+          duration: 20,
+          lotteryCount: 5,
+          lotteries: ['granjita-plus', 'guacharito-millonario', 'la-granjita', 'lotto-activo', 'guacharo-activo']
         }
       ]
     },
@@ -335,6 +359,26 @@ function loadDatabase() {
     });
   }
 
+  // Función auxiliar para garantizar las 5 pizarras predeterminadas de resultados
+  function normalizeConfigSlides(cfg) {
+    if (!cfg) return;
+    if (!cfg.lotterySections) {
+      cfg.lotterySections = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG.lotterySections));
+    }
+    if (!cfg.lotterySections.resultados) {
+      cfg.lotterySections.resultados = { enabled: true, slides: [] };
+    }
+    const rSlides = cfg.lotterySections.resultados.slides;
+    const defS = DEFAULT_SCREEN_CONFIG.lotterySections.resultados.slides;
+    if (!Array.isArray(rSlides) || rSlides.length === 0) {
+      cfg.lotterySections.resultados.slides = JSON.parse(JSON.stringify(defS));
+    } else if (rSlides.length < 5) {
+      for (let i = rSlides.length; i < 5; i++) {
+        if (defS[i]) rSlides.push(JSON.parse(JSON.stringify(defS[i])));
+      }
+    }
+  }
+
   // Asegurar que todos los dispositivos cargados tengan su objeto config completo
   for (const [id, dev] of APPROVED_DEVICES.entries()) {
     if (!dev.config) {
@@ -345,6 +389,7 @@ function loadDatabase() {
         dev.config.modules = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG.modules));
       }
     }
+    normalizeConfigSlides(dev.config);
   }
 
   // 3. Cargar Cuentas de Dispositivos (Pantallas TV) desde JSON
@@ -359,6 +404,7 @@ function loadDatabase() {
             const cleanKey = acc.username.toLowerCase();
             acc.username = cleanKey;
             if (!acc.config) acc.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+            normalizeConfigSlides(acc.config);
             if (!acc.status) acc.status = 'APPROVED';
             if (!acc.defaultService) acc.defaultService = 'loteria';
             if (acc.activeSessionId === undefined) acc.activeSessionId = null;
@@ -388,15 +434,17 @@ function loadDatabase() {
       config: JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG)),
       createdAt: '2026-09-07'
     };
+    normalizeConfigSlides(defaultTv.config);
     DEVICE_ACCOUNTS.set('tv1_fenix', defaultTv);
     APPROVED_DEVICES.set('tv1_fenix', defaultTv);
   }
 
-  // Asegurar que los clientes tengan su config inicializada
+  // Asegurar que los clientes tengan su config inicializada con 5 pizarras
   for (const client of CLIENTS.values()) {
     if (!client.config) {
       client.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
     }
+    normalizeConfigSlides(client.config);
   }
 
   saveDatabase();
@@ -1186,7 +1234,12 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
   if (applyToAll) {
     for (const [id, dev] of APPROVED_DEVICES.entries()) {
       if (userRole === ROLES.SUPER_ADMIN || dev.clientId === requestingClientId) {
-        targetIds.push(id);
+        if (!targetIds.includes(id)) targetIds.push(id);
+      }
+    }
+    for (const [id, acc] of DEVICE_ACCOUNTS.entries()) {
+      if (userRole === ROLES.SUPER_ADMIN || acc.clientId === requestingClientId) {
+        if (!targetIds.includes(id)) targetIds.push(id);
       }
     }
   } else if (Array.isArray(deviceIds)) {
@@ -1194,50 +1247,58 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
   }
 
   for (const id of targetIds) {
-    if (APPROVED_DEVICES.has(id)) {
-      const dev = APPROVED_DEVICES.get(id);
-      if (userRole === ROLES.SUPER_ADMIN || dev.clientId === requestingClientId) {
-        const currentCfg = dev.config || JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
-        const mergedCfg = {
-          ...currentCfg,
-          ...configUpdates,
-          modules: {
-            ...currentCfg.modules,
-            ...(configUpdates.modules || {})
-          }
-        };
+    const dev = APPROVED_DEVICES.get(id);
+    const acc = DEVICE_ACCOUNTS.get(id);
+    const targetObj = dev || acc;
 
-        if (configUpdates.lotterySections) {
-          mergedCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
+    if (targetObj && (userRole === ROLES.SUPER_ADMIN || targetObj.clientId === requestingClientId)) {
+      const currentCfg = targetObj.config || JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+      const mergedCfg = {
+        ...currentCfg,
+        ...configUpdates,
+        modules: {
+          ...currentCfg.modules,
+          ...(configUpdates.modules || {})
         }
+      };
 
-        // Normalizar alias de música de fondo / circo
-        if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
-          const mActive = Boolean(configUpdates.bgMusicEnabled !== undefined ? configUpdates.bgMusicEnabled : configUpdates.circusMusicEnabled);
-          mergedCfg.bgMusicEnabled = mActive;
-          mergedCfg.circusMusicEnabled = mActive;
-        }
+      if (configUpdates.lotterySections) {
+        mergedCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
+      }
 
-        if (configUpdates.bgMusicTrack || configUpdates.circusMusicTrack) {
-          const mTrack = configUpdates.bgMusicTrack || configUpdates.circusMusicTrack;
-          mergedCfg.bgMusicTrack = mTrack;
-          mergedCfg.circusMusicTrack = mTrack;
-        }
+      // Normalizar alias de música de fondo / circo
+      if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
+        const mActive = Boolean(configUpdates.bgMusicEnabled !== undefined ? configUpdates.bgMusicEnabled : configUpdates.circusMusicEnabled);
+        mergedCfg.bgMusicEnabled = mActive;
+        mergedCfg.circusMusicEnabled = mActive;
+      }
 
-        if (configUpdates.bgMusicVolume !== undefined || configUpdates.circusMusicVolume !== undefined) {
-          const mVol = parseFloat(configUpdates.bgMusicVolume !== undefined ? configUpdates.bgMusicVolume : configUpdates.circusMusicVolume);
-          mergedCfg.bgMusicVolume = mVol;
-          mergedCfg.circusMusicVolume = mVol;
-        }
+      if (configUpdates.bgMusicTrack || configUpdates.circusMusicTrack) {
+        const mTrack = configUpdates.bgMusicTrack || configUpdates.circusMusicTrack;
+        mergedCfg.bgMusicTrack = mTrack;
+        mergedCfg.circusMusicTrack = mTrack;
+      }
 
+      if (configUpdates.bgMusicVolume !== undefined || configUpdates.circusMusicVolume !== undefined) {
+        const mVol = parseFloat(configUpdates.bgMusicVolume !== undefined ? configUpdates.bgMusicVolume : configUpdates.circusMusicVolume);
+        mergedCfg.bgMusicVolume = mVol;
+        mergedCfg.circusMusicVolume = mVol;
+      }
+
+      if (dev) {
         dev.config = mergedCfg;
-
         if (configUpdates.defaultService) {
           dev.defaultService = configUpdates.defaultService;
           dev.activeService = configUpdates.defaultService;
         }
-        updated.push(id);
       }
+      if (acc) {
+        acc.config = mergedCfg;
+        if (configUpdates.defaultService) {
+          acc.defaultService = configUpdates.defaultService;
+        }
+      }
+      updated.push(id);
     }
   }
 
