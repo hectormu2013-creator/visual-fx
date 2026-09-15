@@ -105,6 +105,48 @@
                 "triple-zamorano"
               ],
               "lotteryCount": 5
+            },
+            {
+              "id": "slide_3",
+              "name": "Pizarra 3: Animalitos y Ruletas 2",
+              "enabled": true,
+              "duration": 20,
+              "lotteryCount": 5,
+              "lotteries": [
+                "animalitos-la-ricachona",
+                "centena-animalitos",
+                "centena-plus",
+                "chance-animal",
+                "el-ruco"
+              ]
+            },
+            {
+              "id": "slide_4",
+              "name": "Pizarra 4: Triples Complementarios",
+              "enabled": true,
+              "duration": 20,
+              "lotteryCount": 5,
+              "lotteries": [
+                "triple-zamorano",
+                "triple-caliente",
+                "triple-tachira",
+                "triple-zulia",
+                "triple-caracas"
+              ]
+            },
+            {
+              "id": "slide_5",
+              "name": "Pizarra 5: Sorteos Especiales y Ruletas",
+              "enabled": true,
+              "duration": 20,
+              "lotteryCount": 5,
+              "lotteries": [
+                "granjita-plus",
+                "guacharito-millonario",
+                "la-granjita",
+                "lotto-activo",
+                "guacharo-activo"
+              ]
             }
           ],
           "enabled": true

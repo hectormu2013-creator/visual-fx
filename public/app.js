@@ -3514,6 +3514,7 @@ function applyScreenConfig(cfg) {
   if (cfg.lotterySections) {
     currentScreenConfig.lotterySections = JSON.parse(JSON.stringify(cfg.lotterySections));
   }
+  ensureLotterySectionsStructure();
 
   if (cfg.modules) {
     for (const [k, v] of Object.entries(cfg.modules)) {
@@ -3540,7 +3541,9 @@ function applyScreenConfig(cfg) {
     tickerEl.style.display = currentScreenConfig.tickerActive ? 'flex' : 'none';
   }
   if (trackEl) {
-    trackEl.style.animationDuration = `${currentScreenConfig.tickerSpeed}s`;
+    const speed = currentScreenConfig.tickerSpeed || 160;
+    trackEl.style.setProperty('--ticker-speed', `${speed}s`);
+    trackEl.style.setProperty('animation-duration', `${speed}s`, 'important');
   }
 
   // 4. Voz Humana
@@ -3548,6 +3551,16 @@ function applyScreenConfig(cfg) {
 
   // 5. Música de Fondo
   CircusMusicEngine.applyConfig(currentScreenConfig);
+
+  // 6. Refresco en caliente del carrusel si el contenedor de lotería está activo
+  const stage = document.getElementById('lotteryCarouselStage');
+  if (stage) {
+    const slides = getActiveCarouselSlides();
+    if (currentCarouselSlideIdx >= slides.length) {
+      currentCarouselSlideIdx = 0;
+    }
+    updateLotteryPageIndicator(currentCarouselSlideIdx, slides.length);
+  }
 }
 
 // ==========================================
@@ -5427,6 +5440,9 @@ function renderLotteryTicker() {
   }).join('');
 
   track.innerHTML = itemsHtml + itemsHtml;
+  const speed = currentScreenConfig.tickerSpeed || 160;
+  track.style.setProperty('--ticker-speed', `${speed}s`);
+  track.style.setProperty('animation-duration', `${speed}s`, 'important');
 }
 
 function startLotteryEngineView() {
@@ -5770,16 +5786,20 @@ function ensureLotterySectionsStructure() {
     currentScreenConfig.lotterySections.publicidad = { enabled: true, slides: [] };
   }
 
-  // Garantizar de forma predeterminada las 5 pizarras para la sección Resultados
+  // Garantizar estrictamente las 5 pizarras fijas para la sección Resultados
   const res = currentScreenConfig.lotterySections.resultados;
   const defSlides = DEFAULT_SCREEN_CONFIG.lotterySections.resultados.slides;
   if (!Array.isArray(res.slides) || res.slides.length === 0) {
     res.slides = JSON.parse(JSON.stringify(defSlides));
-  } else if (res.slides.length < 5) {
-    for (let i = res.slides.length; i < 5; i++) {
-      if (defSlides[i]) {
-        res.slides.push(JSON.parse(JSON.stringify(defSlides[i])));
+  } else {
+    if (res.slides.length < 5) {
+      for (let i = res.slides.length; i < 5; i++) {
+        if (defSlides[i]) {
+          res.slides.push(JSON.parse(JSON.stringify(defSlides[i])));
+        }
       }
+    } else if (res.slides.length > 5) {
+      res.slides = res.slides.slice(0, 5);
     }
   }
 }
@@ -5794,7 +5814,7 @@ function renderResultadosSlidesEditor() {
   const slides = currentScreenConfig.lotterySections.resultados.slides;
   const activeCount = slides.filter(s => s && s.enabled !== false).length;
   if (countLabel) {
-    countLabel.textContent = `(${activeCount} activas de ${slides.length} pizarras / máx 15)`;
+    countLabel.textContent = `(${activeCount} activas de 5 pizarras fijas)`;
   }
 
   // Renderizar píldoras de navegación rápida en la cabecera sticky con estado activo/inactivo
@@ -5817,7 +5837,7 @@ function renderResultadosSlidesEditor() {
   }
 
   if (slides.length === 0) {
-    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay pizarras de resultados configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
+    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">Cargando pizarras de resultados...</div>';
     return;
   }
 
@@ -5899,8 +5919,8 @@ function renderResultadosSlidesEditor() {
               <input type="number" class="slide-duration-input" value="${slide.duration || 20}" min="5" max="180" onchange="window.updateSlideDuration('resultados', ${sIdx}, this.value)">
               <span>seg</span>
             </div>
-            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('resultados', ${sIdx})" title="Eliminar pizarra">
-              🗑️
+            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('resultados', ${sIdx})" title="Desactivar pizarra (5 fijas)">
+              ${isAct ? '⏸️' : '✅'}
             </button>
           </div>
         </div>
@@ -5920,20 +5940,8 @@ function renderResultadosSlidesEditor() {
     `;
   }).join('');
 
-  // Botón siempre visible al final de la lista para agregar diapositiva #6, etc.
-  const addBtnHtml = (slides.length < 15) ? `
-    <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
-      <button type="button" id="btnBottomAddResultSlide" onclick="window.addNewResultSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
-        ➕ AGREGAR NUEVA PIZARRA #${slides.length + 1} (Hasta 15)
-      </button>
-    </div>
-  ` : `
-    <div style="margin-top:16px; text-align:center; color:#94a3b8; font-size:0.88rem; font-weight:700;">
-      ✅ Límite máximo de 15 pizarras alcanzado para la sección Resultados.
-    </div>
-  `;
-
-  container.innerHTML = cardsHtml + addBtnHtml;
+  // Las 5 pizarras son fijas: no mostrar botón de agregar nueva pizarra
+  container.innerHTML = cardsHtml;
 }
 window.renderResultadosSlidesEditor = renderResultadosSlidesEditor;
 
@@ -6083,27 +6091,35 @@ function renderPublicidadSlidesEditor() {
 }
 window.renderPublicidadSlidesEditor = renderPublicidadSlidesEditor;
 
-// Capturar valores actuales del DOM antes de mutar arrays de diapositivas
+// Capturar valores actuales del DOM para las 5 pizarras fijas de Resultados
 function saveResultadosSlidesFromDOM() {
-  if (!currentScreenConfig.lotterySections?.resultados?.slides) return;
+  ensureLotterySectionsStructure();
   const container = document.getElementById('slidesResultadosContainer');
   if (!container) return;
   const cards = container.querySelectorAll('.slide-editor-card');
+  if (cards.length === 0) return;
+
+  const newSlides = [];
   cards.forEach((card, idx) => {
-    const slide = currentScreenConfig.lotterySections.resultados.slides[idx];
-    if (!slide) return;
     const chkEnabled = card.querySelector('input[type="checkbox"]');
-    if (chkEnabled) slide.enabled = chkEnabled.checked;
     const txtName = card.querySelector('.slide-name-input');
-    if (txtName) slide.name = txtName.value.trim();
     const numDur = card.querySelector('.slide-duration-input');
-    if (numDur) slide.duration = parseInt(numDur.value) || 20;
     const selects = card.querySelectorAll('.slot-select');
-    if (selects.length > 0) {
-      slide.lotteries = Array.from(selects).map(s => s.value);
-      slide.lotteryCount = selects.length;
-    }
+    const lotteries = Array.from(selects).map(s => s.value);
+    const prevSlide = currentScreenConfig.lotterySections.resultados.slides[idx] || {};
+    const slideId = prevSlide.id || `slide_res_${idx + 1}`;
+
+    newSlides.push({
+      id: slideId,
+      name: (txtName && txtName.value.trim()) ? txtName.value.trim() : (prevSlide.name || `Pizarra #${idx + 1}`),
+      enabled: chkEnabled ? chkEnabled.checked : true,
+      duration: numDur ? Math.max(5, parseInt(numDur.value) || 20) : 20,
+      lotteryCount: lotteries.length || 5,
+      lotteries: lotteries.length > 0 ? lotteries : (prevSlide.lotteries || [])
+    });
   });
+
+  currentScreenConfig.lotterySections.resultados.slides = newSlides;
 }
 
 function saveEstadisticasSlidesFromDOM() {
@@ -6216,7 +6232,16 @@ window.addNewPubSlide = addNewPubSlide;
 
 function deleteSlide(secKey, idx) {
   ensureLotterySectionsStructure();
-  if (secKey === 'resultados') saveResultadosSlidesFromDOM();
+  if (secKey === 'resultados') {
+    // Las 5 pizarras de resultados son fijas: alternar/desactivar en lugar de eliminar del array
+    saveResultadosSlidesFromDOM();
+    const slide = currentScreenConfig.lotterySections.resultados.slides[idx];
+    if (slide) {
+      slide.enabled = !slide.enabled;
+      renderResultadosSlidesEditor();
+    }
+    return;
+  }
   if (secKey === 'estadisticas') saveEstadisticasSlidesFromDOM();
   if (secKey === 'publicidad') savePublicidadSlidesFromDOM();
 
@@ -6225,7 +6250,6 @@ function deleteSlide(secKey, idx) {
     if (!confirm('Esta es la única diapositiva de esta sección. ¿Desea eliminarla de todos modos?')) return;
   }
   slides.splice(idx, 1);
-  if (secKey === 'resultados') renderResultadosSlidesEditor();
   if (secKey === 'estadisticas') renderEstadisticasSlidesEditor();
   if (secKey === 'publicidad') renderPublicidadSlidesEditor();
 }
@@ -6280,7 +6304,7 @@ function toggleSlideEnabled(secKey, idx, isChecked) {
     const slides = currentScreenConfig.lotterySections.resultados.slides;
     const activeCount = slides.filter(s => s && s.enabled !== false).length;
     const countLabel = document.getElementById('lblResultadosSlideCount');
-    if (countLabel) countLabel.textContent = `(${activeCount} activas de ${slides.length} pizarras / máx 15)`;
+    if (countLabel) countLabel.textContent = `(${activeCount} activas de 5 pizarras fijas)`;
 
     const quickNav = document.getElementById('quickNavResultados');
     if (quickNav && slides.length > 0) {
@@ -6340,6 +6364,7 @@ function syncScreenConfigFormWithState(cfg) {
   if (cfg.lotterySections) {
     currentScreenConfig.lotterySections = JSON.parse(JSON.stringify(cfg.lotterySections));
   }
+  ensureLotterySectionsStructure();
   if (cfg.modules) {
     currentScreenConfig.modules = JSON.parse(JSON.stringify(cfg.modules));
   }
@@ -6450,7 +6475,14 @@ function setupScreenConfigEventListeners() {
   const lblTicker = document.getElementById('lblCfgTickerSpeed');
   if (rngTicker && lblTicker) {
     rngTicker.addEventListener('input', () => {
-      lblTicker.textContent = `${rngTicker.value}s`;
+      const spd = parseInt(rngTicker.value) || 160;
+      lblTicker.textContent = `${spd}s`;
+      currentScreenConfig.tickerSpeed = spd;
+      const trackEl = document.getElementById('tickerContentTrack');
+      if (trackEl) {
+        trackEl.style.setProperty('--ticker-speed', `${spd}s`);
+        trackEl.style.setProperty('animation-duration', `${spd}s`, 'important');
+      }
     });
   }
 

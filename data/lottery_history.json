@@ -2434,6 +2434,118 @@
         "signo": "Leo",
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "09:15 AM",
+        "number": "51",
+        "name": "Acuario",
+        "tripleA": "51",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Acuario",
+        "isManual": false
+      },
+      {
+        "time": "10:15 AM",
+        "number": "80",
+        "name": "Virgo",
+        "tripleA": "80",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Virgo",
+        "isManual": false
+      },
+      {
+        "time": "11:15 AM",
+        "number": "28",
+        "name": "Cancer",
+        "tripleA": "28",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Cancer",
+        "isManual": false
+      },
+      {
+        "time": "12:15 PM",
+        "number": "39",
+        "name": "Leo",
+        "tripleA": "39",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "01:15 PM",
+        "number": "16",
+        "name": "Sagitario",
+        "tripleA": "16",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Sagitario",
+        "isManual": false
+      },
+      {
+        "time": "02:15 PM",
+        "number": "47",
+        "name": "Piscis",
+        "tripleA": "47",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Piscis",
+        "isManual": false
+      },
+      {
+        "time": "03:15 PM",
+        "number": "90",
+        "name": "Aries",
+        "tripleA": "90",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Aries",
+        "isManual": false
+      },
+      {
+        "time": "04:15 PM",
+        "number": "66",
+        "name": "Capricornio",
+        "tripleA": "66",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Capricornio",
+        "isManual": false
+      },
+      {
+        "time": "05:15 PM",
+        "number": "04",
+        "name": "Tauro",
+        "tripleA": "04",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Tauro",
+        "isManual": false
+      },
+      {
+        "time": "06:15 PM",
+        "number": "35",
+        "name": "Geminis",
+        "tripleA": "35",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Geminis",
+        "isManual": false
+      },
+      {
+        "time": "07:15 PM",
+        "number": "12",
+        "name": "Escorpio",
+        "tripleA": "12",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": "Escorpio",
+        "isManual": false
+      }
     ]
   },
   "triple-centena": {
@@ -5114,6 +5226,138 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:00 AM",
+        "number": "309",
+        "name": null,
+        "tripleA": "309",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "065",
+        "name": null,
+        "tripleA": "065",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "428",
+        "name": null,
+        "tripleA": "428",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "945",
+        "name": null,
+        "tripleA": "945",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "638",
+        "name": null,
+        "tripleA": "638",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "956",
+        "name": null,
+        "tripleA": "956",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "767",
+        "name": null,
+        "tripleA": "767",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "850",
+        "name": null,
+        "tripleA": "850",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "244",
+        "name": null,
+        "tripleA": "244",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "655",
+        "name": null,
+        "tripleA": "655",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "344",
+        "name": null,
+        "tripleA": "344",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "184",
+        "name": null,
+        "tripleA": "184",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "08:00 PM",
+        "number": "532",
+        "name": null,
+        "tripleA": "532",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "animalitos-la-ricachona": {
@@ -7421,6 +7665,128 @@
         "number": "07",
         "name": "PERICO",
         "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:10 AM",
+        "number": "21",
+        "name": "GALLO",
+        "tripleA": "21",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:10 AM",
+        "number": "18",
+        "name": "BURRO",
+        "tripleA": "18",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:10 AM",
+        "number": "25",
+        "name": "GALLINA",
+        "tripleA": "25",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:10 AM",
+        "number": "27",
+        "name": "PERRO",
+        "tripleA": "27",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:10 PM",
+        "number": "33",
+        "name": "PESCADO",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:10 PM",
+        "number": "19",
+        "name": "CHIVO",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:10 PM",
+        "number": "14",
+        "name": "PALOMA",
+        "tripleA": "14",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:10 PM",
+        "number": "23",
+        "name": "CEBRA",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:10 PM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:10 PM",
+        "number": "08",
+        "name": "RATON",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:10 PM",
+        "number": "10",
+        "name": "TIGRE",
+        "tripleA": "10",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:10 PM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -9758,6 +10124,138 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:00 AM",
+        "number": "27",
+        "name": "Perro",
+        "tripleA": "27",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "12",
+        "name": "Caballo",
+        "tripleA": "12",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "30",
+        "name": "Caiman",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "13",
+        "name": "Mono",
+        "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "35",
+        "name": "Jirafa",
+        "tripleA": "35",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "22",
+        "name": "Camello",
+        "tripleA": "22",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "34",
+        "name": "Venado",
+        "tripleA": "34",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "26",
+        "name": "Vaca",
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "16",
+        "name": "Oso",
+        "tripleA": "16",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "31",
+        "name": "Lapa",
+        "tripleA": "31",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "08:00 PM",
+        "number": "06",
+        "name": "Rana",
+        "tripleA": "06",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "centena-plus": {
@@ -12080,6 +12578,138 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:15 AM",
+        "number": "49",
+        "name": "Pereza",
+        "tripleA": "49",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:15 AM",
+        "number": "91",
+        "name": "Flamenco",
+        "tripleA": "91",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:15 AM",
+        "number": "06",
+        "name": "Rana",
+        "tripleA": "06",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:15 AM",
+        "number": "48",
+        "name": "Puercoespin",
+        "tripleA": "48",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:15 PM",
+        "number": "23",
+        "name": "Cebra",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:15 PM",
+        "number": "63",
+        "name": "Cangrejo",
+        "tripleA": "63",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:15 PM",
+        "number": "43",
+        "name": "Mariposa",
+        "tripleA": "43",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:15 PM",
+        "number": "99",
+        "name": "GUACHARIN",
+        "tripleA": "99",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:15 PM",
+        "number": "62",
+        "name": "Cachicamo",
+        "tripleA": "62",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:15 PM",
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:15 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:15 PM",
+        "number": "81",
+        "name": "Foca",
+        "tripleA": "81",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "08:15 PM",
+        "number": "77",
+        "name": "Hiena",
+        "tripleA": "77",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "chance-animal": {
@@ -14193,6 +14823,108 @@
         "number": "38",
         "name": "Flamenco",
         "tripleA": "38",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "09:00 AM",
+        "number": "19",
+        "name": "Cabra",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "03",
+        "name": "Ciempies",
+        "tripleA": "03",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "14",
+        "name": "Paloma",
+        "tripleA": "14",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "10",
+        "name": "Tigre",
+        "tripleA": "10",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "20",
+        "name": "Cochino",
+        "tripleA": "20",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "26",
+        "name": "Vaca",
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "15",
+        "name": "Zorro",
+        "tripleA": "15",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "12",
+        "name": "Caballo",
+        "tripleA": "12",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -16490,6 +17222,108 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "09:00 AM",
+        "number": "19",
+        "name": "Cabra",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "03",
+        "name": "Ciempies",
+        "tripleA": "03",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "14",
+        "name": "Paloma",
+        "tripleA": "14",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "10",
+        "name": "Tigre",
+        "tripleA": "10",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "20",
+        "name": "Cochino",
+        "tripleA": "20",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "26",
+        "name": "Vaca",
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "15",
+        "name": "Zorro",
+        "tripleA": "15",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "12",
+        "name": "Caballo",
+        "tripleA": "12",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "granjita-plus": {
@@ -18767,6 +19601,108 @@
         "number": "05",
         "name": "Leon",
         "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "09:00 AM",
+        "number": "19",
+        "name": "Cabra",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "03",
+        "name": "Ciempies",
+        "tripleA": "03",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "14",
+        "name": "Paloma",
+        "tripleA": "14",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "10",
+        "name": "Tigre",
+        "tripleA": "10",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "20",
+        "name": "Cochino",
+        "tripleA": "20",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "26",
+        "name": "Vaca",
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "15",
+        "name": "Zorro",
+        "tripleA": "15",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "12",
+        "name": "Caballo",
+        "tripleA": "12",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -21079,6 +22015,128 @@
         "number": "86",
         "name": "Buey",
         "tripleA": "86",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:30 AM",
+        "number": "66",
+        "name": "Lobo",
+        "tripleA": "66",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:30 AM",
+        "number": "91",
+        "name": "Morrocoy",
+        "tripleA": "91",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:30 AM",
+        "number": "13",
+        "name": "Mono",
+        "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:30 AM",
+        "number": "68",
+        "name": "Jaguar",
+        "tripleA": "68",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:30 PM",
+        "number": "64",
+        "name": "Gavilan",
+        "tripleA": "64",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:30 PM",
+        "number": "57",
+        "name": "Pato",
+        "tripleA": "57",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:30 PM",
+        "number": "77",
+        "name": "Pinguino",
+        "tripleA": "77",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:30 PM",
+        "number": "82",
+        "name": "Cucaracha",
+        "tripleA": "82",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:30 PM",
+        "number": "51",
+        "name": "Pelicano",
+        "tripleA": "51",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:30 PM",
+        "number": "24",
+        "name": "Iguana",
+        "tripleA": "24",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:30 PM",
+        "number": "89",
+        "name": "Anguila",
+        "tripleA": "89",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:30 PM",
+        "number": "58",
+        "name": "Hormiga",
+        "tripleA": "58",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -23406,6 +24464,128 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:00 AM",
+        "number": "42",
+        "name": "Tucán",
+        "tripleA": "42",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "38",
+        "name": "Búfalo",
+        "tripleA": "38",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "30",
+        "name": "Caimán",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "44",
+        "name": "Chigüire",
+        "tripleA": "44",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "45",
+        "name": "Garza",
+        "tripleA": "45",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "29",
+        "name": "Elefante",
+        "tripleA": "29",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "02",
+        "name": "Toro",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "56",
+        "name": "Tiburón",
+        "tripleA": "56",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "39",
+        "name": "Lechuza",
+        "tripleA": "39",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "33",
+        "name": "Pescado",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "13",
+        "name": "Mono",
+        "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "08",
+        "name": "Ratón",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "la-granjita": {
@@ -25713,6 +26893,128 @@
         "number": "16",
         "name": "Oso",
         "tripleA": "16",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:00 AM",
+        "number": "03",
+        "name": "Ciempies",
+        "tripleA": "03",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "20",
+        "name": "Cochino",
+        "tripleA": "20",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "12",
+        "name": "Caballo",
+        "tripleA": "12",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "08",
+        "name": "Raton",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "0",
+        "name": "Delfin",
+        "tripleA": "0",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "26",
+        "name": "Vaca",
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "15",
+        "name": "Zorro",
+        "tripleA": "15",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "29",
+        "name": "Elefante",
+        "tripleA": "29",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "07",
+        "name": "Perico",
+        "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "19",
+        "name": "Chivo",
+        "tripleA": "19",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -28030,6 +29332,128 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:10 AM",
+        "number": "21",
+        "name": "GALLO",
+        "tripleA": "21",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:10 AM",
+        "number": "18",
+        "name": "BURRO",
+        "tripleA": "18",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:10 AM",
+        "number": "25",
+        "name": "GALLINA",
+        "tripleA": "25",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:10 AM",
+        "number": "27",
+        "name": "PERRO",
+        "tripleA": "27",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:10 PM",
+        "number": "33",
+        "name": "PESCADO",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:10 PM",
+        "number": "19",
+        "name": "CHIVO",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:10 PM",
+        "number": "14",
+        "name": "PALOMA",
+        "tripleA": "14",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:10 PM",
+        "number": "23",
+        "name": "CEBRA",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:10 PM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:10 PM",
+        "number": "08",
+        "name": "RATON",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:10 PM",
+        "number": "10",
+        "name": "TIGRE",
+        "tripleA": "10",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:10 PM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "lotto-activo": {
@@ -30337,6 +31761,128 @@
         "number": "08",
         "name": "Ratón",
         "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:00 AM",
+        "number": "34",
+        "name": "Venado",
+        "tripleA": "34",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "24",
+        "name": "Iguana",
+        "tripleA": "24",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "04",
+        "name": "Alacrán",
+        "tripleA": "04",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "27",
+        "name": "Perro",
+        "tripleA": "27",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "23",
+        "name": "Cebra",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "20",
+        "name": "Cochino",
+        "tripleA": "20",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "06",
+        "name": "Rana",
+        "tripleA": "06",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "33",
+        "name": "Pescado",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "18",
+        "name": "Burro",
+        "tripleA": "18",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "35",
+        "name": "Jirafa",
+        "tripleA": "35",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "31",
+        "name": "Lapa",
+        "tripleA": "31",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -32654,6 +34200,128 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "09:00 AM",
+        "number": "08",
+        "name": "Ratón",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "33",
+        "name": "Pescado",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "07",
+        "name": "Perico",
+        "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "05",
+        "name": "León",
+        "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "32",
+        "name": "Ardilla",
+        "tripleA": "32",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "09",
+        "name": "Águila",
+        "tripleA": "09",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "13",
+        "name": "Mono",
+        "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "33",
+        "name": "Pescado",
+        "tripleA": "33",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "00",
+        "name": "Ballena",
+        "tripleA": "00",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "31",
+        "name": "Lapa",
+        "tripleA": "31",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "08:00 PM",
+        "number": "07",
+        "name": "Perico",
+        "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "selva-plus": {
@@ -34797,6 +36465,138 @@
         "number": "53",
         "name": "Caracol",
         "tripleA": "53",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:15 AM",
+        "number": "78",
+        "name": "Antílope",
+        "tripleA": "78",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:15 AM",
+        "number": "52",
+        "name": "Pulpo",
+        "tripleA": "52",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:15 AM",
+        "number": "46",
+        "name": "Puma",
+        "tripleA": "46",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:15 AM",
+        "number": "24",
+        "name": "Iguana",
+        "tripleA": "24",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:15 PM",
+        "number": "84",
+        "name": "Camarón",
+        "tripleA": "84",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:15 PM",
+        "number": "40",
+        "name": "Avispa",
+        "tripleA": "40",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:15 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:15 PM",
+        "number": "45",
+        "name": "Garza",
+        "tripleA": "45",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:15 PM",
+        "number": "61",
+        "name": "Panda",
+        "tripleA": "61",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:15 PM",
+        "number": "79",
+        "name": "Calamar",
+        "tripleA": "79",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:15 PM",
+        "number": "23",
+        "name": "Cebra",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:15 PM",
+        "number": "92",
+        "name": "Cisne",
+        "tripleA": "92",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "08:15 PM",
+        "number": "32",
+        "name": "Ardilla",
+        "tripleA": "32",
         "tripleB": null,
         "tripleC": null,
         "signo": null,
@@ -37462,6 +39262,128 @@
         "signo": null,
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "08:00 AM",
+        "number": "03",
+        "name": "Ciempies",
+        "tripleA": "03",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "09:00 AM",
+        "number": "20",
+        "name": "Cochino",
+        "tripleA": "20",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "12",
+        "name": "Caballo",
+        "tripleA": "12",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "08",
+        "name": "Raton",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "0",
+        "name": "Delfin",
+        "tripleA": "0",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "26",
+        "name": "Vaca",
+        "tripleA": "26",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "15",
+        "name": "Zorro",
+        "tripleA": "15",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "29",
+        "name": "Elefante",
+        "tripleA": "29",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "07",
+        "name": "Perico",
+        "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "19",
+        "name": "Chivo",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      }
     ]
   },
   "triple-caliente": {
@@ -38185,6 +40107,38 @@
         "tripleB": "992",
         "signo": "Capricornio",
         "isPending": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "01:00 PM",
+        "number": "519",
+        "name": "Virgo",
+        "tripleA": "519",
+        "tripleB": "921",
+        "tripleC": "729",
+        "signo": "Virgo",
+        "isManual": false
+      },
+      {
+        "time": "04:30 PM",
+        "number": "802",
+        "name": "Leo",
+        "tripleA": "802",
+        "tripleB": "597",
+        "tripleC": "146",
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "07:10 PM",
+        "number": "969",
+        "name": "Libra",
+        "tripleA": "969",
+        "tripleB": "560",
+        "tripleC": "051",
+        "signo": "Libra",
+        "isManual": false
       }
     ]
   },
@@ -39202,6 +41156,118 @@
         "signo": "Libra",
         "isManual": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "09:00 AM",
+        "number": "953",
+        "name": "Cancer",
+        "tripleA": "953",
+        "tripleB": "397",
+        "tripleC": "822",
+        "signo": "Cancer",
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "439",
+        "name": "Libra",
+        "tripleA": "439",
+        "tripleB": "110",
+        "tripleC": "547",
+        "signo": "Libra",
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "479",
+        "name": "Leo",
+        "tripleA": "479",
+        "tripleB": "996",
+        "tripleC": "083",
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "012",
+        "name": "Virgo",
+        "tripleA": "012",
+        "tripleB": "760",
+        "tripleC": "523",
+        "signo": "Virgo",
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "153",
+        "name": "Cancer",
+        "tripleA": "153",
+        "tripleB": "898",
+        "tripleC": "930",
+        "signo": "Cancer",
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "824",
+        "name": "Capricornio",
+        "tripleA": "824",
+        "tripleB": "149",
+        "tripleC": "214",
+        "signo": "Capricornio",
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "202",
+        "name": "Sagitario",
+        "tripleA": "202",
+        "tripleB": "917",
+        "tripleC": "182",
+        "signo": "Sagitario",
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "096",
+        "name": "Tauro",
+        "tripleA": "096",
+        "tripleB": "865",
+        "tripleC": "406",
+        "signo": "Tauro",
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "505",
+        "name": "Leo",
+        "tripleA": "505",
+        "tripleB": "375",
+        "tripleC": "831",
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "271",
+        "name": "Cancer",
+        "tripleA": "271",
+        "tripleB": "061",
+        "tripleC": "452",
+        "signo": "Cancer",
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "359",
+        "name": "Acuario",
+        "tripleA": "359",
+        "tripleB": "242",
+        "tripleC": "589",
+        "signo": "Acuario",
+        "isManual": false
+      }
     ]
   },
   "triple-tachira": {
@@ -40136,6 +42202,28 @@
         "signo": "Piscis",
         "isPending": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "01:15 PM",
+        "number": "001",
+        "name": "Tauro",
+        "tripleA": "001",
+        "tripleB": "555",
+        "tripleC": "801",
+        "signo": "Tauro",
+        "isManual": false
+      },
+      {
+        "time": "04:45 PM",
+        "number": "832",
+        "name": "Capricornio",
+        "tripleA": "832",
+        "tripleB": "847",
+        "tripleC": "249",
+        "signo": "Capricornio",
+        "isManual": false
+      }
     ]
   },
   "triple-zamorano": {
@@ -40880,6 +42968,58 @@
         "signo": "Capricornio",
         "isPending": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "10:00 AM",
+        "number": "713",
+        "name": "Tauro",
+        "tripleA": "713",
+        "tripleB": "364",
+        "tripleC": null,
+        "signo": "Tauro",
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "534",
+        "name": "Leo",
+        "tripleA": "534",
+        "tripleB": "344",
+        "tripleC": null,
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "793",
+        "name": "Leo",
+        "tripleA": "793",
+        "tripleB": "168",
+        "tripleC": null,
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "483",
+        "name": "Leo",
+        "tripleA": "483",
+        "tripleB": "107",
+        "tripleC": null,
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "415",
+        "name": "Geminis",
+        "tripleA": "415",
+        "tripleB": "895",
+        "tripleC": null,
+        "signo": "Geminis",
+        "isManual": false
+      }
     ]
   },
   "triple-zulia": {
@@ -41603,6 +43743,38 @@
         "tripleB": "992",
         "signo": "Capricornio",
         "isPending": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "12:45 PM",
+        "number": "557",
+        "name": "Sagitario",
+        "tripleA": "557",
+        "tripleB": "294",
+        "tripleC": "235",
+        "signo": "Sagitario",
+        "isManual": false
+      },
+      {
+        "time": "04:45 PM",
+        "number": "120",
+        "name": "Geminis",
+        "tripleA": "120",
+        "tripleB": "324",
+        "tripleC": "941",
+        "signo": "Geminis",
+        "isManual": false
+      },
+      {
+        "time": "07:05 PM",
+        "number": "731",
+        "name": "Sagitario",
+        "tripleA": "731",
+        "tripleB": "402",
+        "tripleC": "871",
+        "signo": "Sagitario",
+        "isManual": false
       }
     ]
   },
@@ -42914,6 +45086,68 @@
         "signo": "Piscis",
         "isPending": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "09:00 AM",
+        "number": "953",
+        "name": "Cancer",
+        "tripleA": "953",
+        "tripleB": "397",
+        "tripleC": "822",
+        "signo": "Cancer",
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "439",
+        "name": "Libra",
+        "tripleA": "439",
+        "tripleB": "110",
+        "tripleC": "547",
+        "signo": "Libra",
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "479",
+        "name": "Leo",
+        "tripleA": "479",
+        "tripleB": "996",
+        "tripleC": "083",
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "012",
+        "name": "Virgo",
+        "tripleA": "012",
+        "tripleB": "760",
+        "tripleC": "523",
+        "signo": "Virgo",
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "153",
+        "name": "Cancer",
+        "tripleA": "153",
+        "tripleB": "898",
+        "tripleC": "930",
+        "signo": "Cancer",
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "824",
+        "name": "Capricornio",
+        "tripleA": "824",
+        "tripleB": "149",
+        "tripleC": "214",
+        "signo": "Capricornio",
+        "isManual": false
+      }
     ]
   },
   "triple-chance-2": {
@@ -44026,6 +46260,58 @@
         "signo": "Piscis",
         "isPending": false
       }
+    ],
+    "2026-09-14": [
+      {
+        "time": "03:00 PM",
+        "number": "202",
+        "name": "Sagitario",
+        "tripleA": "202",
+        "tripleB": "917",
+        "tripleC": "182",
+        "signo": "Sagitario",
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "096",
+        "name": "Tauro",
+        "tripleA": "096",
+        "tripleB": "865",
+        "tripleC": "406",
+        "signo": "Tauro",
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "505",
+        "name": "Leo",
+        "tripleA": "505",
+        "tripleB": "375",
+        "tripleC": "831",
+        "signo": "Leo",
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "271",
+        "name": "Cancer",
+        "tripleA": "271",
+        "tripleB": "061",
+        "tripleC": "452",
+        "signo": "Cancer",
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "359",
+        "name": "Acuario",
+        "tripleA": "359",
+        "tripleB": "242",
+        "tripleC": "589",
+        "signo": "Acuario",
+        "isManual": false
+      }
     ]
   },
   "triple-caracas": {
@@ -44717,6 +47003,38 @@
         "tripleB": "107",
         "signo": "Piscis",
         "isPending": false
+      }
+    ],
+    "2026-09-14": [
+      {
+        "time": "01:00 PM",
+        "number": "139",
+        "name": "Aries",
+        "tripleA": "139",
+        "tripleB": "222",
+        "tripleC": "783",
+        "signo": "Aries",
+        "isManual": false
+      },
+      {
+        "time": "04:30 PM",
+        "number": "751",
+        "name": "Tauro",
+        "tripleA": "751",
+        "tripleB": "368",
+        "tripleC": "424",
+        "signo": "Tauro",
+        "isManual": false
+      },
+      {
+        "time": "07:00 PM",
+        "number": "740",
+        "name": "Tauro",
+        "tripleA": "740",
+        "tripleB": "296",
+        "tripleC": "337",
+        "signo": "Tauro",
+        "isManual": false
       }
     ]
   }

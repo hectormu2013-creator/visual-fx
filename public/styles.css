@@ -3601,7 +3601,10 @@ kbd {
   align-items: center;
   white-space: nowrap;
   gap: 55px;
-  animation: marqueeScroll 160s linear infinite !important;
+  animation-name: marqueeScroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-duration: var(--ticker-speed, 160s);
   padding-left: 20px;
   width: max-content;
 }

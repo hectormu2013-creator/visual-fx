@@ -226,6 +226,30 @@ function saveDatabase() {
   }
 }
 
+// Función auxiliar a nivel de módulo para garantizar las 5 pizarras fijas de resultados
+function normalizeConfigSlides(cfg) {
+  if (!cfg) return;
+  if (!cfg.lotterySections) {
+    cfg.lotterySections = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG.lotterySections));
+  }
+  if (!cfg.lotterySections.resultados) {
+    cfg.lotterySections.resultados = { enabled: true, slides: [] };
+  }
+  const rSlides = cfg.lotterySections.resultados.slides;
+  const defS = DEFAULT_SCREEN_CONFIG.lotterySections.resultados.slides;
+  if (!Array.isArray(rSlides) || rSlides.length === 0) {
+    cfg.lotterySections.resultados.slides = JSON.parse(JSON.stringify(defS));
+  } else {
+    if (rSlides.length < 5) {
+      for (let i = rSlides.length; i < 5; i++) {
+        if (defS[i]) rSlides.push(JSON.parse(JSON.stringify(defS[i])));
+      }
+    } else if (rSlides.length > 5) {
+      cfg.lotterySections.resultados.slides = rSlides.slice(0, 5);
+    }
+  }
+}
+
 function loadDatabase() {
   ensureDataDir();
 
@@ -357,26 +381,6 @@ function loadDatabase() {
       uptimeMinutesToday: 360,
       uptimeMinutesMonth: 9800
     });
-  }
-
-  // Función auxiliar para garantizar las 5 pizarras predeterminadas de resultados
-  function normalizeConfigSlides(cfg) {
-    if (!cfg) return;
-    if (!cfg.lotterySections) {
-      cfg.lotterySections = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG.lotterySections));
-    }
-    if (!cfg.lotterySections.resultados) {
-      cfg.lotterySections.resultados = { enabled: true, slides: [] };
-    }
-    const rSlides = cfg.lotterySections.resultados.slides;
-    const defS = DEFAULT_SCREEN_CONFIG.lotterySections.resultados.slides;
-    if (!Array.isArray(rSlides) || rSlides.length === 0) {
-      cfg.lotterySections.resultados.slides = JSON.parse(JSON.stringify(defS));
-    } else if (rSlides.length < 5) {
-      for (let i = rSlides.length; i < 5; i++) {
-        if (defS[i]) rSlides.push(JSON.parse(JSON.stringify(defS[i])));
-      }
-    }
   }
 
   // Asegurar que todos los dispositivos cargados tengan su objeto config completo
@@ -538,6 +542,23 @@ async function syncDatabaseWithCloud() {
       if (savedUsers.length > 0) {
         supabaseSync.saveToCloud('system_users', savedUsers);
       }
+    }
+
+    // Normalizar a 5 pizarras fijas para todas las entidades restauradas
+    for (const c of CLIENTS.values()) {
+      if (!c.config) c.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+      normalizeConfigSlides(c.config);
+    }
+    for (const d of APPROVED_DEVICES.values()) {
+      if (!d.config) d.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+      normalizeConfigSlides(d.config);
+    }
+    for (const a of DEVICE_ACCOUNTS.values()) {
+      if (!a.config) a.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+      normalizeConfigSlides(a.config);
+    }
+    for (const u of Object.values(USERS)) {
+      if (u && u.config) normalizeConfigSlides(u.config);
     }
 
     // Si se restauró información desde Supabase, actualizar los archivos locales en disco
