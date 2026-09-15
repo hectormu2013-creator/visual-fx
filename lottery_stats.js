@@ -3,9 +3,14 @@ const path = require('path');
 
 const DATA_DIR = path.join(__dirname, 'data');
 const HISTORY_FILE = path.join(DATA_DIR, 'lottery_history.json');
+let syncDrawsToCloud = null;
+try {
+  syncDrawsToCloud = require('./supabase_lottery').syncDrawsToCloud;
+} catch (e) {}
 
-// Catálogo de animales estándar de ruletas venezolanas (00 a 36 o 0 a 99)
-const ANIMAL_NAMES = {
+
+// Catálogo de animales estándar de ruletas venezolanas (00 a 36 y extendido 0 a 99)
+const BASE_ANIMAL_NAMES = {
   "0": "DELFÍN", "00": "BALLENA", "1": "CARNERO", "2": "TORO", "3": "CIEMPIÉS",
   "4": "ALACRÁN", "5": "LEÓN", "6": "RANA", "7": "PERICO", "8": "RATÓN",
   "9": "ÁGUILA", "10": "TIGRE", "11": "GATO", "12": "CABALLO", "13": "MONO",
@@ -14,8 +19,25 @@ const ANIMAL_NAMES = {
   "24": "IGUANA", "25": "GALLINA", "26": "VACA", "27": "PERRO", "28": "ZAMURO",
   "29": "ELEFANTE", "30": "CAIMÁN", "31": "LAPA", "32": "ARDILLA", "33": "PESCADO",
   "34": "VENADO", "35": "JIRAFA", "36": "CULEBRA", "37": "TORTUGA", "38": "BÚFALO",
-  "39": "LECHUZA", "49": "PEREZA", "52": "PULPO", "54": "GRILLO", "84": "CANGURO"
+  "39": "LECHUZA", "40": "AVISPA", "41": "CANGREJO", "42": "PELÍCANO", "43": "PUMA",
+  "44": "CHIGÜIRE", "45": "GARZA", "46": "TUCÁN", "47": "MARIPOSA", "48": "PUERCOESPÍN",
+  "49": "PEREZA", "50": "CANARIO", "51": "PAVO REAL", "52": "PULPO", "53": "CARACOL",
+  "54": "GRILLO", "55": "OSO HORMIGUERO", "56": "HORMIGA", "57": "PATO", "58": "FLAMINGO",
+  "59": "CAMALEÓN", "60": "TIBURÓN", "61": "PANDA", "62": "CACHICAMO", "63": "GOLONDRINA",
+  "64": "GAVILÁN", "65": "ARAÑA", "66": "LOBO", "67": "AVESTRUZ", "68": "JAGUAR",
+  "69": "PANTERA", "70": "BISONTE", "71": "GUACAMAYA", "72": "GORILA", "73": "HIPOPÓTAMO",
+  "74": "RINOCERONTE", "75": "CIGÜEÑA", "76": "NUTRIA", "77": "PINGÜINO", "78": "ANTÍLOPE",
+  "79": "CALAMAR", "80": "VIZCACHA", "81": "FOCA", "82": "HURÓN", "83": "SURICATA",
+  "84": "CANGURO", "85": "COLIBRÍ", "86": "BUEY", "87": "CABRA", "88": "ERIZO",
+  "89": "ANGUILA", "90": "MANATÍ", "91": "MORROCOY", "92": "CISNE", "93": "GAVIOTA",
+  "94": "COATÍ", "95": "ESCARABAJO", "96": "ARMADILLO", "97": "TAPIR", "98": "DINGO",
+  "99": "GUACHARÍN"
 };
+
+const ANIMAL_NAMES = { ...BASE_ANIMAL_NAMES };
+for (let i = 0; i <= 9; i++) {
+  ANIMAL_NAMES[`0${i}`] = BASE_ANIMAL_NAMES[`${i}`] || `ANIMAL 0${i}`;
+}
 
 const ZODIAC_SIGNS = [
   "Aries", "Tauro", "Géminis", "Cáncer", "Leo", "Virgo",
@@ -54,6 +76,25 @@ function saveHistoryToDisk() {
   }
 }
 
+// Funciones de Hash y PRNG determinístico para cálculos independientes por cada lotería
+function hashString(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function mulberry32(a) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
 // Generador de fechas pasadas YYYY-MM-DD
 function getPastDateStrings(daysCount = 30) {
   const dates = [];
@@ -71,29 +112,58 @@ function getPastDateStrings(daysCount = 30) {
   return dates;
 }
 
-// Inicializar y sembrar histórico de 30 días si está vacío
-function seedBaselineHistory(top10Games) {
+// Inicializar y sembrar histórico de 30 días estrictamente individual por cada lotería
+function seedBaselineHistory(catalog, forceReseed = false) {
   loadHistoryFromDisk();
   const pastDates = getPastDateStrings(30);
   let seeded = false;
 
-  for (const game of top10Games) {
-    if (!historyStore[game.id]) {
+  for (const game of catalog) {
+    if (!historyStore[game.id] || forceReseed) {
       historyStore[game.id] = {};
     }
 
-    pastDates.forEach((dateStr, dayIndex) => {
-      if (!historyStore[game.id][dateStr]) {
+    const isAnimal = (!game.type || game.type === 'animalitos') && !game.id.includes('triple');
+
+    // Determinar pool de números propios de esta lotería
+    let validPool = [];
+    if (isAnimal) {
+      let maxNum = 36;
+      if (game.id === 'guacharito-millonario' || game.id === 'la-ricachona' || game.id === 'animalitos-la-ricachona') {
+        maxNum = 70;
+      } else if (game.id === 'mega-animal-40') {
+        maxNum = 40;
+      } else if (game.id.includes('centena')) {
+        maxNum = 99;
+      }
+
+      validPool = ['00', '0'];
+      for (let n = 1; n <= maxNum; n++) {
+        validPool.push(String(n).padStart(2, '0'));
+      }
+    }
+
+    pastDates.forEach((dateStr) => {
+      if (!historyStore[game.id][dateStr] || forceReseed) {
         seeded = true;
         historyStore[game.id][dateStr] = [];
 
-        // Generar sorteos del día para este juego
-        game.hours.forEach(hour => {
-          if (game.type === 'animalitos') {
-            const maxNum = (game.id === 'guacharito-millonario' || game.id === 'la-ricachona') ? 70 : 36;
-            const pseudoRand = Math.floor((Math.abs(Math.sin(dayIndex * 13 + hour.charCodeAt(0))) * maxNum));
-            const numStr = pseudoRand.toString().padStart(2, '0');
-            const animalName = ANIMAL_NAMES[pseudoRand.toString()] || ANIMAL_NAMES[numStr] || `ANIMAL ${numStr}`;
+        // Semilla única y aislada por lotería y fecha: NUNCA se repite entre juegos diferentes
+        const seedVal = hashString(`${game.id}::${dateStr}::salt2026`);
+        const rng = mulberry32(seedVal);
+
+        if (isAnimal) {
+          // Barajar el pool sin reemplazo para ese día (1 sorteo por hora con números variados)
+          const dayShuffled = [...validPool];
+          for (let i = dayShuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [dayShuffled[i], dayShuffled[j]] = [dayShuffled[j], dayShuffled[i]];
+          }
+
+          game.hours.forEach((hour, hIdx) => {
+            const numStr = dayShuffled[hIdx % dayShuffled.length];
+            const cleanKey = numStr.replace(/^0+/, '') || '0';
+            const animalName = ANIMAL_NAMES[numStr] || ANIMAL_NAMES[cleanKey] || `ANIMAL ${numStr}`;
 
             historyStore[game.id][dateStr].push({
               time: hour,
@@ -101,28 +171,71 @@ function seedBaselineHistory(top10Games) {
               name: animalName,
               isPending: false
             });
-          } else {
-            // Triples
-            const tA = Math.floor(100 + (Math.abs(Math.cos(dayIndex * 7 + hour.charCodeAt(1))) * 899)).toString();
-            const tB = Math.floor(100 + (Math.abs(Math.sin(dayIndex * 11 + hour.charCodeAt(2))) * 899)).toString();
-            const signIdx = Math.floor((Math.abs(Math.sin(dayIndex * 5 + hour.charCodeAt(0))) * ZODIAC_SIGNS.length)) % ZODIAC_SIGNS.length;
+          });
+        } else {
+          // Triples y Terminales (independiente por cada lotería)
+          game.hours.forEach(hour => {
+            const tA = Math.floor(rng() * 1000).toString().padStart(3, '0');
+            const tB = Math.floor(rng() * 1000).toString().padStart(3, '0');
+            const tC = Math.floor(rng() * 1000).toString().padStart(3, '0');
+            const signIdx = Math.floor(rng() * ZODIAC_SIGNS.length);
 
             historyStore[game.id][dateStr].push({
               time: hour,
               tripleA: tA,
               tripleB: tB,
+              tripleC: tC,
               signo: ZODIAC_SIGNS[signIdx],
               isPending: false
             });
-          }
-        });
+          });
+        }
       }
     });
   }
 
-  if (seeded) {
+  // Sobreponer sorteos reales de hoy y días recientes desde lottery_results.json
+  try {
+    const resultsPath = path.join(DATA_DIR, 'lottery_results.json');
+    if (fs.existsSync(resultsPath)) {
+      const liveResults = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+      for (const [dt, byGame] of Object.entries(liveResults)) {
+        for (const [gId, gData] of Object.entries(byGame)) {
+          if (Array.isArray(gData?.draws)) {
+            const valid = gData.draws.filter(d => !d.isPending && (d.number || d.tripleA));
+            if (valid.length > 0) {
+              if (!historyStore[gId]) historyStore[gId] = {};
+              if (!historyStore[gId][dt]) historyStore[gId][dt] = [];
+              valid.forEach(vDraw => {
+                const existingIdx = historyStore[gId][dt].findIndex(x => x.time === vDraw.time);
+                const drawObj = {
+                  time: vDraw.time,
+                  number: vDraw.number || null,
+                  name: vDraw.name || (vDraw.number ? (ANIMAL_NAMES[vDraw.number] || `ANIMAL ${vDraw.number}`) : null),
+                  tripleA: vDraw.tripleA || null,
+                  tripleB: vDraw.tripleB || null,
+                  tripleC: vDraw.tripleC || null,
+                  signo: vDraw.signo || null,
+                  isPending: false
+                };
+                if (existingIdx >= 0) {
+                  historyStore[gId][dt][existingIdx] = drawObj;
+                } else {
+                  historyStore[gId][dt].push(drawObj);
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[LotteryStats] No se pudieron sobreponer resultados reales:', err.message);
+  }
+
+  if (seeded || forceReseed) {
     saveHistoryToDisk();
-    console.log('[LotteryStats] Histórico base de 30 días sembrado y sincronizado exitosamente.');
+    console.log('[LotteryStats] Histórico base de 30 días recalculado individualmente por cada lotería.');
   }
 }
 
@@ -147,10 +260,22 @@ function recordDrawsToHistory(gameId, dateStr, draws) {
   }));
 
   saveHistoryToDisk();
+
+  // Sincronización transparente con Supabase en segundo plano
+  if (typeof syncDrawsToCloud === 'function') {
+    try {
+      const isTriples = gameId.includes('triple') || completedDraws.some(d => d.tripleA || d.tripleB || d.signo);
+      const gameType = isTriples ? 'triples' : 'animalitos';
+      syncDrawsToCloud(gameId, dateStr, completedDraws, gameType).catch(err => {
+        console.warn(`[LotteryStats] Error asíncrono sincronizando con Supabase (${gameId}):`, err.message);
+      });
+    } catch (err) {}
+  }
 }
 
 // 1. Obtener Números Más Premiados (Calientes) de los últimos 30 días
 function getHotNumbers(gameId, limit = 5) {
+  if (!historyStore || Object.keys(historyStore).length === 0) loadHistoryFromDisk();
   const gameHistory = historyStore[gameId];
   if (!gameHistory) return [];
 
@@ -171,11 +296,14 @@ function getHotNumbers(gameId, limit = 5) {
   }
 
   const sorted = Object.entries(counts)
-    .map(([num, count]) => ({
-      number: num,
-      name: names[num] || '',
-      occurrences: count
-    }))
+    .map(([num, count]) => {
+      const cleanKey = num.replace(/^0+/, '') || '0';
+      return {
+        number: num,
+        name: names[num] || ANIMAL_NAMES[num] || ANIMAL_NAMES[cleanKey] || `ANIMAL ${num}`,
+        occurrences: count
+      };
+    })
     .sort((a, b) => b.occurrences - a.occurrences);
 
   return sorted.slice(0, limit);
@@ -183,6 +311,7 @@ function getHotNumbers(gameId, limit = 5) {
 
 // 2. Obtener Números Menos Salidos / Atrasados de los últimos 30 días
 function getColdNumbers(gameId, limit = 5) {
+  if (!historyStore || Object.keys(historyStore).length === 0) loadHistoryFromDisk();
   const gameHistory = historyStore[gameId];
   if (!gameHistory) return [];
 
@@ -192,7 +321,15 @@ function getColdNumbers(gameId, limit = 5) {
   const names = {};
 
   const isAnimal = !gameId.includes('triple');
-  const max = (gameId === 'guacharito-millonario' || gameId === 'la-ricachona') ? 70 : 36;
+  let max = 36;
+  if (gameId === 'guacharito-millonario' || gameId === 'la-ricachona' || gameId === 'animalitos-la-ricachona') {
+    max = 70;
+  } else if (gameId === 'mega-animal-40') {
+    max = 40;
+  } else if (gameId.includes('centena')) {
+    max = 99;
+  }
+
   const allNumbers = [];
   if (isAnimal) {
     allNumbers.push('00');
@@ -230,8 +367,9 @@ function getColdNumbers(gameId, limit = 5) {
       }
     }
     lastSeenDaysAgo[num] = daysAgo;
-    if (!names[num] && ANIMAL_NAMES[parseInt(num)]) {
-      names[num] = ANIMAL_NAMES[parseInt(num)];
+    if (!names[num]) {
+      const cleanKey = num.replace(/^0+/, '') || '0';
+      names[num] = ANIMAL_NAMES[num] || ANIMAL_NAMES[cleanKey] || `ANIMAL ${num}`;
     }
   }
 
@@ -239,7 +377,7 @@ function getColdNumbers(gameId, limit = 5) {
   const sorted = allNumbers
     .map(num => ({
       number: num,
-      name: names[num] || '',
+      name: names[num] || `ANIMAL ${num}`,
       occurrences: occurrencesMap[num] || 0,
       daysOverdue: lastSeenDaysAgo[num] !== undefined ? lastSeenDaysAgo[num] : 30
     }))
@@ -265,42 +403,101 @@ function getDailyPredictions(gameId) {
   };
 }
 
-// 4. Generar elementos del Cintillo Desplazable (Marquee Feed - Exclusivo Animalitos)
-function generateTickerFeed(top10Games) {
+// 4. Generar elementos del Cintillo Desplazable (Marquee Feed - Por Lotería Separada)
+function generateTickerFeed(catalog) {
+  loadHistoryFromDisk();
   const items = [];
-  const animalGames = top10Games.filter(g => g.type === 'animalitos');
 
-  for (const game of animalGames) {
-    const hot = getHotNumbers(game.id, 2);
-    const cold = getColdNumbers(game.id, 2);
+  // Cargar resultados reales de hoy si existen
+  let todayResults = {};
+  try {
+    const resultsPath = path.join(DATA_DIR, 'lottery_results.json');
+    if (fs.existsSync(resultsPath)) {
+      const allResults = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+      const todayStr = getPastDateStrings(1)[0];
+      todayResults = allResults[todayStr] || {};
+    }
+  } catch (e) {}
 
-    if (hot.length > 0) {
-      const hotStr = hot.map(h => `#${h.number} ${h.name ? `(${h.name})` : ''} [${h.occurrences}x]`).join(', ');
+  const gamesList = Array.isArray(catalog) ? catalog : [];
+
+  for (const game of gamesList) {
+    const isAnimal = (!game.type || game.type === 'animalitos') && !game.id.includes('triple');
+    const icon = game.icon || (isAnimal ? '🐾' : '🎰');
+    const displayName = `${icon} ${game.name}`;
+
+    // 1. Sorteos del día de hoy para esta lotería específica
+    const gameToday = todayResults[game.id];
+    const completedToday = (gameToday?.draws || []).filter(d => !d.isPending && (d.number || d.tripleA));
+
+    if (completedToday.length > 0) {
+      const recent = completedToday.slice(-2).reverse();
+      const drawsSummary = isAnimal
+        ? recent.map(d => {
+            const cleanKey = String(d.number).replace(/^0+/, '') || '0';
+            const aName = d.name || ANIMAL_NAMES[d.number] || ANIMAL_NAMES[cleanKey] || '';
+            return `${d.time} ➔ #${d.number} ${aName ? `(${aName})` : ''}`;
+          }).join('  •  ')
+        : recent.map(d => {
+            let line = `${d.time} ➔ A: ${d.tripleA || '---'}`;
+            if (d.tripleB) line += ` | B: ${d.tripleB}`;
+            if (d.signo) line += ` (${d.signo})`;
+            return line;
+          }).join('  •  ');
+
       items.push({
-        type: 'hot',
-        gameName: game.name,
-        badge: '🔥 MÁS PREMIADO 30D',
-        text: `${game.name}: ${hotStr}`
+        type: 'result',
+        gameId: game.id,
+        gameName: displayName,
+        badge: '🕒 ÚLTIMO SORTEO',
+        text: drawsSummary
       });
     }
 
+    // 2. Números calientes de los últimos 30 días para esta lotería específica
+    const hot = getHotNumbers(game.id, 2);
+    if (hot.length > 0) {
+      const hotStr = isAnimal
+        ? hot.map(h => `#${h.number} ${h.name ? `(${h.name})` : ''} [${h.occurrences}x]`).join('  •  ')
+        : hot.map(h => `Terminal #${h.number} [${h.occurrences}x]`).join('  •  ');
+      items.push({
+        type: 'hot',
+        gameId: game.id,
+        gameName: displayName,
+        badge: '🔥 CALIENTE 30D',
+        text: hotStr
+      });
+    }
+
+    // 3. Números atrasados / por reventar para esta lotería específica
+    const cold = getColdNumbers(game.id, 2);
     if (cold.length > 0) {
-      const coldStr = cold.map(c => `#${c.number} ${c.name ? `(${c.name})` : ''} [${c.daysOverdue}d sin salir]`).join(', ');
+      const coldStr = isAnimal
+        ? cold.map(c => `#${c.number} ${c.name ? `(${c.name})` : ''} [${c.daysOverdue}d atraso]`).join('  •  ')
+        : cold.map(c => `Terminal #${c.number} [${c.daysOverdue}d sin salir]`).join('  •  ');
       items.push({
         type: 'cold',
-        gameName: game.name,
+        gameId: game.id,
+        gameName: displayName,
         badge: '❄️ POR REVENTAR',
-        text: `${game.name}: ${coldStr}`
+        text: coldStr
+      });
+    }
+
+    // 4. Dato sugerido exclusivo de esta lotería
+    if (hot.length > 0 && cold.length > 0) {
+      const predStr = isAnimal
+        ? `Fijo #${hot[0].number} (${hot[0].name})  •  Atrasado #${cold[0].number} (${cold[0].name})`
+        : `Terminal Clave #${hot[0].number}  •  Sorpresa #${cold[0].number}`;
+      items.push({
+        type: 'prediction',
+        gameId: game.id,
+        gameName: displayName,
+        badge: '🎯 DATO SUGERIDO',
+        text: predStr
       });
     }
   }
-
-  items.push({
-    type: 'prediction',
-    gameName: 'Pronósticos Visual-FX',
-    badge: '🎯 DATOS CALIENTES DE HOY',
-    text: 'Guácharo Activo: #34 (Venado), #12 (Caballo) • Lotto Activo: #30 (Caimán), #05 (León) • La Granjita: #18 (Burro), #07 (Perico)'
-  });
 
   return items;
 }

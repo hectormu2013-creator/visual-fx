@@ -125,7 +125,7 @@
         <div class="lottery-header-controls" id="lotteryHeaderControls" style="display: none;">
           <!-- Controles Ágiles de Navegación del Carrusel de Loterías -->
           <div class="cintillo-lottery-controls" id="headerLotteryControlsBox">
-            <button type="button" class="btn-cintillo-nav" id="btnHeaderFirst" onclick="window.goToFirstLotteryModule()" title="Ir al Primer Módulo (Inicio)">
+            <button type="button" class="btn-cintillo-nav" id="btnHeaderFirst" title="Ir al Primer Módulo (Inicio)">
               <span class="cintillo-blue-box">
                 <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
                   <rect x="4" y="5" width="2.5" height="14" rx="0.5"/>
@@ -136,7 +136,7 @@
               <span class="btn-cintillo-text">Primero</span>
             </button>
 
-            <button type="button" class="btn-cintillo-nav" id="btnHeaderPrev" onclick="window.goToPrevLotteryModule()" title="Retroceder Módulo (Flecha Izquierda)">
+            <button type="button" class="btn-cintillo-nav" id="btnHeaderPrev" title="Retroceder Módulo (Flecha Izquierda)">
               <span class="cintillo-blue-box">
                 <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
                   <polygon points="7,12 18,5 18,19"/>
@@ -146,7 +146,7 @@
               <span class="btn-cintillo-text">Anterior</span>
             </button>
 
-            <button type="button" class="btn-cintillo-nav btn-cintillo-pause" id="btnHeaderPause" onclick="window.toggleLotteryCarouselPause()" title="Pausar o Reanudar Carrusel (Espacio)">
+            <button type="button" class="btn-cintillo-nav btn-cintillo-pause" id="btnHeaderPause" title="Pausar o Reanudar Carrusel (Espacio)">
               <span class="cintillo-blue-box" id="headerPauseBlueBox">
                 <svg id="svgHeaderPause" viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
                   <rect x="6" y="5" width="4" height="14" rx="1"/>
@@ -159,7 +159,7 @@
               <span class="btn-cintillo-text" id="lblHeaderPauseText">Pausar</span>
             </button>
 
-            <button type="button" class="btn-cintillo-nav" id="btnHeaderNext" onclick="window.goToNextLotteryModule()" title="Adelantar Módulo (Flecha Derecha)">
+            <button type="button" class="btn-cintillo-nav" id="btnHeaderNext" title="Adelantar Módulo (Flecha Derecha)">
               <span class="btn-cintillo-text">Siguiente</span>
               <span class="cintillo-blue-box">
                 <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
@@ -169,7 +169,7 @@
               </span>
             </button>
 
-            <button type="button" class="btn-cintillo-nav" id="btnHeaderLast" onclick="window.goToLastLotteryModule()" title="Ir al Último Módulo (Fin)">
+            <button type="button" class="btn-cintillo-nav" id="btnHeaderLast" title="Ir al Último Módulo (Fin)">
               <span class="btn-cintillo-text">Último</span>
               <span class="cintillo-blue-box">
                 <svg viewBox="0 0 24 24" class="cintillo-svg-icon" fill="currentColor">
@@ -185,7 +185,7 @@
         </div>
 
         <!-- Botón de Pantalla Completa Universal -->
-        <button type="button" class="btn-header-fullscreen" id="btnHeaderFullscreen" onclick="window.toggleAppFullscreen(event)" title="Pantalla Completa (Tecla F)">
+        <button type="button" class="btn-header-fullscreen" id="btnHeaderFullscreen" title="Pantalla Completa (Tecla F)">
           <svg viewBox="0 0 24 24" class="cintillo-fs-svg" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;">
             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
           </svg>
@@ -713,11 +713,11 @@
                   <div class="slides-subpanel-header">
                     <div>
                       <strong style="color:#38bdf8; font-size:0.95rem;">📊 Diapositivas de Estadísticas:</strong>
-                      <span id="lblEstadisticasSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(1 configurada / máx 15)</span>
+                      <span id="lblEstadisticasSlideCount" style="color:#94a3b8; font-size:0.85rem; margin-left:6px;">(3 maestras configurables)</span>
                     </div>
                     <div id="quickNavEstadisticas" class="slides-quick-nav"></div>
-                    <button type="button" class="btn-primary" id="btnAddStatsSlide" onclick="window.addNewStatsSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.88rem; padding:8px 18px; font-weight:800; border-radius:6px; cursor:pointer; box-shadow:0 3px 10px rgba(16,185,129,0.3);">
-                      ➕ Agregar Diapositiva (Hasta 15)
+                    <button type="button" class="btn-primary" id="btnAddStatsSlide" onclick="window.addNewStatsSlide()" style="display:none !important;">
+                      ➕ Agregar Diapositiva
                     </button>
                   </div>
 

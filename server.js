@@ -823,7 +823,23 @@ app.get('/api/lottery/history/:gameId', (req, res) => {
   }
 });
 
+// 4.5 Estado y Auditoría de Sincronización con Supabase (Nube)
+app.get('/api/lottery/cloud-status', async (req, res) => {
+  try {
+    const { getCloudCounts } = require('./supabase_lottery');
+    const counts = await getCloudCounts();
+    return res.json({
+      success: true,
+      cloudConnected: Boolean(counts),
+      data: counts
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // ==========================================
+
 // RUTAS DE DESCARGA DE APK (ANDROID TV / FIRESTICK)
 // ==========================================
 const GITHUB_APK_RELEASE_URL = 'https://github.com/hectormu2013-creator/visual-fx/releases/download/v1.0-tv/visual-fx-tv.apk';

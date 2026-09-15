@@ -39,7 +39,12 @@ Este proyecto es el **Sistema SaaS de Transmisión Visual FX**, diseñado para g
    - **Reloj en Vivo:** Todo panel de resultados debe mostrar la hora actual en tiempo real con segundos y zona horaria de Venezuela.
    - **Pizarra 4 Columnas:** La cartelera estilo 1000Resultados debe desplegar 4 columnas paralelas con división por categorías (`🐾 Animalitos` vs `🎰 Triples y Signos`).
    - **Tarjeta Destacada (Hero Card):** Debe incluir la barra animada de cuenta regresiva (15s), números gigantes legibles a distancia (`6.2rem` / `3.6rem`) e imágenes oficiales SVG para signos zodiacales.
-   - **Cintillo Inferior:** Velocidad pausada (aprox. 160s) con posición fija inferior y padding compensatorio para jamás tapar tarjetas de resultados.
+   - **Cintillo Inferior:** Velocidad pausada en el rango de **250s a 500s** (valor recomendado y por defecto ~300s/350s) con posición fija inferior y padding compensatorio para jamás tapar tarjetas de resultados.
+   - **Presentación de Triples en 3 Líneas:** Para cada sorteo de triples en todas sus secciones (pizarras de resultados, módulos y Pizarra 1000), estructurar estrictamente en 3 líneas:
+     1. *Línea 1:* Hora del sorteo con badge oficial/pendiente (`🕒 12:00 PM`).
+     2. *Línea 2:* Triples A y B (`A: ...` y `B: ...`) en pastillas horizontales simétricas y balanceadas.
+     3. *Línea 3:* Triple C con el signo (`C: ...` y signo zodiacal con su ícono SVG oficial y nombre).
+   - **5 Pizarras Fijas de Resultados:** La sección Resultados opera con exactamente 5 pizarras predeterminadas fijas; en lugar de agregar o eliminar diapositivas arbitrariamente, se utiliza el alternador de activación/pausa interactivo (`⏸️` / `✅`).
 10. **Pantalla Completa Universal (Tecla F y Botón):**
     - Implementar siempre el mecanismo dual: API nativa `requestFullscreen()` + clase CSS `body.app-fullscreen-mode` para compatibilidad total con Smart TVs y WebViews Android.
 11. **Síntesis de Voz Natural:**

@@ -7,6 +7,11 @@ const DATA_DIR = path.join(__dirname, 'data');
 const RESULTS_FILE = path.join(DATA_DIR, 'lottery_results.json');
 
 const { seedBaselineHistory, recordDrawsToHistory } = require('./lottery_stats');
+let syncGameToCloud = null;
+try {
+  syncGameToCloud = require('./supabase_lottery').syncGameToCloud;
+} catch (e) {}
+
 
 // Catálogo Top 10 Oficial de Loterías (Basado en Ventas Reales con Logos Oficiales Verificados)
 const TOP_10_GAMES = [
@@ -258,6 +263,13 @@ function addLotteryToCatalog(gameData) {
 
   lotteryCatalog.push(newGame);
   saveCatalogToDisk();
+
+  if (typeof syncGameToCloud === 'function') {
+    syncGameToCloud(newGame).catch(err => {
+      console.warn(`[LotteryEngine] Error asíncrono guardando juego en Supabase (${newGame.id}):`, err.message);
+    });
+  }
+
   return { success: true, game: newGame, catalog: lotteryCatalog };
 }
 
@@ -275,6 +287,13 @@ function updateLotteryInCatalog(id, updateData) {
   if (Array.isArray(updateData.hours)) lotteryCatalog[idx].hours = updateData.hours;
 
   saveCatalogToDisk();
+
+  if (typeof syncGameToCloud === 'function') {
+    syncGameToCloud(lotteryCatalog[idx]).catch(err => {
+      console.warn(`[LotteryEngine] Error asíncrono actualizando juego en Supabase (${id}):`, err.message);
+    });
+  }
+
   return { success: true, game: lotteryCatalog[idx], catalog: lotteryCatalog };
 }
 

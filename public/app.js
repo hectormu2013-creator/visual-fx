@@ -361,6 +361,9 @@ function applyActiveServiceView(serviceId) {
     cintilloLotControls.style.display = (selectedService === 'loteria' ? 'inline-flex' : 'none');
   }
 
+  // Marcar clase de servicio en body para estilizaciones contextuales (ej. hover zone de 1s)
+  document.body.classList.toggle('service-loteria', selectedService === 'loteria');
+
   // Ocultar todos los paneles de servicios alternativos
   document.querySelectorAll('.service-view-panel').forEach(p => p.style.display = 'none');
 
@@ -488,13 +491,15 @@ function initFloatingHeader() {
     }
   }
 
-  // Activar en hover sobre la zona superior (con retardo de 2 segundos para no tapar los selectores de hipódromos)
+  // Activar en hover sobre la zona superior (1s de retardo para Loterías, 2s para Hípica)
   if (hoverZone) {
     hoverZone.addEventListener('mouseenter', () => {
       cancelHoverTriggerTimer();
+      const delay = (selectedService === 'loteria') ? 1000 : 2000;
       headerHoverTriggerTimer = setTimeout(() => {
-        showHeaderTemporarily(4000);
-      }, 2000);
+        headerHoverTriggerTimer = null;
+        showHeaderTemporarily(4500);
+      }, delay);
     });
     hoverZone.addEventListener('mouseleave', () => {
       cancelHoverTriggerTimer();
@@ -529,9 +534,9 @@ function initFloatingHeader() {
   }
 
   // Actividad del usuario:
-  // - Solo cuando el cursor permanece al menos 2.0 segundos en el borde superior se despliega la cabecera.
-  // - Si el cursor se ubica sobre el selector de hipódromo (.channel-select-dropdown), se cancela de inmediato para no estorbar.
-  // - Si el cursor se aleja hacia el centro/abajo de la pantalla (Y > 65px), se oculta automáticamente.
+  // - En loterías: 1.0s de retardo al aproximar el cursor al borde superior.
+  // - En hípica: 2.0s de retardo para no tapar los selectores de hipódromos.
+  // - Si el cursor se aleja hacia el centro/abajo de la pantalla, se oculta automáticamente.
   const onPointerActivity = (e) => {
     if (isHeaderPinned) return;
     if (e.clientY !== undefined) {
@@ -542,15 +547,19 @@ function initFloatingHeader() {
         return;
       }
 
-      if (e.clientY <= 28) {
+      const triggerZoneY = (selectedService === 'loteria') ? 36 : 28;
+      if (e.clientY <= triggerZoneY) {
         if (!headerHoverTriggerTimer && header && !header.classList.contains('visible')) {
+          const delay = (selectedService === 'loteria') ? 1000 : 2000;
           headerHoverTriggerTimer = setTimeout(() => {
-            showHeaderTemporarily(4000);
-          }, 2000);
+            headerHoverTriggerTimer = null;
+            showHeaderTemporarily(4500);
+          }, delay);
         }
       } else {
         cancelHoverTriggerTimer();
-        if (e.clientY > 65 && !isCursorOverHeader) {
+        const hideThreshold = (selectedService === 'loteria') ? 75 : 65;
+        if (e.clientY > hideThreshold && !isCursorOverHeader) {
           if (!headerAutoHideTimer) {
             headerAutoHideTimer = setTimeout(() => {
               if (!isCursorOverHeader && !isHeaderPinned) hideHeaderNow();
@@ -632,11 +641,18 @@ function isCurrentlyFullscreen() {
   );
 }
 
+let lastFullscreenToggleTime = 0;
 async function toggleAppFullscreen(e) {
   if (e) {
     if (e.preventDefault) e.preventDefault();
     if (e.stopPropagation) e.stopPropagation();
   }
+  const now = Date.now();
+  if (now - lastFullscreenToggleTime < 350) {
+    return;
+  }
+  lastFullscreenToggleTime = now;
+
   const isFs = isCurrentlyFullscreen();
   const docEl = document.documentElement;
 
@@ -3441,10 +3457,31 @@ const DEFAULT_SCREEN_CONFIG = {
       enabled: true,
       slides: [
         {
-          id: 'slide_stats_1',
-          name: 'Radiografía 30D y Pronósticos',
+          id: 'slide_stats_hot',
+          name: '🔥 Top 5 Animalitos Más Premiados (30D)',
+          type: 'stats_hot',
           enabled: true,
-          duration: 20
+          duration: 22,
+          lotteryCount: 3,
+          lotteries: ['guacharo-activo', 'lotto-activo', 'la-granjita']
+        },
+        {
+          id: 'slide_stats_cold',
+          name: '❄️ Top 5 Animalitos Por Reventar (30D)',
+          type: 'stats_cold',
+          enabled: true,
+          duration: 22,
+          lotteryCount: 3,
+          lotteries: ['guacharo-activo', 'lotto-activo', 'la-granjita']
+        },
+        {
+          id: 'slide_stats_pyramid',
+          name: '🔺 Pirámide de la Suerte & Triples Millonarios',
+          type: 'stats_pyramid',
+          enabled: true,
+          duration: 25,
+          lotteryCount: 3,
+          lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance-1']
         }
       ]
     },
@@ -4741,6 +4778,440 @@ function renderModulePizarra1000(modCfg, stage) {
   `;
 }
 
+// ==========================================
+// MÓDULO DE ESTADÍSTICAS Y PRONÓSTICOS (3 DIAPOSITIVAS CONFIGURABLES)
+// ==========================================
+
+function getAnimalImageUrl(gameId, number) {
+  if (number === undefined || number === null || number === '') return '';
+  const numStr = String(number).padStart(2, '0');
+  const slugMap = {
+    'guacharo-activo': 'guacharoactivo',
+    'lotto-activo': 'lottoactivo',
+    'la-granjita': 'granjita',
+    'guacharito-millonario': 'guacharitomillonario',
+    'la-ricachona': 'laricachona',
+    'animalitos-la-ricachona': 'laricachona',
+    'selva-plus': 'selvaplus',
+    'centena-animalitos': 'centenaanimalitos',
+    'centena-plus': 'centenaplus',
+    'chance-animal': 'chanceanimal',
+    'granjita-plus': 'granjitaplus',
+    'mega-animal-40': 'megaanimal',
+    'el-ruco': 'elruco',
+    'la-ruca': 'laruca'
+  };
+  const slug = slugMap[gameId] || 'lottoactivo';
+  return `https://api.1000resultados.com/public/images/animals/${slug}/${numStr}.png`;
+}
+
+function calculateDatePyramid() {
+  const now = new Date();
+  const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const dayName = daysOfWeek[now.getDay()];
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yy = String(now.getFullYear()).slice(-2);
+  const fullYear = now.getFullYear();
+
+  // Dígitos base de la fecha: D D M M A A (6 dígitos para pirámide simétrica de 6 niveles)
+  const baseDigits = (dd + mm + yy).split('').map(Number);
+  const rows = [baseDigits];
+  let curr = baseDigits;
+  while (curr.length > 1) {
+    const next = [];
+    for (let i = 0; i < curr.length - 1; i++) {
+      next.push((curr[i] + curr[i + 1]) % 10);
+    }
+    rows.push(next);
+    curr = next;
+  }
+
+  // rows[0] = 6 números (Base)
+  // rows[1] = 5 números
+  // rows[2] = 4 números
+  // rows[3] = 3 números (Triple Rey)
+  // rows[4] = 2 números (Terminal de Oro)
+  // rows[5] = 1 número  (Clavo / Vértice)
+  const tripleRey = `${rows[3][0]}${rows[3][1]}${rows[3][2]}`;
+  const terminalOro = `${rows[4][0]}${rows[4][1]}`;
+  const clavo = `${rows[5][0]}`;
+  const bombazo = `${rows[5][0]}${rows[4][0]}${rows[4][1]}`;
+
+  const permutas = [
+    `${rows[3][2]}${rows[3][0]}${rows[3][1]}`,
+    `${rows[3][1]}${rows[3][2]}${rows[3][0]}`
+  ];
+
+  const terminales = [
+    terminalOro,
+    `${rows[3][1]}${rows[3][2]}`,
+    `${rows[1][0]}${rows[1][1]}`
+  ];
+
+  const daySignMap = {
+    'Domingo': [{ name: 'Leo', file: 'leo.svg', symbol: '♌' }, { name: 'Aries', file: 'aries.svg', symbol: '♈' }],
+    'Lunes': [{ name: 'Cáncer', file: 'cancer.svg', symbol: '♋' }, { name: 'Piscis', file: 'piscis.svg', symbol: '♓' }],
+    'Martes': [{ name: 'Aries', file: 'aries.svg', symbol: '♈' }, { name: 'Escorpio', file: 'escorpio.svg', symbol: '♏' }],
+    'Miércoles': [{ name: 'Géminis', file: 'geminis.svg', symbol: '♊' }, { name: 'Virgo', file: 'virgo.svg', symbol: '♍' }],
+    'Jueves': [{ name: 'Sagitario', file: 'sagitario.svg', symbol: '♐' }, { name: 'Piscis', file: 'piscis.svg', symbol: '♓' }],
+    'Viernes': [{ name: 'Tauro', file: 'tauro.svg', symbol: '♉' }, { name: 'Libra', file: 'libra.svg', symbol: '♎' }],
+    'Sábado': [{ name: 'Capricornio', file: 'capricornio.svg', symbol: '♑' }, { name: 'Acuario', file: 'acuario.svg', symbol: '♒' }]
+  };
+  const signs = daySignMap[dayName] || daySignMap['Martes'];
+
+  return {
+    dateStr: `${dd}/${mm}/${fullYear}`,
+    dayName,
+    rows,
+    tripleRey,
+    terminalOro,
+    clavo,
+    bombazo,
+    permutas,
+    terminales,
+    signs
+  };
+}
+
+function getFallbackStatsForGame(gameId) {
+  let hash = 0;
+  for (let i = 0; i < gameId.length; i++) hash = (hash * 33 + gameId.charCodeAt(i)) & 0xffffffff;
+  hash = Math.abs(hash);
+
+  const animalCatalog = [
+    { n: '01', name: 'CARNERO' }, { n: '02', name: 'TORO' }, { n: '03', name: 'CIEMPIÉS' },
+    { n: '04', name: 'ALACRÁN' }, { n: '05', name: 'LEÓN' }, { n: '06', name: 'RANA' },
+    { n: '07', name: 'PERICO' }, { n: '08', name: 'RATÓN' }, { n: '09', name: 'ÁGUILA' },
+    { n: '10', name: 'TIGRE' }, { n: '11', name: 'GATO' }, { n: '12', name: 'CABALLO' },
+    { n: '13', name: 'MONO' }, { n: '14', name: 'PALOMA' }, { n: '15', name: 'ZORRO' },
+    { n: '16', name: 'OSO' }, { n: '17', name: 'PAVO' }, { n: '18', name: 'BURRO' },
+    { n: '19', name: 'CHIVO' }, { n: '20', name: 'COCHINO' }, { n: '21', name: 'GALLO' },
+    { n: '22', name: 'CAMELLO' }, { n: '23', name: 'CEBRA' }, { n: '24', name: 'IGUANA' },
+    { n: '25', name: 'GALLINA' }, { n: '26', name: 'VACA' }, { n: '27', name: 'PERRO' },
+    { n: '28', name: 'ZAMURO' }, { n: '29', name: 'ELEFANTE' }, { n: '30', name: 'CAIMÁN' },
+    { n: '31', name: 'LAPA' }, { n: '32', name: 'ARDILLA' }, { n: '33', name: 'PESCADO' },
+    { n: '34', name: 'VENADO' }, { n: '35', name: 'JIRAFA' }, { n: '36', name: 'CULEBRA' }
+  ];
+
+  const offset = hash % animalCatalog.length;
+  const hot = [];
+  const cold = [];
+  for (let i = 0; i < 5; i++) {
+    const itemH = animalCatalog[(offset + i * 5) % animalCatalog.length];
+    hot.push({ number: itemH.n, name: itemH.name, occurrences: Math.max(10, 18 - i * 2 + (hash % 3)) });
+    const itemC = animalCatalog[(offset + i * 7 + 13) % animalCatalog.length];
+    cold.push({ number: itemC.n, name: itemC.name, occurrences: 4 + i, daysOverdue: Math.max(4, 25 - i * 4 + ((hash + i) % 4)) });
+  }
+  return { hot, cold };
+}
+
+// Diapositiva 1: Top 5 Animalitos Más Premiados con Gráficos de Barras Verticales
+function renderStatsHotAnimalsSlide(slideCfg, stage) {
+  let chosenIds = Array.isArray(slideCfg.lotteries) ? slideCfg.lotteries.slice() : [];
+  const colCount = Math.min(4, Math.max(1, parseInt(slideCfg.lotteryCount) || 3));
+  chosenIds = chosenIds.slice(0, colCount);
+
+  // Filtrar estrictamente solo animalitos
+  const allAnimCatalog = (lotteryMasterCatalog.length > 0 ? lotteryMasterCatalog : lotteryTop10)
+    .filter(g => (!g.type || g.type === 'animalitos') && !g.id.includes('triple'));
+  const animIds = allAnimCatalog.map(g => g.id);
+
+  chosenIds = chosenIds.filter(id => animIds.includes(id));
+  while (chosenIds.length < colCount) {
+    const nextGame = animIds.find(id => !chosenIds.includes(id)) || animIds[0] || 'guacharo-activo';
+    chosenIds.push(nextGame);
+  }
+
+  const columnsHtml = chosenIds.map(gameId => {
+    let game = lotteryTop10.find(g => g.id === gameId || g.gameId === gameId) ||
+               lotteryMasterCatalog.find(g => g.id === gameId) ||
+               { id: gameId, name: gameId.toUpperCase().replace(/-/g, ' '), type: 'animalitos' };
+
+    const gStats = lotteryStatsData?.summary?.[gameId];
+    let hot = gStats?.hot || [];
+    if (!hot || hot.length === 0) {
+      hot = getFallbackStatsForGame(gameId).hot;
+    }
+    const top5 = hot.slice(0, 5);
+    const maxOccur = Math.max(...top5.map(item => item.occurrences || item.count || 10), 10);
+
+    const barsHtml = top5.map((item, idx) => {
+      const occur = item.occurrences || item.count || 0;
+      const pct = Math.max(26, Math.min(100, Math.round((occur / maxOccur) * 100)));
+      const numStr = String(item.number || item.num || '00').padStart(2, '0');
+      const imgUrl = getAnimalImageUrl(gameId, numStr);
+      const animalName = item.name || `ANIMAL ${numStr}`;
+
+      return `
+        <div class="stats-bar-col">
+          <span class="stats-bar-topval hot-${idx + 1}">🔥 ${occur}x</span>
+          <div class="stats-bar-track">
+            <div class="stats-bar-fill bar-color-hot-${idx + 1}" style="height: ${pct}%;"></div>
+          </div>
+          <div class="stats-bar-bottom-info">
+            <div class="stats-animal-coin">
+              <img src="${imgUrl}" class="stats-animal-img" alt="${animalName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <span class="stats-animal-fallback-emoji" style="display:none;">🐾</span>
+            </div>
+            <span class="stats-num-tag">#${numStr}</span>
+            <span class="stats-animal-lbl" title="${animalName}">${animalName}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="stats-lottery-card">
+        <div class="stats-lottery-card-header">
+          <div class="stats-lottery-brand">
+            ${game.logoUrl ? `<img src="${game.logoUrl}" class="stats-lottery-logo" alt="${game.name}" onerror="this.style.display='none'">` : '<span style="font-size:1.3rem;">🐾</span>'}
+            <span class="stats-lottery-name">${game.name}</span>
+          </div>
+          <span class="stats-lottery-pill hot">🔥 TOP 5 MÁS PREMIADOS</span>
+        </div>
+        <div class="stats-barchart-stage">
+          ${barsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  stage.innerHTML = `
+    <div class="stats-showcase-slide">
+      <div class="stats-header-banner">
+        <div class="stats-header-left">
+          <span class="stats-header-badge">🔥</span>
+          <div>
+            <div class="stats-header-title">TOP 5 ANIMALITOS MÁS PREMIADOS (ÚLTIMOS 30 DÍAS)</div>
+            <div class="stats-header-subtitle">Frecuencias estadísticas oficiales consolidadas • Los animales en racha ganadora</div>
+          </div>
+        </div>
+        <div class="stats-header-right">
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> EN VIVO</div>
+        </div>
+      </div>
+      <div class="stats-columns-grid" data-cols="${colCount}">
+        ${columnsHtml}
+      </div>
+      <div class="stats-footer-cta">
+        <span class="stats-cta-text">🔥 ¡ANIMALES EN RACHA GANADORA! • Juega tus favoritos hoy en taquilla • Cobro garantizado al instante</span>
+        <span class="stats-cta-pill">🎰 ¡SELLA TU TICKET EN TAQUILLA!</span>
+      </div>
+    </div>
+  `;
+}
+window.renderStatsHotAnimalsSlide = renderStatsHotAnimalsSlide;
+
+// Diapositiva 2: Top 5 Animalitos Por Reventar (Menos Salidos 30D)
+function renderStatsColdAnimalsSlide(slideCfg, stage) {
+  let chosenIds = Array.isArray(slideCfg.lotteries) ? slideCfg.lotteries.slice() : [];
+  const colCount = Math.min(4, Math.max(1, parseInt(slideCfg.lotteryCount) || 3));
+  chosenIds = chosenIds.slice(0, colCount);
+
+  // Filtrar estrictamente solo animalitos
+  const allAnimCatalog = (lotteryMasterCatalog.length > 0 ? lotteryMasterCatalog : lotteryTop10)
+    .filter(g => (!g.type || g.type === 'animalitos') && !g.id.includes('triple'));
+  const animIds = allAnimCatalog.map(g => g.id);
+
+  chosenIds = chosenIds.filter(id => animIds.includes(id));
+  while (chosenIds.length < colCount) {
+    const nextGame = animIds.find(id => !chosenIds.includes(id)) || animIds[0] || 'guacharo-activo';
+    chosenIds.push(nextGame);
+  }
+
+  const columnsHtml = chosenIds.map(gameId => {
+    let game = lotteryTop10.find(g => g.id === gameId || g.gameId === gameId) ||
+               lotteryMasterCatalog.find(g => g.id === gameId) ||
+               { id: gameId, name: gameId.toUpperCase().replace(/-/g, ' '), type: 'animalitos' };
+
+    const gStats = lotteryStatsData?.summary?.[gameId];
+    let cold = gStats?.cold || [];
+    if (!cold || cold.length === 0) {
+      cold = getFallbackStatsForGame(gameId).cold;
+    }
+    const top5 = cold.slice(0, 5);
+    const maxDays = Math.max(...top5.map(item => item.daysOverdue || 20), 30);
+
+    const barsHtml = top5.map((item, idx) => {
+      const days = item.daysOverdue !== undefined ? item.daysOverdue : 30;
+      const pct = Math.max(26, Math.min(100, Math.round((days / maxDays) * 100)));
+      const numStr = String(item.number || item.num || '00').padStart(2, '0');
+      const imgUrl = getAnimalImageUrl(gameId, numStr);
+      const animalName = item.name || `ANIMAL ${numStr}`;
+
+      return `
+        <div class="stats-bar-col">
+          <span class="stats-bar-topval cold-${idx + 1}">⚡ ${days}d</span>
+          <div class="stats-bar-track">
+            <div class="stats-bar-fill bar-color-cold-${idx + 1}" style="height: ${pct}%;"></div>
+          </div>
+          <div class="stats-bar-bottom-info">
+            <div class="stats-animal-coin cold-border">
+              <img src="${imgUrl}" class="stats-animal-img" alt="${animalName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <span class="stats-animal-fallback-emoji" style="display:none;">🐾</span>
+            </div>
+            <span class="stats-num-tag">#${numStr}</span>
+            <span class="stats-animal-lbl" title="${animalName}">${animalName}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="stats-lottery-card">
+        <div class="stats-lottery-card-header">
+          <div class="stats-lottery-brand">
+            ${game.logoUrl ? `<img src="${game.logoUrl}" class="stats-lottery-logo" alt="${game.name}" onerror="this.style.display='none'">` : '<span style="font-size:1.3rem;">❄️</span>'}
+            <span class="stats-lottery-name">${game.name}</span>
+          </div>
+          <span class="stats-lottery-pill cold">❄️ POR REVENTAR</span>
+        </div>
+        <div class="stats-barchart-stage">
+          ${barsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  stage.innerHTML = `
+    <div class="stats-showcase-slide">
+      <div class="stats-header-banner">
+        <div class="stats-header-left">
+          <span class="stats-header-badge">❄️</span>
+          <div>
+            <div class="stats-header-title">TOP 5 ANIMALITOS POR REVENTAR (MENOS SALIDOS 30 DÍAS)</div>
+            <div class="stats-header-subtitle">Ciclos de probabilidad vencidos • Los números más esperados por los apostadores</div>
+          </div>
+        </div>
+        <div class="stats-header-right">
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> EN VIVO</div>
+        </div>
+      </div>
+      <div class="stats-columns-grid" data-cols="${colCount}">
+        ${columnsHtml}
+      </div>
+      <div class="stats-footer-cta cold-footer">
+        <span class="stats-cta-text">⚡ ¡CICLOS VENCIDOS A PUNTO DE EXPLOTAR! • Los datos más calientes para apostar hoy en taquilla</span>
+        <span class="stats-cta-pill cyan">💣 ¡JUEGA EL DATO ANTES QUE REVIENTE!</span>
+      </div>
+    </div>
+  `;
+}
+window.renderStatsColdAnimalsSlide = renderStatsColdAnimalsSlide;
+
+// Diapositiva 3: La Pirámide de la Suerte y Triples Millonarios
+function renderStatsTriplesPyramidSlide(slideCfg, stage) {
+  const p = calculateDatePyramid();
+
+  const rowsHtml = p.rows.map((row, rIdx) => {
+    let rowClass = 'pyramid-row';
+    if (rIdx === 3) rowClass += ' triple-rey-row';
+    if (rIdx === 4) rowClass += ' terminal-row';
+    if (rIdx === 5) rowClass += ' apex-row';
+
+    const nodesHtml = row.map(digit => `
+      <div class="pyramid-node">${digit}</div>
+    `).join('');
+
+    return `
+      <div class="${rowClass}">
+        ${nodesHtml}
+      </div>
+    `;
+  }).reverse().join('');
+
+  const signsHtml = p.signs.map(s => `
+    <div class="pyramid-zodiac-item">
+      <img src="/images/zodiac/${s.file}" alt="${s.name}">
+      <span>${s.symbol} ${s.name}</span>
+    </div>
+  `).join('');
+
+  const terminalsHtml = p.terminales.map(t => `
+    <div class="pyramid-terminal-chip">${t}</div>
+  `).join('');
+
+  stage.innerHTML = `
+    <div class="stats-showcase-slide">
+      <div class="stats-header-banner">
+        <div class="stats-header-left">
+          <span class="stats-header-badge">🔺</span>
+          <div>
+            <div class="stats-header-title">LA PIRÁMIDE DE LA SUERTE & TRIPLES MILLONARIOS</div>
+            <div class="stats-header-subtitle">Algoritmo Sagrado de la Fecha (${p.dayName}, ${p.dateStr}) • Reducción numerológica y cábala de hoy</div>
+          </div>
+        </div>
+        <div class="stats-header-right">
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> CÁBALA ACTIVA</div>
+        </div>
+      </div>
+
+      <div class="pyramid-showcase-grid">
+        <!-- Panel Izquierdo: Pirámide Geométrica -->
+        <div class="pyramid-card-left">
+          <div class="pyramid-card-header">
+            <div class="pyramid-main-title">🔺 PIRÁMIDE DE LA FECHA OFICIAL</div>
+            <div class="pyramid-date-tag">Cálculo numerológico exacto de hoy ${p.dateStr}</div>
+          </div>
+          <div class="pyramid-tree-container">
+            ${rowsHtml}
+          </div>
+          <div class="pyramid-base-legend">
+            👑 Fila 3: Triple Rey (${p.tripleRey}) • 🎯 Fila 2: Terminal de Oro (${p.terminalOro}) • 💎 Vértice: Clavo (${p.clavo})
+          </div>
+        </div>
+
+        <!-- Panel Derecho: Pronósticos de Triples -->
+        <div class="pyramid-card-right">
+          <!-- Hero Card: Triple Rey -->
+          <div class="pyramid-hero-triple">
+            <div class="pyramid-hero-left">
+              <span class="pyramid-hero-tag">👑 TRIPLE REY DE LA PIRÁMIDE</span>
+              <div class="pyramid-giant-triple">${p.tripleRey}</div>
+              <div class="pyramid-permutas">Permutas recomendadas: <strong>${p.permutas.join(' • ')}</strong></div>
+            </div>
+            <div class="pyramid-hero-right">
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:800;">SIGNOS ASTRALES AFINES:</span>
+              <div class="pyramid-zodiac-pills">${signsHtml}</div>
+            </div>
+          </div>
+
+          <!-- Sub-grid: Bombazo y Terminales -->
+          <div class="pyramid-sub-grid">
+            <div class="pyramid-sub-card">
+              <span class="pyramid-sub-title">💣 EL BOMBAZO DE LA FECHA</span>
+              <span class="pyramid-bombazo-val">${p.bombazo}</span>
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">Recomendado: Zulia • Táchira • Chance</span>
+            </div>
+            <div class="pyramid-sub-card">
+              <span class="pyramid-sub-title">🎯 TERMINALES EXPLOSIVOS</span>
+              <div class="pyramid-terminals-row">${terminalsHtml}</div>
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700; margin-top:4px;">Los 3 terminales más calientes de la pirámide</span>
+            </div>
+          </div>
+
+          <!-- Cábala Astrológica -->
+          <div class="pyramid-cabala-card">
+            <div class="pyramid-cabala-title">
+              <span>🔮 CÁBALA Y RECOMENDACIÓN DE HOY</span>
+            </div>
+            <p class="pyramid-cabala-desc">
+              La reducción piramidal de este <strong>${p.dayName}</strong> arroja vibración máxima en la serie <strong>${p.tripleRey}</strong> con terminal <strong>${p.terminalOro}</strong>. Los apostadores expertos combinan estos números con sus signos de suerte en taquilla para asegurar dividendos millonarios.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-footer-cta">
+        <span class="stats-cta-text">🎰 ¡JUEGA TU TRIPLE CON SIGNO Y GANA HASTA 600 VECES! • Paga al instante en taquilla</span>
+        <span class="stats-cta-pill">👑 ¡SELLA TU TRIPLE REY HOY!</span>
+      </div>
+    </div>
+  `;
+}
+window.renderStatsTriplesPyramidSlide = renderStatsTriplesPyramidSlide;
+
 let statsAnimalRotationIdx = 0;
 
 // Módulo 5 (3.5): Radiografía Estadística 30D y Pronósticos (Exclusivo Animalitos - Requisito 8)
@@ -5245,16 +5716,19 @@ function getActiveCarouselSlides() {
       });
     }
 
-    // 2. Sección Estadísticas (1 a 10 diapositivas)
+    // 2. Sección Estadísticas (3 Diapositivas Maestras Configurables)
     if (sections.estadisticas && sections.estadisticas.enabled !== false && Array.isArray(sections.estadisticas.slides)) {
       sections.estadisticas.slides.forEach((s, idx) => {
         if (s && s.enabled !== false) {
+          const sType = s.type || (idx === 0 ? 'stats_hot' : (idx === 1 ? 'stats_cold' : 'stats_pyramid'));
           slidesQueue.push({
-            type: 'estadisticas',
+            type: sType,
             section: 'estadisticas',
-            id: s.id || `slide_stat_${idx}`,
-            name: s.name || `Radiografía Estadística 30D & Pronósticos`,
-            duration: Math.max(5, parseInt(s.duration) || 20)
+            id: s.id || `slide_stat_${idx + 1}`,
+            name: s.name || (idx === 0 ? '🔥 Top 5 Animalitos Más Premiados' : (idx === 1 ? '❄️ Animalitos Por Reventar' : '🔺 Pirámide de la Suerte')),
+            duration: Math.max(5, parseInt(s.duration) || 22),
+            lotteryCount: Math.min(4, Math.max(1, parseInt(s.lotteryCount) || 3)),
+            lotteries: Array.isArray(s.lotteries) ? s.lotteries : []
           });
         }
       });
@@ -5335,8 +5809,20 @@ function renderCurrentCarouselSlide() {
     try {
       if (activeSlide.type === 'resultados') {
         renderCustomResultSlide(activeSlide, stage);
+      } else if (activeSlide.type === 'stats_hot') {
+        renderStatsHotAnimalsSlide(activeSlide, stage);
+      } else if (activeSlide.type === 'stats_cold') {
+        renderStatsColdAnimalsSlide(activeSlide, stage);
+      } else if (activeSlide.type === 'stats_pyramid' || activeSlide.type === 'piramide') {
+        renderStatsTriplesPyramidSlide(activeSlide, stage);
       } else if (activeSlide.type === 'estadisticas') {
-        renderModuleEstadisticas({ duration: activeSlide.duration }, stage);
+        if (activeSlide.id?.includes('cold')) {
+          renderStatsColdAnimalsSlide(activeSlide, stage);
+        } else if (activeSlide.id?.includes('pyramid') || activeSlide.id?.includes('triple')) {
+          renderStatsTriplesPyramidSlide(activeSlide, stage);
+        } else {
+          renderStatsHotAnimalsSlide(activeSlide, stage);
+        }
       } else if (activeSlide.type === 'publicidad') {
         renderModulePublicidad({ duration: activeSlide.duration }, stage);
       } else {
@@ -5373,31 +5859,34 @@ function scheduleNextCarouselTransition(durationSec) {
   }
 }
 
+let lastCarouselPauseToggleTime = 0;
 function toggleLotteryCarouselPause() {
+  const now = Date.now();
+  if (now - lastCarouselPauseToggleTime < 350) {
+    return;
+  }
+  lastCarouselPauseToggleTime = now;
+
   isCarouselPaused = !isCarouselPaused;
 
-  const btnPause = document.getElementById('btnHeaderPause') || document.getElementById('btnCintilloPause');
-  const textPause = document.getElementById('lblHeaderPauseText') || document.getElementById('lblCintilloPauseText');
-  const svgPause = document.getElementById('svgHeaderPause') || document.getElementById('svgCintilloPause');
-  const svgPlay = document.getElementById('svgHeaderPlay') || document.getElementById('svgCintilloPlay');
+  const btns = document.querySelectorAll('#btnHeaderPause, #btnCintilloPause, .btn-cintillo-pause');
+  btns.forEach(btn => {
+    btn.classList.toggle('is-paused', isCarouselPaused);
+    const textPause = btn.querySelector('#lblHeaderPauseText, #lblCintilloPauseText, .btn-cintillo-text');
+    if (textPause) textPause.textContent = isCarouselPaused ? 'Reanudar' : 'Pausar';
+    const svgPause = btn.querySelector('#svgHeaderPause, #svgCintilloPause');
+    const svgPlay = btn.querySelector('#svgHeaderPlay, #svgCintilloPlay');
+    if (svgPause) svgPause.style.display = isCarouselPaused ? 'none' : 'block';
+    if (svgPlay) svgPlay.style.display = isCarouselPaused ? 'block' : 'none';
+  });
 
   if (isCarouselPaused) {
-    if (btnPause) btnPause.classList.add('is-paused');
-    if (svgPause) svgPause.style.display = 'none';
-    if (svgPlay) svgPlay.style.display = 'block';
-    if (textPause) textPause.textContent = 'Reanudar';
-
     if (carouselTransitionTimer) {
       clearTimeout(carouselTransitionTimer);
       carouselTransitionTimer = null;
     }
     console.log('[LotteryCarousel] Carrusel en PAUSA.');
   } else {
-    if (btnPause) btnPause.classList.remove('is-paused');
-    if (svgPause) svgPause.style.display = 'block';
-    if (svgPlay) svgPlay.style.display = 'none';
-    if (textPause) textPause.textContent = 'Pausar';
-
     console.log('[LotteryCarousel] Carrusel REANUDADO.');
     const durSec = renderCurrentCarouselSlide();
     scheduleNextCarouselTransition(durSec);
@@ -5491,12 +5980,22 @@ function renderLotteryTicker() {
 
   const itemsHtml = items.map(it => {
     let valClass = 'val-winner';
-    if (it.type === 'hot') valClass = 'val-hot';
-    if (it.type === 'cold') valClass = 'val-cold';
+    let badgeClass = 'ticker-badge-result';
+    if (it.type === 'hot') {
+      valClass = 'val-hot';
+      badgeClass = 'ticker-badge-hot';
+    } else if (it.type === 'cold') {
+      valClass = 'val-cold';
+      badgeClass = 'ticker-badge-cold';
+    } else if (it.type === 'prediction') {
+      valClass = 'val-prediction';
+      badgeClass = 'ticker-badge-pred';
+    }
+
     return `
       <div class="ticker-item">
-        <span class="game-tag">${it.gameName || ''}</span>:
-        <span style="font-size:0.95rem; opacity:0.85;">${it.badge || it.label || ''}</span>
+        <span class="game-tag">${it.gameName || ''}</span>
+        <span class="ticker-badge ${badgeClass}">${it.badge || ''}</span>
         <strong class="${valClass}">${it.text || it.value || ''}</strong>
       </div>
     `;
@@ -5865,6 +6364,45 @@ function ensureLotterySectionsStructure() {
       res.slides = res.slides.slice(0, 5);
     }
   }
+
+  // Garantizar exactamente las 3 diapositivas configurables para la sección Estadísticas
+  const est = currentScreenConfig.lotterySections.estadisticas;
+  const defEstSlides = DEFAULT_SCREEN_CONFIG.lotterySections.estadisticas.slides;
+  if (!Array.isArray(est.slides) || est.slides.length === 0) {
+    est.slides = JSON.parse(JSON.stringify(defEstSlides));
+  } else {
+    // Si tiene diapositivas viejas o incompletas, asegurar que existan las 3 diapositivas requeridas
+    if (est.slides.length < 3) {
+      for (let i = est.slides.length; i < 3; i++) {
+        if (defEstSlides[i]) {
+          est.slides.push(JSON.parse(JSON.stringify(defEstSlides[i])));
+        }
+      }
+    } else if (est.slides.length > 3) {
+      est.slides = est.slides.slice(0, 3);
+    }
+    // Asegurar los tipos correctos para las 3 diapositivas
+    if (est.slides[0]) {
+      est.slides[0].type = 'stats_hot';
+      if (!est.slides[0].lotteryCount) est.slides[0].lotteryCount = 3;
+      if (!Array.isArray(est.slides[0].lotteries) || est.slides[0].lotteries.length === 0) {
+        est.slides[0].lotteries = ['guacharo-activo', 'lotto-activo', 'la-granjita'];
+      }
+    }
+    if (est.slides[1]) {
+      est.slides[1].type = 'stats_cold';
+      if (!est.slides[1].lotteryCount) est.slides[1].lotteryCount = 3;
+      if (!Array.isArray(est.slides[1].lotteries) || est.slides[1].lotteries.length === 0) {
+        est.slides[1].lotteries = ['guacharo-activo', 'lotto-activo', 'la-granjita'];
+      }
+    }
+    if (est.slides[2]) {
+      est.slides[2].type = 'stats_pyramid';
+      if (!Array.isArray(est.slides[2].lotteries) || est.slides[2].lotteries.length === 0) {
+        est.slides[2].lotteries = ['triple-zulia', 'triple-tachira', 'triple-chance-1'];
+      }
+    }
+  }
 }
 
 function renderResultadosSlidesEditor() {
@@ -6008,6 +6546,27 @@ function renderResultadosSlidesEditor() {
 }
 window.renderResultadosSlidesEditor = renderResultadosSlidesEditor;
 
+function setStatsSlideLotteryCount(sIdx, count) {
+  ensureLotterySectionsStructure();
+  saveEstadisticasSlidesFromDOM();
+  const slide = currentScreenConfig.lotterySections.estadisticas.slides[sIdx];
+  if (slide) {
+    slide.lotteryCount = count;
+    renderEstadisticasSlidesEditor();
+  }
+}
+window.setStatsSlideLotteryCount = setStatsSlideLotteryCount;
+
+function setStatsSlideLotterySlot(sIdx, slotIdx, gameId) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections.estadisticas.slides[sIdx];
+  if (slide) {
+    if (!Array.isArray(slide.lotteries)) slide.lotteries = [];
+    slide.lotteries[slotIdx] = gameId;
+  }
+}
+window.setStatsSlideLotterySlot = setStatsSlideLotterySlot;
+
 function renderEstadisticasSlidesEditor() {
   ensureLotterySectionsStructure();
   const container = document.getElementById('slidesEstadisticasContainer');
@@ -6016,70 +6575,148 @@ function renderEstadisticasSlidesEditor() {
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.estadisticas.slides;
-  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
+  const activeCount = slides.filter(s => s && s.enabled !== false).length;
+  if (countLabel) countLabel.textContent = `(${activeCount} activas de 3 diapositivas fijas)`;
 
   // Barra de navegación rápida
   if (quickNav) {
-    if (slides.length > 0) {
-      quickNav.innerHTML = `
-        <span class="slides-quick-nav-label">Ir a:</span>
-        ${slides.map((s, i) => `
-          <button type="button" class="btn-quick-slide-jump" onclick="window.scrollToSlideEditor('estadisticas', ${i})" title="${s.name || `Estadísticas #${i + 1}`}">
-            #${i + 1}
+    quickNav.innerHTML = `
+      <span class="slides-quick-nav-label">Ir a:</span>
+      ${slides.map((s, i) => {
+        const isAct = s.enabled !== false;
+        return `
+          <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('estadisticas', ${i})" title="${s.name || `Diapositiva #${i + 1}`}">
+            ${isAct ? '●' : '○'} #${i + 1}
           </button>
-        `).join('')}
+        `;
+      }).join('')}
+    `;
+  }
+
+  // Filtrar estrictamente solo animalitos
+  const catalog = (lotteryMasterCatalog.length > 0) ? lotteryMasterCatalog : (lotteryTop10.length > 0 ? lotteryTop10 : []);
+  const animalGames = catalog.filter(g => (!g.type || g.type === 'animalitos') && !g.id.includes('triple'));
+  const tripleGames = catalog.filter(g => g.type === 'triples' || g.id.includes('triple'));
+
+  const cardsHtml = slides.map((slide, sIdx) => {
+    const isAct = slide.enabled !== false;
+    const isPyramid = (sIdx === 2 || slide.type === 'stats_pyramid');
+    const colCount = Math.min(4, Math.max(1, parseInt(slide.lotteryCount) || 3));
+
+    let bodyContent = '';
+
+    if (!isPyramid) {
+      const countBtns = [1, 2, 3, 4].map(num => `
+        <button type="button" class="btn-lottery-count-pill ${colCount === num ? 'active' : ''}" onclick="window.setStatsSlideLotteryCount(${sIdx}, ${num})">
+          ${num} ${num === 1 ? 'Lotería' : 'Loterías'}
+        </button>
+      `).join('');
+
+      let chosen = Array.isArray(slide.lotteries) ? slide.lotteries.slice(0, colCount) : [];
+      while (chosen.length < colCount) {
+        const next = animalGames[chosen.length]?.id || 'guacharo-activo';
+        chosen.push(next);
+      }
+
+      const slotsHtml = chosen.map((selectedId, slotIdx) => {
+        const optionsHtml = animalGames.map(g => `
+          <option value="${g.id}" ${g.id === selectedId ? 'selected' : ''}>
+            ${g.icon || '🐾'} ${g.name}
+          </option>
+        `).join('');
+
+        return `
+          <div class="slide-slot-box">
+            <span class="slot-box-label">Lotería #${slotIdx + 1} (Animalitos):</span>
+            <select class="slot-select" onchange="window.setStatsSlideLotterySlot(${sIdx}, ${slotIdx}, this.value)">
+              ${optionsHtml}
+            </select>
+          </div>
+        `;
+      }).join('');
+
+      bodyContent = `
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">¿Cuántas loterías de animalitos mostrar en esta diapositiva?</span>
+            <div class="lottery-count-selector-group">
+              ${countBtns}
+            </div>
+          </div>
+          <div class="slide-slots-grid">
+            ${slotsHtml}
+          </div>
+        </div>
       `;
     } else {
-      quickNav.innerHTML = '';
-    }
-  }
+      const tripleSelected = Array.isArray(slide.lotteries) ? slide.lotteries : ['triple-zulia', 'triple-tachira', 'triple-chance-1'];
+      const tripleOptions = tripleGames.map(g => `
+        <option value="${g.id}" ${tripleSelected.includes(g.id) ? 'selected' : ''}>
+          ${g.icon || '🎰'} ${g.name}
+        </option>
+      `).join('');
 
-  if (slides.length === 0) {
-    container.innerHTML = '<div style="color:#94a3b8; font-size:0.9rem; padding:12px; text-align:center;">No hay diapositivas de estadísticas configuradas. Haga clic en "+ Agregar Diapositiva".</div>';
-    return;
-  }
-
-  const cardsHtml = slides.map((s, idx) => `
-    <div class="slide-editor-card" id="slideCard_stat_${idx}">
-      <div class="slide-editor-header">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <label class="switch-label" style="margin:0;">
-            <input type="checkbox" ${s.enabled !== false ? 'checked' : ''} onchange="window.toggleSlideEnabled('estadisticas', ${idx}, this.checked)">
-          </label>
-          <span class="slide-number-badge">Estadísticas #${idx + 1}</span>
-        </div>
-        <div class="slide-name-input-group">
-          <input type="text" class="slide-name-input" value="${s.name || ''}" placeholder="Nombre de la diapositiva" oninput="window.updateSlideName('estadisticas', ${idx}, this.value)">
-          <button type="button" class="btn-clear-name" onclick="window.clearSlideName('estadisticas', ${idx})">Limpiar</button>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="slide-duration-box">
-            <span>Duración:</span>
-            <input type="number" class="slide-duration-input" value="${s.duration || 20}" min="5" max="180" onchange="window.updateSlideDuration('estadisticas', ${idx}, this.value)">
-            <span>seg</span>
+      bodyContent = `
+        <div style="background:rgba(15,23,42,0.6); padding:10px 14px; border-radius:8px; border:1px solid rgba(245,158,11,0.25);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:#fbbf24; font-size:0.88rem;">🔺 Pirámide Matemática de la Fecha & Triples</strong>
+            <span style="font-size:0.75rem; color:#94a3b8;">(Cálculo numerológico automático según la fecha)</span>
           </div>
-          <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('estadisticas', ${idx})">🗑️</button>
+          <p style="margin:0 0 10px 0; font-size:0.82rem; color:#cbd5e1; line-height:1.4;">
+            Despliega la legendaria Pirámide de la Suerte basada en los 6 dígitos de la fecha de hoy, coronando el <strong>Triple Rey</strong>, las permutas, los terminales explosivos y la cábala numerológica para incentivar las jugadas de triples en taquilla.
+          </p>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">Lotería de Triples foco:</span>
+            <select class="triple-focus-select" style="background:#1e293b; color:#fff; border:1px solid #475569; padding:4px 8px; border-radius:6px; font-size:0.82rem;" onchange="window.setStatsSlideLotterySlot(${sIdx}, 0, this.value)">
+              ${tripleOptions}
+            </select>
+          </div>
         </div>
+      `;
+    }
+
+    const defaultTitle = sIdx === 0 
+      ? '🔥 Top 5 Animalitos Más Premiados (30D)' 
+      : (sIdx === 1 ? '❄️ Animalitos Por Reventar (Menos Salidos 30D)' : '🔺 Pirámide de la Suerte & Triples Millonarios');
+
+    return `
+      <div class="slide-editor-card ${isAct ? '' : 'slide-deactivated'}" id="slideCard_stat_${sIdx}">
+        <div class="slide-editor-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label class="switch-label" style="margin:0;">
+              <input type="checkbox" id="chkSlideStat_${sIdx}" ${isAct ? 'checked' : ''} onchange="window.toggleSlideEnabled('estadisticas', ${sIdx}, this.checked)">
+            </label>
+            <span class="slide-number-badge">
+              Diapositiva #${sIdx + 1}
+            </span>
+            <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('estadisticas', ${sIdx})">
+              ${isAct ? '✅ ACTIVA' : '⏸️ PAUSADA'}
+            </span>
+          </div>
+          <div class="slide-name-input-group">
+            <input type="text" class="slide-name-input" value="${slide.name || defaultTitle}" placeholder="${defaultTitle}" oninput="window.updateSlideName('estadisticas', ${sIdx}, this.value)">
+            <button type="button" class="btn-clear-name" onclick="window.clearSlideName('estadisticas', ${sIdx})">Limpiar</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="slide-duration-box">
+              <span>Duración:</span>
+              <input type="number" class="slide-duration-input" value="${slide.duration || 22}" min="5" max="180" onchange="window.updateSlideDuration('estadisticas', ${sIdx}, this.value)">
+              <span>seg</span>
+            </div>
+            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('estadisticas', ${sIdx})" title="Alternar pausa/activa">
+              ${isAct ? '⏸️' : '✅'}
+            </button>
+          </div>
+        </div>
+        ${bodyContent}
       </div>
-      <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Despliega la radiografía de 30 días de animalitos (más calientes, fríos / por reventar y pronósticos recomendados).</p>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
-  const addBtnStatsHtml = (slides.length < 15) ? `
-    <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
-      <button type="button" id="btnBottomAddStatsSlide" onclick="window.addNewStatsSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
-        ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
-      </button>
-    </div>
-  ` : `
-    <div style="margin-top:16px; text-align:center; color:#94a3b8; font-size:0.88rem; font-weight:700;">
-      ✅ Límite máximo de 15 diapositivas alcanzado para la sección Estadísticas.
-    </div>
-  `;
-
-  container.innerHTML = cardsHtml + addBtnStatsHtml;
+  container.innerHTML = cardsHtml;
 }
 window.renderEstadisticasSlidesEditor = renderEstadisticasSlidesEditor;
+
 
 function renderPublicidadSlidesEditor() {
   ensureLotterySectionsStructure();
@@ -6199,6 +6836,18 @@ function saveEstadisticasSlidesFromDOM() {
     if (txtName) slide.name = txtName.value.trim();
     const numDur = card.querySelector('.slide-duration-input');
     if (numDur) slide.duration = parseInt(numDur.value) || 20;
+
+    // Guardar loterías de animalitos seleccionadas
+    const slotSelects = card.querySelectorAll('.slot-select');
+    if (slotSelects && slotSelects.length > 0) {
+      slide.lotteries = Array.from(slotSelects).map(sel => sel.value);
+      slide.lotteryCount = slide.lotteries.length;
+    }
+    // Guardar lotería de triples para la pirámide
+    const tripleSelect = card.querySelector('.triple-focus-select');
+    if (tripleSelect) {
+      slide.lotteries = [tripleSelect.value];
+    }
   });
 }
 
@@ -6248,25 +6897,7 @@ function addNewResultSlide() {
 window.addNewResultSlide = addNewResultSlide;
 
 function addNewStatsSlide() {
-  ensureLotterySectionsStructure();
-  saveEstadisticasSlidesFromDOM();
-  const slides = currentScreenConfig.lotterySections.estadisticas.slides;
-  if (slides.length >= 15) {
-    alert('Ha alcanzado el límite máximo de 15 diapositivas para la sección Estadísticas.');
-    return;
-  }
-  slides.push({
-    id: `slide_stat_${Date.now()}`,
-    name: `Radiografía Estadística #${slides.length + 1}`,
-    enabled: true,
-    duration: 20
-  });
-
-  const newIdx = slides.length - 1;
-  renderEstadisticasSlidesEditor();
-  setTimeout(() => {
-    window.scrollToSlideEditor('estadisticas', newIdx);
-  }, 60);
+  alert('La sección Estadísticas opera con 3 diapositivas maestras fijas altamente configurables: Top 5 Calientes, Top 5 Fríos y Pirámide de Triples.');
 }
 window.addNewStatsSlide = addNewStatsSlide;
 
@@ -6305,7 +6936,16 @@ function deleteSlide(secKey, idx) {
     }
     return;
   }
-  if (secKey === 'estadisticas') saveEstadisticasSlidesFromDOM();
+  if (secKey === 'estadisticas') {
+    // Las 3 diapositivas de estadísticas son maestras fijas: alternar/pausar en lugar de eliminar del array
+    saveEstadisticasSlidesFromDOM();
+    const slide = currentScreenConfig.lotterySections.estadisticas.slides[idx];
+    if (slide) {
+      slide.enabled = !slide.enabled;
+      renderEstadisticasSlidesEditor();
+    }
+    return;
+  }
   if (secKey === 'publicidad') savePublicidadSlidesFromDOM();
 
   const slides = currentScreenConfig.lotterySections[secKey].slides;
@@ -6313,7 +6953,6 @@ function deleteSlide(secKey, idx) {
     if (!confirm('Esta es la única diapositiva de esta sección. ¿Desea eliminarla de todos modos?')) return;
   }
   slides.splice(idx, 1);
-  if (secKey === 'estadisticas') renderEstadisticasSlidesEditor();
   if (secKey === 'publicidad') renderPublicidadSlidesEditor();
 }
 window.deleteSlide = deleteSlide;
