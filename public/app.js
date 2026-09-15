@@ -3382,7 +3382,7 @@ const DEFAULT_SCREEN_CONFIG = {
   themeMode: 'dark',
   colorStyle: 'emerald',
   tickerActive: true,
-  tickerSpeed: 160,
+  tickerSpeed: 300,
   voiceEnabled: true,
   voiceVolume: 0.90,
   animalSfxEnabled: true,
@@ -3484,7 +3484,7 @@ function applyScreenConfig(cfg) {
   currentScreenConfig.themeMode = cfg.themeMode || currentScreenConfig.themeMode;
   currentScreenConfig.colorStyle = cfg.colorStyle || currentScreenConfig.colorStyle;
   if (cfg.tickerActive !== undefined) currentScreenConfig.tickerActive = Boolean(cfg.tickerActive);
-  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = parseInt(cfg.tickerSpeed) || 160;
+  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = Math.min(500, Math.max(250, parseInt(cfg.tickerSpeed) || 300));
   if (cfg.voiceEnabled !== undefined) currentScreenConfig.voiceEnabled = Boolean(cfg.voiceEnabled);
   if (cfg.voiceVolume !== undefined) currentScreenConfig.voiceVolume = parseFloat(cfg.voiceVolume);
   if (cfg.animalSfxEnabled !== undefined) currentScreenConfig.animalSfxEnabled = Boolean(cfg.animalSfxEnabled);
@@ -3534,14 +3534,14 @@ function applyScreenConfig(cfg) {
   colorClasses.forEach(cls => document.body.classList.remove(cls));
   document.body.classList.add(`color-${currentScreenConfig.colorStyle}`);
 
-  // 3. Cintillo Inferior y Velocidad
+  // 3. Cintillo Inferior y Velocidad (Rango 250s - 500s)
   const tickerEl = document.getElementById('lotteryLiveTicker') || document.getElementById('lotteryTickerBar');
   const trackEl = document.getElementById('tickerContentTrack');
   if (tickerEl) {
     tickerEl.style.display = currentScreenConfig.tickerActive ? 'flex' : 'none';
   }
   if (trackEl) {
-    const speed = currentScreenConfig.tickerSpeed || 160;
+    const speed = Math.min(500, Math.max(250, parseInt(currentScreenConfig.tickerSpeed) || 300));
     trackEl.style.setProperty('--ticker-speed', `${speed}s`);
     trackEl.style.setProperty('animation-duration', `${speed}s`, 'important');
   }
@@ -4537,27 +4537,38 @@ function renderModuleTop5Triples(modCfg, stage) {
       const tripleB = isDone ? (draw.tripleB || '--') : '--';
       const tripleC = isDone ? (draw.tripleC || '--') : '--';
       const signo = isDone ? (draw.signo || '') : '';
-      const zData = getZodiacData(signo);
-      const hasB = (tripleB !== '--' || gameHasB);
-      const hasC = (tripleC !== '--' || gameHasC);
+      const zData = signo ? getZodiacData(signo) : null;
+      const extraName = isDone ? (draw.name || '') : '';
+      const timeStr = draw.time || draw.hour || '';
+
+      const signoHtml = signo
+        ? `<span class="result-triple-sign" title="Signo ${signo}">
+            ${zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}">` : ''}
+            <span class="signo-name">${zData ? `${zData.symbol} ${signo}` : signo}</span>
+          </span>`
+        : (extraName
+          ? `<span class="result-triple-name">${extraName}</span>`
+          : (isDone ? '' : '<span class="result-triple-sign pending-sign">⏳ Por Jugar</span>'));
 
       return `
-        <div class="board-draw-row triple-2lines ${isDone ? 'done' : 'pending'}">
-          <div class="board-draw-left">
-            <span class="draw-time-cell">${draw.time || draw.hour}</span>
-            <div class="draw-avatar-cell">
-              ${zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}" title="${zData.name}">` : (signo ? '<span style="font-size:1rem;">♈</span>' : (isDone ? '<span style="font-size:0.85rem;">⭐</span>' : '<span class="draw-pending-icon">⏳</span>'))}
-            </div>
+        <div class="board-draw-row triple-3lines ${isDone ? 'done' : 'pending'}">
+          <div class="triple-row-time">
+            <span class="triple-time-text">${timeStr}</span>
+            ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">⏳ Por Jugar</span>'}
           </div>
-          <div class="result-triple-block">
-            <div class="result-triple-subline">
-              <span class="result-triple-pill triple-a" title="Triple A">A: ${tripleA}</span>
-              ${hasB ? `<span class="result-triple-pill triple-b" title="Triple B">B: ${tripleB}</span>` : ''}
-            </div>
-            <div class="result-triple-subline">
-              ${hasC ? `<span class="result-triple-pill triple-c" title="Triple C">C: ${tripleC}</span>` : ''}
-              ${signo ? `<span class="result-triple-sign">${zData ? `${zData.symbol} ${signo}` : signo}</span>` : (isDone && draw.name ? `<span class="result-triple-name">${draw.name}</span>` : (isDone ? '' : '<span class="result-triple-sign" style="opacity:0.6;">⏳ Por Jugar</span>'))}
-            </div>
+          <div class="triple-row-ab">
+            <span class="result-triple-pill triple-a" title="Triple A">
+              <span class="pill-lbl">A:</span><span class="pill-val">${tripleA}</span>
+            </span>
+            <span class="result-triple-pill triple-b" title="Triple B">
+              <span class="pill-lbl">B:</span><span class="pill-val">${tripleB}</span>
+            </span>
+          </div>
+          <div class="triple-row-c">
+            <span class="result-triple-pill triple-c" title="Triple C">
+              <span class="pill-lbl">C:</span><span class="pill-val">${tripleC}</span>
+            </span>
+            ${signoHtml}
           </div>
         </div>
       `;
@@ -4641,23 +4652,65 @@ function renderModulePizarra1000(modCfg, stage) {
 
     const rowsHtml = draws.map(draw => {
       const isDone = !draw.isPending && (draw.number || draw.tripleA || draw.tripleB || draw.tripleC);
-      const num = isDone ? (isAnimal ? draw.number : `A:${draw.tripleA || '--'}`) : '--';
-      const name = isDone ? (isAnimal ? (draw.name || '') : `B:${draw.tripleB || '--'} C:${draw.tripleC || '--'} ${draw.signo || ''}`) : 'Esperando...';
-      const img = isDone ? (draw.image || '') : '';
-      const zData = (!isAnimal && isDone && draw.signo) ? getZodiacData(draw.signo) : null;
+      const timeStr = draw.time || draw.hour || '';
 
-      return `
-        <div class="board-draw-row ${isDone ? 'done' : 'pending'}">
-          <span class="draw-time-cell">${draw.time || draw.hour}</span>
-          <div class="draw-info-cell">
-            <span class="draw-num-badge">${num}</span>
-            <span class="draw-name-label">${name}</span>
+      if (isAnimal) {
+        const num = isDone ? (draw.number || '--') : '--';
+        const name = isDone ? (draw.name || '') : 'Esperando...';
+        const img = isDone ? (draw.image || '') : '';
+        return `
+          <div class="board-draw-row ${isDone ? 'done' : 'pending'}">
+            <span class="draw-time-cell">${timeStr}</span>
+            <div class="draw-info-cell">
+              <span class="draw-num-badge">${num}</span>
+              <span class="draw-name-label">${name}</span>
+            </div>
+            <div class="draw-avatar-cell">
+              ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">🪙</span>' : '<span class="draw-pending-icon">⏳</span>')}
+            </div>
           </div>
-          <div class="draw-avatar-cell">
-            ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">🪙</span>' : '<span class="draw-pending-icon">⏳</span>'))}
+        `;
+      } else {
+        // Triples en Pizarra 1000: Presentación oficial en 3 líneas
+        const tripleA = isDone ? (draw.tripleA || draw.number || '--') : '--';
+        const tripleB = isDone ? (draw.tripleB || '--') : '--';
+        const tripleC = isDone ? (draw.tripleC || '--') : '--';
+        const signo = isDone ? (draw.signo || '') : '';
+        const zData = signo ? getZodiacData(signo) : null;
+        const extraName = isDone ? (draw.name || '') : '';
+
+        const signoHtml = signo
+          ? `<span class="result-triple-sign" title="Signo ${signo}">
+              ${zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}">` : ''}
+              <span class="signo-name">${zData ? `${zData.symbol} ${signo}` : signo}</span>
+            </span>`
+          : (extraName
+            ? `<span class="result-triple-name">${extraName}</span>`
+            : (isDone ? '' : '<span class="result-triple-sign pending-sign">⏳ Por Jugar</span>'));
+
+        return `
+          <div class="board-draw-row triple-3lines ${isDone ? 'done' : 'pending'}">
+            <div class="triple-row-time">
+              <span class="triple-time-text">${timeStr}</span>
+              ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">⏳ Por Jugar</span>'}
+            </div>
+            <div class="triple-row-ab">
+              <span class="result-triple-pill triple-a" title="Triple A">
+                <span class="pill-lbl">A:</span><span class="pill-val">${tripleA}</span>
+              </span>
+              <span class="result-triple-pill triple-b" title="Triple B">
+                <span class="pill-lbl">B:</span><span class="pill-val">${tripleB}</span>
+              </span>
+            </div>
+            <div class="triple-row-c">
+              <span class="result-triple-pill triple-c" title="Triple C">
+                <span class="pill-lbl">C:</span><span class="pill-val">${tripleC}</span>
+              </span>
+              ${signoHtml}
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }).join('');
 
     const isFewDraws = draws.length <= 6;
@@ -5078,18 +5131,16 @@ function renderCustomResultSlide(slideCfg, stage) {
         const signo = isDone ? (draw.signo || '') : '';
         const extraName = isDone ? (draw.name || '') : '';
         const zData = signo ? getZodiacData(signo) : null;
-        const isMultiTripleGame = (gameId.includes('chance') || gameId.includes('zulia') || gameId.includes('tachira') || gameId.includes('zamorano') || gameId.includes('caliente') || gameHasB || gameHasC);
-
-        const avatarImgHtml = draw.image 
-          ? `<img src="${draw.image}" class="result-avatar-img" alt="${extraName || ''}" onerror="this.style.display='none'">` 
-          : (zData 
-            ? `<img src="/images/zodiac/${zData.file}" class="result-avatar-img" alt="${zData.name}">` 
-            : (game.logoUrl 
-              ? `<img src="${game.logoUrl}" class="result-avatar-img" alt="${game.name}" onerror="this.style.display='none'">` 
-              : '<span class="result-avatar-coin">🎰</span>'));
+        const isMultiTripleGame = (gameId.includes('chance') || gameId.includes('zulia') || gameId.includes('tachira') || gameId.includes('zamorano') || gameId.includes('caliente') || gameId.includes('caracas') || gameHasB || gameHasC);
 
         // Solo juegos de terminales puros de 1 número usan una sola línea
         if (!isMultiTripleGame && !gameHasB && !gameHasC && !signo) {
+          const avatarImgHtml = draw.image 
+            ? `<img src="${draw.image}" class="result-avatar-img" alt="${extraName || ''}" onerror="this.style.display='none'">` 
+            : (game.logoUrl 
+              ? `<img src="${game.logoUrl}" class="result-avatar-img" alt="${game.name}" onerror="this.style.display='none'">` 
+              : '<span class="result-avatar-coin">🎰</span>');
+
           return `
             <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
               <span class="result-time">${timeStr}</span>
@@ -5102,26 +5153,38 @@ function renderCustomResultSlide(slideCfg, stage) {
           `;
         }
 
-        // Diseño Oficial en 2 Líneas para Triples (Requisito 1):
-        // Línea 1: Triples A y B
-        // Línea 2: Triple C con su signo zodiacal
+        // Presentación Oficial en 3 Líneas para Triples:
+        // Línea 1: Hora del sorteo
+        // Línea 2: Triples A y B
+        // Línea 3: Triple C con el signo
+        const signoHtml = signo
+          ? `<span class="result-triple-sign" title="Signo ${signo}">
+              ${zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}">` : ''}
+              <span class="signo-name">${zData ? `${zData.symbol} ${signo}` : signo}</span>
+            </span>`
+          : (extraName
+            ? `<span class="result-triple-name">${extraName}</span>`
+            : (isDone ? '' : '<span class="result-triple-sign pending-sign">⏳ Por Jugar</span>'));
+
         return `
-          <div class="result-draw-row triple-2lines ${isDone ? 'done' : 'pending'}">
-            <div class="result-draw-left">
-              <span class="result-time">${timeStr}</span>
-              <div class="result-avatar-box">
-                ${avatarImgHtml}
-              </div>
+          <div class="result-draw-row triple-3lines ${isDone ? 'done' : 'pending'}">
+            <div class="triple-row-time">
+              <span class="triple-time-text">${timeStr}</span>
+              ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">⏳ Por Jugar</span>'}
             </div>
-            <div class="result-triple-block">
-              <div class="result-triple-subline">
-                <span class="result-triple-pill triple-a" title="Triple A">A: ${tA}</span>
-                <span class="result-triple-pill triple-b" title="Triple B">B: ${tB}</span>
-              </div>
-              <div class="result-triple-subline">
-                <span class="result-triple-pill triple-c" title="Triple C">C: ${tC}</span>
-                ${signo ? `<span class="result-triple-sign">${zData ? `${zData.symbol} ${signo}` : signo}</span>` : (extraName ? `<span class="result-triple-name">${extraName}</span>` : (isDone ? '' : '<span class="result-triple-sign" style="opacity:0.6;">⏳ Por Jugar</span>'))}
-              </div>
+            <div class="triple-row-ab">
+              <span class="result-triple-pill triple-a" title="Triple A">
+                <span class="pill-lbl">A:</span><span class="pill-val">${tA}</span>
+              </span>
+              <span class="result-triple-pill triple-b" title="Triple B">
+                <span class="pill-lbl">B:</span><span class="pill-val">${tB}</span>
+              </span>
+            </div>
+            <div class="triple-row-c">
+              <span class="result-triple-pill triple-c" title="Triple C">
+                <span class="pill-lbl">C:</span><span class="pill-val">${tC}</span>
+              </span>
+              ${signoHtml}
             </div>
           </div>
         `;
@@ -5440,7 +5503,7 @@ function renderLotteryTicker() {
   }).join('');
 
   track.innerHTML = itemsHtml + itemsHtml;
-  const speed = currentScreenConfig.tickerSpeed || 160;
+  const speed = Math.min(500, Math.max(250, parseInt(currentScreenConfig.tickerSpeed) || 300));
   track.style.setProperty('--ticker-speed', `${speed}s`);
   track.style.setProperty('animation-duration', `${speed}s`, 'important');
 }
@@ -6372,7 +6435,7 @@ function syncScreenConfigFormWithState(cfg) {
   if (cfg.colorStyle || cfg.colorScheme) currentScreenConfig.colorStyle = cfg.colorStyle || cfg.colorScheme;
   if (cfg.defaultService) currentScreenConfig.defaultService = cfg.defaultService;
   if (cfg.tickerActive !== undefined) currentScreenConfig.tickerActive = Boolean(cfg.tickerActive);
-  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = parseInt(cfg.tickerSpeed) || 160;
+  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = Math.min(500, Math.max(250, parseInt(cfg.tickerSpeed) || 300));
 
   // Modo de Tema
   const radTheme = document.querySelectorAll('input[name="cfgThemeMode"]');
@@ -6386,13 +6449,14 @@ function syncScreenConfigFormWithState(cfg) {
   const selService = document.getElementById('cfgDefaultService');
   if (selService) selService.value = cfg.defaultService || 'loteria';
 
-  // Cintillo
+  // Cintillo (Rango 250s - 500s)
   const chkTicker = document.getElementById('cfgTickerActive');
   const rngTicker = document.getElementById('cfgTickerSpeed');
   const lblTicker = document.getElementById('lblCfgTickerSpeed');
   if (chkTicker) chkTicker.checked = cfg.tickerActive !== false;
-  if (rngTicker) rngTicker.value = cfg.tickerSpeed || 160;
-  if (lblTicker) lblTicker.textContent = `${cfg.tickerSpeed || 160}s`;
+  const spdVal = Math.min(500, Math.max(250, parseInt(cfg.tickerSpeed) || 300));
+  if (rngTicker) rngTicker.value = spdVal;
+  if (lblTicker) lblTicker.textContent = `${spdVal}s`;
 
   // Audio y Voz
   const chkVoice = document.getElementById('cfgVoiceEnabled');
@@ -6475,7 +6539,7 @@ function setupScreenConfigEventListeners() {
   const lblTicker = document.getElementById('lblCfgTickerSpeed');
   if (rngTicker && lblTicker) {
     rngTicker.addEventListener('input', () => {
-      const spd = parseInt(rngTicker.value) || 160;
+      const spd = Math.min(500, Math.max(250, parseInt(rngTicker.value) || 300));
       lblTicker.textContent = `${spd}s`;
       currentScreenConfig.tickerSpeed = spd;
       const trackEl = document.getElementById('tickerContentTrack');
@@ -6591,7 +6655,7 @@ function setupScreenConfigEventListeners() {
       const colorStyle = document.getElementById('cfgColorScheme')?.value || 'emerald';
       const defaultService = document.getElementById('cfgDefaultService')?.value || 'loteria';
       const tickerActive = document.getElementById('cfgTickerActive')?.checked !== false;
-      const tickerSpeed = parseInt(document.getElementById('cfgTickerSpeed')?.value) || 160;
+      const tickerSpeed = Math.min(500, Math.max(250, parseInt(document.getElementById('cfgTickerSpeed')?.value) || 300));
       const voiceEnabled = document.getElementById('cfgVoiceEnabled')?.checked !== false;
       const voiceVolume = (parseInt(document.getElementById('cfgVoiceVolume')?.value) || 90) / 100;
       const animalSfxEnabled = document.getElementById('cfgAnimalSfx')?.checked !== false;

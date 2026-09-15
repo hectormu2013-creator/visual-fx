@@ -8225,7 +8225,7 @@
       "icon": "🎯",
       "logoUrl": "https://api.1000resultados.com/public/images/lottery/tripletachira/logo.png",
       "color": "#d97706",
-      "lastUpdated": "2026-09-15T01:31:50.289Z",
+      "lastUpdated": "2026-09-15T02:16:03.205Z",
       "draws": [
         {
           "time": "01:15 PM",
@@ -8253,7 +8253,13 @@
         },
         {
           "time": "10:10 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "729",
+          "name": "Acuario",
+          "tripleA": "729",
+          "tripleB": "322",
+          "tripleC": "052",
+          "signo": "Acuario"
         }
       ],
       "hours": [

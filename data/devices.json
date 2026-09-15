@@ -57,7 +57,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -117,11 +117,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -129,11 +131,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -240,7 +244,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -300,11 +304,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -312,11 +318,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -423,7 +431,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -483,11 +491,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -495,11 +505,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -606,7 +618,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -666,11 +678,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -678,11 +692,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -789,7 +805,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -849,11 +865,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -861,11 +879,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -972,7 +992,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -1032,11 +1052,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -1044,11 +1066,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -1155,7 +1179,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -1215,11 +1239,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -1227,11 +1253,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -1338,7 +1366,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -1398,11 +1426,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -1410,11 +1440,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -1540,7 +1572,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -1600,11 +1632,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -1612,11 +1646,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -1739,7 +1775,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -1799,11 +1835,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -1811,11 +1849,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -1919,7 +1959,7 @@
         "themeMode": "dark",
         "colorStyle": "emerald",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -1979,11 +2019,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -1991,11 +2033,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -2119,7 +2163,7 @@
         },
         "themeMode": "dark",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -2179,11 +2223,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -2191,11 +2237,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]
@@ -2321,7 +2369,7 @@
         },
         "themeMode": "dark",
         "colorScheme": "emerald",
-        "tickerSpeed": 160,
+        "tickerSpeed": 500,
         "voiceVolume": 0.85,
         "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
@@ -2381,11 +2429,13 @@
                 "name": "triples y terminales",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "terminal-la-granjita",
                   "triple-caliente",
-                  "triple-centena"
+                  "triple-centena",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               },
               {
@@ -2393,11 +2443,13 @@
                 "name": "mas animalitos",
                 "enabled": true,
                 "duration": 20,
-                "lotteryCount": 3,
+                "lotteryCount": 5,
                 "lotteries": [
                   "granjita-plus",
                   "mega-animal-40",
-                  "selva-plus"
+                  "selva-plus",
+                  "chance-animal",
+                  "el-ruco"
                 ]
               }
             ]

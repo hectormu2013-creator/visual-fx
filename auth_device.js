@@ -39,7 +39,7 @@ const USERS = {
 const DEFAULT_SCREEN_CONFIG = {
   themeMode: 'dark', // 'dark' | 'light'
   colorScheme: 'emerald', // 'emerald' | 'cyan' | 'gold' | 'purple' | 'clean'
-  tickerSpeed: 160, // Segundos para el recorrido del cintillo
+  tickerSpeed: 300, // Segundos para el recorrido del cintillo (rango 250s - 500s)
   tickerActive: true,
   voiceEnabled: true,
   voiceVolume: 0.9,

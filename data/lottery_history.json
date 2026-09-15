@@ -42223,6 +42223,16 @@
         "tripleC": "249",
         "signo": "Capricornio",
         "isManual": false
+      },
+      {
+        "time": "10:10 PM",
+        "number": "729",
+        "name": "Acuario",
+        "tripleA": "729",
+        "tripleB": "322",
+        "tripleC": "052",
+        "signo": "Acuario",
+        "isManual": false
       }
     ]
   },
