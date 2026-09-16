@@ -11364,7 +11364,7 @@
       "icon": "🎯",
       "logoUrl": "https://api.1000resultados.com/public/images/lottery/tripletachira/logo.png",
       "color": "#d97706",
-      "lastUpdated": "2026-09-15T22:52:26.249Z",
+      "lastUpdated": "2026-09-16T02:16:12.191Z",
       "draws": [
         {
           "time": "01:15 PM",
@@ -11392,7 +11392,13 @@
         },
         {
           "time": "10:10 PM",
-          "isPending": true
+          "isPending": false,
+          "number": "341",
+          "name": "Acuario",
+          "tripleA": "341",
+          "tripleB": "817",
+          "tripleC": "499",
+          "signo": "Acuario"
         }
       ],
       "hours": [

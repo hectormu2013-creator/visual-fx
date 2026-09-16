@@ -3392,13 +3392,228 @@ function goToLiveStreams() {
 }
 
 // ==========================================
+// Catálogo Oficial de Formas de Pago, Horarios y Multiplicadores de Loterías
+// ==========================================
+const LOTTERY_RULES_CATALOG = {
+  animalitos: [
+    {
+      id: 'guacharo-activo',
+      name: 'Guácharo Activo',
+      badge: '🦜 77 Animales',
+      animalsCount: 77,
+      animalsRange: '0 al 76',
+      draws: '12 Sorteos Diarios (08:00 AM - 07:00 PM)',
+      multiplier: '60× / 120×',
+      multiplierNote: '¡Paga 120× si sale el comodín Guácharo!',
+      multiplierTag: 'comodin',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs (1.200 Bs con Guácharo)',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/guacharoactivo/logo.png',
+      color: '#10b981'
+    },
+    {
+      id: 'guacharito-millonario',
+      name: 'Guacharito Millonario',
+      badge: '🐥 77 Animales',
+      animalsCount: 77,
+      animalsRange: '0 al 76',
+      draws: '12 Sorteos Diarios (08:30 AM - 07:30 PM)',
+      multiplier: '60× / 120×',
+      multiplierNote: '¡Paga 120× si sale el comodín Guacharito!',
+      multiplierTag: 'comodin',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs (1.200 Bs con Guacharito)',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/guacharitomillonario/logo.png',
+      color: '#f59e0b'
+    },
+    {
+      id: 'la-granjita',
+      name: 'La Granjita',
+      badge: '🐸 38 Animales',
+      animalsCount: 38,
+      animalsRange: '0, 00 al 36',
+      draws: '11 Sorteos Diarios (08:00 AM - 07:00 PM)',
+      multiplier: '30×',
+      multiplierNote: '30 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/granjita/logo.png',
+      color: '#84cc16'
+    },
+    {
+      id: 'lotto-activo',
+      name: 'Lotto Activo',
+      badge: '🐾 38 Animales',
+      animalsCount: 38,
+      animalsRange: '0, 00 al 36',
+      draws: '11 Sorteos Diarios (09:00 AM - 07:00 PM)',
+      multiplier: '30×',
+      multiplierNote: '30 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/lottoactivo/logo.png',
+      color: '#06b6d4'
+    },
+    {
+      id: 'chance-animal',
+      name: 'Chance Animal',
+      badge: '🎲 38 Animales',
+      animalsCount: 38,
+      animalsRange: '0, 00 al 36',
+      draws: '11 Sorteos Diarios (09:00 AM - 07:00 PM)',
+      multiplier: '30×',
+      multiplierNote: '30 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/chanceanimal/logo.png',
+      color: '#8b5cf6'
+    },
+    {
+      id: 'la-ricachona',
+      name: 'La Ricachona',
+      badge: '💰 38 Animales',
+      animalsCount: 38,
+      animalsRange: '0, 00 al 36',
+      draws: '12 Sorteos Diarios (08:10 AM - 07:10 PM)',
+      multiplier: '30×',
+      multiplierNote: '30 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/laricachona/logo.png',
+      color: '#ec4899'
+    },
+    {
+      id: 'centena-animalitos',
+      name: 'Centena Animalitos',
+      badge: '💯 100 Animales',
+      animalsCount: 100,
+      animalsRange: '00 al 99',
+      draws: '12 Sorteos Diarios (08:00 AM - 07:00 PM)',
+      multiplier: '60×',
+      multiplierNote: '60 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/centenaanimalitos/logo.png',
+      color: '#3b82f6'
+    },
+    {
+      id: 'centena-plus',
+      name: 'Centena Plus',
+      badge: '💯 100 Animales',
+      animalsCount: 100,
+      animalsRange: '00 al 99',
+      draws: '12 Sorteos Diarios (08:30 AM - 07:30 PM)',
+      multiplier: '60×',
+      multiplierNote: '60 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/centenaplus/logo.png',
+      color: '#10b981'
+    },
+    {
+      id: 'selva-plus',
+      name: 'Selva Plus',
+      badge: '🌿 38 Animales',
+      animalsCount: 38,
+      animalsRange: '0, 00 al 36',
+      draws: '11 Sorteos Diarios (09:30 AM - 07:30 PM)',
+      multiplier: '30×',
+      multiplierNote: '30 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/selvaplus/logo.png',
+      color: '#14b8a6'
+    },
+    {
+      id: 'granjita-plus',
+      name: 'La Granjita Plus',
+      badge: '🌟 38 Animales',
+      animalsCount: 38,
+      animalsRange: '0, 00 al 36',
+      draws: '12 Sorteos Diarios (08:10 AM - 07:10 PM)',
+      multiplier: '30×',
+      multiplierNote: '30 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/animals/granjitaplus/logo.png',
+      color: '#84cc16'
+    }
+  ],
+  triples: [
+    {
+      id: 'triple-zulia',
+      name: 'Triple Zulia',
+      badge: '🎰 3 Sorteos',
+      draws: '12:45 PM • 04:45 PM • 07:05 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplezulia/logo.png',
+      color: '#3b82f6'
+    },
+    {
+      id: 'triple-tachira',
+      name: 'Triple Táchira',
+      badge: '🎯 3 Sorteos',
+      draws: '01:15 PM • 04:45 PM • 10:10 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/lottery/tripletachira/logo.png',
+      color: '#eab308'
+    },
+    {
+      id: 'triple-chance',
+      name: 'Triple Chance',
+      badge: '🎲 11 Sorteos',
+      draws: '09:00 AM a 07:00 PM (Cada Hora)',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplechance/logo.png',
+      color: '#8b5cf6'
+    },
+    {
+      id: 'triple-caracas',
+      name: 'Triple Caracas',
+      badge: '🏛️ 3 Sorteos',
+      draws: '01:00 PM • 04:30 PM • 07:00 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplecaracas/logo.png',
+      color: '#ef4444'
+    },
+    {
+      id: 'triple-zamorano',
+      name: 'Triple Zamorano',
+      badge: '🐎 3 Sorteos',
+      draws: '12:00 PM • 04:00 PM • 07:00 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: 'Astro 1.000×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Astro: 10 Bs ➔ 10.000 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplezamorano/logo.png',
+      color: '#f97316'
+    },
+    {
+      id: 'triple-caliente',
+      name: 'Triple Caliente',
+      badge: '🔥 3 Sorteos',
+      draws: '01:00 PM • 04:30 PM • 07:15 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
+      logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplecaliente/logo.png',
+      color: '#f43f5e'
+    }
+  ]
+};
+window.LOTTERY_RULES_CATALOG = LOTTERY_RULES_CATALOG;
+
+// ==========================================
 // Configuración Global y Personalización de Pantallas Digitales
 // ==========================================
 const DEFAULT_SCREEN_CONFIG = {
   themeMode: 'dark',
   colorStyle: 'emerald',
   tickerActive: true,
-  tickerSpeed: 300,
+  tickerSpeed: 350,
   voiceEnabled: true,
   voiceVolume: 0.90,
   animalSfxEnabled: true,
@@ -3412,7 +3627,9 @@ const DEFAULT_SCREEN_CONFIG = {
       enabled: true,
       slides: [
         {
-          id: 'slide_1',
+          id: 'slide_res_1',
+          serial: 'Pizarra1',
+          order: 1,
           name: 'Pizarra 1: Animalitos Líderes',
           enabled: true,
           duration: 20,
@@ -3420,7 +3637,9 @@ const DEFAULT_SCREEN_CONFIG = {
           lotteries: ['guacharo-activo', 'lotto-activo', 'la-granjita', 'guacharito-millonario', 'chance-animal']
         },
         {
-          id: 'slide_2',
+          id: 'slide_res_2',
+          serial: 'Pizarra2',
+          order: 2,
           name: 'Pizarra 2: Triples y Terminales Estrella',
           enabled: true,
           duration: 20,
@@ -3428,7 +3647,9 @@ const DEFAULT_SCREEN_CONFIG = {
           lotteries: ['triple-zulia', 'triple-tachira', 'triple-caracas', 'triple-chance-1', 'triple-chance-2']
         },
         {
-          id: 'slide_3',
+          id: 'slide_res_3',
+          serial: 'Pizarra3',
+          order: 3,
           name: 'Pizarra 3: Animalitos y Ruletas 2',
           enabled: true,
           duration: 20,
@@ -3436,7 +3657,9 @@ const DEFAULT_SCREEN_CONFIG = {
           lotteries: ['animalitos-la-ricachona', 'centena-animalitos', 'centena-plus', 'chance-animal', 'el-ruco']
         },
         {
-          id: 'slide_4',
+          id: 'slide_res_4',
+          serial: 'Pizarra4',
+          order: 4,
           name: 'Pizarra 4: Triples Complementarios',
           enabled: true,
           duration: 20,
@@ -3444,7 +3667,9 @@ const DEFAULT_SCREEN_CONFIG = {
           lotteries: ['triple-zamorano', 'triple-caliente', 'triple-tachira', 'triple-zulia', 'triple-caracas']
         },
         {
-          id: 'slide_5',
+          id: 'slide_res_5',
+          serial: 'Pizarra5',
+          order: 5,
           name: 'Pizarra 5: Sorteos Especiales y Ruletas',
           enabled: true,
           duration: 20,
@@ -3458,6 +3683,8 @@ const DEFAULT_SCREEN_CONFIG = {
       slides: [
         {
           id: 'slide_stats_hot',
+          serial: 'Estadistica1',
+          order: 6,
           name: '🔥 Top 5 Animalitos Más Premiados (30D)',
           type: 'stats_hot',
           enabled: true,
@@ -3467,6 +3694,8 @@ const DEFAULT_SCREEN_CONFIG = {
         },
         {
           id: 'slide_stats_cold',
+          serial: 'Estadistica2',
+          order: 7,
           name: '❄️ Top 5 Animalitos Por Reventar (30D)',
           type: 'stats_cold',
           enabled: true,
@@ -3476,6 +3705,8 @@ const DEFAULT_SCREEN_CONFIG = {
         },
         {
           id: 'slide_stats_pyramid',
+          serial: 'Estadistica3',
+          order: 8,
           name: '🔺 Pirámide de la Suerte & Triples Millonarios',
           type: 'stats_pyramid',
           enabled: true,
@@ -3490,9 +3721,54 @@ const DEFAULT_SCREEN_CONFIG = {
       slides: [
         {
           id: 'slide_pub_1',
-          name: 'Publicidad Oficial de Loterías',
+          serial: 'Publicidad1',
+          order: 9,
+          type: 'pub_rules_animalitos',
+          name: '🐾 Reglas, Horarios y Formas de Pago: Animalitos',
           enabled: true,
-          duration: 15
+          duration: 18,
+          lotteries: ['guacharo-activo', 'la-granjita', 'lotto-activo', 'guacharito-millonario', 'chance-animal', 'la-ricachona', 'centena-animalitos', 'centena-plus', 'selva-plus', 'granjita-plus']
+        },
+        {
+          id: 'slide_pub_2',
+          serial: 'Publicidad2',
+          order: 10,
+          type: 'pub_rules_triples',
+          name: '🎰 Formas de Pago y Horarios: Triples y Terminales',
+          enabled: true,
+          duration: 18,
+          lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano', 'triple-caliente']
+        },
+        {
+          id: 'slide_pub_3',
+          serial: 'Publicidad3',
+          order: 11,
+          type: 'pub_agency_identity',
+          name: '🏢 Identidad, Horarios y Normas de la Agencia',
+          enabled: true,
+          duration: 16,
+          agencyName: 'AGENCIA OFICIAL LA FORTUNA',
+          agencySlogan: 'Tu Agencia de Confianza • Pagos Seguros al Instante',
+          agencyHours: 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)',
+          ticketValidity: 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.',
+          agencyRules: [
+            'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
+            'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
+            'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+            'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+            'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
+          ]
+        },
+        {
+          id: 'slide_pub_4',
+          serial: 'Publicidad4',
+          order: 12,
+          type: 'pub_agency_benefits',
+          name: '💎 Beneficios Exclusivos de Nuestra Agencia',
+          enabled: true,
+          duration: 16,
+          title: '¿POR QUÉ APOSTAR CON NOSOTROS?',
+          subtitle: 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla'
         }
       ]
     }
@@ -3514,6 +3790,31 @@ let lotteryTop10 = [];
 let lotteryStatsData = null;
 let lastAnnouncedDrawId = {};
 let lotteryPollingTimer = null;
+let lastRenderedTickerContent = '';
+
+// Normalización matemática de la velocidad del cintillo para Smart TVs y pantallas de agencia
+function applyTickerSpeedToTrack(track) {
+  const el = track || document.getElementById('tickerContentTrack');
+  if (!el) return;
+  const userSpeed = Math.min(800, Math.max(150, parseInt(currentScreenConfig.tickerSpeed) || 350));
+  // Calibración visual a velocidad constante en px/segundo:
+  // 600s -> ~11.6 px/s (ultra pausado)
+  // 500s -> ~14.0 px/s (pausado y muy relajado, ideal para leer a distancia en agencia)
+  // 350s -> ~20.0 px/s (recomendado oficial)
+  // 250s -> ~28.0 px/s (ágil)
+  // 150s -> ~46.6 px/s (rápido)
+  const pxPerSec = Math.max(6, 7000 / userSpeed);
+  const halfWidth = (el.scrollWidth > 0) ? (el.scrollWidth / 2) : 40000;
+  const calculatedDuration = Math.max(40, Math.round(halfWidth / pxPerSec));
+
+  el.style.setProperty('--ticker-speed', `${calculatedDuration}s`);
+  el.style.setProperty('animation-duration', `${calculatedDuration}s`, 'important');
+}
+
+window.addEventListener('resize', () => {
+  const trackEl = document.getElementById('tickerContentTrack');
+  if (trackEl) applyTickerSpeedToTrack(trackEl);
+});
 
 function applyScreenConfig(cfg) {
   if (!cfg) return;
@@ -3521,7 +3822,7 @@ function applyScreenConfig(cfg) {
   currentScreenConfig.themeMode = cfg.themeMode || currentScreenConfig.themeMode;
   currentScreenConfig.colorStyle = cfg.colorStyle || currentScreenConfig.colorStyle;
   if (cfg.tickerActive !== undefined) currentScreenConfig.tickerActive = Boolean(cfg.tickerActive);
-  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = Math.min(500, Math.max(250, parseInt(cfg.tickerSpeed) || 300));
+  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = Math.min(800, Math.max(150, parseInt(cfg.tickerSpeed) || 350));
   if (cfg.voiceEnabled !== undefined) currentScreenConfig.voiceEnabled = Boolean(cfg.voiceEnabled);
   if (cfg.voiceVolume !== undefined) currentScreenConfig.voiceVolume = parseFloat(cfg.voiceVolume);
   if (cfg.animalSfxEnabled !== undefined) currentScreenConfig.animalSfxEnabled = Boolean(cfg.animalSfxEnabled);
@@ -3571,16 +3872,14 @@ function applyScreenConfig(cfg) {
   colorClasses.forEach(cls => document.body.classList.remove(cls));
   document.body.classList.add(`color-${currentScreenConfig.colorStyle}`);
 
-  // 3. Cintillo Inferior y Velocidad (Rango 250s - 500s)
+  // 3. Cintillo Inferior y Velocidad (Rango 150s - 600s calibrado)
   const tickerEl = document.getElementById('lotteryLiveTicker') || document.getElementById('lotteryTickerBar');
   const trackEl = document.getElementById('tickerContentTrack');
   if (tickerEl) {
     tickerEl.style.display = currentScreenConfig.tickerActive ? 'flex' : 'none';
   }
   if (trackEl) {
-    const speed = Math.min(500, Math.max(250, parseInt(currentScreenConfig.tickerSpeed) || 300));
-    trackEl.style.setProperty('--ticker-speed', `${speed}s`);
-    trackEl.style.setProperty('animation-duration', `${speed}s`, 'important');
+    applyTickerSpeedToTrack(trackEl);
   }
 
   // 4. Voz Humana
@@ -5075,7 +5374,7 @@ function renderStatsColdAnimalsSlide(slideCfg, stage) {
   }).join('');
 
   stage.innerHTML = `
-    <div class="stats-showcase-slide">
+    <div class="stats-showcase-slide cold-theme">
       <div class="stats-header-banner">
         <div class="stats-header-left">
           <span class="stats-header-badge">❄️</span>
@@ -5688,6 +5987,290 @@ function renderCustomResultSlide(slideCfg, stage) {
 window.renderCustomResultSlide = renderCustomResultSlide;
 
 // ==========================================
+// RENDERERS DE DIAPOSITIVAS DE INFORMACIÓN Y PUBLICIDAD
+// ==========================================
+
+// 1. Diapositiva: Reglas, Horarios y Formas de Pago de Animalitos (Requisito 2)
+function renderSlidePubRulesAnimalitos(slide, stage) {
+  const chosenIds = Array.isArray(slide.lotteries) && slide.lotteries.length > 0 
+    ? slide.lotteries 
+    : LOTTERY_RULES_CATALOG.animalitos.map(g => g.id);
+
+  const games = chosenIds.map(id => {
+    return LOTTERY_RULES_CATALOG.animalitos.find(g => g.id === id) || {
+      id,
+      name: id.toUpperCase().replace(/-/g, ' '),
+      badge: '🐾 38 Animales',
+      animalsCount: 38,
+      animalsRange: '0 al 36',
+      draws: '11 Sorteos Diarios',
+      multiplier: '30×',
+      multiplierNote: '30 veces lo apostado',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
+      logoUrl: '',
+      color: '#10b981'
+    };
+  }).slice(0, 10);
+
+  const cardsHtml = games.map(g => {
+    const isGuacharo = g.multiplierTag === 'comodin' || g.multiplier.includes('120');
+    return `
+      <div class="pub-lottery-card">
+        <div class="pub-card-left">
+          <div class="pub-logo-box">
+            ${g.logoUrl ? `<img src="${g.logoUrl}" class="pub-lottery-logo" alt="${g.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
+            <span style="${g.logoUrl ? 'display:none;' : ''} font-size:1.6rem;">${g.badge.includes('🦜') ? '🦜' : (g.badge.includes('🐥') ? '🐥' : (g.badge.includes('🐸') ? '🐸' : '🐾'))}</span>
+          </div>
+          <div class="pub-card-details">
+            <span class="pub-lottery-name">${g.name}</span>
+            <div class="pub-meta-badges">
+              <span class="pub-badge-info">${g.badge}</span>
+              <span class="pub-badge-schedule">🕒 ${g.draws}</span>
+            </div>
+          </div>
+        </div>
+        <div class="pub-card-right">
+          <div class="pub-mult-pill ${isGuacharo ? '' : 'green'}">${g.multiplier}</div>
+          <span class="pub-mult-note">${g.multiplierNote}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  stage.innerHTML = `
+    <div class="pub-showcase-slide">
+      <div class="pub-header-banner">
+        <div class="pub-header-left">
+          <span class="pub-header-badge">🐾</span>
+          <div>
+            <div class="pub-header-title">${slide.name || '🐾 REGLAS, HORARIOS Y MULTIPLICADORES: ANIMALITOS'}</div>
+            <div class="pub-header-subtitle">Guía oficial de formas de pago en taquilla • Multiplica tus jugadas hoy</div>
+          </div>
+        </div>
+        <div class="pub-header-right">
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> EN VIVO</div>
+        </div>
+      </div>
+      <div class="pub-catalog-grid">
+        ${cardsHtml}
+      </div>
+      <div class="stats-footer-cta">
+        <span class="stats-cta-text">🐾 ¡MULTIPLICA TU DINERO CON TUS ANIMALES FAVORITOS! • Cobro inmediato garantizado en taquilla</span>
+        <span class="stats-cta-pill">🎟️ ¡SELLA TUS JUGADAS AHORA!</span>
+      </div>
+    </div>
+  `;
+}
+window.renderSlidePubRulesAnimalitos = renderSlidePubRulesAnimalitos;
+
+// 2. Diapositiva: Formas de Pago y Horarios de Triples y Terminales (Requisito 3)
+function renderSlidePubRulesTriples(slide, stage) {
+  const chosenIds = Array.isArray(slide.lotteries) && slide.lotteries.length > 0
+    ? slide.lotteries
+    : LOTTERY_RULES_CATALOG.triples.map(g => g.id);
+
+  const games = chosenIds.map(id => {
+    return LOTTERY_RULES_CATALOG.triples.find(g => g.id === id) || {
+      id,
+      name: id.toUpperCase().replace(/-/g, ' '),
+      badge: '🎰 3 Sorteos',
+      draws: 'Horarios Oficiales',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      logoUrl: '',
+      color: '#3b82f6'
+    };
+  }).slice(0, 10);
+
+  const cardsHtml = games.map(g => `
+    <div class="pub-lottery-card">
+      <div class="pub-card-left">
+        <div class="pub-logo-box">
+          ${g.logoUrl ? `<img src="${g.logoUrl}" class="pub-lottery-logo" alt="${g.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
+          <span style="${g.logoUrl ? 'display:none;' : ''} font-size:1.6rem;">🎰</span>
+        </div>
+        <div class="pub-card-details">
+          <span class="pub-lottery-name">${g.name}</span>
+          <div class="pub-meta-badges">
+            <span class="pub-badge-info">${g.badge}</span>
+            <span class="pub-badge-schedule">🕒 ${g.draws}</span>
+          </div>
+        </div>
+      </div>
+      <div class="pub-card-right">
+        <div class="pub-triples-payouts">
+          <div class="pub-triple-item">
+            <span class="pub-triple-lbl">TRIPLE</span>
+            <span class="pub-triple-val gold">${g.multiplierTriple}</span>
+          </div>
+          <div class="pub-triple-item">
+            <span class="pub-triple-lbl">TERMINAL</span>
+            <span class="pub-triple-val">${g.multiplierTerminal}</span>
+          </div>
+          <div class="pub-triple-item">
+            <span class="pub-triple-lbl">SIGNO/ASTRO</span>
+            <span class="pub-triple-val gold">${g.multiplierSigno}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  stage.innerHTML = `
+    <div class="pub-showcase-slide">
+      <div class="pub-header-banner">
+        <div class="pub-header-left">
+          <span class="pub-header-badge">🎰</span>
+          <div>
+            <div class="pub-header-title">${slide.name || '🎰 FORMAS DE PAGO Y HORARIOS: TRIPLES Y TERMINALES'}</div>
+            <div class="pub-header-subtitle">Paga 600 veces en triples directos • 70 veces en terminales • 1.200 veces en signo zodiacal</div>
+          </div>
+        </div>
+        <div class="pub-header-right">
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> EN VIVO</div>
+        </div>
+      </div>
+      <div class="pub-catalog-grid">
+        ${cardsHtml}
+      </div>
+      <div class="stats-footer-cta cold-footer">
+        <span class="stats-cta-text">🎰 ¡LOS PREMIOS MÁS GRANDES DE VENEZUELA! • Triple directo 600x • Terminal 70x • Signo 1.200x</span>
+        <span class="stats-cta-pill cyan">💰 ¡COBRO SEGURO E INSTANTÁNEO!</span>
+      </div>
+    </div>
+  `;
+}
+window.renderSlidePubRulesTriples = renderSlidePubRulesTriples;
+
+// 3. Diapositiva: Identidad, Horarios y Normas de la Agencia (Requisito 4)
+function renderSlidePubAgencyIdentity(slide, stage) {
+  const agencyName = slide.agencyName || 'AGENCIA OFICIAL LA FORTUNA';
+  const agencySlogan = slide.agencySlogan || 'Tu Agencia de Confianza • Pagos Seguros al Instante';
+  const agencyHours = slide.agencyHours || 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
+  const ticketValidity = slide.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
+  
+  const rules = Array.isArray(slide.agencyRules) && slide.agencyRules.length > 0 ? slide.agencyRules : [
+    'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
+    'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
+    'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+    'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+    'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
+  ];
+
+  const rulesListHtml = rules.map((r, i) => `
+    <li class="pub-rule-entry">
+      <span class="pub-rule-icon">✔</span>
+      <div><strong>Norma #${i + 1}:</strong> ${r}</div>
+    </li>
+  `).join('');
+
+  stage.innerHTML = `
+    <div class="pub-showcase-slide">
+      <div class="pub-header-banner">
+        <div class="pub-header-left">
+          <span class="pub-header-badge">🏢</span>
+          <div>
+            <div class="pub-header-title">${slide.name || '🏢 IDENTIDAD, HORARIOS Y NORMAS DE LA AGENCIA'}</div>
+            <div class="pub-header-subtitle">${agencySlogan}</div>
+          </div>
+        </div>
+        <div class="pub-header-right">
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> EN VIVO</div>
+        </div>
+      </div>
+
+      <div class="pub-agency-container">
+        <div class="pub-agency-card-left">
+          <div class="pub-agency-brand-hero">
+            <div class="pub-agency-emblem">🏛️</div>
+            <h2 class="pub-agency-name-title">${agencyName}</h2>
+            <span class="pub-agency-status-tag">AGENCIA AUTORIZADA 100% OFICIAL</span>
+          </div>
+          <div class="pub-agency-info-boxes">
+            <div class="pub-info-box-item gold">
+              <div class="pub-info-box-header">🕒 HORARIO DE ATENCIÓN</div>
+              <div class="pub-info-box-body">${agencyHours}</div>
+            </div>
+            <div class="pub-info-box-item">
+              <div class="pub-info-box-header">🎟️ CADUCIDAD / VALIDEZ DE TICKETS</div>
+              <div class="pub-info-box-body">${ticketValidity}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pub-agency-card-right">
+          <div class="pub-rules-header">
+            <span style="font-size:1.5rem;">📜</span>
+            <h3>Condiciones Generales y Normas de Taquilla</h3>
+          </div>
+          <ul class="pub-rules-list">
+            ${rulesListHtml}
+          </ul>
+        </div>
+      </div>
+
+      <div class="stats-footer-cta">
+        <span class="stats-cta-text">🏢 JUEGA CON RESPONSABILIDAD • Conserve su ticket en buen estado • Pagos garantizados al instante</span>
+        <span class="stats-cta-pill">🛡️ RESPALDO Y CONFIANZA TOTAL</span>
+      </div>
+    </div>
+  `;
+}
+window.renderSlidePubAgencyIdentity = renderSlidePubAgencyIdentity;
+
+// 4. Diapositiva: Beneficios Exclusivos de Nuestra Agencia (Requisito 5)
+function renderSlidePubAgencyBenefits(slide, stage) {
+  const subtitle = slide.subtitle || 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla';
+
+  const benefits = [
+    { icon: '🏛️', title: 'Solidez Financiera', desc: 'Respaldo de capital garantizado para pagar hasta los premios más grandes sin demoras ni intermediarios.' },
+    { icon: '⚡', title: 'Pagos Inmediatos', desc: 'Cobra al instante en taquilla: Pago Móvil instantáneo, efectivo o transferencia bancaria en segundos.' },
+    { icon: '📜', title: '100% Legal y Oficial', desc: 'Agencia debidamente autorizada con conexión directa a los servidores oficiales de las loterías de Venezuela.' },
+    { icon: '⏱️', title: 'Atención Ultrarrápida', desc: 'Taquillas múltiples de alta velocidad para que selles tus tickets sin colas ni esperas.' },
+    { icon: '🛡️', title: 'Seguridad y Confianza', desc: 'Instalaciones cómodas y seguras con monitoreo continuo para tu total tranquilidad.' },
+    { icon: '💳', title: 'Todos los Medios de Pago', desc: 'Aceptamos Pago Móvil, Punto de Venta, Biopago, Efectivo Divisas y Bolívares al cambio oficial.' },
+    { icon: '📺', title: 'Pantallas 4K en Vivo', desc: 'Monitoreo en tiempo real de todos los resultados con actualización inmediata y audio en alta definición.' },
+    { icon: '🤝', title: 'Atención de Primera', desc: 'Personal amable, calificado y siempre dispuesto a orientarte en tus jugadas y combinaciones favoritas.' }
+  ];
+
+  const tilesHtml = benefits.map(b => `
+    <div class="pub-benefit-tile">
+      <div class="pub-benefit-icon">${b.icon}</div>
+      <div class="pub-benefit-title">${b.title}</div>
+      <p class="pub-benefit-desc">${b.desc}</p>
+    </div>
+  `).join('');
+
+  stage.innerHTML = `
+    <div class="pub-showcase-slide">
+      <div class="pub-header-banner">
+        <div class="pub-header-left">
+          <span class="pub-header-badge">💎</span>
+          <div>
+            <div class="pub-header-title">${slide.name || '💎 BENEFICIOS EXCLUSIVOS DE NUESTRA AGENCIA'}</div>
+            <div class="pub-header-subtitle">${subtitle}</div>
+          </div>
+        </div>
+        <div class="pub-header-right">
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> EN VIVO</div>
+        </div>
+      </div>
+
+      <div class="pub-benefits-grid">
+        ${tilesHtml}
+      </div>
+
+      <div class="stats-footer-cta">
+        <span class="stats-cta-text">💎 ¡GRACIAS POR PREFERIRNOS! • La agencia #1 en confianza, rapidez y atención al cliente</span>
+        <span class="stats-cta-pill">🌟 ¡LA MEJOR AGENCIA DEL PAÍS!</span>
+      </div>
+    </div>
+  `;
+}
+window.renderSlidePubAgencyBenefits = renderSlidePubAgencyBenefits;
+
+// ==========================================
 // MOTOR MULTI-SECCIÓN DE DIAPOSITIVAS Y NAVEGACIÓN
 // ==========================================
 let currentCarouselSlideIdx = 0;
@@ -5699,15 +6282,17 @@ function getActiveCarouselSlides() {
   const slidesQueue = [];
 
   if (sections) {
-    // 1. Sección Resultados (1 a 10 diapositivas)
+    // 1. Sección Resultados (5 Pizarras Fijas Reordenables)
     if (sections.resultados && sections.resultados.enabled !== false && Array.isArray(sections.resultados.slides)) {
       sections.resultados.slides.forEach((s, idx) => {
         if (s && s.enabled !== false) {
           slidesQueue.push({
             type: 'resultados',
             section: 'resultados',
-            id: s.id || `slide_res_${idx}`,
-            name: s.name || `Resultados - Diapositiva ${idx + 1}`,
+            id: s.id || `slide_res_${idx + 1}`,
+            serial: s.serial || `Pizarra${idx + 1}`,
+            order: parseInt(s.order) || (idx + 1),
+            name: s.name || `Pizarra ${idx + 1}`,
             duration: Math.max(5, parseInt(s.duration) || 20),
             lotteryCount: Math.min(5, Math.max(1, parseInt(s.lotteryCount) || 5)),
             lotteries: Array.isArray(s.lotteries) ? s.lotteries : []
@@ -5716,7 +6301,7 @@ function getActiveCarouselSlides() {
       });
     }
 
-    // 2. Sección Estadísticas (3 Diapositivas Maestras Configurables)
+    // 2. Sección Estadísticas (3 Diapositivas Maestras Reordenables)
     if (sections.estadisticas && sections.estadisticas.enabled !== false && Array.isArray(sections.estadisticas.slides)) {
       sections.estadisticas.slides.forEach((s, idx) => {
         if (s && s.enabled !== false) {
@@ -5725,6 +6310,8 @@ function getActiveCarouselSlides() {
             type: sType,
             section: 'estadisticas',
             id: s.id || `slide_stat_${idx + 1}`,
+            serial: s.serial || `Estadistica${idx + 1}`,
+            order: parseInt(s.order) || (idx + 6),
             name: s.name || (idx === 0 ? '🔥 Top 5 Animalitos Más Premiados' : (idx === 1 ? '❄️ Animalitos Por Reventar' : '🔺 Pirámide de la Suerte')),
             duration: Math.max(5, parseInt(s.duration) || 22),
             lotteryCount: Math.min(4, Math.max(1, parseInt(s.lotteryCount) || 3)),
@@ -5734,28 +6321,37 @@ function getActiveCarouselSlides() {
       });
     }
 
-    // 3. Sección Publicidad (1 a 10 diapositivas)
+    // 3. Sección Publicidad (4 Diapositivas Maestras o hasta 15 Reordenables)
     if (sections.publicidad && sections.publicidad.enabled !== false && Array.isArray(sections.publicidad.slides)) {
       sections.publicidad.slides.forEach((s, idx) => {
         if (s && s.enabled !== false) {
+          const defaultPubType = (idx === 0 ? 'pub_rules_animalitos' : (idx === 1 ? 'pub_rules_triples' : (idx === 2 ? 'pub_agency_identity' : (idx === 3 ? 'pub_agency_benefits' : 'publicidad'))));
           slidesQueue.push({
-            type: 'publicidad',
+            ...s,
+            type: s.type || defaultPubType,
             section: 'publicidad',
-            id: s.id || `slide_pub_${idx}`,
-            name: s.name || `Publicidad Oficial de Loterías`,
-            duration: Math.max(5, parseInt(s.duration) || 15)
+            id: s.id || `slide_pub_${idx + 1}`,
+            serial: s.serial || `Publicidad${idx + 1}`,
+            order: parseInt(s.order) || (idx + 9),
+            name: s.name || `Publicidad Oficial #${idx + 1}`,
+            duration: Math.max(5, parseInt(s.duration) || 16)
           });
         }
       });
     }
   }
 
+  // Ordenar la cola de reproducción según la posición/orden personalizada del usuario
+  slidesQueue.sort((a, b) => (parseInt(a.order) || 99) - (parseInt(b.order) || 99));
+
   if (slidesQueue.length === 0) {
     slidesQueue.push({
       type: 'resultados',
       section: 'resultados',
-      id: 'slide_1',
-      name: 'Top 5 Animalitos Principales',
+      id: 'slide_res_1',
+      serial: 'Pizarra1',
+      order: 1,
+      name: 'Pizarra 1: Animalitos Líderes',
       duration: 20,
       lotteryCount: 5,
       lotteries: ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
@@ -5763,8 +6359,10 @@ function getActiveCarouselSlides() {
     slidesQueue.push({
       type: 'resultados',
       section: 'resultados',
-      id: 'slide_2',
-      name: 'Triples y Terminales Estrella',
+      id: 'slide_res_2',
+      serial: 'Pizarra2',
+      order: 2,
+      name: 'Pizarra 2: Triples y Terminales Estrella',
       duration: 20,
       lotteryCount: 5,
       lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-zamorano', 'triple-caliente']
@@ -5775,8 +6373,10 @@ function getActiveCarouselSlides() {
 }
 window.getActiveCarouselSlides = getActiveCarouselSlides;
 
-function updateLotteryPageIndicator(idx, total) {
-  const pageStr = `${idx + 1} de ${total}`;
+function updateLotteryPageIndicator(idx, total, activeSlide) {
+  const curSlide = activeSlide || (getActiveCarouselSlides()[idx]);
+  const serialTag = (curSlide && curSlide.serial) ? `[${curSlide.serial}] ` : '';
+  const pageStr = `${serialTag}${idx + 1} de ${total}`;
   const pageEl = document.getElementById('lblLotteryPageText');
   if (pageEl) pageEl.textContent = pageStr;
 
@@ -5803,7 +6403,7 @@ function renderCurrentCarouselSlide() {
     lblModule.textContent = activeSlide.name || 'RESULTADOS DE LOTERÍAS';
   }
 
-  updateLotteryPageIndicator(currentCarouselSlideIdx, slides.length);
+  updateLotteryPageIndicator(currentCarouselSlideIdx, slides.length, activeSlide);
 
   if (stage) {
     try {
@@ -5815,6 +6415,14 @@ function renderCurrentCarouselSlide() {
         renderStatsColdAnimalsSlide(activeSlide, stage);
       } else if (activeSlide.type === 'stats_pyramid' || activeSlide.type === 'piramide') {
         renderStatsTriplesPyramidSlide(activeSlide, stage);
+      } else if (activeSlide.type === 'pub_rules_animalitos') {
+        renderSlidePubRulesAnimalitos(activeSlide, stage);
+      } else if (activeSlide.type === 'pub_rules_triples') {
+        renderSlidePubRulesTriples(activeSlide, stage);
+      } else if (activeSlide.type === 'pub_agency_identity') {
+        renderSlidePubAgencyIdentity(activeSlide, stage);
+      } else if (activeSlide.type === 'pub_agency_benefits') {
+        renderSlidePubAgencyBenefits(activeSlide, stage);
       } else if (activeSlide.type === 'estadisticas') {
         if (activeSlide.id?.includes('cold')) {
           renderStatsColdAnimalsSlide(activeSlide, stage);
@@ -5824,7 +6432,17 @@ function renderCurrentCarouselSlide() {
           renderStatsHotAnimalsSlide(activeSlide, stage);
         }
       } else if (activeSlide.type === 'publicidad') {
-        renderModulePublicidad({ duration: activeSlide.duration }, stage);
+        if (activeSlide.id?.includes('animal') || activeSlide.id?.includes('rule_1')) {
+          renderSlidePubRulesAnimalitos(activeSlide, stage);
+        } else if (activeSlide.id?.includes('triple') || activeSlide.id?.includes('rule_2')) {
+          renderSlidePubRulesTriples(activeSlide, stage);
+        } else if (activeSlide.id?.includes('agency') || activeSlide.id?.includes('norma')) {
+          renderSlidePubAgencyIdentity(activeSlide, stage);
+        } else if (activeSlide.id?.includes('benefit')) {
+          renderSlidePubAgencyBenefits(activeSlide, stage);
+        } else {
+          renderModulePublicidad({ duration: activeSlide.duration }, stage);
+        }
       } else {
         renderCustomResultSlide(activeSlide, stage);
       }
@@ -6001,10 +6619,15 @@ function renderLotteryTicker() {
     `;
   }).join('');
 
-  track.innerHTML = itemsHtml + itemsHtml;
-  const speed = Math.min(500, Math.max(250, parseInt(currentScreenConfig.tickerSpeed) || 300));
-  track.style.setProperty('--ticker-speed', `${speed}s`);
-  track.style.setProperty('animation-duration', `${speed}s`, 'important');
+  // Solo reinyectar en el DOM si el contenido realmente cambió o si el track está vacío
+  // Esto evita reiniciar la animación CSS a 0 cada 40 segundos en cada ciclo de polling
+  if (track.innerHTML === '' || lastRenderedTickerContent !== itemsHtml) {
+    track.innerHTML = itemsHtml + itemsHtml;
+    lastRenderedTickerContent = itemsHtml;
+  }
+
+  applyTickerSpeedToTrack(track);
+  requestAnimationFrame(() => applyTickerSpeedToTrack(track));
 }
 
 function startLotteryEngineView() {
@@ -6348,7 +6971,7 @@ function ensureLotterySectionsStructure() {
     currentScreenConfig.lotterySections.publicidad = { enabled: true, slides: [] };
   }
 
-  // Garantizar estrictamente las 5 pizarras fijas para la sección Resultados
+  // 1. Garantizar estrictamente las 5 pizarras fijas para la sección Resultados con Serial y Orden
   const res = currentScreenConfig.lotterySections.resultados;
   const defSlides = DEFAULT_SCREEN_CONFIG.lotterySections.resultados.slides;
   if (!Array.isArray(res.slides) || res.slides.length === 0) {
@@ -6363,15 +6986,18 @@ function ensureLotterySectionsStructure() {
     } else if (res.slides.length > 5) {
       res.slides = res.slides.slice(0, 5);
     }
+    res.slides.forEach((s, i) => {
+      if (!s.serial) s.serial = `Pizarra${i + 1}`;
+      if (!s.order) s.order = i + 1;
+    });
   }
 
-  // Garantizar exactamente las 3 diapositivas configurables para la sección Estadísticas
+  // 2. Garantizar exactamente las 3 diapositivas configurables para la sección Estadísticas
   const est = currentScreenConfig.lotterySections.estadisticas;
   const defEstSlides = DEFAULT_SCREEN_CONFIG.lotterySections.estadisticas.slides;
   if (!Array.isArray(est.slides) || est.slides.length === 0) {
     est.slides = JSON.parse(JSON.stringify(defEstSlides));
   } else {
-    // Si tiene diapositivas viejas o incompletas, asegurar que existan las 3 diapositivas requeridas
     if (est.slides.length < 3) {
       for (let i = est.slides.length; i < 3; i++) {
         if (defEstSlides[i]) {
@@ -6381,9 +7007,10 @@ function ensureLotterySectionsStructure() {
     } else if (est.slides.length > 3) {
       est.slides = est.slides.slice(0, 3);
     }
-    // Asegurar los tipos correctos para las 3 diapositivas
     if (est.slides[0]) {
       est.slides[0].type = 'stats_hot';
+      if (!est.slides[0].serial) est.slides[0].serial = 'Estadistica1';
+      if (!est.slides[0].order) est.slides[0].order = 6;
       if (!est.slides[0].lotteryCount) est.slides[0].lotteryCount = 3;
       if (!Array.isArray(est.slides[0].lotteries) || est.slides[0].lotteries.length === 0) {
         est.slides[0].lotteries = ['guacharo-activo', 'lotto-activo', 'la-granjita'];
@@ -6391,6 +7018,8 @@ function ensureLotterySectionsStructure() {
     }
     if (est.slides[1]) {
       est.slides[1].type = 'stats_cold';
+      if (!est.slides[1].serial) est.slides[1].serial = 'Estadistica2';
+      if (!est.slides[1].order) est.slides[1].order = 7;
       if (!est.slides[1].lotteryCount) est.slides[1].lotteryCount = 3;
       if (!Array.isArray(est.slides[1].lotteries) || est.slides[1].lotteries.length === 0) {
         est.slides[1].lotteries = ['guacharo-activo', 'lotto-activo', 'la-granjita'];
@@ -6398,10 +7027,60 @@ function ensureLotterySectionsStructure() {
     }
     if (est.slides[2]) {
       est.slides[2].type = 'stats_pyramid';
+      if (!est.slides[2].serial) est.slides[2].serial = 'Estadistica3';
+      if (!est.slides[2].order) est.slides[2].order = 8;
       if (!Array.isArray(est.slides[2].lotteries) || est.slides[2].lotteries.length === 0) {
         est.slides[2].lotteries = ['triple-zulia', 'triple-tachira', 'triple-chance-1'];
       }
     }
+  }
+
+  // 3. Garantizar al menos las 4 diapositivas maestras para Publicidad con seriales y orden
+  const pub = currentScreenConfig.lotterySections.publicidad;
+  const defPubSlides = DEFAULT_SCREEN_CONFIG.lotterySections.publicidad.slides;
+  if (!Array.isArray(pub.slides) || pub.slides.length === 0) {
+    pub.slides = JSON.parse(JSON.stringify(defPubSlides));
+  } else {
+    if (pub.slides.length < 4) {
+      for (let i = pub.slides.length; i < 4; i++) {
+        if (defPubSlides[i]) {
+          pub.slides.push(JSON.parse(JSON.stringify(defPubSlides[i])));
+        }
+      }
+    }
+    pub.slides.forEach((s, i) => {
+      if (!s.serial) s.serial = `Publicidad${i + 1}`;
+      if (!s.order) s.order = i + 9;
+      if (i === 0 && (!s.type || s.type === 'publicidad')) s.type = 'pub_rules_animalitos';
+      if (i === 1 && (!s.type || s.type === 'publicidad')) s.type = 'pub_rules_triples';
+      if (i === 2 && (!s.type || s.type === 'publicidad')) s.type = 'pub_agency_identity';
+      if (i === 3 && (!s.type || s.type === 'publicidad')) s.type = 'pub_agency_benefits';
+      if (s.type === 'pub_rules_animalitos' && (!Array.isArray(s.lotteries) || s.lotteries.length === 0)) {
+        s.lotteries = ['guacharo-activo', 'la-granjita', 'lotto-activo', 'guacharito-millonario', 'chance-animal', 'la-ricachona', 'centena-animalitos', 'centena-plus', 'selva-plus', 'granjita-plus'];
+      }
+      if (s.type === 'pub_rules_triples' && (!Array.isArray(s.lotteries) || s.lotteries.length === 0)) {
+        s.lotteries = ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano', 'triple-caliente'];
+      }
+      if (s.type === 'pub_agency_identity') {
+        if (!s.agencyName) s.agencyName = 'AGENCIA OFICIAL LA FORTUNA';
+        if (!s.agencySlogan) s.agencySlogan = 'Tu Agencia de Confianza • Pagos Seguros al Instante';
+        if (!s.agencyHours) s.agencyHours = 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
+        if (!s.ticketValidity) s.ticketValidity = 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
+        if (!Array.isArray(s.agencyRules) || s.agencyRules.length === 0) {
+          s.agencyRules = [
+            'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
+            'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
+            'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+            'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+            'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
+          ];
+        }
+      }
+      if (s.type === 'pub_agency_benefits') {
+        if (!s.title) s.title = '¿POR QUÉ APOSTAR CON NOSOTROS?';
+        if (!s.subtitle) s.subtitle = 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla';
+      }
+    });
   }
 }
 
@@ -6469,6 +7148,9 @@ function renderResultadosSlidesEditor() {
     slide.lotteryCount = lotCount;
     if (!Array.isArray(slide.lotteries)) slide.lotteries = [];
 
+    const serial = slide.serial || `Pizarra${sIdx + 1}`;
+    const order = parseInt(slide.order) || (sIdx + 1);
+
     const countBtnsHtml = [1, 2, 3, 4, 5].map(n => `
       <button type="button" class="btn-count-lottery ${n === lotCount ? 'active' : ''}" onclick="window.setSlideLotteryCount('resultados', ${sIdx}, ${n})">
         ${n} ${n === 1 ? 'Lotería' : 'Loterías'}
@@ -6503,7 +7185,7 @@ function renderResultadosSlidesEditor() {
             <label class="switch-label" style="margin:0;" title="${isAct ? 'Pizarra ACTIVA (clic para desactivar)' : 'Pizarra DESACTIVADA (clic para activar)'}">
               <input type="checkbox" id="chkSlideRes_${sIdx}" ${isAct ? 'checked' : ''} onchange="window.toggleSlideEnabled('resultados', ${sIdx}, this.checked)">
             </label>
-            <span class="slide-number-badge">Pizarra #${sIdx + 1}</span>
+            <span class="slide-serial-badge">${serial}</span>
             <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('resultados', ${sIdx})" title="Clic para alternar activación">
               ${isAct ? '✅ ACTIVA' : '⏸️ DESACTIVADA'}
             </span>
@@ -6515,6 +7197,12 @@ function renderResultadosSlidesEditor() {
           </div>
 
           <div style="display:flex; align-items:center; gap:10px;">
+            <div class="slide-order-selector-group" title="Posición en la secuencia del carrusel">
+              <span class="slide-order-label">Pos:</span>
+              <select class="slide-order-select" onchange="window.updateSlideOrder('resultados', ${sIdx}, this.value)">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(pos => `<option value="${pos}" ${pos === order ? 'selected' : ''}>#${pos}</option>`).join('')}
+              </select>
+            </div>
             <div class="slide-duration-box">
               <span>Duración:</span>
               <input type="number" class="slide-duration-input" value="${slide.duration || 20}" min="5" max="180" onchange="window.updateSlideDuration('resultados', ${sIdx}, this.value)">
@@ -6602,6 +7290,8 @@ function renderEstadisticasSlidesEditor() {
     const isAct = slide.enabled !== false;
     const isPyramid = (sIdx === 2 || slide.type === 'stats_pyramid');
     const colCount = Math.min(4, Math.max(1, parseInt(slide.lotteryCount) || 3));
+    const serial = slide.serial || `Estadistica${sIdx + 1}`;
+    const order = parseInt(slide.order) || (sIdx + 6);
 
     let bodyContent = '';
 
@@ -6686,9 +7376,7 @@ function renderEstadisticasSlidesEditor() {
             <label class="switch-label" style="margin:0;">
               <input type="checkbox" id="chkSlideStat_${sIdx}" ${isAct ? 'checked' : ''} onchange="window.toggleSlideEnabled('estadisticas', ${sIdx}, this.checked)">
             </label>
-            <span class="slide-number-badge">
-              Diapositiva #${sIdx + 1}
-            </span>
+            <span class="slide-serial-badge">${serial}</span>
             <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('estadisticas', ${sIdx})">
               ${isAct ? '✅ ACTIVA' : '⏸️ PAUSADA'}
             </span>
@@ -6698,6 +7386,12 @@ function renderEstadisticasSlidesEditor() {
             <button type="button" class="btn-clear-name" onclick="window.clearSlideName('estadisticas', ${sIdx})">Limpiar</button>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
+            <div class="slide-order-selector-group" title="Posición en la secuencia del carrusel">
+              <span class="slide-order-label">Pos:</span>
+              <select class="slide-order-select" onchange="window.updateSlideOrder('estadisticas', ${sIdx}, this.value)">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(pos => `<option value="${pos}" ${pos === order ? 'selected' : ''}>#${pos}</option>`).join('')}
+              </select>
+            </div>
             <div class="slide-duration-box">
               <span>Duración:</span>
               <input type="number" class="slide-duration-input" value="${slide.duration || 22}" min="5" max="180" onchange="window.updateSlideDuration('estadisticas', ${sIdx}, this.value)">
@@ -6717,7 +7411,6 @@ function renderEstadisticasSlidesEditor() {
 }
 window.renderEstadisticasSlidesEditor = renderEstadisticasSlidesEditor;
 
-
 function renderPublicidadSlidesEditor() {
   ensureLotterySectionsStructure();
   const container = document.getElementById('slidesPublicidadContainer');
@@ -6726,18 +7419,22 @@ function renderPublicidadSlidesEditor() {
   if (!container) return;
 
   const slides = currentScreenConfig.lotterySections.publicidad.slides;
-  if (countLabel) countLabel.textContent = `(${slides.length} configuradas / máx 15)`;
+  const activeCount = slides.filter(s => s && s.enabled !== false).length;
+  if (countLabel) countLabel.textContent = `(${activeCount} activas de ${slides.length} configuradas / máx 15)`;
 
   // Barra de navegación rápida
   if (quickNav) {
     if (slides.length > 0) {
       quickNav.innerHTML = `
         <span class="slides-quick-nav-label">Ir a:</span>
-        ${slides.map((s, i) => `
-          <button type="button" class="btn-quick-slide-jump" onclick="window.scrollToSlideEditor('publicidad', ${i})" title="${s.name || `Publicidad #${i + 1}`}">
-            #${i + 1}
-          </button>
-        `).join('')}
+        ${slides.map((s, i) => {
+          const isAct = s.enabled !== false;
+          return `
+            <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('publicidad', ${i})" title="${s.name || `Publicidad #${i + 1}`} (${s.serial || `Publicidad${i + 1}`})">
+              ${isAct ? '●' : '○'} #${i + 1}
+            </button>
+          `;
+        }).join('')}
       `;
     } else {
       quickNav.innerHTML = '';
@@ -6749,31 +7446,161 @@ function renderPublicidadSlidesEditor() {
     return;
   }
 
-  const cardsHtml = slides.map((s, idx) => `
-    <div class="slide-editor-card" id="slideCard_pub_${idx}">
-      <div class="slide-editor-header">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <label class="switch-label" style="margin:0;">
-            <input type="checkbox" ${s.enabled !== false ? 'checked' : ''} onchange="window.toggleSlideEnabled('publicidad', ${idx}, this.checked)">
+  const cardsHtml = slides.map((s, idx) => {
+    const isAct = s.enabled !== false;
+    const serial = s.serial || `Publicidad${idx + 1}`;
+    const order = parseInt(s.order) || (idx + 9);
+
+    let bodyHtml = '';
+
+    if (s.type === 'pub_rules_animalitos' || idx === 0) {
+      const selectedGames = Array.isArray(s.lotteries) ? s.lotteries : LOTTERY_RULES_CATALOG.animalitos.map(g => g.id);
+      const itemsHtml = LOTTERY_RULES_CATALOG.animalitos.map(g => {
+        const isChecked = selectedGames.includes(g.id);
+        return `
+          <label style="display:flex; align-items:center; gap:6px; background:rgba(15,23,42,0.6); padding:6px 10px; border-radius:6px; border:1px solid ${isChecked ? '#10b981' : 'rgba(255,255,255,0.08)'}; font-size:0.82rem; color:${isChecked ? '#f8fafc' : '#94a3b8'}; cursor:pointer;">
+            <input type="checkbox" class="chk-pub-animal" value="${g.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.style.borderColor = this.checked ? '#10b981' : 'rgba(255,255,255,0.08)'; this.parentElement.style.color = this.checked ? '#f8fafc' : '#94a3b8';">
+            <span>${g.name}</span>
+            <span style="margin-left:auto; font-weight:800; color:#fbbf24; font-size:0.75rem;">${g.multiplier}</span>
           </label>
-          <span class="slide-number-badge">Publicidad #${idx + 1}</span>
-        </div>
-        <div class="slide-name-input-group">
-          <input type="text" class="slide-name-input" value="${s.name || ''}" placeholder="Nombre de la diapositiva" oninput="window.updateSlideName('publicidad', ${idx}, this.value)">
-          <button type="button" class="btn-clear-name" onclick="window.clearSlideName('publicidad', ${idx})">Limpiar</button>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="slide-duration-box">
-            <span>Duración:</span>
-            <input type="number" class="slide-duration-input" value="${s.duration || 15}" min="5" max="180" onchange="window.updateSlideDuration('publicidad', ${idx}, this.value)">
-            <span>seg</span>
+        `;
+      }).join('');
+
+      bodyHtml = `
+        <div style="background:rgba(15,23,42,0.65); padding:12px; border-radius:8px; border:1px solid rgba(16,185,129,0.3);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:#34d399; font-size:0.88rem;">🐾 Loterías de Animalitos en Exhibición (Hasta 10):</strong>
+            <span style="font-size:0.75rem; color:#94a3b8;">Muestra logos, nombres, horarios, cantidad de animales y multiplicadores (ej: Granjita 30×, Guácharo 60× / 120×)</span>
           </div>
-          <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('publicidad', ${idx})">🗑️</button>
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">
+            ${itemsHtml}
+          </div>
         </div>
+      `;
+    } else if (s.type === 'pub_rules_triples' || idx === 1) {
+      const selectedTriples = Array.isArray(s.lotteries) ? s.lotteries : LOTTERY_RULES_CATALOG.triples.map(g => g.id);
+      const itemsHtml = LOTTERY_RULES_CATALOG.triples.map(g => {
+        const isChecked = selectedTriples.includes(g.id);
+        return `
+          <label style="display:flex; align-items:center; gap:6px; background:rgba(15,23,42,0.6); padding:6px 10px; border-radius:6px; border:1px solid ${isChecked ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; font-size:0.82rem; color:${isChecked ? '#f8fafc' : '#94a3b8'}; cursor:pointer;">
+            <input type="checkbox" class="chk-pub-triple" value="${g.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.style.borderColor = this.checked ? '#38bdf8' : 'rgba(255,255,255,0.08)'; this.parentElement.style.color = this.checked ? '#f8fafc' : '#94a3b8';">
+            <span>${g.name}</span>
+            <span style="margin-left:auto; font-weight:800; color:#38bdf8; font-size:0.75rem;">700× / 70×</span>
+          </label>
+        `;
+      }).join('');
+
+      bodyHtml = `
+        <div style="background:rgba(15,23,42,0.65); padding:12px; border-radius:8px; border:1px solid rgba(56,189,248,0.3);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:#38bdf8; font-size:0.88rem;">🎰 Loterías de Triples y Terminales en Exhibición (Hasta 10):</strong>
+            <span style="font-size:0.75rem; color:#94a3b8;">Despliega tabla de pagos oficial: Triples (700×), Terminales (70×) y Signo/Astro (1.200×)</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    } else if (s.type === 'pub_agency_identity' || idx === 2) {
+      const aName = s.agencyName || 'AGENCIA OFICIAL LA FORTUNA';
+      const aSlogan = s.agencySlogan || 'Tu Agencia de Confianza • Pagos Seguros al Instante';
+      const aHours = s.agencyHours || 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
+      const aVal = s.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
+      const rulesText = (Array.isArray(s.agencyRules) ? s.agencyRules : [
+        'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
+        'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
+        'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+        'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+        'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
+      ]).join('\n');
+
+      bodyHtml = `
+        <div style="background:rgba(15,23,42,0.65); padding:14px; border-radius:8px; border:1px solid rgba(245,158,11,0.3); display:flex; flex-direction:column; gap:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label style="display:block; font-size:0.76rem; font-weight:800; color:#fbbf24; text-transform:uppercase; margin-bottom:4px;">Nombre Institucional de la Agencia:</label>
+              <input type="text" id="pubAgencyName_${idx}" value="${aName}" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
+            </div>
+            <div>
+              <label style="display:block; font-size:0.76rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Slogan / Lema de Confianza:</label>
+              <input type="text" id="pubAgencySlogan_${idx}" value="${aSlogan}" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label style="display:block; font-size:0.76rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Horario Oficial de Taquilla:</label>
+              <input type="text" id="pubAgencyHours_${idx}" value="${aHours}" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
+            </div>
+            <div>
+              <label style="display:block; font-size:0.76rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Validez / Caducidad de Tickets:</label>
+              <input type="text" id="pubTicketValidity_${idx}" value="${aVal}" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
+            </div>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.76rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Normas de Taquilla (Una norma por línea):</label>
+            <textarea id="pubAgencyRules_${idx}" rows="4" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:8px 10px; border-radius:6px; font-size:0.82rem; font-family:inherit; resize:vertical;">${rulesText}</textarea>
+          </div>
+        </div>
+      `;
+    } else if (s.type === 'pub_agency_benefits' || idx === 3) {
+      const bSub = s.subtitle || 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla';
+
+      bodyHtml = `
+        <div style="background:rgba(15,23,42,0.65); padding:12px; border-radius:8px; border:1px solid rgba(168,85,247,0.3); display:flex; flex-direction:column; gap:10px;">
+          <div>
+            <label style="display:block; font-size:0.76rem; font-weight:800; color:#c084fc; text-transform:uppercase; margin-bottom:4px;">Subtítulo de la Diapositiva:</label>
+            <input type="text" id="pubBenefitsSubtitle_${idx}" value="${bSub}" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
+          </div>
+          <p style="margin:0; font-size:0.82rem; color:#cbd5e1; line-height:1.4;">
+            ✨ Despliega el mosaico institucional de los <strong>8 Beneficios Clave</strong> de apostar en la agencia: Solidez Financiera, Pagos Inmediatos, 100% Legalidad, Rapidez de Taquilla, Seguridad, Todos los Medios de Pago, Pantallas 4K en Vivo y Atención de Primera.
+          </p>
+        </div>
+      `;
+    } else {
+      bodyHtml = `
+        <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Diapositiva promocional personalizada con llamado a la acción en taquilla y respaldo oficial de la agencia.</p>
+      `;
+    }
+
+    return `
+      <div class="slide-editor-card ${isAct ? '' : 'slide-deactivated'}" id="slideCard_pub_${idx}">
+        <div class="slide-editor-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label class="switch-label" style="margin:0;" title="${isAct ? 'Publicidad ACTIVA (clic para desactivar)' : 'Publicidad DESACTIVADA (clic para activar)'}">
+              <input type="checkbox" id="chkSlidePub_${idx}" ${isAct ? 'checked' : ''} onchange="window.toggleSlideEnabled('publicidad', ${idx}, this.checked)">
+            </label>
+            <span class="slide-serial-badge">${serial}</span>
+            <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('publicidad', ${idx})">
+              ${isAct ? '✅ ACTIVA' : '⏸️ DESACTIVADA'}
+            </span>
+          </div>
+
+          <div class="slide-name-input-group">
+            <input type="text" class="slide-name-input" value="${s.name || ''}" placeholder="Nombre de la diapositiva" oninput="window.updateSlideName('publicidad', ${idx}, this.value)">
+            <button type="button" class="btn-clear-name" onclick="window.clearSlideName('publicidad', ${idx})">Limpiar</button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="slide-order-selector-group" title="Posición en la secuencia del carrusel">
+              <span class="slide-order-label">Pos:</span>
+              <select class="slide-order-select" onchange="window.updateSlideOrder('publicidad', ${idx}, this.value)">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(pos => `<option value="${pos}" ${pos === order ? 'selected' : ''}>#${pos}</option>`).join('')}
+              </select>
+            </div>
+            <div class="slide-duration-box">
+              <span>Duración:</span>
+              <input type="number" class="slide-duration-input" value="${s.duration || 16}" min="5" max="180" onchange="window.updateSlideDuration('publicidad', ${idx}, this.value)">
+              <span>seg</span>
+            </div>
+            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('publicidad', ${idx})" title="${idx < 4 ? 'Alternar activación' : 'Eliminar diapositiva'}">
+              ${idx < 4 ? (isAct ? '⏸️' : '✅') : '🗑️'}
+            </button>
+          </div>
+        </div>
+        ${bodyHtml}
       </div>
-      <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Diapositiva promocional con logos oficiales, llamados a la acción en taquilla y respaldo oficial de la agencia.</p>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   const addBtnPubHtml = (slides.length < 15) ? `
     <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
@@ -6804,6 +7631,8 @@ function saveResultadosSlidesFromDOM() {
     const chkEnabled = card.querySelector('input[type="checkbox"]');
     const txtName = card.querySelector('.slide-name-input');
     const numDur = card.querySelector('.slide-duration-input');
+    const selOrder = card.querySelector('.slide-order-select');
+    const slideOrder = selOrder ? (parseInt(selOrder.value) || (idx + 1)) : (idx + 1);
     const selects = card.querySelectorAll('.slot-select');
     const lotteries = Array.from(selects).map(s => s.value);
     const prevSlide = currentScreenConfig.lotterySections.resultados.slides[idx] || {};
@@ -6811,6 +7640,8 @@ function saveResultadosSlidesFromDOM() {
 
     newSlides.push({
       id: slideId,
+      serial: prevSlide.serial || `Pizarra${idx + 1}`,
+      order: slideOrder,
       name: (txtName && txtName.value.trim()) ? txtName.value.trim() : (prevSlide.name || `Pizarra #${idx + 1}`),
       enabled: chkEnabled ? chkEnabled.checked : true,
       duration: numDur ? Math.max(5, parseInt(numDur.value) || 20) : 20,
@@ -6836,6 +7667,9 @@ function saveEstadisticasSlidesFromDOM() {
     if (txtName) slide.name = txtName.value.trim();
     const numDur = card.querySelector('.slide-duration-input');
     if (numDur) slide.duration = parseInt(numDur.value) || 20;
+    const selOrder = card.querySelector('.slide-order-select');
+    if (selOrder) slide.order = parseInt(selOrder.value) || (idx + 6);
+    if (!slide.serial) slide.serial = `Estadistica${idx + 1}`;
 
     // Guardar loterías de animalitos seleccionadas
     const slotSelects = card.querySelectorAll('.slot-select');
@@ -6864,9 +7698,46 @@ function savePublicidadSlidesFromDOM() {
     const txtName = card.querySelector('.slide-name-input');
     if (txtName) slide.name = txtName.value.trim();
     const numDur = card.querySelector('.slide-duration-input');
-    if (numDur) slide.duration = parseInt(numDur.value) || 15;
+    if (numDur) slide.duration = Math.max(5, parseInt(numDur.value) || 16);
+    const selOrder = card.querySelector('.slide-order-select');
+    if (selOrder) slide.order = parseInt(selOrder.value) || (idx + 9);
+    if (!slide.serial) slide.serial = `Publicidad${idx + 1}`;
+
+    // Guardar campos específicos según tipo de publicidad
+    if (slide.type === 'pub_rules_animalitos' || idx === 0) {
+      const chkGames = Array.from(card.querySelectorAll('.chk-pub-animal:checked')).map(c => c.value);
+      if (chkGames.length > 0) slide.lotteries = chkGames;
+    } else if (slide.type === 'pub_rules_triples' || idx === 1) {
+      const chkTriples = Array.from(card.querySelectorAll('.chk-pub-triple:checked')).map(c => c.value);
+      if (chkTriples.length > 0) slide.lotteries = chkTriples;
+    } else if (slide.type === 'pub_agency_identity' || idx === 2) {
+      const elName = card.querySelector(`#pubAgencyName_${idx}`);
+      if (elName) slide.agencyName = elName.value.trim();
+      const elSlogan = card.querySelector(`#pubAgencySlogan_${idx}`);
+      if (elSlogan) slide.agencySlogan = elSlogan.value.trim();
+      const elHours = card.querySelector(`#pubAgencyHours_${idx}`);
+      if (elHours) slide.agencyHours = elHours.value.trim();
+      const elValidity = card.querySelector(`#pubTicketValidity_${idx}`);
+      if (elValidity) slide.ticketValidity = elValidity.value.trim();
+      const elRules = card.querySelector(`#pubAgencyRules_${idx}`);
+      if (elRules) {
+        slide.agencyRules = elRules.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      }
+    } else if (slide.type === 'pub_agency_benefits' || idx === 3) {
+      const elSub = card.querySelector(`#pubBenefitsSubtitle_${idx}`);
+      if (elSub) slide.subtitle = elSub.value.trim();
+    }
   });
 }
+
+function updateSlideOrder(secKey, idx, val) {
+  ensureLotterySectionsStructure();
+  const slide = currentScreenConfig.lotterySections[secKey]?.slides?.[idx];
+  if (slide) {
+    slide.order = parseInt(val) || 1;
+  }
+}
+window.updateSlideOrder = updateSlideOrder;
 
 function addNewResultSlide() {
   ensureLotterySectionsStructure();
@@ -6881,6 +7752,8 @@ function addNewResultSlide() {
 
   slides.push({
     id: `slide_res_${Date.now()}`,
+    serial: `Pizarra${slides.length + 1}`,
+    order: slides.length + 1,
     name: `Diapositiva ${slides.length + 1}`,
     enabled: true,
     duration: 20,
@@ -6911,9 +7784,11 @@ function addNewPubSlide() {
   }
   slides.push({
     id: `slide_pub_${Date.now()}`,
+    serial: `Publicidad${slides.length + 1}`,
+    order: slides.length + 9,
     name: `Publicidad Oficial #${slides.length + 1}`,
     enabled: true,
-    duration: 15
+    duration: 16
   });
 
   const newIdx = slides.length - 1;
@@ -6946,7 +7821,18 @@ function deleteSlide(secKey, idx) {
     }
     return;
   }
-  if (secKey === 'publicidad') savePublicidadSlidesFromDOM();
+  if (secKey === 'publicidad') {
+    if (idx < 4) {
+      savePublicidadSlidesFromDOM();
+      const slide = currentScreenConfig.lotterySections.publicidad.slides[idx];
+      if (slide) {
+        slide.enabled = !slide.enabled;
+        renderPublicidadSlidesEditor();
+      }
+      return;
+    }
+    savePublicidadSlidesFromDOM();
+  }
 
   const slides = currentScreenConfig.lotterySections[secKey].slides;
   if (slides.length <= 1) {
@@ -7074,7 +7960,7 @@ function syncScreenConfigFormWithState(cfg) {
   if (cfg.colorStyle || cfg.colorScheme) currentScreenConfig.colorStyle = cfg.colorStyle || cfg.colorScheme;
   if (cfg.defaultService) currentScreenConfig.defaultService = cfg.defaultService;
   if (cfg.tickerActive !== undefined) currentScreenConfig.tickerActive = Boolean(cfg.tickerActive);
-  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = Math.min(500, Math.max(250, parseInt(cfg.tickerSpeed) || 300));
+  if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = Math.min(800, Math.max(150, parseInt(cfg.tickerSpeed) || 350));
 
   // Modo de Tema
   const radTheme = document.querySelectorAll('input[name="cfgThemeMode"]');
@@ -7088,12 +7974,12 @@ function syncScreenConfigFormWithState(cfg) {
   const selService = document.getElementById('cfgDefaultService');
   if (selService) selService.value = cfg.defaultService || 'loteria';
 
-  // Cintillo (Rango 250s - 500s)
+  // Cintillo (Rango 150s - 600s)
   const chkTicker = document.getElementById('cfgTickerActive');
   const rngTicker = document.getElementById('cfgTickerSpeed');
   const lblTicker = document.getElementById('lblCfgTickerSpeed');
   if (chkTicker) chkTicker.checked = cfg.tickerActive !== false;
-  const spdVal = Math.min(500, Math.max(250, parseInt(cfg.tickerSpeed) || 300));
+  const spdVal = Math.min(800, Math.max(150, parseInt(cfg.tickerSpeed) || 350));
   if (rngTicker) rngTicker.value = spdVal;
   if (lblTicker) lblTicker.textContent = `${spdVal}s`;
 
@@ -7178,13 +8064,12 @@ function setupScreenConfigEventListeners() {
   const lblTicker = document.getElementById('lblCfgTickerSpeed');
   if (rngTicker && lblTicker) {
     rngTicker.addEventListener('input', () => {
-      const spd = Math.min(500, Math.max(250, parseInt(rngTicker.value) || 300));
+      const spd = Math.min(800, Math.max(150, parseInt(rngTicker.value) || 350));
       lblTicker.textContent = `${spd}s`;
       currentScreenConfig.tickerSpeed = spd;
       const trackEl = document.getElementById('tickerContentTrack');
       if (trackEl) {
-        trackEl.style.setProperty('--ticker-speed', `${spd}s`);
-        trackEl.style.setProperty('animation-duration', `${spd}s`, 'important');
+        applyTickerSpeedToTrack(trackEl);
       }
     });
   }
@@ -7294,7 +8179,7 @@ function setupScreenConfigEventListeners() {
       const colorStyle = document.getElementById('cfgColorScheme')?.value || 'emerald';
       const defaultService = document.getElementById('cfgDefaultService')?.value || 'loteria';
       const tickerActive = document.getElementById('cfgTickerActive')?.checked !== false;
-      const tickerSpeed = Math.min(500, Math.max(250, parseInt(document.getElementById('cfgTickerSpeed')?.value) || 300));
+      const tickerSpeed = Math.min(800, Math.max(150, parseInt(document.getElementById('cfgTickerSpeed')?.value) || 350));
       const voiceEnabled = document.getElementById('cfgVoiceEnabled')?.checked !== false;
       const voiceVolume = (parseInt(document.getElementById('cfgVoiceVolume')?.value) || 90) / 100;
       const animalSfxEnabled = document.getElementById('cfgAnimalSfx')?.checked !== false;

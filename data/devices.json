@@ -2455,86 +2455,21 @@
     "TV-DEMO-01",
     {
       "config": {
-        "modules": {
-          "publicidad": {
-            "title": "Publicidad Oficial de Loterías",
-            "enabled": true,
-            "duration": 15
-          },
-          "estadisticas": {
-            "title": "Estadísticas & Pronósticos 30D",
-            "enabled": true,
-            "duration": 20
-          },
-          "pizarra_1000": {
-            "enabled": true,
-            "duration": 28
-          },
-          "top5_triples": {
-            "enabled": true,
-            "duration": 20,
-            "games": [
-              "triple-zulia",
-              "triple-tachira",
-              "triple-chance",
-              "triple-caracas",
-              "triple-zamorano"
-            ]
-          },
-          "top5_animalitos": {
-            "enabled": true,
-            "duration": 20,
-            "games": [
-              "guacharo-activo",
-              "granjita",
-              "lotto-activo",
-              "la-ricachona",
-              "lotto-rey"
-            ]
-          },
-          "estadisticas_30d": {
-            "enabled": true,
-            "duration": 20
-          },
-          "animalitos_group2": {
-            "enabled": true,
-            "duration": 18,
-            "games": [
-              "selva-plus",
-              "ruleta-activa",
-              "granjita-plus"
-            ]
-          },
-          "group2_animalitos": {
-            "games": [
-              "selva-plus",
-              "ruleta-activa",
-              "granjita-plus"
-            ],
-            "title": "Animalitos - Grupo 2",
-            "enabled": true,
-            "duration": 18
-          },
-          "ultimos_5_sorteos": {
-            "enabled": true,
-            "duration": 25
-          },
-          "publicidad_loteria": {
-            "enabled": true,
-            "duration": 15
-          }
-        },
         "themeMode": "dark",
-        "colorStyle": "emerald",
         "colorScheme": "emerald",
         "tickerSpeed": 500,
-        "voiceVolume": 0.9,
-        "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
         "voiceEnabled": true,
-        "bgMusicVolume": 0.25,
+        "voiceVolume": 0.9,
+        "animalSfxEnabled": true,
         "bgMusicEnabled": false,
+        "circusMusicEnabled": false,
+        "bgMusicTrack": "circus_waltz",
+        "circusMusicTrack": "circus_waltz",
+        "bgMusicCustomUrl": "",
         "customMusicUrl": "",
+        "bgMusicVolume": 0.25,
+        "circusMusicVolume": 0.25,
         "defaultService": "loteria",
         "lotterySections": {
           "resultados": {
@@ -2668,11 +2603,76 @@
             ]
           }
         },
-        "animalSfxEnabled": true,
-        "bgMusicCustomUrl": "",
-        "circusMusicTrack": "circus_waltz",
-        "circusMusicVolume": 0.25,
-        "circusMusicEnabled": false
+        "modules": {
+          "publicidad": {
+            "title": "Publicidad Oficial de Loterías",
+            "enabled": true,
+            "duration": 15
+          },
+          "estadisticas": {
+            "title": "Estadísticas & Pronósticos 30D",
+            "enabled": true,
+            "duration": 20
+          },
+          "pizarra_1000": {
+            "enabled": true,
+            "duration": 28
+          },
+          "top5_triples": {
+            "enabled": true,
+            "duration": 20,
+            "games": [
+              "triple-zulia",
+              "triple-tachira",
+              "triple-chance",
+              "triple-caracas",
+              "triple-zamorano"
+            ]
+          },
+          "top5_animalitos": {
+            "enabled": true,
+            "duration": 20,
+            "games": [
+              "guacharo-activo",
+              "granjita",
+              "lotto-activo",
+              "la-ricachona",
+              "lotto-rey"
+            ]
+          },
+          "estadisticas_30d": {
+            "enabled": true,
+            "duration": 20
+          },
+          "animalitos_group2": {
+            "enabled": true,
+            "duration": 18,
+            "games": [
+              "selva-plus",
+              "ruleta-activa",
+              "granjita-plus"
+            ]
+          },
+          "group2_animalitos": {
+            "games": [
+              "selva-plus",
+              "ruleta-activa",
+              "granjita-plus"
+            ],
+            "title": "Animalitos - Grupo 2",
+            "enabled": true,
+            "duration": 18
+          },
+          "ultimos_5_sorteos": {
+            "enabled": true,
+            "duration": 25
+          },
+          "publicidad_loteria": {
+            "enabled": true,
+            "duration": 15
+          }
+        },
+        "colorStyle": "emerald"
       },
       "status": "APPROVED",
       "tvName": "Dispositivo 1",
@@ -2694,86 +2694,21 @@
     "TV-DEMO-02",
     {
       "config": {
-        "modules": {
-          "publicidad": {
-            "title": "Publicidad Oficial de Loterías",
-            "enabled": true,
-            "duration": 15
-          },
-          "estadisticas": {
-            "title": "Estadísticas & Pronósticos 30D",
-            "enabled": true,
-            "duration": 20
-          },
-          "pizarra_1000": {
-            "enabled": true,
-            "duration": 28
-          },
-          "top5_triples": {
-            "enabled": true,
-            "duration": 20,
-            "games": [
-              "triple-zulia",
-              "triple-tachira",
-              "triple-chance",
-              "triple-caracas",
-              "triple-zamorano"
-            ]
-          },
-          "top5_animalitos": {
-            "enabled": true,
-            "duration": 20,
-            "games": [
-              "guacharo-activo",
-              "granjita",
-              "lotto-activo",
-              "la-ricachona",
-              "lotto-rey"
-            ]
-          },
-          "estadisticas_30d": {
-            "enabled": true,
-            "duration": 20
-          },
-          "animalitos_group2": {
-            "enabled": true,
-            "duration": 18,
-            "games": [
-              "selva-plus",
-              "ruleta-activa",
-              "granjita-plus"
-            ]
-          },
-          "group2_animalitos": {
-            "games": [
-              "selva-plus",
-              "ruleta-activa",
-              "granjita-plus"
-            ],
-            "title": "Animalitos - Grupo 2",
-            "enabled": true,
-            "duration": 18
-          },
-          "ultimos_5_sorteos": {
-            "enabled": true,
-            "duration": 25
-          },
-          "publicidad_loteria": {
-            "enabled": true,
-            "duration": 15
-          }
-        },
         "themeMode": "dark",
-        "colorStyle": "emerald",
         "colorScheme": "emerald",
         "tickerSpeed": 500,
-        "voiceVolume": 0.9,
-        "bgMusicTrack": "circus_waltz",
         "tickerActive": true,
         "voiceEnabled": true,
-        "bgMusicVolume": 0.25,
+        "voiceVolume": 0.9,
+        "animalSfxEnabled": true,
         "bgMusicEnabled": false,
+        "circusMusicEnabled": false,
+        "bgMusicTrack": "circus_waltz",
+        "circusMusicTrack": "circus_waltz",
+        "bgMusicCustomUrl": "",
         "customMusicUrl": "",
+        "bgMusicVolume": 0.25,
+        "circusMusicVolume": 0.25,
         "defaultService": "loteria",
         "lotterySections": {
           "resultados": {
@@ -2907,11 +2842,76 @@
             ]
           }
         },
-        "animalSfxEnabled": true,
-        "bgMusicCustomUrl": "",
-        "circusMusicTrack": "circus_waltz",
-        "circusMusicVolume": 0.25,
-        "circusMusicEnabled": false
+        "modules": {
+          "publicidad": {
+            "title": "Publicidad Oficial de Loterías",
+            "enabled": true,
+            "duration": 15
+          },
+          "estadisticas": {
+            "title": "Estadísticas & Pronósticos 30D",
+            "enabled": true,
+            "duration": 20
+          },
+          "pizarra_1000": {
+            "enabled": true,
+            "duration": 28
+          },
+          "top5_triples": {
+            "enabled": true,
+            "duration": 20,
+            "games": [
+              "triple-zulia",
+              "triple-tachira",
+              "triple-chance",
+              "triple-caracas",
+              "triple-zamorano"
+            ]
+          },
+          "top5_animalitos": {
+            "enabled": true,
+            "duration": 20,
+            "games": [
+              "guacharo-activo",
+              "granjita",
+              "lotto-activo",
+              "la-ricachona",
+              "lotto-rey"
+            ]
+          },
+          "estadisticas_30d": {
+            "enabled": true,
+            "duration": 20
+          },
+          "animalitos_group2": {
+            "enabled": true,
+            "duration": 18,
+            "games": [
+              "selva-plus",
+              "ruleta-activa",
+              "granjita-plus"
+            ]
+          },
+          "group2_animalitos": {
+            "games": [
+              "selva-plus",
+              "ruleta-activa",
+              "granjita-plus"
+            ],
+            "title": "Animalitos - Grupo 2",
+            "enabled": true,
+            "duration": 18
+          },
+          "ultimos_5_sorteos": {
+            "enabled": true,
+            "duration": 25
+          },
+          "publicidad_loteria": {
+            "enabled": true,
+            "duration": 15
+          }
+        },
+        "colorStyle": "emerald"
       },
       "status": "APPROVED",
       "tvName": "Dispositivo 2",
