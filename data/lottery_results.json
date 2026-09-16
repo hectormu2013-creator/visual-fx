@@ -11572,5 +11572,1227 @@
         "07:00 PM"
       ]
     }
+  },
+  "2026-09-16": {
+    "animalitos-la-ricachona": {
+      "gameId": "animalitos-la-ricachona",
+      "id": "animalitos-la-ricachona",
+      "name": "ANIMALITOS LA RICACHONA",
+      "shortName": "La Ricachona",
+      "type": "animalitos",
+      "icon": "💰",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/laricachona/logo.png",
+      "color": "#ec4899",
+      "lastUpdated": "2026-09-16T10:12:04.039Z",
+      "draws": [
+        {
+          "time": "08:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:10 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "centena-animalitos": {
+      "gameId": "centena-animalitos",
+      "id": "centena-animalitos",
+      "name": "CENTENA ANIMALITOS",
+      "shortName": "Centena Anim",
+      "type": "animalitos",
+      "icon": "💯",
+      "logoUrl": "",
+      "color": "#6366f1",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "centena-plus": {
+      "gameId": "centena-plus",
+      "id": "centena-plus",
+      "name": "CENTENA PLUS",
+      "shortName": "Centena Plus",
+      "type": "animalitos",
+      "icon": "✨",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/centenaplus/logo.png",
+      "color": "#8b5cf6",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:15 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:15 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:15 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:15 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:15 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "chance-animal": {
+      "gameId": "chance-animal",
+      "id": "chance-animal",
+      "name": "CHANCE ANIMAL",
+      "shortName": "Chance Animal",
+      "type": "animalitos",
+      "icon": "🎲",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/chanceanimal/logo.png",
+      "color": "#b85918",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "el-ruco": {
+      "gameId": "el-ruco",
+      "id": "el-ruco",
+      "name": "EL RUCO",
+      "shortName": "El Ruco",
+      "type": "animalitos",
+      "icon": "🤠",
+      "logoUrl": "",
+      "color": "#78350f",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "granjita-plus": {
+      "gameId": "granjita-plus",
+      "id": "granjita-plus",
+      "name": "GRANJITA PLUS",
+      "shortName": "Granjita Plus",
+      "type": "animalitos",
+      "icon": "🌟",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/granjitaplus/logo.png",
+      "color": "#84cc16",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:10 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:10 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:10 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "guacharito-millonario": {
+      "gameId": "guacharito-millonario",
+      "id": "guacharito-millonario",
+      "name": "GUACHARITO MILLONARIO",
+      "shortName": "Guacharito",
+      "type": "animalitos",
+      "icon": "🐥",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/guacharitomillonario/logo.png",
+      "color": "#5b2b73",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:30 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:30 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:30 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:30 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:30 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "guacharo-activo": {
+      "gameId": "guacharo-activo",
+      "id": "guacharo-activo",
+      "name": "GUÁCHARO ACTIVO",
+      "shortName": "Guácharo",
+      "type": "animalitos",
+      "icon": "🦜",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/guacharoactivo/logo.png",
+      "color": "#802334",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "la-granjita": {
+      "gameId": "la-granjita",
+      "id": "la-granjita",
+      "name": "LA GRANJITA",
+      "shortName": "La Granjita",
+      "type": "animalitos",
+      "icon": "🐸",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/granjita/logo.png",
+      "color": "#0d734d",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "la-ricachona": {
+      "gameId": "la-ricachona",
+      "id": "la-ricachona",
+      "name": "LA RICACHONA",
+      "shortName": "La Ricachona",
+      "type": "animalitos",
+      "icon": "💎",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/laricachona/logo.png",
+      "color": "#db2777",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "la-ruca": {
+      "gameId": "la-ruca",
+      "id": "la-ruca",
+      "name": "LA RUCA",
+      "shortName": "La Ruca",
+      "type": "animalitos",
+      "icon": "🐎",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/laruca/logo.png",
+      "color": "#92400e",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "09:15 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:15 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:15 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:15 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "lotto-activo": {
+      "gameId": "lotto-activo",
+      "id": "lotto-activo",
+      "name": "LOTTO ACTIVO",
+      "shortName": "Lotto Activo",
+      "type": "animalitos",
+      "icon": "🐾",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/lottoactivo/logo.png",
+      "color": "#0d5e67",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "mega-animal-40": {
+      "gameId": "mega-animal-40",
+      "id": "mega-animal-40",
+      "name": "MEGA ANIMAL 40",
+      "shortName": "Mega Animal",
+      "type": "animalitos",
+      "icon": "🦁",
+      "logoUrl": "",
+      "color": "#ea580c",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "selva-plus": {
+      "gameId": "selva-plus",
+      "id": "selva-plus",
+      "name": "SELVA PLUS",
+      "shortName": "Selva Plus",
+      "type": "animalitos",
+      "icon": "🌿",
+      "logoUrl": "https://api.1000resultados.com/public/images/animals/selvaplus/logo.png",
+      "color": "#0f766e",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "09:30 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:30 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:30 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:30 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "terminal-la-granjita": {
+      "gameId": "terminal-la-granjita",
+      "id": "terminal-la-granjita",
+      "name": "TERMINAL LA GRANJITA",
+      "shortName": "Terminal Granjita",
+      "type": "triples",
+      "icon": "🎯",
+      "logoUrl": "https://cdns2.premierpluss.com/assets_webpages/granjita/logoLagraTerminal.webp",
+      "color": "#4d7c0f",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-caliente": {
+      "gameId": "triple-caliente",
+      "id": "triple-caliente",
+      "name": "TRIPLE CALIENTE",
+      "shortName": "Triple Caliente",
+      "type": "triples",
+      "icon": "🔥",
+      "logoUrl": "",
+      "color": "#dc2626",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:15 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-centena": {
+      "gameId": "triple-centena",
+      "id": "triple-centena",
+      "name": "TRIPLE CENTENA",
+      "shortName": "Triple Centena",
+      "type": "triples",
+      "icon": "⚡",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplecentena/logo.png",
+      "color": "#7c3aed",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "08:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-chance": {
+      "gameId": "triple-chance",
+      "id": "triple-chance",
+      "name": "TRIPLE CHANCE",
+      "shortName": "Triple Chance",
+      "type": "triples",
+      "icon": "🎲",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
+      "color": "#8b5cf6",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-chance-1": {
+      "gameId": "triple-chance-1",
+      "id": "triple-chance-1",
+      "name": "TRIPLE CHANCE (9 AM - 2 PM)",
+      "shortName": "Chance 1",
+      "type": "triples",
+      "icon": "🎲",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
+      "color": "#8b5cf6",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "09:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "10:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "11:00 AM",
+          "isPending": true
+        },
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "02:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-chance-2": {
+      "gameId": "triple-chance-2",
+      "id": "triple-chance-2",
+      "name": "TRIPLE CHANCE (3 PM - 7 PM)",
+      "shortName": "Chance 2",
+      "type": "triples",
+      "icon": "🎲",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplechance/logo.png",
+      "color": "#8b5cf6",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "03:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "05:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "06:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-tachira": {
+      "gameId": "triple-tachira",
+      "id": "triple-tachira",
+      "name": "TRIPLE TÁCHIRA",
+      "shortName": "Triple Táchira",
+      "type": "triples",
+      "icon": "🎯",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/tripletachira/logo.png",
+      "color": "#d97706",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "01:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:45 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:15 PM",
+          "isPending": true
+        },
+        {
+          "time": "10:10 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-zamorano": {
+      "gameId": "triple-zamorano",
+      "id": "triple-zamorano",
+      "name": "TRIPLE ZAMORANO",
+      "shortName": "Triple Zamorano",
+      "type": "triples",
+      "icon": "🐎",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplezamorano/logo.png",
+      "color": "#ea580c",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "12:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-zulia": {
+      "gameId": "triple-zulia",
+      "id": "triple-zulia",
+      "name": "TRIPLE ZULIA",
+      "shortName": "Triple Zulia",
+      "type": "triples",
+      "icon": "🎰",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplezulia/logo.png",
+      "color": "#2563eb",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "12:45 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:45 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:05 PM",
+          "isPending": true
+        }
+      ]
+    },
+    "triple-caracas": {
+      "gameId": "triple-caracas",
+      "id": "triple-caracas",
+      "name": "TRIPLE CARACAS",
+      "shortName": "Triple Caracas",
+      "type": "triples",
+      "icon": "🏛️",
+      "logoUrl": "https://api.1000resultados.com/public/images/lottery/triplecaracas/logo.png",
+      "color": "#ef4444",
+      "lastUpdated": "2026-09-16T10:12:04.040Z",
+      "draws": [
+        {
+          "time": "01:00 PM",
+          "isPending": true
+        },
+        {
+          "time": "04:30 PM",
+          "isPending": true
+        },
+        {
+          "time": "07:00 PM",
+          "isPending": true
+        }
+      ]
+    }
   }
 }

@@ -48,6 +48,30 @@ function profileDeviceHardware() {
 const hardwareProfile = profileDeviceHardware();
 const IS_SMART_TV = hardwareProfile.isSmartTv;
 
+function isMobileDevice() {
+  return !IS_SMART_TV && (
+    /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent) ||
+    window.innerWidth <= 768
+  );
+}
+
+function updateMobileFabVisibility() {
+  const fab = document.getElementById('mobileAdminFab');
+  if (!fab) return;
+  const isDeviceModalOpen = elements.deviceModal && (elements.deviceModal.style.display === 'flex' || elements.deviceModal.style.display === 'block');
+  const isAdmin = currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'CLIENT_MANAGER' || currentUser.role === 'TECH_CHIEF');
+  if (isMobileDevice() && isAdmin && !isDeviceModalOpen) {
+    fab.style.display = 'inline-flex';
+  } else {
+    fab.style.display = 'none';
+  }
+}
+window.updateMobileFabVisibility = updateMobileFabVisibility;
+window.isMobileDevice = isMobileDevice;
+window.addEventListener('resize', () => {
+  updateMobileFabVisibility();
+});
+
 let selectedQualityMode = localStorage.getItem('vfx_stream_quality_mode') || 'AUTO';
 
 function getEffectiveQualityTier() {
@@ -291,6 +315,7 @@ const elements = {
   deviceModal: document.getElementById('deviceModal'),
   btnAdminModal: document.getElementById('btnAdminModal'),
   btnCloseDeviceModal: document.getElementById('btnCloseDeviceModal'),
+  mobileAdminFab: document.getElementById('mobileAdminFab'),
   txtActivationPin: document.getElementById('txtActivationPin'),
   txtTvName: document.getElementById('txtTvName'),
   btnSubmitActivation: document.getElementById('btnSubmitActivation'),
@@ -947,6 +972,7 @@ function checkUserSession() {
       if (btnLoginHeader) btnLoginHeader.style.display = 'none';
       if (elements.btnAdminModal) elements.btnAdminModal.style.display = isDevice ? 'none' : 'inline-flex';
       if (isDevice) document.body.classList.add('authorized-screen');
+      updateMobileFabVisibility();
 
       if (elements.gridViewport && selectedService === 'hipica') {
         elements.gridViewport.style.display = 'grid';
@@ -959,6 +985,7 @@ function checkUserSession() {
       document.body.classList.remove('has-session');
       if (profileArea) profileArea.style.display = 'none';
       if (btnLoginHeader) btnLoginHeader.style.display = 'inline-flex';
+      updateMobileFabVisibility();
     }
   } else {
     currentToken = null;
@@ -966,6 +993,7 @@ function checkUserSession() {
     document.body.classList.remove('has-session');
     if (profileArea) profileArea.style.display = 'none';
     if (btnLoginHeader) btnLoginHeader.style.display = 'inline-flex';
+    updateMobileFabVisibility();
   }
 }
 
@@ -981,6 +1009,7 @@ function openExecutiveAdminModal() {
   }
 
   elements.deviceModal.style.display = 'flex';
+  updateMobileFabVisibility();
   
   // Limpiar campos de creación de TV para que no tengan nada preestablecido ni autocompletado
   const clearDeviceInputs = () => {
@@ -1171,12 +1200,18 @@ elements.loginForm.addEventListener('submit', async (e) => {
       // Cerrar modal de login
       if (elements.loginModal) elements.loginModal.style.display = 'none';
 
-      // Restaurar servicio activo e iniciar transmisiones
-      applyActiveServiceView(selectedService);
-      if (selectedService === 'hipica') {
-        await loadChannelCatalog();
-        updateGridView(activeGridMode || 1);
+      const isMobileAdmin = isMobileDevice() && currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'CLIENT_MANAGER' || currentUser.role === 'TECH_CHIEF');
+      if (isMobileAdmin) {
+        openExecutiveAdminModal();
+      } else {
+        // Restaurar servicio activo e iniciar transmisiones
+        applyActiveServiceView(selectedService);
+        if (selectedService === 'hipica') {
+          await loadChannelCatalog();
+          updateGridView(activeGridMode || 1);
+        }
       }
+      updateMobileFabVisibility();
     } else {
       elements.loginError.textContent = data.error || 'Credenciales inválidas.';
       elements.loginError.style.display = 'block';
@@ -1197,6 +1232,9 @@ function handleLogout() {
   currentUser = null;
   document.body.classList.remove('has-session');
   document.body.classList.remove('authorized-screen');
+  const fab = document.getElementById('mobileAdminFab');
+  if (fab) fab.style.display = 'none';
+  if (elements.deviceModal) elements.deviceModal.style.display = 'none';
 
   // 1. Detener y purgar todos los reproductores de video activos inmediatamente
   [1, 2, 3, 4].forEach(num => {
@@ -1826,7 +1864,13 @@ function switchAdminTab(targetTabId) {
   const tabPanes = document.querySelectorAll('.tab-pane');
 
   tabBtns.forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === targetTabId);
+    const isActive = (b.dataset.tab === targetTabId);
+    b.classList.toggle('active', isActive);
+    if (isActive) {
+      try {
+        b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      } catch (e) {}
+    }
   });
   tabPanes.forEach(p => {
     p.classList.toggle('active', p.id === targetTabId);
@@ -2093,6 +2137,13 @@ function setupEventListeners() {
       openExecutiveAdminModal();
     }
   });
+
+  const mobileFab = document.getElementById('mobileAdminFab');
+  if (mobileFab) {
+    mobileFab.addEventListener('click', () => {
+      openExecutiveAdminModal();
+    });
+  }
 
   // Acceso Técnico Oculto en Smart TVs: 5 clics rápidos sobre el logotipo Visual-FX
   let logoClicks = 0;
@@ -2470,6 +2521,7 @@ function setupEventListeners() {
   elements.btnCloseDeviceModal.addEventListener('click', () => {
     stopTestMonitorPlayer();
     elements.deviceModal.style.display = 'none';
+    updateMobileFabVisibility();
   });
 }
 

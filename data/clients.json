@@ -55,7 +55,7 @@
       "themeMode": "dark",
       "colorStyle": "clean",
       "colorScheme": "clean",
-      "tickerSpeed": 400,
+      "tickerSpeed": 250,
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -70,20 +70,71 @@
             {
               "id": "slide_pub_1",
               "name": "Publicidad Oficial de Loterías",
+              "type": "pub_rules_animalitos",
+              "order": 9,
+              "serial": "Publicidad1",
               "enabled": true,
-              "duration": 15
+              "duration": 15,
+              "lotteries": [
+                "guacharo-activo",
+                "guacharito-millonario",
+                "la-granjita",
+                "lotto-activo",
+                "chance-animal",
+                "la-ricachona",
+                "centena-animalitos",
+                "centena-plus",
+                "selva-plus",
+                "granjita-plus"
+              ]
             },
             {
               "id": "slide_pub_1789310079643",
               "name": "Publicidad Oficial #2",
+              "type": "pub_rules_triples",
+              "order": 10,
+              "serial": "Publicidad2",
               "enabled": true,
-              "duration": 15
+              "duration": 15,
+              "lotteries": [
+                "triple-zulia",
+                "triple-tachira",
+                "triple-chance",
+                "triple-caracas",
+                "triple-zamorano",
+                "triple-caliente"
+              ]
             },
             {
               "id": "slide_pub_1789310098602",
               "name": "Publicidad Oficial #3",
+              "type": "pub_agency_identity",
+              "order": 11,
+              "serial": "Publicidad3",
               "enabled": true,
-              "duration": 15
+              "duration": 15,
+              "agencyName": "Centro de apuestas Fenix 2023                                Numero de Surerencias o reclamos 04245707040 Solo mensajes Whatsapp",
+              "agencyHours": "Lunes a Domingo: 07:00 AM a 07:00 PM (Horario Corrido)",
+              "agencyRules": [
+                "Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.",
+                "Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.",
+                "Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.",
+                "Prohibida terminantemente la venta de apuestas a menores de 18 años.",
+                "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
+              ],
+              "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
+            },
+            {
+              "id": "slide_pub_4",
+              "name": "💎 Beneficios Exclusivos de Nuestra Agencia",
+              "type": "pub_agency_benefits",
+              "order": 12,
+              "title": "¿POR QUÉ APOSTAR CON NOSOTROS?",
+              "serial": "Publicidad4",
+              "enabled": true,
+              "duration": 15,
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
             }
           ],
           "enabled": true
@@ -93,6 +144,8 @@
             {
               "id": "slide_1",
               "name": "Top 5 Animalitos Principales",
+              "order": 1,
+              "serial": "Pizarra1",
               "enabled": true,
               "duration": 25,
               "lotteries": [
@@ -107,6 +160,8 @@
             {
               "id": "slide_2",
               "name": "Top 5 Triples tradicionales",
+              "order": 2,
+              "serial": "Pizarra2",
               "enabled": true,
               "duration": 25,
               "lotteries": [
@@ -121,6 +176,8 @@
             {
               "id": "slide_3",
               "name": "Animalitos complementarios",
+              "order": 3,
+              "serial": "Pizarra3",
               "enabled": true,
               "duration": 15,
               "lotteries": [
@@ -135,6 +192,8 @@
             {
               "id": "slide_4",
               "name": "Pizarra 4: Triples Complementarios",
+              "order": 4,
+              "serial": "Pizarra4",
               "enabled": true,
               "duration": 15,
               "lotteries": [
@@ -149,6 +208,8 @@
             {
               "id": "slide_5",
               "name": "El rebusque",
+              "order": 5,
+              "serial": "Pizarra5",
               "enabled": true,
               "duration": 15,
               "lotteries": [
@@ -168,8 +229,45 @@
             {
               "id": "slide_stats_1",
               "name": "Radiografía 30D y Pronósticos",
+              "type": "stats_hot",
+              "order": 6,
+              "serial": "Estadistica1",
               "enabled": true,
-              "duration": 20
+              "duration": 20,
+              "lotteries": [
+                "guacharo-activo",
+                "lotto-activo",
+                "la-granjita"
+              ],
+              "lotteryCount": 3
+            },
+            {
+              "id": "slide_stats_cold",
+              "name": "❄️ Top 5 Animalitos Por Reventar (30D)",
+              "type": "stats_cold",
+              "order": 7,
+              "serial": "Estadistica2",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "guacharo-activo",
+                "lotto-activo",
+                "la-granjita"
+              ],
+              "lotteryCount": 3
+            },
+            {
+              "id": "slide_stats_pyramid",
+              "name": "🔺 Pirámide de la Suerte & Triples Millonarios",
+              "type": "stats_pyramid",
+              "order": 8,
+              "serial": "Estadistica3",
+              "enabled": true,
+              "duration": 20,
+              "lotteries": [
+                "triple-zulia"
+              ],
+              "lotteryCount": 3
             }
           ],
           "enabled": true

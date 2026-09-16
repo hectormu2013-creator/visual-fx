@@ -1698,8 +1698,10 @@ iframe {
 .modal-card.wide-admin {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   max-width: 100vw;
   max-height: 100vh;
+  max-height: 100dvh;
   border-radius: 0;
   border: none;
   display: flex;
@@ -1765,6 +1767,15 @@ iframe {
   gap: 8px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.admin-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-tab-btn {
@@ -1778,6 +1789,7 @@ iframe {
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease;
   border-radius: 6px 6px 0 0;
+  flex-shrink: 0;
 }
 
 .admin-tab-btn:hover {
@@ -7913,6 +7925,629 @@ body.app-fullscreen-mode .lottery-carousel-stage {
   padding: 1px 6px;
   border-radius: 4px;
   margin-right: 4px;
+}
+
+/* ==========================================================================
+   OPTIMIZACIÓN PARA TELÉFONOS CELULARES Y DISPOSITIVOS MÓVILES (MODO ADMIN)
+   ========================================================================== */
+
+/* Floating Action Button (FAB) para acceso rápido al Modo Administrativo */
+.mobile-admin-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 18px;
+  z-index: 99998;
+  background: linear-gradient(135deg, #0284c7, #10b981);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65), 0 0 14px rgba(16, 185, 129, 0.45);
+  border-radius: 30px;
+  padding: 10px 18px;
+  font-family: var(--font-headline), -apple-system, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-admin-fab:active {
+  transform: scale(0.92);
+}
+
+.mobile-admin-fab .fab-icon {
+  font-size: 1.15rem;
+  animation: spinSlow 12s linear infinite;
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (min-width: 769px) {
+  .mobile-admin-fab {
+    display: none !important;
+  }
+}
+
+/* Reglas Responsivas Globales Móvil para el Modo Administrativo */
+@media (max-width: 768px) {
+  /* Contenedor Modal de Administración en Pantalla Completa Móvil */
+  .modal-card.wide-admin {
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    padding: 10px 12px 14px 12px !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  /* Cabecera Compacta del Modal */
+  .modal-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .admin-title-area {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .admin-title-area h3 {
+    font-size: 1.1rem !important;
+    gap: 6px !important;
+    margin: 0 !important;
+  }
+
+  .admin-subtitle {
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 240px !important;
+    margin-top: 2px !important;
+  }
+
+  .admin-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 2px !important;
+  }
+
+  .admin-header-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-header-actions .btn-live-racing-header,
+  .admin-header-actions .btn-logout-header {
+    padding: 6px 10px !important;
+    font-size: 0.74rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    border-radius: 6px !important;
+  }
+
+  .btn-close {
+    padding: 4px 12px !important;
+    font-size: 1.3rem !important;
+    min-height: 36px !important;
+    min-width: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Barra de Pestañas Swipeable Horizontal Estilo Píldora */
+  .admin-tabs {
+    display: flex !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    padding: 2px 2px 8px 2px !important;
+    margin-bottom: 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .admin-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-tab-btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 8px 14px !important;
+    font-size: 0.8rem !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #94a3b8 !important;
+    transition: all 0.15s ease !important;
+  }
+
+  .admin-tab-btn.active {
+    background: rgba(56, 189, 248, 0.22) !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
+  }
+
+  /* Contenido del Panel y Cajas de Sección */
+  .admin-tab-content {
+    padding-right: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .admin-section-box {
+    padding: 12px 14px !important;
+    margin-bottom: 16px !important;
+    border-radius: 10px !important;
+  }
+
+  .admin-section-box h4 {
+    font-size: 0.95rem !important;
+  }
+
+  .section-desc {
+    font-size: 0.78rem !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Formularios Apilados Verticales y Touch-Friendly */
+  .form-grid-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .form-grid-row input,
+  .form-grid-row select,
+  .form-grid-row button {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    box-sizing: border-box !important;
+    min-height: 44px !important;
+    font-size: 16px !important; /* Previene auto-zoom molesto en iOS y Android */
+    border-radius: 8px !important;
+  }
+
+  .form-grid-row button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+  }
+
+  #boxManualAnimal,
+  #boxManualTriple {
+    width: 100% !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  #boxManualAnimal input,
+  #boxManualTriple input {
+    width: 100% !important;
+    min-width: 100% !important;
+    text-align: left !important;
+  }
+
+  /* ===================================================
+     TAB: CONFIGURACIÓN DE PANTALLAS EN CELULAR
+     =================================================== */
+
+  /* Selector de Pantallas Destino */
+  .screen-checkbox-grid {
+    grid-template-columns: 1fr !important;
+    max-height: 180px !important;
+    gap: 8px !important;
+    padding: 2px !important;
+  }
+
+  .screen-check-item {
+    padding: 10px 12px !important;
+    min-height: 44px !important;
+    font-size: 0.9rem !important;
+    border-radius: 8px !important;
+  }
+
+  .screen-check-item input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Tarjetas de Configuración (Apariencia, Cintillo, Audio, Loterías) */
+  .config-settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .config-card {
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .config-card-title {
+    font-size: 0.94rem !important;
+    margin-bottom: 10px !important;
+  }
+
+  /* Toggles de Radio y Switches */
+  .radio-toggle-group {
+    display: flex !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .radio-pill {
+    flex: 1 !important;
+    justify-content: center !important;
+    min-height: 42px !important;
+    padding: 6px 8px !important;
+    font-size: 0.8rem !important;
+    border-radius: 12px !important;
+  }
+
+  .switch-label {
+    font-size: 0.82rem !important;
+    gap: 10px !important;
+    padding: 4px 0 !important;
+  }
+
+  .switch-label input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Controles Deslizantes (Sliders de Velocidad y Volumen) */
+  input[type="range"] {
+    height: 38px !important;
+    cursor: pointer !important;
+    margin: 6px 0 !important;
+  }
+
+  /* Pestañas de las 3 Secciones de Loterías (Resultados, Stats, Ads) */
+  .lottery-sections-tabs {
+    display: flex !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .lottery-sections-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sec-subtab-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 0.78rem !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Cabecera Sticky de Diapositivas */
+  .slides-subpanel-header {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .slides-quick-nav {
+    display: flex !important;
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    padding-bottom: 2px !important;
+  }
+
+  .slides-quick-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .btn-quick-slide-jump {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 0.74rem !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Tarjetas del Editor de Diapositivas de Loterías */
+  .slide-editor-card {
+    padding: 12px 10px !important;
+    gap: 10px !important;
+    border-radius: 10px !important;
+  }
+
+  .slide-editor-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .slide-name-input-group {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    gap: 6px !important;
+  }
+
+  .slide-name-input {
+    flex: 1 !important;
+    font-size: 15px !important;
+    padding: 8px 10px !important;
+    min-height: 40px !important;
+  }
+
+  .btn-clear-name {
+    min-height: 40px !important;
+    padding: 0 10px !important;
+  }
+
+  .lottery-count-selector-group {
+    display: flex !important;
+    width: 100% !important;
+    gap: 4px !important;
+  }
+
+  .btn-count-lottery {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 6px 2px !important;
+    font-size: 0.76rem !important;
+    min-height: 36px !important;
+  }
+
+  .slide-slots-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .slot-item-box {
+    padding: 8px 10px !important;
+  }
+
+  .slot-select {
+    width: 100% !important;
+    min-height: 42px !important;
+    font-size: 15px !important;
+    padding: 6px 8px !important;
+  }
+
+  /* Diapositivas de Publicidad Responsivas */
+  .slide-editor-card div[style*="grid-template-columns:1fr 1fr"],
+  .slide-editor-card div[style*="grid-template-columns: 1fr 1fr"],
+  .slide-editor-card div[style*="grid-template-columns: repeat(auto-fill"],
+  .slide-editor-card div[style*="grid-template-columns:repeat(auto-fill"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Barra Sticky Inferior de Guardado de Configuración */
+  .screen-config-save-bar {
+    position: sticky !important;
+    bottom: -1px !important;
+    z-index: 60 !important;
+    background: rgba(8, 12, 22, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    padding: 10px !important;
+    margin: 16px -12px -12px -12px !important;
+    border-top: 1px solid rgba(56, 189, 248, 0.35) !important;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.75) !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .btn-save-screen-config,
+  #btnSaveScreenConfig {
+    width: 100% !important;
+    min-height: 48px !important;
+    font-size: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+  }
+
+  /* ===================================================
+     ÁRBOL DE PANTALLAS Y CLIENTES (TAB 2)
+     =================================================== */
+  .client-tree-card {
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .client-tree-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .client-tree-devices-list {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .device-tree-item {
+    padding: 10px 12px !important;
+  }
+
+  .device-tree-actions {
+    display: flex !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .device-tree-actions button {
+    flex: 1 !important;
+    min-height: 38px !important;
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* ===================================================
+     TABLAS DE DATOS EN MÓVILES
+     =================================================== */
+  .table-responsive {
+    border-radius: 8px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .btn-action-sm,
+  .btn-danger-sm {
+    min-height: 36px !important;
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 2px !important;
+  }
+
+  /* ===================================================
+     ANALÍTICAS Y MONITOREO (TAB 5)
+     =================================================== */
+  .kpi-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .kpi-card {
+    padding: 10px !important;
+  }
+
+  .kpi-value {
+    font-size: 1.2rem !important;
+  }
+
+  /* ===================================================
+     MODALES COMPLEMENTARIOS (LOGIN, STATS, CATÁLOGO)
+     =================================================== */
+  .login-card-modern {
+    width: 94vw !important;
+    max-width: 94vw !important;
+    padding: 24px 18px 20px 18px !important;
+  }
+
+  .login-brand-title {
+    font-size: 1.5rem !important;
+  }
+
+  .stats-modal-card {
+    width: 96vw !important;
+    max-width: 96vw !important;
+    max-height: 94vh !important;
+    max-height: 94dvh !important;
+    padding: 14px 12px !important;
+  }
+
+  .stats-modal-header h2 {
+    font-size: 1.1rem !important;
+  }
+
+  #channelTestVideoWrapper {
+    max-width: 100% !important;
+    height: 200px !important;
+  }
+
+  /* ===================================================
+     CABECERA SUPERIOR EN DISPOSITIVOS MÓVILES
+     =================================================== */
+  .app-header {
+    padding: 6px 10px !important;
+  }
+
+  .header-row-top {
+    padding-bottom: 4px !important;
+  }
+
+  .brand-logo .brand-name {
+    font-size: 1.05rem !important;
+  }
+
+  .device-badge,
+  .btn-pin-header {
+    display: none !important;
+  }
+
+  .logout-text {
+    display: none !important;
+  }
+
+  .btn-logout-header {
+    padding: 6px 10px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .btn-sidebar-toggle {
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .btn-admin-modal {
+    padding: 6px 12px !important;
+    font-size: 1rem !important;
+  }
+
+  .header-row-bottom {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 4px 0 !important;
+  }
+
+  .header-row-bottom::-webkit-scrollbar {
+    display: none;
+  }
+
+  .header-controls-left,
+  .header-controls-right {
+    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
+  }
 }
 
 
