@@ -39,7 +39,11 @@ Este proyecto es el **Sistema SaaS de Transmisión Visual FX**, diseñado para g
    - **Reloj en Vivo:** Todo panel de resultados debe mostrar la hora actual en tiempo real con segundos y zona horaria de Venezuela.
    - **Pizarra 4 Columnas:** La cartelera estilo 1000Resultados debe desplegar 4 columnas paralelas con división por categorías (`🐾 Animalitos` vs `🎰 Triples y Signos`).
    - **Tarjeta Destacada (Hero Card):** Debe incluir la barra animada de cuenta regresiva (15s), números gigantes legibles a distancia (`6.2rem` / `3.6rem`) e imágenes oficiales SVG para signos zodiacales.
-   - **Cintillo Inferior:** Velocidad pausada en el rango de **250s a 500s** (valor recomendado y por defecto ~300s/350s) con posición fija inferior y padding compensatorio para jamás tapar tarjetas de resultados.
+   - **Cintillo Inferior y Velocidad Normalizada:**
+     - **Velocidad Constante:** Debe calcularse matemáticamente por ancho de contenido: `Duración = (scrollWidth / 2) / (7000 / userSpeed)` para garantizar una velocidad visual constante en px/s (ej. ~14 px/s para 500s, ~20 px/s para 350s) en el rango de **150s a 600s** (default `350s`).
+     - **Bucle Continuo sin Saltos:** Prohibido reescribir `innerHTML` del track en cada ciclo de polling (40s) si el contenido no ha cambiado, evitando reiniciar la animación CSS a 0%.
+     - **Aceleración por GPU:** Incluir `will-change: transform;` en `.ticker-content-track` para fluidez total en Smart TVs.
+     - **Espacio Seguro:** Posición fija inferior y padding compensatorio inferior (`#panelLottery { padding-bottom: 72px; }`) para jamás tapar tarjetas de resultados ni controles.
    - **Presentación de Triples en 3 Líneas:** Para cada sorteo de triples en todas sus secciones (pizarras de resultados, módulos y Pizarra 1000), estructurar estrictamente en 3 líneas:
      1. *Línea 1:* Hora del sorteo con badge oficial/pendiente (`🕒 12:00 PM`).
      2. *Línea 2:* Triples A y B (`A: ...` y `B: ...`) en pastillas horizontales simétricas y balanceadas.
@@ -53,5 +57,13 @@ Este proyecto es el **Sistema SaaS de Transmisión Visual FX**, diseñado para g
     - Proteger contra errores de permisos de GitHub PAT excluyendo `.github/workflows/` si el token no posee ámbito `workflow`.
     - Confirmar despliegues en Render mediante su API REST (`.render_config.json`) verificando estado `live` y respuesta de endpoints de producción.
     - **Comando Rápido ("subelo"):** Siempre que el usuario escriba *"subelo"* o *"súbelo"*, ejecutar automáticamente el ciclo completo: `git add .` (excluyendo workflows si aplica), `git commit -m "..."`, `git push origin main`, disparar despliegue en Render vía API REST y monitorear hasta confirmar estado `live` y respuesta 200 OK.
+13. **Tabla Oficial de Pagos y Multiplicadores de Lotería en Agencias:**
+    - **Triples Directos (A y B):** Pagan estrictamente **600×** (600 por cada 1 Bs apostado; 10 Bs ➔ 6.000 Bs). Jamás colocar 700×.
+    - **Terminales:** Pagan estrictamente **70×** (10 Bs ➔ 700 Bs).
+    - **Triple Signo / Astro:** Pagan **1.200×** (10 Bs ➔ 12.000 Bs) o Astro Zamorano a **1.000×**.
+    - **Animalitos:** Pagan **30×** en juegos estándar (La Granjita, Lotto Activo, Chance Animal, La Ricachona, Selva Plus, Granjita Plus), Centenas pagan **60×**, y Guácharo Activo / Guacharito pagan **60× / 120×** (con comodín Guácharo).
+14. **Diapositivas de Publicidad, Identidad y Reordenamiento por Serial:**
+    - Mantener las 4 diapositivas publicitarias fijas con sus seriales permanentes visibles (`Publicidad1` Animalitos, `Publicidad2` Triples 600x, `Publicidad3` Identidad y Normas de Agencia, `Publicidad4` Beneficios de la Agencia).
+    - Respetar el reordenamiento por selector de posición (1 a 15) en todas las secciones (Resultados, Estadísticas, Publicidad), persistiendo las personalizaciones en `data/devices.json` y `data/device_accounts.json`.
 
 
