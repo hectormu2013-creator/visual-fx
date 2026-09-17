@@ -71,7 +71,10 @@
               "id": "slide_pub_1",
               "name": "Publicidad Oficial de Loterías",
               "enabled": true,
-              "duration": 15
+              "duration": 15,
+              "serial": "Publicidad1",
+              "order": 9,
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -90,7 +93,9 @@
                 "guacharito-millonario",
                 "chance-animal"
               ],
-              "lotteryCount": 5
+              "lotteryCount": 5,
+              "serial": "Pizarra1",
+              "order": 1
             },
             {
               "id": "slide_2",
@@ -104,7 +109,9 @@
                 "triple-caracas",
                 "triple-zamorano"
               ],
-              "lotteryCount": 5
+              "lotteryCount": 5,
+              "serial": "Pizarra2",
+              "order": 2
             },
             {
               "id": "slide_3",
@@ -118,7 +125,9 @@
                 "chance-animal",
                 "el-ruco"
               ],
-              "lotteryCount": 5
+              "lotteryCount": 5,
+              "serial": "Pizarra3",
+              "order": 3
             },
             {
               "id": "slide_4",
@@ -132,7 +141,9 @@
                 "triple-zulia",
                 "triple-caracas"
               ],
-              "lotteryCount": 5
+              "lotteryCount": 5,
+              "serial": "Pizarra4",
+              "order": 4
             },
             {
               "id": "slide_5",
@@ -146,7 +157,9 @@
                 "lotto-activo",
                 "guacharo-activo"
               ],
-              "lotteryCount": 5
+              "lotteryCount": 5,
+              "serial": "Pizarra5",
+              "order": 5
             }
           ],
           "enabled": true
@@ -165,7 +178,9 @@
                 "la-granjita",
                 "guacharito-millonario"
               ],
-              "lotteryCount": 4
+              "lotteryCount": 4,
+              "serial": "Estadistica1",
+              "order": 6
             },
             {
               "id": "slide_stats_cold",
@@ -179,7 +194,9 @@
                 "la-granjita",
                 "guacharito-millonario"
               ],
-              "lotteryCount": 4
+              "lotteryCount": 4,
+              "serial": "Estadistica2",
+              "order": 7
             },
             {
               "id": "slide_stats_pyramid",
@@ -190,7 +207,9 @@
               "lotteries": [
                 "triple-tachira"
               ],
-              "lotteryCount": 3
+              "lotteryCount": 3,
+              "serial": "Estadistica3",
+              "order": 8
             }
           ],
           "enabled": true
@@ -200,7 +219,9 @@
       "bgMusicCustomUrl": "",
       "circusMusicTrack": "circus_waltz",
       "circusMusicVolume": 0.25,
-      "circusMusicEnabled": false
+      "circusMusicEnabled": false,
+      "voiceEngine": "auto",
+      "logoUrl": ""
     },
     "location": "Sede Principal",
     "username": "hector_owner",

@@ -3,6 +3,7 @@
     "name": "Fenix",
     "pass": "fenix123",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -56,6 +57,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -86,7 +88,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -103,7 +106,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -123,6 +127,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -134,7 +139,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -292,10 +298,12 @@
     "name": "Fenix 2023",
     "pass": "fenix2023",
     "config": {
+      "logoUrl": "",
       "themeMode": "dark",
       "colorStyle": "emerald",
       "colorScheme": "emerald",
       "tickerSpeed": 160,
+      "voiceEngine": "auto",
       "voiceVolume": 0.9,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -310,8 +318,11 @@
             {
               "id": "slide_pub_1",
               "name": "Publicidad Oficial de Loterías",
+              "order": 9,
+              "serial": "Publicidad1",
               "enabled": true,
-              "duration": 15
+              "duration": 15,
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -321,6 +332,8 @@
             {
               "id": "slide_1",
               "name": "Pizarra 1: Animalitos Líderes",
+              "order": 1,
+              "serial": "Pizarra1",
               "enabled": true,
               "duration": 20,
               "lotteries": [
@@ -335,6 +348,8 @@
             {
               "id": "slide_2",
               "name": "Pizarra 2: Triples y Terminales Estrella",
+              "order": 2,
+              "serial": "Pizarra2",
               "enabled": true,
               "duration": 20,
               "lotteries": [
@@ -349,6 +364,8 @@
             {
               "id": "slide_3",
               "name": "Pizarra 3: Animalitos y Ruletas 2",
+              "order": 3,
+              "serial": "Pizarra3",
               "enabled": true,
               "duration": 20,
               "lotteries": [
@@ -363,6 +380,8 @@
             {
               "id": "slide_4",
               "name": "Pizarra 4: Triples Complementarios",
+              "order": 4,
+              "serial": "Pizarra4",
               "enabled": true,
               "duration": 20,
               "lotteries": [
@@ -377,6 +396,8 @@
             {
               "id": "slide_5",
               "name": "Pizarra 5: Sorteos Especiales y Ruletas",
+              "order": 5,
+              "serial": "Pizarra5",
               "enabled": true,
               "duration": 20,
               "lotteries": [
@@ -396,6 +417,8 @@
             {
               "id": "slide_stats_1",
               "name": "Radiografía 30D y Pronósticos",
+              "order": 6,
+              "serial": "Estadistica1",
               "enabled": true,
               "duration": 20
             }

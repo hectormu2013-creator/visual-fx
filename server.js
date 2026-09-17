@@ -58,6 +58,7 @@ const {
   queryHistoricalDraws,
   getHistoryOverview
 } = require('./lottery_stats');
+const { handleTtsRequest } = require('./tts_service');
 
 const app = express();
 const PORT = process.env.PORT || 3500;
@@ -676,6 +677,9 @@ app.get('/api/stream/proxy', (req, res) => {
 
   return handleStreamProxy(req, res, targetUrl);
 });
+
+// Endpoint Universal de Audio TTS para Smart TVs y Navegadores
+app.get('/api/tts', handleTtsRequest);
 
 // ==========================================
 // RUTAS DE LOTERÍAS Y ANIMALITOS (TOP 10 OFICIAL)

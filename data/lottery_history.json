@@ -7779,75 +7779,123 @@
     "2026-09-16": [
       {
         "time": "08:10 AM",
-        "number": "68",
-        "name": "JAGUAR",
-        "isPending": false
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "09:10 AM",
-        "number": "41",
-        "name": "CANGREJO",
-        "isPending": false
+        "number": "34",
+        "name": "VENADO",
+        "tripleA": "34",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "10:10 AM",
-        "number": "45",
-        "name": "GARZA",
-        "isPending": false
+        "number": "23",
+        "name": "CEBRA",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "11:10 AM",
-        "number": "05",
-        "name": "LEÓN",
-        "isPending": false
+        "number": "32",
+        "name": "ARDILLA",
+        "tripleA": "32",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "12:10 PM",
-        "number": "10",
-        "name": "TIGRE",
-        "isPending": false
+        "number": "36",
+        "name": "CULEBRA",
+        "tripleA": "36",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "01:10 PM",
-        "number": "32",
-        "name": "ARDILLA",
-        "isPending": false
+        "number": "23",
+        "name": "CEBRA",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "02:10 PM",
-        "number": "06",
-        "name": "RANA",
-        "isPending": false
+        "number": "29",
+        "name": "ELEFANTE",
+        "tripleA": "29",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "03:10 PM",
-        "number": "20",
-        "name": "COCHINO",
-        "isPending": false
+        "number": "30",
+        "name": "CAIMAN",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "04:10 PM",
-        "number": "00",
-        "name": "DELFÍN",
-        "isPending": false
+        "number": "32",
+        "name": "ARDILLA",
+        "tripleA": "32",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "05:10 PM",
-        "number": "66",
-        "name": "LOBO",
-        "isPending": false
+        "number": "08",
+        "name": "RATON",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "06:10 PM",
-        "number": "02",
-        "name": "TORO",
-        "isPending": false
+        "number": "34",
+        "name": "VENADO",
+        "tripleA": "34",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "07:10 PM",
-        "number": "46",
-        "name": "TUCÁN",
-        "isPending": false
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -10259,75 +10307,133 @@
     "2026-09-16": [
       {
         "time": "08:00 AM",
-        "number": "63",
-        "name": "GOLONDRINA",
-        "isPending": false
+        "number": "13",
+        "name": "Mono",
+        "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "09:00 AM",
-        "number": "69",
-        "name": "PANTERA",
-        "isPending": false
+        "number": "03",
+        "name": "Ciempies",
+        "tripleA": "03",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "10:00 AM",
-        "number": "32",
-        "name": "ARDILLA",
-        "isPending": false
+        "number": "24",
+        "name": "Iguana",
+        "tripleA": "24",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "11:00 AM",
-        "number": "16",
-        "name": "OSO",
-        "isPending": false
+        "number": "00",
+        "name": "Ballena",
+        "tripleA": "00",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "12:00 PM",
-        "number": "45",
-        "name": "GARZA",
-        "isPending": false
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "01:00 PM",
-        "number": "41",
-        "name": "CANGREJO",
-        "isPending": false
+        "number": "18",
+        "name": "Burro",
+        "tripleA": "18",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "02:00 PM",
-        "number": "80",
-        "name": "VIZCACHA",
-        "isPending": false
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "03:00 PM",
-        "number": "11",
-        "name": "GATO",
-        "isPending": false
+        "number": "13",
+        "name": "Mono",
+        "tripleA": "13",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "04:00 PM",
-        "number": "79",
-        "name": "CALAMAR",
-        "isPending": false
+        "number": "0",
+        "name": "elfin",
+        "tripleA": "0",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "05:00 PM",
-        "number": "33",
-        "name": "PESCADO",
-        "isPending": false
+        "number": "15",
+        "name": "Zorro",
+        "tripleA": "15",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "06:00 PM",
-        "number": "18",
-        "name": "BURRO",
-        "isPending": false
+        "number": "19",
+        "name": "Chivo",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "07:00 PM",
-        "number": "82",
-        "name": "HURÓN",
-        "isPending": false
+        "number": "27",
+        "name": "Perro",
+        "tripleA": "27",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "08:00 PM",
+        "number": "18",
+        "name": "Burro",
+        "tripleA": "18",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -12735,75 +12841,133 @@
     "2026-09-16": [
       {
         "time": "08:15 AM",
-        "number": "69",
-        "name": "PANTERA",
-        "isPending": false
+        "number": "25",
+        "name": "Gallina",
+        "tripleA": "25",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "09:15 AM",
-        "number": "04",
-        "name": "ALACRÁN",
-        "isPending": false
+        "number": "95",
+        "name": "Cardenal",
+        "tripleA": "95",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "10:15 AM",
-        "number": "49",
-        "name": "PEREZA",
-        "isPending": false
+        "number": "03",
+        "name": "Ciempies",
+        "tripleA": "03",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "11:15 AM",
-        "number": "15",
-        "name": "ZORRO",
-        "isPending": false
+        "number": "19",
+        "name": "Chivo",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "12:15 PM",
-        "number": "41",
-        "name": "CANGREJO",
-        "isPending": false
+        "number": "87",
+        "name": "Salta Montes",
+        "tripleA": "87",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "01:15 PM",
-        "number": "50",
-        "name": "CANARIO",
-        "isPending": false
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "02:15 PM",
-        "number": "06",
-        "name": "RANA",
-        "isPending": false
+        "number": "20",
+        "name": "Cochino",
+        "tripleA": "20",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "03:15 PM",
-        "number": "88",
-        "name": "ERIZO",
-        "isPending": false
+        "number": "83",
+        "name": "Buho",
+        "tripleA": "83",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "04:15 PM",
-        "number": "25",
-        "name": "GALLINA",
-        "isPending": false
+        "number": "73",
+        "name": "Hipopotamo",
+        "tripleA": "73",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "05:15 PM",
-        "number": "29",
-        "name": "ELEFANTE",
-        "isPending": false
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "06:15 PM",
-        "number": "71",
-        "name": "GUACAMAYA",
-        "isPending": false
+        "number": "43",
+        "name": "Mariposa",
+        "tripleA": "43",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "07:15 PM",
-        "number": "61",
-        "name": "PANDA",
-        "isPending": false
+        "number": "42",
+        "name": "Tucan",
+        "tripleA": "42",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "08:15 PM",
+        "number": "29",
+        "name": "Elefante",
+        "tripleA": "29",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -14981,69 +15145,103 @@
     "2026-09-16": [
       {
         "time": "09:00 AM",
-        "number": "23",
-        "name": "CEBRA",
-        "isPending": false
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "10:00 AM",
-        "number": "10",
-        "name": "TIGRE",
-        "isPending": false
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "11:00 AM",
-        "number": "28",
-        "name": "ZAMURO",
-        "isPending": false
+        "number": "23",
+        "name": "Cebra",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "12:00 PM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
+        "number": "05",
+        "name": "Leon",
+        "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "01:00 PM",
-        "number": "26",
-        "name": "VACA",
-        "isPending": false
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "02:00 PM",
-        "number": "14",
-        "name": "PALOMA",
-        "isPending": false
+        "number": "21",
+        "name": "Gallo",
+        "tripleA": "21",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "03:00 PM",
-        "number": "35",
-        "name": "JIRAFA",
-        "isPending": false
+        "number": "36",
+        "name": "Conejo",
+        "tripleA": "36",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "04:00 PM",
-        "number": "32",
-        "name": "ARDILLA",
-        "isPending": false
+        "number": "30",
+        "name": "Caiman",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "05:00 PM",
-        "number": "18",
-        "name": "BURRO",
-        "isPending": false
+        "number": "22",
+        "name": "Camello",
+        "tripleA": "22",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "06:00 PM",
-        "number": "0",
-        "name": "DELFÍN",
-        "isPending": false
-      },
-      {
-        "time": "07:00 PM",
-        "number": "05",
-        "name": "LEÓN",
-        "isPending": false
+        "number": "50",
+        "name": "Cisne",
+        "tripleA": "50",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -17394,76 +17592,104 @@
     ],
     "2026-09-16": [
       {
-        "time": "08:00 AM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
-      },
-      {
         "time": "09:00 AM",
-        "number": "28",
-        "name": "ZAMURO",
-        "isPending": false
+        "number": "11",
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "10:00 AM",
-        "number": "36",
-        "name": "CULEBRA",
-        "isPending": false
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "11:00 AM",
-        "number": "29",
-        "name": "ELEFANTE",
-        "isPending": false
+        "number": "23",
+        "name": "Cebra",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "12:00 PM",
-        "number": "12",
-        "name": "CABALLO",
-        "isPending": false
+        "number": "05",
+        "name": "Leon",
+        "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "01:00 PM",
-        "number": "19",
-        "name": "CHIVO",
-        "isPending": false
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "02:00 PM",
-        "number": "14",
-        "name": "PALOMA",
-        "isPending": false
+        "number": "21",
+        "name": "Gallo",
+        "tripleA": "21",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "03:00 PM",
-        "number": "31",
-        "name": "LAPA",
-        "isPending": false
+        "number": "36",
+        "name": "Conejo",
+        "tripleA": "36",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "04:00 PM",
-        "number": "24",
-        "name": "IGUANA",
-        "isPending": false
+        "number": "30",
+        "name": "Caiman",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "05:00 PM",
-        "number": "30",
-        "name": "CAIMÁN",
-        "isPending": false
+        "number": "22",
+        "name": "Camello",
+        "tripleA": "22",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "06:00 PM",
-        "number": "11",
-        "name": "GATO",
-        "isPending": false
-      },
-      {
-        "time": "07:00 PM",
-        "number": "25",
-        "name": "GALLINA",
-        "isPending": false
+        "number": "50",
+        "name": "Cisne",
+        "tripleA": "50",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -19948,76 +20174,104 @@
     ],
     "2026-09-16": [
       {
-        "time": "08:10 AM",
-        "number": "13",
-        "name": "MONO",
-        "isPending": false
-      },
-      {
-        "time": "09:10 AM",
-        "number": "12",
-        "name": "CABALLO",
-        "isPending": false
-      },
-      {
-        "time": "10:10 AM",
-        "number": "00",
-        "name": "DELFÍN",
-        "isPending": false
-      },
-      {
-        "time": "11:10 AM",
-        "number": "29",
-        "name": "ELEFANTE",
-        "isPending": false
-      },
-      {
-        "time": "12:10 PM",
-        "number": "14",
-        "name": "PALOMA",
-        "isPending": false
-      },
-      {
-        "time": "01:10 PM",
-        "number": "02",
-        "name": "TORO",
-        "isPending": false
-      },
-      {
-        "time": "02:10 PM",
-        "number": "26",
-        "name": "VACA",
-        "isPending": false
-      },
-      {
-        "time": "03:10 PM",
-        "number": "08",
-        "name": "RATÓN",
-        "isPending": false
-      },
-      {
-        "time": "04:10 PM",
-        "number": "09",
-        "name": "ÁGUILA",
-        "isPending": false
-      },
-      {
-        "time": "05:10 PM",
-        "number": "25",
-        "name": "GALLINA",
-        "isPending": false
-      },
-      {
-        "time": "06:10 PM",
-        "number": "03",
-        "name": "CIEMPIÉS",
-        "isPending": false
-      },
-      {
-        "time": "07:10 PM",
+        "time": "09:00 AM",
         "number": "11",
-        "name": "GATO",
-        "isPending": false
+        "name": "Gato",
+        "tripleA": "11",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:00 AM",
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:00 AM",
+        "number": "23",
+        "name": "Cebra",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:00 PM",
+        "number": "05",
+        "name": "Leon",
+        "tripleA": "05",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:00 PM",
+        "number": "17",
+        "name": "Pavo",
+        "tripleA": "17",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:00 PM",
+        "number": "21",
+        "name": "Gallo",
+        "tripleA": "21",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:00 PM",
+        "number": "36",
+        "name": "Conejo",
+        "tripleA": "36",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "04:00 PM",
+        "number": "30",
+        "name": "Caiman",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "05:00 PM",
+        "number": "22",
+        "name": "Camello",
+        "tripleA": "22",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "06:00 PM",
+        "number": "50",
+        "name": "Cisne",
+        "tripleA": "50",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -22405,75 +22659,123 @@
     "2026-09-16": [
       {
         "time": "08:30 AM",
-        "number": "17",
-        "name": "PAVO",
-        "isPending": false
+        "number": "04",
+        "name": "Alacran",
+        "tripleA": "04",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "09:30 AM",
-        "number": "35",
-        "name": "JIRAFA",
-        "isPending": false
+        "number": "64",
+        "name": "Gavilan",
+        "tripleA": "64",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "10:30 AM",
-        "number": "06",
-        "name": "RANA",
-        "isPending": false
+        "number": "34",
+        "name": "Venado",
+        "tripleA": "34",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "11:30 AM",
-        "number": "45",
-        "name": "GARZA",
-        "isPending": false
+        "number": "38",
+        "name": "Bufalo",
+        "tripleA": "38",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "12:30 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
+        "number": "01",
+        "name": "Carnero",
+        "tripleA": "01",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "01:30 PM",
-        "number": "49",
-        "name": "PEREZA",
-        "isPending": false
+        "number": "35",
+        "name": "Jirafa",
+        "tripleA": "35",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "02:30 PM",
-        "number": "34",
-        "name": "VENADO",
-        "isPending": false
+        "number": "85",
+        "name": "Hamster",
+        "tripleA": "85",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "03:30 PM",
-        "number": "61",
-        "name": "PANDA",
-        "isPending": false
+        "number": "93",
+        "name": "Gaviota",
+        "tripleA": "93",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "04:30 PM",
-        "number": "0",
-        "name": "DELFÍN",
-        "isPending": false
+        "number": "60",
+        "name": "Camaleon",
+        "tripleA": "60",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "05:30 PM",
-        "number": "10",
-        "name": "TIGRE",
-        "isPending": false
+        "number": "95",
+        "name": "Escarabajo",
+        "tripleA": "95",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "06:30 PM",
-        "number": "15",
-        "name": "ZORRO",
-        "isPending": false
+        "number": "07",
+        "name": "Perico",
+        "tripleA": "07",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "07:30 PM",
-        "number": "42",
-        "name": "PELÍCANO",
-        "isPending": false
+        "number": "54",
+        "name": "Grillo",
+        "tripleA": "54",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -24865,75 +25167,123 @@
     "2026-09-16": [
       {
         "time": "08:00 AM",
-        "number": "16",
-        "name": "OSO",
-        "isPending": false
+        "number": "58",
+        "name": "Hormiga",
+        "tripleA": "58",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "09:00 AM",
-        "number": "31",
-        "name": "LAPA",
-        "isPending": false
+        "number": "10",
+        "name": "Tigre",
+        "tripleA": "10",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "10:00 AM",
-        "number": "15",
-        "name": "ZORRO",
-        "isPending": false
+        "number": "27",
+        "name": "Perro",
+        "tripleA": "27",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "11:00 AM",
-        "number": "03",
-        "name": "CIEMPIÉS",
-        "isPending": false
+        "number": "04",
+        "name": "Alacrán",
+        "tripleA": "04",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "12:00 PM",
-        "number": "29",
-        "name": "ELEFANTE",
-        "isPending": false
+        "number": "46",
+        "name": "Puma",
+        "tripleA": "46",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "01:00 PM",
-        "number": "36",
-        "name": "CULEBRA",
-        "isPending": false
+        "number": "69",
+        "name": "Conejo",
+        "tripleA": "69",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "02:00 PM",
-        "number": "17",
-        "name": "PAVO",
-        "isPending": false
+        "number": "19",
+        "name": "Chivo",
+        "tripleA": "19",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "03:00 PM",
-        "number": "25",
-        "name": "GALLINA",
-        "isPending": false
+        "number": "68",
+        "name": "Jaguar",
+        "tripleA": "68",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "04:00 PM",
-        "number": "24",
-        "name": "IGUANA",
-        "isPending": false
+        "number": "52",
+        "name": "Pulpo",
+        "tripleA": "52",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "05:00 PM",
-        "number": "26",
-        "name": "VACA",
-        "isPending": false
+        "number": "12",
+        "name": "Caballo",
+        "tripleA": "12",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "06:00 PM",
-        "number": "04",
-        "name": "ALACRÁN",
-        "isPending": false
+        "number": "0",
+        "name": "Delfín",
+        "tripleA": "0",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
         "time": "07:00 PM",
-        "number": "32",
-        "name": "ARDILLA",
-        "isPending": false
+        "number": "66",
+        "name": "Lobo",
+        "tripleA": "66",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },
@@ -29944,76 +30294,124 @@
     ],
     "2026-09-16": [
       {
-        "time": "08:00 AM",
-        "number": "61",
-        "name": "PANDA",
-        "isPending": false
+        "time": "08:10 AM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
-        "time": "09:00 AM",
+        "time": "09:10 AM",
+        "number": "34",
+        "name": "VENADO",
+        "tripleA": "34",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "10:10 AM",
+        "number": "23",
+        "name": "CEBRA",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "11:10 AM",
+        "number": "32",
+        "name": "ARDILLA",
+        "tripleA": "32",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "12:10 PM",
+        "number": "36",
+        "name": "CULEBRA",
+        "tripleA": "36",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "01:10 PM",
+        "number": "23",
+        "name": "CEBRA",
+        "tripleA": "23",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "02:10 PM",
+        "number": "29",
+        "name": "ELEFANTE",
+        "tripleA": "29",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
+      },
+      {
+        "time": "03:10 PM",
         "number": "30",
-        "name": "CAIMÁN",
-        "isPending": false
+        "name": "CAIMAN",
+        "tripleA": "30",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
-        "time": "10:00 AM",
-        "number": "70",
-        "name": "BISONTE",
-        "isPending": false
+        "time": "04:10 PM",
+        "number": "32",
+        "name": "ARDILLA",
+        "tripleA": "32",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
-        "time": "11:00 AM",
-        "number": "21",
-        "name": "GALLO",
-        "isPending": false
+        "time": "05:10 PM",
+        "number": "08",
+        "name": "RATON",
+        "tripleA": "08",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
-        "time": "12:00 PM",
-        "number": "03",
-        "name": "CIEMPIÉS",
-        "isPending": false
+        "time": "06:10 PM",
+        "number": "34",
+        "name": "VENADO",
+        "tripleA": "34",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       },
       {
-        "time": "01:00 PM",
-        "number": "52",
-        "name": "PULPO",
-        "isPending": false
-      },
-      {
-        "time": "02:00 PM",
-        "number": "54",
-        "name": "GRILLO",
-        "isPending": false
-      },
-      {
-        "time": "03:00 PM",
-        "number": "67",
-        "name": "AVESTRUZ",
-        "isPending": false
-      },
-      {
-        "time": "04:00 PM",
-        "number": "48",
-        "name": "PUERCOESPÍN",
-        "isPending": false
-      },
-      {
-        "time": "05:00 PM",
-        "number": "27",
-        "name": "PERRO",
-        "isPending": false
-      },
-      {
-        "time": "06:00 PM",
-        "number": "01",
-        "name": "CARNERO",
-        "isPending": false
-      },
-      {
-        "time": "07:00 PM",
-        "number": "17",
-        "name": "PAVO",
-        "isPending": false
+        "time": "07:10 PM",
+        "number": "02",
+        "name": "TORO",
+        "tripleA": "02",
+        "tripleB": null,
+        "tripleC": null,
+        "signo": null,
+        "isManual": false
       }
     ]
   },

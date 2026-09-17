@@ -43,6 +43,8 @@ const DEFAULT_SCREEN_CONFIG = {
   tickerActive: true,
   voiceEnabled: true,
   voiceVolume: 0.9,
+  voiceEngine: 'auto', // 'auto' (híbrido inteligente) | 'server' (audio HD MP3) | 'native' (Web Speech API)
+  logoUrl: '', // Logotipo personalizado oficial de la agencia/cliente
   animalSfxEnabled: true,
   bgMusicEnabled: true,
   circusMusicEnabled: true,
@@ -226,12 +228,16 @@ function saveDatabase() {
   }
 }
 
-// Función auxiliar a nivel de módulo para garantizar las 5 pizarras fijas de resultados
+// Función auxiliar a nivel de módulo para garantizar y proteger la estructura de diapositivas de las 3 secciones
 function normalizeConfigSlides(cfg) {
   if (!cfg) return;
   if (!cfg.lotterySections) {
     cfg.lotterySections = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG.lotterySections));
   }
+  if (!cfg.voiceEngine) cfg.voiceEngine = 'auto';
+  if (cfg.logoUrl === undefined) cfg.logoUrl = '';
+
+  // 1. Sección Resultados (5 pizarras fijas)
   if (!cfg.lotterySections.resultados) {
     cfg.lotterySections.resultados = { enabled: true, slides: [] };
   }
@@ -247,7 +253,53 @@ function normalizeConfigSlides(cfg) {
     } else if (rSlides.length > 5) {
       cfg.lotterySections.resultados.slides = rSlides.slice(0, 5);
     }
+    cfg.lotterySections.resultados.slides.forEach((s, idx) => {
+      if (!s.serial) s.serial = `Pizarra${idx + 1}`;
+      if (s.order === undefined) s.order = idx + 1;
+    });
   }
+
+  // 2. Sección Estadísticas (3 diapositivas)
+  if (!cfg.lotterySections.estadisticas) {
+    cfg.lotterySections.estadisticas = { enabled: true, slides: [] };
+  }
+  const estSlides = cfg.lotterySections.estadisticas.slides;
+  if (!Array.isArray(estSlides) || estSlides.length === 0) {
+    cfg.lotterySections.estadisticas.slides = [
+      { id: 'slide_stats_1', serial: 'Estadistica1', order: 6, name: '🔥 Los Más Calientes: Frecuencia Top 30D', type: 'stats_hot', enabled: true, duration: 20, lotteryCount: 3, lotteries: ['guacharo-activo', 'lotto-activo', 'la-granjita'] },
+      { id: 'slide_stats_2', serial: 'Estadistica2', order: 7, name: '❄️ Los Más Fríos: Datos Atrasados', type: 'stats_cold', enabled: true, duration: 20, lotteryCount: 3, lotteries: ['guacharo-activo', 'lotto-activo', 'la-granjita'] },
+      { id: 'slide_stats_3', serial: 'Estadistica3', order: 8, name: '🔺 Pirámide de la Suerte & Triples Millonarios', type: 'stats_pyramid', enabled: true, duration: 25, lotteryCount: 3, lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance-1'] }
+    ];
+  } else {
+    estSlides.forEach((s, idx) => {
+      if (!s.serial) s.serial = `Estadistica${idx + 1}`;
+      if (s.order === undefined) s.order = idx + 6;
+    });
+  }
+
+  // 3. Sección Publicidad (4 diapositivas)
+  if (!cfg.lotterySections.publicidad) {
+    cfg.lotterySections.publicidad = { enabled: true, slides: [] };
+  }
+  const pubSlides = cfg.lotterySections.publicidad.slides;
+  if (!Array.isArray(pubSlides) || pubSlides.length === 0) {
+    cfg.lotterySections.publicidad.slides = [
+      { id: 'slide_pub_1', serial: 'Publicidad1', order: 9, type: 'pub_rules_animalitos', name: '🐾 Reglas, Horarios y Formas de Pago: Animalitos', enabled: true, duration: 18, lotteries: ['guacharo-activo', 'la-granjita', 'lotto-activo', 'guacharito-millonario', 'chance-animal', 'la-ricachona', 'centena-animalitos', 'centena-plus', 'selva-plus', 'granjita-plus'] },
+      { id: 'slide_pub_2', serial: 'Publicidad2', order: 10, type: 'pub_rules_triples', name: '🎰 Formas de Pago y Horarios: Triples y Terminales', enabled: true, duration: 18, lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano', 'triple-caliente'] },
+      { id: 'slide_pub_3', serial: 'Publicidad3', order: 11, type: 'pub_agency_identity', name: '🏢 Identidad, Horarios y Normas de la Agencia', enabled: true, duration: 16, agencyName: 'AGENCIA OFICIAL LA FORTUNA', agencyContact: '', logoUrl: cfg.logoUrl || '', agencySlogan: 'Tu Agencia de Confianza • Pagos Seguros al Instante', agencyHours: 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)', ticketValidity: 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.', agencyRules: ['Conserve su ticket en perfecto estado.', 'Verifique su jugada antes de retirarse.', 'Los premios se pagan al instante en bolívares.', 'Prohibida la venta a menores de 18 años.'] },
+      { id: 'slide_pub_4', serial: 'Publicidad4', order: 12, type: 'pub_agency_benefits', name: '💎 Beneficios Exclusivos de Nuestra Agencia', enabled: true, duration: 16, subtitle: 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla' }
+    ];
+  } else {
+    pubSlides.forEach((s, idx) => {
+      if (!s.serial) s.serial = `Publicidad${idx + 1}`;
+      if (s.order === undefined) s.order = idx + 9;
+      if (s.agencyContact === undefined) s.agencyContact = '';
+      if (s.type === 'pub_agency_identity') {
+        if (!s.logoUrl && cfg.logoUrl) s.logoUrl = cfg.logoUrl;
+      }
+    });
+  }
+  return cfg;
 }
 
 function loadDatabase() {
@@ -1181,6 +1233,17 @@ function updateDeviceConfig(deviceId, newConfig, requestingClientId, userRole) {
     }
   };
 
+  if (newConfig.lotterySections) {
+    dev.config.lotterySections = JSON.parse(JSON.stringify(newConfig.lotterySections));
+  }
+  if (newConfig.logoUrl !== undefined) {
+    dev.config.logoUrl = newConfig.logoUrl;
+  }
+  if (newConfig.voiceEngine) {
+    dev.config.voiceEngine = newConfig.voiceEngine;
+  }
+  normalizeConfigSlides(dev.config);
+
   if (newConfig.defaultService) {
     dev.defaultService = newConfig.defaultService;
     dev.activeService = newConfig.defaultService;
@@ -1211,6 +1274,13 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
     if (configUpdates.lotterySections) {
       mergedClientCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
     }
+    if (configUpdates.logoUrl !== undefined) {
+      mergedClientCfg.logoUrl = configUpdates.logoUrl;
+      client.logoUrl = configUpdates.logoUrl;
+    }
+    if (configUpdates.voiceEngine) {
+      mergedClientCfg.voiceEngine = configUpdates.voiceEngine;
+    }
     if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
       const mActive = Boolean(configUpdates.bgMusicEnabled !== undefined ? configUpdates.bgMusicEnabled : configUpdates.circusMusicEnabled);
       mergedClientCfg.bgMusicEnabled = mActive;
@@ -1229,6 +1299,7 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
     if (configUpdates.defaultService) {
       mergedClientCfg.defaultService = configUpdates.defaultService;
     }
+    normalizeConfigSlides(mergedClientCfg);
     client.config = mergedClientCfg;
     savedClientCfg = mergedClientCfg;
   }
@@ -1247,6 +1318,13 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
     if (configUpdates.lotterySections) {
       mergedSuperCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
     }
+    if (configUpdates.logoUrl !== undefined) {
+      mergedSuperCfg.logoUrl = configUpdates.logoUrl;
+    }
+    if (configUpdates.voiceEngine) {
+      mergedSuperCfg.voiceEngine = configUpdates.voiceEngine;
+    }
+    normalizeConfigSlides(mergedSuperCfg);
     USERS['hector_owner'].config = mergedSuperCfg;
     if (USERS['hector']) USERS['hector'].config = mergedSuperCfg;
     if (USERS['superadmin']) USERS['superadmin'].config = mergedSuperCfg;
@@ -1286,6 +1364,12 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
       if (configUpdates.lotterySections) {
         mergedCfg.lotterySections = JSON.parse(JSON.stringify(configUpdates.lotterySections));
       }
+      if (configUpdates.logoUrl !== undefined) {
+        mergedCfg.logoUrl = configUpdates.logoUrl;
+      }
+      if (configUpdates.voiceEngine) {
+        mergedCfg.voiceEngine = configUpdates.voiceEngine;
+      }
 
       // Normalizar alias de música de fondo / circo
       if (configUpdates.bgMusicEnabled !== undefined || configUpdates.circusMusicEnabled !== undefined) {
@@ -1305,6 +1389,8 @@ function batchUpdateDeviceConfig(deviceIds, configUpdates, requestingClientId, u
         mergedCfg.bgMusicVolume = mVol;
         mergedCfg.circusMusicVolume = mVol;
       }
+
+      normalizeConfigSlides(mergedCfg);
 
       if (dev) {
         dev.config = mergedCfg;
@@ -1737,5 +1823,6 @@ module.exports = {
   deleteDeviceAccount,
   updateDevicePassword,
   kickDeviceSession,
-  syncDatabaseWithCloud
+  syncDatabaseWithCloud,
+  normalizeConfigSlides
 };

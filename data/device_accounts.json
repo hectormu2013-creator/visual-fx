@@ -2,6 +2,7 @@
   {
     "pass": "tv1234",
     "config": {
+      "logoUrl": "",
       "modules": {
         "publicidad": {
           "title": "Publicidad Oficial de Loterías",
@@ -75,6 +76,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -105,7 +107,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -122,7 +125,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -142,6 +146,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -153,7 +158,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -312,6 +318,7 @@
     "pass": "taqpass2026",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "publicidad": {
           "title": "Publicidad Oficial de Loterías",
@@ -385,6 +392,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -415,7 +423,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -432,7 +441,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -452,6 +462,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -463,7 +474,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -623,6 +635,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -676,6 +689,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -706,7 +720,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -723,7 +738,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -743,6 +759,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -754,7 +771,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -917,6 +935,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -970,6 +989,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -1000,7 +1020,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -1017,7 +1038,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -1037,6 +1059,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -1048,7 +1071,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -1211,6 +1235,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -1264,6 +1289,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -1294,7 +1320,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -1311,7 +1338,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -1331,6 +1359,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -1342,7 +1371,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -1505,6 +1535,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -1558,6 +1589,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -1588,7 +1620,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -1605,7 +1638,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -1625,6 +1659,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -1636,7 +1671,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -1799,6 +1835,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -1852,6 +1889,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -1882,7 +1920,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -1899,7 +1938,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -1919,6 +1959,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -1930,7 +1971,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -2093,6 +2135,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -2146,6 +2189,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -2176,7 +2220,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -2193,7 +2238,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -2213,6 +2259,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -2224,7 +2271,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -2387,6 +2435,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -2440,6 +2489,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -2470,7 +2520,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -2487,7 +2538,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -2507,6 +2559,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -2518,7 +2571,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -2681,6 +2735,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -2734,6 +2789,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -2764,7 +2820,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -2781,7 +2838,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -2801,6 +2859,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -2812,7 +2871,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -2975,6 +3035,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -3028,6 +3089,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -3058,7 +3120,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -3075,7 +3138,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -3095,6 +3159,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -3106,7 +3171,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -3269,6 +3335,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -3322,6 +3389,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -3352,7 +3420,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -3369,7 +3438,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -3389,6 +3459,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -3400,7 +3471,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true
@@ -3563,6 +3635,7 @@
     "pass": "123",
     "role": "DEVICE",
     "config": {
+      "logoUrl": "",
       "modules": {
         "pizarra_1000": {
           "enabled": true,
@@ -3616,6 +3689,7 @@
       "colorStyle": "clean",
       "colorScheme": "clean",
       "tickerSpeed": 250,
+      "voiceEngine": "auto",
       "voiceVolume": 1,
       "bgMusicTrack": "circus_waltz",
       "tickerActive": true,
@@ -3646,7 +3720,8 @@
                 "centena-plus",
                 "selva-plus",
                 "granjita-plus"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310079643",
@@ -3663,7 +3738,8 @@
                 "triple-caracas",
                 "triple-zamorano",
                 "triple-caliente"
-              ]
+              ],
+              "agencyContact": ""
             },
             {
               "id": "slide_pub_1789310098602",
@@ -3683,6 +3759,7 @@
                 "En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente."
               ],
               "agencySlogan": "Tu Agencia de Confianza • Pagos Seguros al Instante",
+              "agencyContact": "",
               "ticketValidity": "Los tickets premiados tienen una validez estricta de 48 horas continuas a partir de la  emisión."
             },
             {
@@ -3694,7 +3771,8 @@
               "serial": "Publicidad4",
               "enabled": true,
               "duration": 15,
-              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla"
+              "subtitle": "Máxima solidez, transparencia absoluta y la mejor atención en taquilla",
+              "agencyContact": ""
             }
           ],
           "enabled": true

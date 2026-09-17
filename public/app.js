@@ -881,13 +881,28 @@ async function checkDeviceAuthorization() {
         if (profileArea) profileArea.style.display = 'flex';
       }
 
-      // Aplicar configuración guardada del cliente o remota de la pantalla
-      if (currentUser && currentUser.config) {
+      // Aplicar configuración remota del servidor como fuente suprema de verdad
+      const serverConfig = data.config || (data.device && data.device.config);
+      if (serverConfig) {
+        applyScreenConfig(serverConfig);
+        if (currentUser) {
+          currentUser.config = serverConfig;
+          try {
+            localStorage.setItem('visual_fx_user', JSON.stringify(currentUser));
+          } catch (e) {}
+        }
+        try {
+          localStorage.setItem('visual_fx_screen_config', JSON.stringify(serverConfig));
+        } catch (e) {}
+      } else if (currentUser && currentUser.config) {
         applyScreenConfig(currentUser.config);
-      } else if (data.config) {
-        applyScreenConfig(data.config);
-      } else if (data.device && data.device.config) {
-        applyScreenConfig(data.device.config);
+      } else {
+        const localSaved = localStorage.getItem('visual_fx_screen_config');
+        if (localSaved) {
+          try {
+            applyScreenConfig(JSON.parse(localSaved));
+          } catch (e) {}
+        }
       }
 
       // Aplicar servicio de inicio por defecto asignado al televisor al encenderse
@@ -3668,6 +3683,8 @@ const DEFAULT_SCREEN_CONFIG = {
   tickerSpeed: 350,
   voiceEnabled: true,
   voiceVolume: 0.90,
+  voiceEngine: 'auto', // 'auto' | 'server' | 'native'
+  logoUrl: '', // Logotipo personalizado de la agencia
   animalSfxEnabled: true,
   circusMusicEnabled: true,
   circusMusicTrack: 'circus_waltz',
@@ -3800,6 +3817,8 @@ const DEFAULT_SCREEN_CONFIG = {
           enabled: true,
           duration: 16,
           agencyName: 'AGENCIA OFICIAL LA FORTUNA',
+          agencyContact: '',
+          logoUrl: '',
           agencySlogan: 'Tu Agencia de Confianza • Pagos Seguros al Instante',
           agencyHours: 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)',
           ticketValidity: 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.',
@@ -3934,8 +3953,15 @@ function applyScreenConfig(cfg) {
     applyTickerSpeedToTrack(trackEl);
   }
 
-  // 4. Voz Humana
+  // 4. Voz Humana y Motor
+  if (cfg.voiceEngine) currentScreenConfig.voiceEngine = cfg.voiceEngine;
   lotteryVoiceEnabled = currentScreenConfig.voiceEnabled;
+
+  // 4.1 Logotipo de la Agencia
+  if (cfg.logoUrl !== undefined) {
+    currentScreenConfig.logoUrl = cfg.logoUrl;
+    updateUiClientLogo(cfg.logoUrl);
+  }
 
   // 5. Música de Fondo
   CircusMusicEngine.applyConfig(currentScreenConfig);
@@ -3950,6 +3976,26 @@ function applyScreenConfig(cfg) {
     updateLotteryPageIndicator(currentCarouselSlideIdx, slides.length);
   }
 }
+
+function updateUiClientLogo(logoUrl) {
+  const previewImg = document.getElementById('cfgLogoPreviewImg');
+  const placeholder = document.getElementById('cfgLogoPlaceholder');
+  const btnRemove = document.getElementById('btnRemoveClientLogo');
+  if (previewImg && placeholder) {
+    if (logoUrl) {
+      previewImg.src = logoUrl;
+      previewImg.style.display = 'block';
+      placeholder.style.display = 'none';
+      if (btnRemove) btnRemove.style.display = 'inline-block';
+    } else {
+      previewImg.src = '';
+      previewImg.style.display = 'none';
+      placeholder.style.display = 'block';
+      if (btnRemove) btnRemove.style.display = 'none';
+    }
+  }
+}
+window.updateUiClientLogo = updateUiClientLogo;
 
 // ==========================================
 // Mapa Oficial de Signos Zodiacales
@@ -4553,9 +4599,98 @@ function playChimeAlert() {
   } catch (e) {}
 }
 
+// ==========================================
+// Motor Universal de Síntesis de Voz (Web Speech API + Fallback Servidor MP3)
+// ==========================================
+let cachedVoices = [];
+function initVoices() {
+  if (!('speechSynthesis' in window)) return;
+  cachedVoices = window.speechSynthesis.getVoices() || [];
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      cachedVoices = window.speechSynthesis.getVoices() || [];
+    };
+  }
+}
+initVoices();
+
+let isUniversalAudioUnlocked = false;
+function initUniversalAudioUnlock() {
+  if (isUniversalAudioUnlocked) return;
+  const unlockAudio = () => {
+    isUniversalAudioUnlocked = true;
+    try {
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      if (window.speechSynthesis && window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    } catch (e) {}
+    window.removeEventListener('click', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+    window.removeEventListener('touchstart', unlockAudio);
+    window.removeEventListener('pointerdown', unlockAudio);
+  };
+  window.addEventListener('click', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
+  window.addEventListener('touchstart', unlockAudio, { passive: true });
+  window.addEventListener('pointerdown', unlockAudio, { passive: true });
+}
+initUniversalAudioUnlock();
+
+let currentTtsAudioEl = null;
+
+function playAudioTts(text, volume = 0.9, onEndCallback) {
+  try {
+    if (currentTtsAudioEl) {
+      try {
+        currentTtsAudioEl.pause();
+        currentTtsAudioEl.currentTime = 0;
+      } catch (e) {}
+      currentTtsAudioEl = null;
+    }
+
+    const ttsUrl = `/api/tts?text=${encodeURIComponent(text)}`;
+    const audio = new Audio(ttsUrl);
+    audio.volume = Math.max(0, Math.min(1, volume));
+    currentTtsAudioEl = audio;
+
+    let callbackFired = false;
+    const finish = () => {
+      if (!callbackFired) {
+        callbackFired = true;
+        currentTtsAudioEl = null;
+        if (onEndCallback) onEndCallback();
+      }
+    };
+
+    audio.onended = finish;
+    audio.onerror = (err) => {
+      console.warn('[AudioTTS Error]', err);
+      finish();
+    };
+
+    // Watchdog de seguridad en caso de red lenta
+    setTimeout(finish, 13000);
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn('[AudioTTS Autoplay Blocked / Fallback]', err);
+        finish();
+      });
+    }
+  } catch (err) {
+    console.error('[AudioTTS Exception]', err);
+    if (onEndCallback) onEndCallback();
+  }
+}
+window.playAudioTts = playAudioTts;
+
 function getBestSpanishVoice() {
   if (!('speechSynthesis' in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
+  const voices = (cachedVoices && cachedVoices.length > 0) ? cachedVoices : window.speechSynthesis.getVoices();
   if (!voices || voices.length === 0) return null;
 
   const naturalSpanish = voices.find(v => {
@@ -4581,77 +4716,123 @@ function getBestSpanishVoice() {
   return voices.find(v => (v.lang || '').toLowerCase().startsWith('es')) || null;
 }
 
+window._activeSpeechUtterance = null;
+
 function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
   if (!lotteryVoiceEnabled) {
     if (onEndCallback) onEndCallback();
     return;
   }
-  if (!('speechSynthesis' in window)) {
-    if (onEndCallback) onEndCallback();
+
+  // Normalización fonética para pronunciación fluida y natural
+  let cleanGameName = (gameName || '').replace(/\s*\([^)]*\)/g, '').trim();
+  let cleanResult = (resultText || '').trim();
+
+  cleanGameName = cleanGameName.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  cleanResult = cleanResult.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  if (/\btriple\s+chance\b/i.test(cleanGameName) || cleanGameName.toLowerCase() === 'chance') {
+    cleanGameName = 'Chanse';
+  } else {
+    cleanGameName = cleanGameName.replace(/\bchance\b/gi, 'Chanse');
+  }
+  cleanResult = cleanResult.replace(/\bchance\b/gi, 'Chanse');
+
+  cleanGameName = cleanGameName.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
+  cleanResult = cleanResult.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
+
+  cleanGameName = cleanGameName
+    .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
+    .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
+    .replace(/\br[ií]cachona\b/gi, 'Rícachona');
+  cleanResult = cleanResult
+    .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
+    .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
+    .replace(/\br[ií]cachona\b/gi, 'Rícachona');
+
+  cleanGameName = cleanGameName.replace(/\bt[aá]chira\b/gi, 'Táchira');
+  cleanResult = cleanResult.replace(/\bt[aá]chira\b/gi, 'Táchira');
+
+  const fullPhrase = `Atención. Resultado oficial de ${cleanGameName}, sorteo de las ${drawTime}: ${cleanResult}.`;
+  const voiceVol = currentScreenConfig.voiceVolume || 0.90;
+  const engine = currentScreenConfig.voiceEngine || 'auto';
+
+  // 1. Si el motor configurado es explícitamente "server" o si el dispositivo no soporta SpeechSynthesis:
+  if (engine === 'server' || !('speechSynthesis' in window)) {
+    playAudioTts(fullPhrase, voiceVol, onEndCallback);
     return;
   }
+
+  // 2. Si es "auto" o "native", verificar si hay alguna voz en español disponible:
+  const bestVoice = getBestSpanishVoice();
+  if (!bestVoice && engine !== 'native') {
+    // Si no hay voces en español en este televisor/navegador, saltar de inmediato al audio HD del servidor
+    playAudioTts(fullPhrase, voiceVol, onEndCallback);
+    return;
+  }
+
+  // 3. Intentar síntesis nativa con watchdog de respaldo
   try {
-    window.speechSynthesis.cancel();
-    
-    // Normalización fonética para pronunciación fluida y natural:
-    // 1. Quitar paréntesis o aclaratorias de horarios en el nombre hablado (ej: "Triple Chance (9 AM - 2 PM)" -> "Triple Chance")
-    let cleanGameName = (gameName || '').replace(/\s*\([^)]*\)/g, '').trim();
-    let cleanResult = (resultText || '').trim();
-
-    // 2. Convertir mayúsculas continuas a minúsculas/título para evitar que el sintetizador las deletree
-    cleanGameName = cleanGameName.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-    cleanResult = cleanResult.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-
-    // 3. Corregir Triples de Chance: locución limpia como "Chance" (pronunciado "Chanse" en español) seguido de la hora
-    if (/\btriple\s+chance\b/i.test(cleanGameName) || cleanGameName.toLowerCase() === 'chance') {
-      cleanGameName = 'Chanse';
-    } else {
-      cleanGameName = cleanGameName.replace(/\bchance\b/gi, 'Chanse');
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
     }
-    cleanResult = cleanResult.replace(/\bchance\b/gi, 'Chanse');
+    window.speechSynthesis.cancel();
 
-    // 4. Corregir fonética de "Guácharo" para forzar acento esdrújulo en la primera 'a' (Guá-cha-ro)
-    cleanGameName = cleanGameName.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
-    cleanResult = cleanResult.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
-
-    // 5. Corregir específicamente "Rícachona" para que se pronuncie como una sola palabra corrida con acento en la 'i' (Rí-ca-cho-na)
-    cleanGameName = cleanGameName
-      .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
-      .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
-      .replace(/\br[ií]cachona\b/gi, 'Rícachona');
-    cleanResult = cleanResult
-      .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
-      .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
-      .replace(/\br[ií]cachona\b/gi, 'Rícachona');
-
-    // 6. Corregir fonética de "Táchira" para forzar acento esdrújulo en la primera 'a' (TÁ-chi-ra)
-    cleanGameName = cleanGameName.replace(/\bt[aá]chira\b/gi, 'Táchira');
-    cleanResult = cleanResult.replace(/\bt[aá]chira\b/gi, 'Táchira');
-
-    const utterance = new SpeechSynthesisUtterance(`Atención. Resultado oficial de ${cleanGameName}, sorteo de las ${drawTime}: ${cleanResult}.`);
+    const utterance = new SpeechSynthesisUtterance(fullPhrase);
     utterance.lang = 'es-VE';
     utterance.rate = 0.90;
     utterance.pitch = 1.02;
-    utterance.volume = currentScreenConfig.voiceVolume || 0.90;
-    const bestVoice = getBestSpanishVoice();
+    utterance.volume = voiceVol;
     if (bestVoice) utterance.voice = bestVoice;
 
+    // Protección crucial contra Garbage Collection en Android TV / Chromium
+    window._activeSpeechUtterance = utterance;
+
     let callbackFired = false;
+    let hasSpeechStarted = false;
+
     const fireCallbackOnce = () => {
-      if (!callbackFired && onEndCallback) {
+      if (!callbackFired) {
         callbackFired = true;
-        onEndCallback();
+        window._activeSpeechUtterance = null;
+        if (onEndCallback) onEndCallback();
       }
     };
 
+    utterance.onstart = () => {
+      hasSpeechStarted = true;
+    };
+
     utterance.onend = fireCallbackOnce;
-    utterance.onerror = fireCallbackOnce;
-    setTimeout(fireCallbackOnce, 9000);
+
+    // Si la síntesis nativa arroja error o falla en el TV, recurrir de inmediato al audio del servidor
+    utterance.onerror = (err) => {
+      console.warn('[SpeechSynthesis Error -> Fallback to Audio TTS]', err);
+      window._activeSpeechUtterance = null;
+      if (!callbackFired) {
+        callbackFired = true;
+        playAudioTts(fullPhrase, voiceVol, onEndCallback);
+      }
+    };
+
+    // Watchdog de 1.2 segundos: si el televisor congeló el utterance y nunca disparó onstart, conmutar a audio MP3
+    setTimeout(() => {
+      if (!hasSpeechStarted && !callbackFired && engine !== 'native') {
+        console.warn('[SpeechSynthesis Watchdog Timeout -> Fallback to Audio TTS]');
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+        window._activeSpeechUtterance = null;
+        callbackFired = true;
+        playAudioTts(fullPhrase, voiceVol, onEndCallback);
+      }
+    }, 1200);
+
+    // Timeout de seguridad máximo para finalizar el anuncio si onend no se disparó
+    setTimeout(fireCallbackOnce, 9500);
 
     window.speechSynthesis.speak(utterance);
   } catch (e) {
-    console.warn('[SpeechSynthesis]', e);
-    if (onEndCallback) onEndCallback();
+    console.warn('[SpeechSynthesis Exception -> Fallback to Audio TTS]', e);
+    playAudioTts(fullPhrase, voiceVol, onEndCallback);
   }
 }
 
@@ -6198,9 +6379,11 @@ window.renderSlidePubRulesTriples = renderSlidePubRulesTriples;
 // 3. Diapositiva: Identidad, Horarios y Normas de la Agencia (Requisito 4)
 function renderSlidePubAgencyIdentity(slide, stage) {
   const agencyName = slide.agencyName || 'AGENCIA OFICIAL LA FORTUNA';
+  const agencyContact = slide.agencyContact || '';
   const agencySlogan = slide.agencySlogan || 'Tu Agencia de Confianza • Pagos Seguros al Instante';
   const agencyHours = slide.agencyHours || 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
   const ticketValidity = slide.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
+  const logoUrl = slide.logoUrl || currentScreenConfig.logoUrl || (currentUser && currentUser.logoUrl) || '';
   
   const rules = Array.isArray(slide.agencyRules) && slide.agencyRules.length > 0 ? slide.agencyRules : [
     'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
@@ -6235,8 +6418,21 @@ function renderSlidePubAgencyIdentity(slide, stage) {
       <div class="pub-agency-container">
         <div class="pub-agency-card-left">
           <div class="pub-agency-brand-hero">
-            <div class="pub-agency-emblem">🏛️</div>
+            ${logoUrl ? `
+              <div class="pub-agency-custom-logo-box" style="margin-bottom:12px; display:flex; justify-content:center;">
+                <img src="${logoUrl}" alt="Logotipo Agencia" style="max-height:85px; max-width:180px; object-fit:contain; border-radius:8px; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.6));">
+              </div>
+            ` : `
+              <div class="pub-agency-emblem">🏛️</div>
+            `}
             <h2 class="pub-agency-name-title">${agencyName}</h2>
+            ${agencyContact ? `
+              <div class="pub-agency-claims-badge" style="display:inline-flex; align-items:center; gap:8px; background:rgba(16, 185, 129, 0.18); border:1px solid rgba(16, 185, 129, 0.45); padding:6px 16px; border-radius:30px; font-weight:700; color:#34d399; margin:6px 0 10px 0; font-size:0.95rem;">
+                <span style="font-size:1.1rem;">📱</span>
+                <span>Reclamos y Sugerencias:</span>
+                <strong style="color:#ffffff; letter-spacing:0.5px;">${agencyContact}</strong>
+              </div>
+            ` : ''}
             <span class="pub-agency-status-tag">AGENCIA AUTORIZADA 100% OFICIAL</span>
           </div>
           <div class="pub-agency-info-boxes">
@@ -6768,8 +6964,10 @@ async function loadScreenConfigManager() {
     // Poblar Selector de Loterías para Módulos 1, 2, 3
     populateModuleLotteryPickers();
 
-    // Sincronizar campos del formulario con la configuración guardada del cliente (Petición 6)
-    const cfgToSync = (currentUser && currentUser.config) ? currentUser.config : currentScreenConfig;
+    // Sincronizar campos del formulario con la configuración guardada y activa (Prioridad a config activa)
+    const cfgToSync = (currentScreenConfig && Object.keys(currentScreenConfig).length > 0)
+      ? currentScreenConfig
+      : ((currentUser && currentUser.config) ? currentUser.config : DEFAULT_SCREEN_CONFIG);
     syncScreenConfigFormWithState(cfgToSync);
   } catch (err) {
     console.error('Error cargando gestor de configuración de pantallas:', err);
@@ -7115,6 +7313,8 @@ function ensureLotterySectionsStructure() {
       }
       if (s.type === 'pub_agency_identity') {
         if (!s.agencyName) s.agencyName = 'AGENCIA OFICIAL LA FORTUNA';
+        if (s.agencyContact === undefined) s.agencyContact = '';
+        if (s.logoUrl === undefined) s.logoUrl = '';
         if (!s.agencySlogan) s.agencySlogan = 'Tu Agencia de Confianza • Pagos Seguros al Instante';
         if (!s.agencyHours) s.agencyHours = 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
         if (!s.ticketValidity) s.ticketValidity = 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
@@ -7555,6 +7755,7 @@ function renderPublicidadSlidesEditor() {
       `;
     } else if (s.type === 'pub_agency_identity' || idx === 2) {
       const aName = s.agencyName || 'AGENCIA OFICIAL LA FORTUNA';
+      const aContact = s.agencyContact || '';
       const aSlogan = s.agencySlogan || 'Tu Agencia de Confianza • Pagos Seguros al Instante';
       const aHours = s.agencyHours || 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
       const aVal = s.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
@@ -7577,6 +7778,11 @@ function renderPublicidadSlidesEditor() {
               <label style="display:block; font-size:0.76rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Slogan / Lema de Confianza:</label>
               <input type="text" id="pubAgencySlogan_${idx}" value="${aSlogan}" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
             </div>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.76rem; font-weight:800; color:#34d399; text-transform:uppercase; margin-bottom:4px;">📱 Número de Reclamos y Sugerencias (WhatsApp / Teléfono):</label>
+            <input type="text" id="pubAgencyContact_${idx}" value="${aContact}" placeholder="Ej: +58 412-1234567 / 0414-9876543 (Atención al Cliente)" style="width:100%; background:#0f172a; border:1px solid rgba(16,185,129,0.5); color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
+            <small style="color:#94a3b8; font-size:0.72rem; display:block; margin-top:2px;">Se muestra en una pastilla destacada verde en el televisor debajo del nombre de la agencia.</small>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
@@ -7765,6 +7971,9 @@ function savePublicidadSlidesFromDOM() {
     } else if (slide.type === 'pub_agency_identity' || idx === 2) {
       const elName = card.querySelector(`#pubAgencyName_${idx}`);
       if (elName) slide.agencyName = elName.value.trim();
+      const elContact = card.querySelector(`#pubAgencyContact_${idx}`);
+      if (elContact) slide.agencyContact = elContact.value.trim();
+      if (currentScreenConfig.logoUrl) slide.logoUrl = currentScreenConfig.logoUrl;
       const elSlogan = card.querySelector(`#pubAgencySlogan_${idx}`);
       if (elSlogan) slide.agencySlogan = elSlogan.value.trim();
       const elHours = card.querySelector(`#pubAgencyHours_${idx}`);
@@ -8013,6 +8222,8 @@ function syncScreenConfigFormWithState(cfg) {
   if (cfg.defaultService) currentScreenConfig.defaultService = cfg.defaultService;
   if (cfg.tickerActive !== undefined) currentScreenConfig.tickerActive = Boolean(cfg.tickerActive);
   if (cfg.tickerSpeed) currentScreenConfig.tickerSpeed = Math.min(800, Math.max(150, parseInt(cfg.tickerSpeed) || 350));
+  if (cfg.voiceEngine) currentScreenConfig.voiceEngine = cfg.voiceEngine;
+  if (cfg.logoUrl !== undefined) currentScreenConfig.logoUrl = cfg.logoUrl;
 
   // Modo de Tema
   const radTheme = document.querySelectorAll('input[name="cfgThemeMode"]');
@@ -8026,6 +8237,10 @@ function syncScreenConfigFormWithState(cfg) {
   const selService = document.getElementById('cfgDefaultService');
   if (selService) selService.value = cfg.defaultService || 'loteria';
 
+  // Logotipo Oficial de la Agencia
+  const effectiveLogo = cfg.logoUrl || currentScreenConfig.logoUrl || '';
+  updateUiClientLogo(effectiveLogo);
+
   // Cintillo (Rango 150s - 600s)
   const chkTicker = document.getElementById('cfgTickerActive');
   const rngTicker = document.getElementById('cfgTickerSpeed');
@@ -8037,10 +8252,12 @@ function syncScreenConfigFormWithState(cfg) {
 
   // Audio y Voz
   const chkVoice = document.getElementById('cfgVoiceEnabled');
+  const selVoiceEngine = document.getElementById('cfgVoiceEngine');
   const rngVoice = document.getElementById('cfgVoiceVolume');
   const lblVoice = document.getElementById('lblCfgVoiceVol');
   const chkAnimalSfx = document.getElementById('cfgAnimalSfx');
   if (chkVoice) chkVoice.checked = cfg.voiceEnabled !== false;
+  if (selVoiceEngine) selVoiceEngine.value = cfg.voiceEngine || currentScreenConfig.voiceEngine || 'auto';
   if (rngVoice) rngVoice.value = Math.round((cfg.voiceVolume || 0.9) * 100);
   if (lblVoice) lblVoice.textContent = `${Math.round((cfg.voiceVolume || 0.9) * 100)}%`;
   if (chkAnimalSfx) chkAnimalSfx.checked = cfg.animalSfxEnabled !== false;
@@ -8123,6 +8340,99 @@ function setupScreenConfigEventListeners() {
       if (trackEl) {
         applyTickerSpeedToTrack(trackEl);
       }
+    });
+  }
+
+  // Logotipo Oficial de la Agencia / Cliente
+  const fileLogo = document.getElementById('cfgClientLogoFile');
+  const btnRemoveLogo = document.getElementById('btnRemoveClientLogo');
+  if (fileLogo) {
+    fileLogo.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor seleccione un archivo de imagen válido (PNG, JPG, WebP o SVG).');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const img = new Image();
+        img.onload = () => {
+          // Redimensionar suavemente en canvas (máx 280x120) para mantener payload ligero (<30KB)
+          const maxW = 280;
+          const maxH = 120;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxW || h > maxH) {
+            const ratio = Math.min(maxW / w, maxH / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedData = canvas.toDataURL('image/png', 0.92);
+
+          currentScreenConfig.logoUrl = compressedData;
+          updateUiClientLogo(compressedData);
+
+          // Actualizar diapositiva 3 de publicidad
+          if (currentScreenConfig.lotterySections?.publicidad?.slides) {
+            currentScreenConfig.lotterySections.publicidad.slides.forEach(s => {
+              if (s.type === 'pub_agency_identity') {
+                s.logoUrl = compressedData;
+              }
+            });
+          }
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (btnRemoveLogo) {
+    btnRemoveLogo.addEventListener('click', () => {
+      currentScreenConfig.logoUrl = '';
+      if (fileLogo) fileLogo.value = '';
+      updateUiClientLogo('');
+      if (currentScreenConfig.lotterySections?.publicidad?.slides) {
+        currentScreenConfig.lotterySections.publicidad.slides.forEach(s => {
+          if (s.type === 'pub_agency_identity') {
+            s.logoUrl = '';
+          }
+        });
+      }
+    });
+  }
+
+  // Motor de Voz / Síntesis
+  const selVoiceEngine = document.getElementById('cfgVoiceEngine');
+  if (selVoiceEngine) {
+    selVoiceEngine.addEventListener('change', () => {
+      currentScreenConfig.voiceEngine = selVoiceEngine.value;
+    });
+  }
+
+  // Probar Locución Ahora (Botón de Prueba)
+  const btnTestVoice = document.getElementById('btnTestVoiceNow');
+  const lblTestStatus = document.getElementById('lblTestVoiceStatus');
+  if (btnTestVoice) {
+    btnTestVoice.addEventListener('click', () => {
+      if (lblTestStatus) {
+        lblTestStatus.style.display = 'inline';
+        lblTestStatus.style.color = '#38bdf8';
+        lblTestStatus.textContent = '🔊 Reproduciendo locución de prueba...';
+      }
+      speakLotteryDraw('La Granjita', '12:00 PM', '11 GATO', () => {
+        if (lblTestStatus) {
+          lblTestStatus.style.color = '#34d399';
+          lblTestStatus.textContent = '✅ Locución completada exitosamente.';
+          setTimeout(() => { lblTestStatus.style.display = 'none'; }, 3500);
+        }
+      });
     });
   }
 
@@ -8234,6 +8544,8 @@ function setupScreenConfigEventListeners() {
       const tickerSpeed = Math.min(800, Math.max(150, parseInt(document.getElementById('cfgTickerSpeed')?.value) || 350));
       const voiceEnabled = document.getElementById('cfgVoiceEnabled')?.checked !== false;
       const voiceVolume = (parseInt(document.getElementById('cfgVoiceVolume')?.value) || 90) / 100;
+      const voiceEngine = document.getElementById('cfgVoiceEngine')?.value || currentScreenConfig.voiceEngine || 'auto';
+      const clientLogoUrl = currentScreenConfig.logoUrl || '';
       const animalSfxEnabled = document.getElementById('cfgAnimalSfx')?.checked !== false;
       const isMusicChecked = document.getElementById('cfgBgMusicEnabled')?.checked === true;
       const circusMusicTrack = document.getElementById('cfgBgMusicTrack')?.value || 'circus_waltz';
@@ -8243,6 +8555,15 @@ function setupScreenConfigEventListeners() {
       saveResultadosSlidesFromDOM();
       saveEstadisticasSlidesFromDOM();
       savePublicidadSlidesFromDOM();
+
+      // Garantizar que la diapositiva 3 de publicidad tenga el logo del cliente asignado
+      if (currentScreenConfig.lotterySections?.publicidad?.slides) {
+        currentScreenConfig.lotterySections.publicidad.slides.forEach(s => {
+          if (s.type === 'pub_agency_identity') {
+            s.logoUrl = clientLogoUrl;
+          }
+        });
+      }
 
       const anim1Games = Array.from(document.querySelectorAll('.chk-lottery-anim1:checked')).map(c => c.value);
       const tripGames = Array.from(document.querySelectorAll('.chk-lottery-trip:checked')).map(c => c.value);
@@ -8257,6 +8578,8 @@ function setupScreenConfigEventListeners() {
         tickerSpeed,
         voiceEnabled,
         voiceVolume,
+        voiceEngine,
+        logoUrl: clientLogoUrl,
         animalSfxEnabled,
         bgMusicEnabled: isMusicChecked,
         circusMusicEnabled: isMusicChecked,
@@ -8323,6 +8646,7 @@ function setupScreenConfigEventListeners() {
           applyScreenConfig(assembledConfig);
           if (currentUser) {
             currentUser.config = assembledConfig;
+            currentUser.logoUrl = clientLogoUrl;
             try {
               localStorage.setItem('visual_fx_user', JSON.stringify(currentUser));
             } catch (e) {}
