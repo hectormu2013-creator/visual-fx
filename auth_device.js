@@ -188,6 +188,10 @@ const APPROVED_DEVICES = new Map();
 const PENDING_ACTIVATIONS = new Map();
 const DEVICE_ACCOUNTS = new Map();
 
+// ⚠️ PROTECCIÓN DE DATOS: no subir nada a Supabase hasta haber restaurado primero desde la nube.
+// Antes, cada reinicio subía la copia vieja de data/*.json del repo y borraba las pantallas creadas después.
+let cloudSyncReady = false;
+
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {
     try {
@@ -223,6 +227,10 @@ function saveDatabase() {
 
     // PERSISTENCIA PERMANENTE EN NUBE (SUPABASE)
     // Se ejecuta de manera asíncrona no bloqueante para no demorar la respuesta de la API
+    if (!cloudSyncReady) {
+      // Aún no se restauró desde la nube: NO sobrescribir Supabase con datos locales posiblemente viejos
+      return;
+    }
     Promise.all([
       supabaseSync.saveToCloud('clients', clientsArr),
       supabaseSync.saveToCloud('devices', devicesArr),
@@ -523,6 +531,12 @@ async function syncDatabaseWithCloud() {
   try {
     console.log('[SupabaseSync] Consultando persistencia en la nube (Supabase)...');
     const cloudData = await supabaseSync.loadAllFromCloud();
+    if (!cloudData) {
+      // Error de red/Supabase: NO tratar como "nube vacía" (eso sobrescribía la nube con datos viejos)
+      console.warn('[SupabaseSync] No se pudo leer Supabase. Se reintenta en 30 s sin sobrescribir la nube.');
+      setTimeout(syncDatabaseWithCloud, 30000);
+      return;
+    }
     let hasRestoredAny = false;
 
     // 1. Restaurar o respaldar Clientes
@@ -643,7 +657,43 @@ async function syncDatabaseWithCloud() {
     }
   } catch (err) {
     console.warn('[SupabaseSync] Error durante sincronización con Supabase:', err.message);
+    setTimeout(syncDatabaseWithCloud, 30000);
+    return;
   }
+
+  // Restauración completada: a partir de ahora los cambios sí se suben a Supabase
+  cloudSyncReady = true;
+
+  // Reparar pantallas huérfanas (existen en dispositivos con su clave, pero faltan en cuentas de login)
+  const repaired = reconcileOrphanDeviceAccounts();
+  if (repaired > 0) {
+    console.log(`[SupabaseSync] 🔧 Reparadas ${repaired} cuenta(s) de pantalla huérfanas con sus claves originales.`);
+    saveDatabase();
+  }
+}
+
+/**
+ * Reconstruye en DEVICE_ACCOUNTS las pantallas que siguen en APPROVED_DEVICES (con usuario y clave)
+ * pero que se perdieron de la lista de cuentas de login. Conserva su clave y configuración originales.
+ */
+function reconcileOrphanDeviceAccounts() {
+  let repaired = 0;
+  for (const [id, dev] of Array.from(APPROVED_DEVICES.entries())) {
+    if (!dev || dev.role !== 'DEVICE' || !dev.pass || !dev.clientId) continue;
+    const key = String(dev.username || id).trim().toLowerCase();
+    if (!key || DEVICE_ACCOUNTS.has(key) || USERS[key]) continue;
+    dev.username = key;
+    if (!dev.status) dev.status = 'APPROVED';
+    if (dev.activeSessionId === undefined) dev.activeSessionId = null;
+    if (!dev.defaultService) dev.defaultService = (dev.config && dev.config.defaultService) || 'loteria';
+    if (!dev.clientName) dev.clientName = (CLIENTS.get(dev.clientId) || {}).name || 'Fenix';
+    if (!dev.config) dev.config = JSON.parse(JSON.stringify(DEFAULT_SCREEN_CONFIG));
+    normalizeConfigSlides(dev.config);
+    DEVICE_ACCOUNTS.set(key, dev);
+    if (id !== key) APPROVED_DEVICES.set(key, dev);
+    repaired++;
+  }
+  return repaired;
 }
 
 // Inicializar persistencia de datos (Local + Nube)

@@ -75,7 +75,10 @@ async function loadAllFromCloud() {
   try {
     const url = `${SUPABASE_URL}/rest/v1/visual_fx_store?select=key,data,updated_at`;
     const res = await fetch(url, { method: 'GET', headers: HEADERS });
-    if (!res.ok) return {};
+    if (!res.ok) {
+      console.warn(`[SupabaseSync] Lectura de la nube falló (HTTP ${res.status}).`);
+      return null; // null = error (distinto de nube vacía)
+    }
     const records = await res.json();
     const map = {};
     if (Array.isArray(records)) {
@@ -88,7 +91,7 @@ async function loadAllFromCloud() {
     return map;
   } catch (err) {
     console.warn('[SupabaseSync] Error cargando todos los registros de la nube:', err.message);
-    return {};
+    return null; // null = error (distinto de nube vacía)
   }
 }
 
