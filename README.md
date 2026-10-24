@@ -39,9 +39,9 @@ Abrir en el navegador: `http://localhost:3500`
 
 ## 🔐 Cuentas de Acceso Rápido
 
-- **Super Admin**: `hector_owner` / `admin2026`
-- **Jefe Técnico**: `jefe_tecnico` / `soporte2026`
-- **Agencia Cabimas**: `leo1` / `1234`
+- **Super Admin**: `hector_owner` / `(definida en Render: PASS_HECTOR_OWNER)`
+- **Jefe Técnico**: `jefe_tecnico` / `(definida en Render: PASS_JEFE_TECNICO)`
+- **Agencia Cabimas**: `leo1` / `(asignada por el administrador)`
 
 ---
 

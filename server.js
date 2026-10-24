@@ -75,12 +75,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir archivos estáticos desde cualquier ubicación posible
+// Servir archivos estáticos SOLO desde public/
+// ⚠️ SEGURIDAD: NUNCA servir __dirname (raíz del proyecto): expondría data/*.json
+// (usuarios, cuentas de pantallas y contraseñas) y el código con credenciales.
 const possiblePublicDirs = [
   path.join(__dirname, 'public'),
-  path.join(process.cwd(), 'public'),
-  path.join(__dirname, '..', 'public'),
-  path.join(__dirname)
+  path.join(process.cwd(), 'public')
 ];
 
 possiblePublicDirs.forEach(dir => {

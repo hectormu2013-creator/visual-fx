@@ -1,12 +1,15 @@
 // Módulo de Integración Automática RTN.tv (Racetrack Television Network) para Agencias Fénix
 const fetch = require('node-fetch');
 
-// Credenciales Oficiales RTN.tv
+// Credenciales Oficiales RTN.tv (SOLO desde variables de entorno RTN_USER / RTN_PASS en Render)
 const RTN_CREDS = {
   loginUrl: 'https://online.rtn.tv/index.php',
-  username: process.env.RTN_USER || 'Hector_mu2001@yahoo.com',
-  password: process.env.RTN_PASS || 'K!Z9qz$ew2SamCp'
+  username: process.env.RTN_USER || '',
+  password: process.env.RTN_PASS || ''
 };
+
+// Límites para no colgar ni inflar la RAM de Render si RTN responde lento
+const FETCH_LIMITS = { timeout: 15000, size: 5 * 1024 * 1024 };
 
 // Mapeo Extendido de Nombres de Hipódromos RTN a IDs de Visual-FX
 const RTN_TRACK_MAP = {
@@ -75,6 +78,11 @@ async function fetchRtnLiveStreams() {
   console.log('📡 [RTN Bridge] Conectando a RTN.tv con credenciales de Fénix...');
   const activeStreams = {};
 
+  if (!RTN_CREDS.username || !RTN_CREDS.password) {
+    console.error('⚠️ [RTN Bridge] Faltan RTN_USER / RTN_PASS en variables de entorno. Sincronización omitida.');
+    return activeStreams;
+  }
+
   try {
     // 1. Iniciar Sesión en RTN.tv
     const bodyParams = new URLSearchParams();
@@ -88,8 +96,10 @@ async function fetchRtnLiveStreams() {
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       },
-      body: bodyParams.toString()
+      body: bodyParams.toString(),
+      ...FETCH_LIMITS
     });
+    loginRes.body.resume(); // descartar body no usado y liberar el socket
 
     const rawCookies = loginRes.headers.get('set-cookie') || '';
     const cookieHeader = rawCookies.split(',').map(c => c.split(';')[0]).join('; ');
@@ -118,7 +128,8 @@ async function fetchRtnLiveStreams() {
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       },
-      body: trackListParams.toString()
+      body: trackListParams.toString(),
+      ...FETCH_LIMITS
     });
 
     const tracksHtml = await tracksRes.text();
@@ -166,7 +177,8 @@ async function fetchRtnLiveStreams() {
               'Content-Type': 'application/x-www-form-urlencoded',
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             },
-            body: playerParams.toString()
+            body: playerParams.toString(),
+            ...FETCH_LIMITS
           });
 
           const playerHtml = await playerRes.text();

@@ -3,7 +3,15 @@ const path = require('path');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = 'visual_fx_fenix_secret_key_2026';
+// Secreto JWT desde variable de entorno (JWT_SECRET en Render).
+// El valor legado se mantiene SOLO como respaldo temporal hasta rotarlo (rotar cierra la sesión de todas las TVs).
+const JWT_SECRET = process.env.JWT_SECRET || 'visual_fx_fenix_secret_key_2026';
+if (!process.env.JWT_SECRET) console.warn('⚠️ [Auth] JWT_SECRET no definido en el entorno: usando secreto legado (inseguro).');
+
+// Contraseñas de administradores desde variables de entorno (separar varias con coma)
+const envPasswords = (name, legacy) => process.env[name]
+  ? process.env[name].split(',').map(s => s.trim()).filter(Boolean)
+  : legacy;
 
 // Jerarquía de Roles
 const ROLES = {
@@ -16,7 +24,7 @@ const ROLES = {
 const hectorSuperAdmin = {
   username: 'hector_owner',
   name: 'Héctor (Super Administrador)',
-  passwords: ['admin2026', 'fenix2026'],
+  passwords: envPasswords('PASS_HECTOR_OWNER', ['admin2026', 'fenix2026']),
   role: ROLES.SUPER_ADMIN,
   location: 'Sede Principal'
 };
@@ -29,7 +37,7 @@ const USERS = {
   'jefe_tecnico': {
     username: 'jefe_tecnico',
     name: 'Soporte Técnico Visual-FX',
-    passwords: ['soporte2026'],
+    passwords: envPasswords('PASS_JEFE_TECNICO', ['soporte2026']),
     role: ROLES.TECH_CHIEF,
     location: 'Centro de Operaciones'
   }
@@ -650,7 +658,12 @@ function loginUser(username, password) {
   // 1. Verificar si es Super Admin o Técnico (Humano operador: acceso directo sin PIN)
   if (USERS[cleanUser]) {
     const u = USERS[cleanUser];
-    const match = Array.isArray(u.passwords) ? u.passwords.includes(cleanPass) : u.pass === cleanPass;
+    // Las claves definidas en variables de entorno tienen prioridad sobre las persistidas (JSON/Supabase)
+    const envKey = { hector_owner: 'PASS_HECTOR_OWNER', jefe_tecnico: 'PASS_JEFE_TECNICO' }[(u.username || '').toLowerCase()];
+    const envList = envKey && process.env[envKey] ? envPasswords(envKey, []) : null;
+    const match = envList
+      ? envList.includes(cleanPass)
+      : (Array.isArray(u.passwords) ? u.passwords.includes(cleanPass) : u.pass === cleanPass);
     if (match) {
       const token = jwt.sign(
         {

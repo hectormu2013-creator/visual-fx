@@ -7,7 +7,15 @@ const masterState = {
   healthyChannelsCount: 0
 };
 
+let syncInProgress = false;
+
 async function syncRtnStreams(channelsCatalog) {
+  // Evitar sincronizaciones solapadas: si RTN tarda más de 3 min, no acumular ciclos en memoria
+  if (syncInProgress) {
+    console.warn('⏳ [Master Ingest RTN] Sincronización anterior aún en curso, se omite este ciclo.');
+    return;
+  }
+  syncInProgress = true;
   try {
     // 1. Resetear el estado onAir previo de todos los canales
     channelsCatalog.forEach(c => {
@@ -56,6 +64,8 @@ async function syncRtnStreams(channelsCatalog) {
     console.log(`📡 [Master Ingest RTN] Sincronización exitosa (${Object.keys(bridgeStreams).length} señales EN VIVO activas).`);
   } catch (e) {
     console.error('⚠️ [Master Ingest RTN] Error en chequeo automático:', e.message);
+  } finally {
+    syncInProgress = false;
   }
 }
 

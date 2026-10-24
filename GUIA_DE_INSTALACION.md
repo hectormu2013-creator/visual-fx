@@ -97,11 +97,11 @@ El sistema incluye cuentas preconfiguradas con diferentes roles de acceso:
 
 | Usuario | Contraseña | Rol | Acceso |
 | :--- | :--- | :--- | :--- |
-| `hector_owner` | `admin2026` | **SUPER_ADMIN** | Control total, gestión de usuarios, canales y activación de TVs |
-| `jefe_tecnico` | `soporte2026` | **TECH_CHIEF** | Gestión de transmisiones, conmutación de fuentes HLS y soporte técnico |
-| `leo1` | `1234` | **AGENCY_MANAGER** | Operación de Agencia Cabimas y control de sus televisores |
-| `agencia_caracas` | `fenix123` | **AGENCY_MANAGER** | Operación de Agencia Caracas |
-| `agencia_maracaibo` | `fenix123` | **AGENCY_MANAGER** | Operación de Agencia Maracaibo |
+| `hector_owner` | `(definida en Render: PASS_HECTOR_OWNER)` | **SUPER_ADMIN** | Control total, gestión de usuarios, canales y activación de TVs |
+| `jefe_tecnico` | `(definida en Render: PASS_JEFE_TECNICO)` | **TECH_CHIEF** | Gestión de transmisiones, conmutación de fuentes HLS y soporte técnico |
+| `leo1` | `(asignada por el administrador)` | **AGENCY_MANAGER** | Operación de Agencia Cabimas y control de sus televisores |
+| `agencia_caracas` | `(asignada por el administrador)` | **AGENCY_MANAGER** | Operación de Agencia Caracas |
+| `agencia_maracaibo` | `(asignada por el administrador)` | **AGENCY_MANAGER** | Operación de Agencia Maracaibo |
 
 ---
 
