@@ -12,15 +12,14 @@ let currentFirstTvCookie = process.env.FIRST_TV_COOKIE || DEFAULT_FIRST_TV_COOKI
 let firstTvEnabled = process.env.FIRST_TV_ENABLED !== 'false';
 let circuitPausedUntil = 0;
 
-// Caché de tokens (los tokens tkendtime de 1st.tv duran 12 horas; renovamos cada 4 horas)
-const TOKEN_TTL_MS = 4 * 60 * 60 * 1000;
-// Caché de estado En Vivo (45 min si está en vivo, 25 min si está fuera de aire)
-const LIVE_STATUS_TTL_MS = 45 * 60 * 1000;
-const OFFAIR_STATUS_TTL_MS = 25 * 60 * 1000;
+// Caché de tokens (los tokens tkendtime de 1st.tv duran 12 horas; renovamos cada 6 horas)
+const TOKEN_TTL_MS = 6 * 60 * 60 * 1000;
+// Caché de estado En Vivo en CDN (35 min si está en vivo, 10 min si está fuera de aire; no toca 1st.tv si ya tiene token)
+const LIVE_STATUS_TTL_MS = 35 * 60 * 1000;
+const OFFAIR_STATUS_TTL_MS = 10 * 60 * 1000;
 
 const trackStateCache = new Map();
 let startupSyncCompleted = false;
-let secondaryScanCursor = 0;
 
 // Hipódromos Prioritarios (1/ST TV & principales del día en baja latencia H5Live ~2s)
 const PRIORITY_TRACKS = [
@@ -35,30 +34,57 @@ const PRIORITY_TRACKS = [
   { id: 'parx-racing', code: 'PRX', name: 'Parx Racing', flag: '🇺🇸', location: 'Bensalem, Pennsylvania, EE.UU.' }
 ];
 
-// Hipódromos Secundarios (escaneo gradual rotativo de máx. 3 por ciclo cada 10 min)
+// Hipódromos Secundarios clasificados por franja horaria (Hora de Venezuela VET = UTC-4)
+// DAY: 11:30 am - 5:15 pm | BOTH: 2:00 pm - 8:30 pm | NIGHT: 5:00 pm - 11:59 pm
 const SECONDARY_TRACKS = [
-  { id: 'saratoga', code: 'SAR', name: 'Saratoga Race Course', flag: '🇺🇸', location: 'Saratoga Springs, New York, EE.UU.' },
-  { id: 'churchill-downs', code: 'CD', name: 'Churchill Downs', flag: '🇺🇸', location: 'Louisville, Kentucky, EE.UU.' },
-  { id: 'delaware-park', code: 'DEL', name: 'Delaware Park', flag: '🇺🇸', location: 'Wilmington, Delaware, EE.UU.' },
-  { id: 'los-alamitos', code: 'LRC', name: 'Los Alamitos', flag: '🇺🇸', location: 'Cypress, California, EE.UU.' },
-  { id: 'hawthorne', code: 'HAW', name: 'Hawthorne Race Course', flag: '🇺🇸', location: 'Stickney/Cicero, Illinois, EE.UU.' },
-  { id: 'horseshoe-indianapolis', code: 'IND', name: 'Horseshoe Indianapolis', flag: '🇺🇸', location: 'Shelbyville, Indiana, EE.UU.' },
-  { id: 'mountaineer-park', code: 'MNR', name: 'Mountaineer Park', flag: '🇺🇸', location: 'New Cumberland, West Virginia, EE.UU.' },
-  { id: 'evangeline-downs', code: 'EVD', name: 'Evangeline Downs', flag: '🇺🇸', location: 'Opelousas, Louisiana, EE.UU.' },
-  { id: 'finger-lakes', code: 'FL', name: 'Finger Lakes', flag: '🇺🇸', location: 'Farmington, New York, EE.UU.' },
-  { id: 'presque-isle', code: 'PID', name: 'Presque Isle Downs', flag: '🇺🇸', location: 'Erie, Pennsylvania, EE.UU.' },
-  { id: 'thistledown', code: 'TDN', name: 'Thistledown', flag: '🇺🇸', location: 'North Randall, Ohio, EE.UU.' },
-  { id: 'del-mar', code: 'DMR', name: 'Del Mar', flag: '🇺🇸', location: 'Del Mar, California, EE.UU.' },
-  { id: 'monmouth-park', code: 'MTH', name: 'Monmouth Park', flag: '🇺🇸', location: 'Oceanport, New Jersey, EE.UU.' },
-  { id: 'charles-town', code: 'CT', name: 'Charles Town Races', flag: '🇺🇸', location: 'Charles Town, West Virginia, EE.UU.' },
-  { id: 'penn-national', code: 'PEN', name: 'Penn National', flag: '🇺🇸', location: 'Grantville, Pennsylvania, EE.UU.' },
-  { id: 'mahoning-valley', code: 'MVR', name: 'Mahoning Valley', flag: '🇺🇸', location: 'Youngstown, Ohio, EE.UU.' },
-  { id: 'remington-park', code: 'RP', name: 'Remington Park', flag: '🇺🇸', location: 'Oklahoma City, Oklahoma, EE.UU.' },
-  { id: 'delta-downs', code: 'DED', name: 'Delta Downs', flag: '🇺🇸', location: 'Vinton, Louisiana, EE.UU.' },
-  { id: 'oaklawn-park', code: 'OP', name: 'Oaklawn Park', flag: '🇺🇸', location: 'Hot Springs, Arkansas, EE.UU.' },
-  { id: 'fair-grounds', code: 'FG', name: 'Fair Grounds', flag: '🇺🇸', location: 'New Orleans, Louisiana, EE.UU.' },
-  { id: 'turfway-park', code: 'TP', name: 'Turfway Park', flag: '🇺🇸', location: 'Florence, Kentucky, EE.UU.' }
+  // Tarde / Noche (BOTH)
+  { id: 'churchill-downs', code: 'CD', name: 'Churchill Downs', flag: '🇺🇸', location: 'Louisville, Kentucky, EE.UU.', schedule: 'BOTH' },
+  { id: 'del-mar', code: 'DMR', name: 'Del Mar', flag: '🇺🇸', location: 'Del Mar, California, EE.UU.', schedule: 'BOTH' },
+  { id: 'horseshoe-indianapolis', code: 'IND', name: 'Horseshoe Indianapolis', flag: '🇺🇸', location: 'Shelbyville, Indiana, EE.UU.', schedule: 'BOTH' },
+  { id: 'presque-isle', code: 'PID', name: 'Presque Isle Downs', flag: '🇺🇸', location: 'Erie, Pennsylvania, EE.UU.', schedule: 'BOTH' },
+  { id: 'hawthorne', code: 'HAW', name: 'Hawthorne Race Course', flag: '🇺🇸', location: 'Stickney/Cicero, Illinois, EE.UU.', schedule: 'BOTH' },
+  // Nocturnos (NIGHT: >= 5:00 pm VET)
+  { id: 'charles-town', code: 'CT', name: 'Charles Town Races', flag: '🇺🇸', location: 'Charles Town, West Virginia, EE.UU.', schedule: 'NIGHT' },
+  { id: 'penn-national', code: 'PEN', name: 'Penn National', flag: '🇺🇸', location: 'Grantville, Pennsylvania, EE.UU.', schedule: 'NIGHT' },
+  { id: 'mountaineer-park', code: 'MNR', name: 'Mountaineer Park', flag: '🇺🇸', location: 'New Cumberland, West Virginia, EE.UU.', schedule: 'NIGHT' },
+  { id: 'remington-park', code: 'RP', name: 'Remington Park', flag: '🇺🇸', location: 'Oklahoma City, Oklahoma, EE.UU.', schedule: 'NIGHT' },
+  { id: 'delta-downs', code: 'DED', name: 'Delta Downs', flag: '🇺🇸', location: 'Vinton, Louisiana, EE.UU.', schedule: 'NIGHT' },
+  { id: 'evangeline-downs', code: 'EVD', name: 'Evangeline Downs', flag: '🇺🇸', location: 'Opelousas, Louisiana, EE.UU.', schedule: 'NIGHT' },
+  { id: 'turfway-park', code: 'TP', name: 'Turfway Park', flag: '🇺🇸', location: 'Florence, Kentucky, EE.UU.', schedule: 'NIGHT' },
+  { id: 'los-alamitos', code: 'LRC', name: 'Los Alamitos', flag: '🇺🇸', location: 'Cypress, California, EE.UU.', schedule: 'NIGHT' },
+  // Diurnos (DAY: 11:30 am - 5:15 pm VET)
+  { id: 'saratoga', code: 'SAR', name: 'Saratoga Race Course', flag: '🇺🇸', location: 'Saratoga Springs, New York, EE.UU.', schedule: 'DAY' },
+  { id: 'delaware-park', code: 'DEL', name: 'Delaware Park', flag: '🇺🇸', location: 'Wilmington, Delaware, EE.UU.', schedule: 'DAY' },
+  { id: 'finger-lakes', code: 'FL', name: 'Finger Lakes', flag: '🇺🇸', location: 'Farmington, New York, EE.UU.', schedule: 'DAY' },
+  { id: 'thistledown', code: 'TDN', name: 'Thistledown', flag: '🇺🇸', location: 'North Randall, Ohio, EE.UU.', schedule: 'DAY' },
+  { id: 'monmouth-park', code: 'MTH', name: 'Monmouth Park', flag: '🇺🇸', location: 'Oceanport, New Jersey, EE.UU.', schedule: 'DAY' },
+  { id: 'mahoning-valley', code: 'MVR', name: 'Mahoning Valley', flag: '🇺🇸', location: 'Youngstown, Ohio, EE.UU.', schedule: 'DAY' },
+  { id: 'oaklawn-park', code: 'OP', name: 'Oaklawn Park', flag: '🇺🇸', location: 'Hot Springs, Arkansas, EE.UU.', schedule: 'DAY' },
+  { id: 'fair-grounds', code: 'FG', name: 'Fair Grounds', flag: '🇺🇸', location: 'New Orleans, Louisiana, EE.UU.', schedule: 'DAY' }
 ];
+
+/**
+ * Ordena los hipódromos secundarios según la hora actual en Venezuela (UTC-4)
+ * para priorizar los diurnos entre 11am-5pm y los nocturnos desde las 5pm en adelante.
+ */
+function getTimePrioritizedSecondaryTracks() {
+  const vetHour = (new Date().getUTCHours() - 4 + 24) % 24;
+  const isEveningVet = (vetHour >= 17 || vetHour < 2); // 5:00 PM a 1:59 AM VET
+
+  const weight = (track) => {
+    if (isEveningVet) {
+      if (track.schedule === 'NIGHT') return 1;
+      if (track.schedule === 'BOTH') return 2;
+      return 3;
+    } else {
+      if (track.schedule === 'DAY') return 1;
+      if (track.schedule === 'BOTH') return 2;
+      return 3;
+    }
+  };
+
+  return [...SECONDARY_TRACKS].sort((a, b) => weight(a) - weight(b));
+}
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -207,16 +233,18 @@ async function checkSingleTrack(trackDef, activeStreams) {
       if (cached.onAir && cached.streamData) {
         activeStreams[trackDef.id] = cached.streamData;
       }
-      return false; // No hizo falta petición de red
+      return 'CACHED'; // No hizo falta petición de red
     }
   }
 
   let m3u8Url = cached && cached.m3u8Url && (now < cached.tokenExpiresAt) ? cached.m3u8Url : null;
   let tokenExpiresAt = cached ? cached.tokenExpiresAt : 0;
+  let didFirstTvAjax = false;
 
   if (!m3u8Url) {
     m3u8Url = await resolveFirstTvTrackM3u8(trackDef.code);
     tokenExpiresAt = now + TOKEN_TTL_MS;
+    didFirstTvAjax = true;
   }
 
   if (!m3u8Url) {
@@ -227,7 +255,7 @@ async function checkSingleTrack(trackDef, activeStreams) {
       onAir: false,
       streamData: null
     });
-    return true;
+    return didFirstTvAjax ? 'FIRST_TV_AJAX' : 'CDN_PROBE_ONLY';
   }
 
   const isLive = await probeRcnStreamIsLive(m3u8Url);
@@ -263,12 +291,12 @@ async function checkSingleTrack(trackDef, activeStreams) {
     });
   }
 
-  return true;
+  return didFirstTvAjax ? 'FIRST_TV_AJAX' : 'CDN_PROBE_ONLY';
 }
 
 /**
- * Obtiene los hipódromos en vivo desde 1st.tv con caché inteligente y pausas humanas.
- * @param {Object} existingPublicStreams - Canales que ya tienen señal pública activa (ej. YouTube oficial) para no consultarlos de más.
+ * Obtiene los hipódromos en vivo desde 1st.tv con caché inteligente por franja horaria (Diurna vs. Nocturna) y pausas humanas.
+ * @param {Object} existingPublicStreams - Canales que ya tienen señal pública activa.
  */
 async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
   const activeStreams = {};
@@ -288,13 +316,12 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
 
   try {
     // 1. Verificar siempre los hipódromos prioritarios (GP, SA, LRL, KEE, AQU, BEL, WO, TAM, PRX)
-    // Priorizamos H5Live (~2s de latencia) incluso si tienen respaldo YouTube iframe (~12s)
     for (const track of PRIORITY_TRACKS) {
       if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
       try {
-        const didNetworkCall = await checkSingleTrack(track, activeStreams);
-        if (didNetworkCall) {
-          await sleep(1300 + Math.floor(Math.random() * 700));
+        const callType = await checkSingleTrack(track, activeStreams);
+        if (callType === 'FIRST_TV_AJAX') {
+          await sleep(1200 + Math.floor(Math.random() * 600));
         }
       } catch (err) {
         if (err.message === 'FIRST_TV_SESSION_EXPIRED') {
@@ -306,7 +333,8 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
     }
 
     // 2. Poblar en activeStreams los secundarios que ya estén en caché como onAir
-    for (const track of SECONDARY_TRACKS) {
+    const orderedSecondary = getTimePrioritizedSecondaryTracks();
+    for (const track of orderedSecondary) {
       if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
       const cached = trackStateCache.get(track.id);
       if (cached && cached.onAir && cached.streamData && Date.now() < cached.tokenExpiresAt) {
@@ -314,23 +342,27 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
       }
     }
 
-    // 3. Escanear gradualmente máximo 3 hipódromos secundarios por ciclo para evitar ráfagas
-    const maxSecondaryToScan = startupSyncCompleted ? 3 : 4;
-    let scannedCount = 0;
-    let attempts = 0;
+    // 3. Escanear secundarios priorizando la franja horaria actual (Diurna vs. Nocturna):
+    //    - Si ya tiene token válido de 6h en caché, probar el CDN ws.rcncdn.com cuesta 0 peticiones a 1st.tv.
+    //    - Si requiere pedir token nuevo a 1st.tv, limitar a máx. 5 tokens nuevos por ciclo con pausa humana.
+    const maxNewTokensPerCycle = 5;
+    let newTokensFetched = 0;
 
-    while (scannedCount < maxSecondaryToScan && attempts < SECONDARY_TRACKS.length) {
-      const track = SECONDARY_TRACKS[secondaryScanCursor % SECONDARY_TRACKS.length];
-      secondaryScanCursor = (secondaryScanCursor + 1) % SECONDARY_TRACKS.length;
-      attempts++;
-
+    for (const track of orderedSecondary) {
       if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
 
+      const cached = trackStateCache.get(track.id);
+      const hasValidToken = Boolean(cached && cached.m3u8Url && Date.now() < cached.tokenExpiresAt);
+
+      if (!hasValidToken && newTokensFetched >= maxNewTokensPerCycle) {
+        continue;
+      }
+
       try {
-        const didNetworkCall = await checkSingleTrack(track, activeStreams);
-        if (didNetworkCall) {
-          scannedCount++;
-          await sleep(1800 + Math.floor(Math.random() * 1000));
+        const callType = await checkSingleTrack(track, activeStreams);
+        if (callType === 'FIRST_TV_AJAX') {
+          newTokensFetched++;
+          await sleep(1400 + Math.floor(Math.random() * 700));
         }
       } catch (err) {
         if (err.message === 'FIRST_TV_SESSION_EXPIRED') {
