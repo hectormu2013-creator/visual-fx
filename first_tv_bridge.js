@@ -22,18 +22,22 @@ const trackStateCache = new Map();
 let startupSyncCompleted = false;
 let secondaryScanCursor = 0;
 
-// Hipódromos Prioritarios (1/ST TV & principales del día)
+// Hipódromos Prioritarios (1/ST TV & principales del día en baja latencia H5Live ~2s)
 const PRIORITY_TRACKS = [
   { id: 'gulfstream-park', code: 'GP', name: 'Gulfstream Park', flag: '🇺🇸', location: 'Hallandale Beach, Florida, EE.UU.' },
   { id: 'santa-anita-park', code: 'SA', name: 'Santa Anita Park', flag: '🇺🇸', location: 'Arcadia, California, EE.UU.' },
   { id: 'laurel-park', code: 'LRL', name: 'Laurel Park', flag: '🇺🇸', location: 'Laurel, Maryland, EE.UU.' },
   { id: 'keeneland', code: 'KEE', name: 'Keeneland', flag: '🇺🇸', location: 'Lexington, Kentucky, EE.UU.' },
+  { id: 'aqueduct-racetrack', code: 'AQU', name: 'Aqueduct Racetrack', flag: '🇺🇸', location: 'Queens, New York, EE.UU.' },
+  { id: 'belmont-park', code: 'BEL', name: 'Belmont Park', flag: '🇺🇸', location: 'Elmont, New York, EE.UU.' },
+  { id: 'woodbine', code: 'WO', name: 'Woodbine Racetrack', flag: '🇨🇦', location: 'Toronto, Ontario, Canadá' },
   { id: 'tampa-bay-downs', code: 'TAM', name: 'Tampa Bay Downs', flag: '🇺🇸', location: 'Tampa, Florida, EE.UU.' },
   { id: 'parx-racing', code: 'PRX', name: 'Parx Racing', flag: '🇺🇸', location: 'Bensalem, Pennsylvania, EE.UU.' }
 ];
 
 // Hipódromos Secundarios (escaneo gradual rotativo de máx. 3 por ciclo cada 10 min)
 const SECONDARY_TRACKS = [
+  { id: 'saratoga', code: 'SAR', name: 'Saratoga Race Course', flag: '🇺🇸', location: 'Saratoga Springs, New York, EE.UU.' },
   { id: 'churchill-downs', code: 'CD', name: 'Churchill Downs', flag: '🇺🇸', location: 'Louisville, Kentucky, EE.UU.' },
   { id: 'delaware-park', code: 'DEL', name: 'Delaware Park', flag: '🇺🇸', location: 'Wilmington, Delaware, EE.UU.' },
   { id: 'los-alamitos', code: 'LRC', name: 'Los Alamitos', flag: '🇺🇸', location: 'Cypress, California, EE.UU.' },
@@ -283,13 +287,14 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
   }
 
   try {
-    // 1. Verificar siempre los hipódromos prioritarios (GP, SA, LRL, KEE, TAM, PRX)
+    // 1. Verificar siempre los hipódromos prioritarios (GP, SA, LRL, KEE, AQU, BEL, WO, TAM, PRX)
+    // Priorizamos H5Live (~2s de latencia) incluso si tienen respaldo YouTube iframe (~12s)
     for (const track of PRIORITY_TRACKS) {
-      if (existingPublicStreams[track.id]) continue;
+      if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
       try {
         const didNetworkCall = await checkSingleTrack(track, activeStreams);
         if (didNetworkCall) {
-          await sleep(1500 + Math.floor(Math.random() * 900));
+          await sleep(1300 + Math.floor(Math.random() * 700));
         }
       } catch (err) {
         if (err.message === 'FIRST_TV_SESSION_EXPIRED') {
@@ -302,7 +307,7 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
 
     // 2. Poblar en activeStreams los secundarios que ya estén en caché como onAir
     for (const track of SECONDARY_TRACKS) {
-      if (existingPublicStreams[track.id]) continue;
+      if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
       const cached = trackStateCache.get(track.id);
       if (cached && cached.onAir && cached.streamData && Date.now() < cached.tokenExpiresAt) {
         activeStreams[track.id] = cached.streamData;
@@ -319,7 +324,7 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
       secondaryScanCursor = (secondaryScanCursor + 1) % SECONDARY_TRACKS.length;
       attempts++;
 
-      if (existingPublicStreams[track.id]) continue;
+      if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
 
       try {
         const didNetworkCall = await checkSingleTrack(track, activeStreams);

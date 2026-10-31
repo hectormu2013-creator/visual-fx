@@ -241,6 +241,50 @@ function stopFrameDropWatchdog(cellNum) {
   lastPlaybackQuality[cellNum] = null;
 }
 
+// Sincronizador de Borde en Vivo (Live-Edge Catchup para mínima latencia en agencias)
+const liveCatchupTimers = { 1: null, 2: null, 3: null, 4: null };
+
+function startLiveEdgeCatchup(cellNum, video, isUltraLowLatencyMp4 = false) {
+  stopLiveEdgeCatchup(cellNum);
+  liveCatchupTimers[cellNum] = setInterval(() => {
+    if (!video || video.paused || !video.buffered || video.buffered.length === 0) return;
+    try {
+      const liveEdge = video.buffered.end(video.buffered.length - 1);
+      const lag = liveEdge - video.currentTime;
+      if (!Number.isFinite(lag) || lag < 0) return;
+
+      if (isUltraLowLatencyMp4) {
+        // Streams H5Live fMP4 (~2s tiempo real): no permitir que micro-cortes acumulen retraso
+        if (lag > 3.5) {
+          video.currentTime = Math.max(0, liveEdge - 0.35);
+          video.playbackRate = 1.0;
+        } else if (lag > 1.25) {
+          if (video.playbackRate !== 1.06) video.playbackRate = 1.06;
+        } else if (lag <= 0.55 && video.playbackRate !== 1.0) {
+          video.playbackRate = 1.0;
+        }
+      } else {
+        // Streams HLS estándar
+        if (lag > 12) {
+          video.currentTime = Math.max(0, liveEdge - 2.0);
+          video.playbackRate = 1.0;
+        } else if (lag > 5.5) {
+          if (video.playbackRate !== 1.05) video.playbackRate = 1.05;
+        } else if (lag <= 2.5 && video.playbackRate !== 1.0) {
+          video.playbackRate = 1.0;
+        }
+      }
+    } catch (e) {}
+  }, 3500);
+}
+
+function stopLiveEdgeCatchup(cellNum) {
+  if (liveCatchupTimers[cellNum]) {
+    clearInterval(liveCatchupTimers[cellNum]);
+    liveCatchupTimers[cellNum] = null;
+  }
+}
+
 function setStreamQualityMode(mode) {
   if (!['AUTO', 'LIGHT', 'MEDIUM', 'FULL'].includes(mode)) mode = 'AUTO';
   selectedQualityMode = mode;
@@ -266,6 +310,7 @@ const hlsPlayers = { 1: null, 2: null, 3: null, 4: null };
 // Strict Player Cleanup & Hardware Memory Release
 function stopAndDestroyPlayer(cellNum) {
   stopFrameDropWatchdog(cellNum);
+  stopLiveEdgeCatchup(cellNum);
   if (hlsPlayers[cellNum]) {
     try {
       hlsPlayers[cellNum].stopLoad();
@@ -1571,6 +1616,7 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
     const hideLoader = () => { if (loader) loader.style.display = 'none'; };
     video.addEventListener('loadeddata', hideLoader, { once: true });
     video.addEventListener('playing', hideLoader, { once: true });
+    startLiveEdgeCatchup(cellNum, video, true);
     video.addEventListener('error', () => {
       console.warn(`[1/ST Direct MP4] Reconectando señal en celda ${cellNum}...`);
       setTimeout(() => {
@@ -1617,6 +1663,7 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
 
         applyResolutionCap(cellNum, hls, activeGridMode, currentMaximizedCellNum === cellNum);
         startFrameDropWatchdog(cellNum, video, hls);
+        startLiveEdgeCatchup(cellNum, video, false);
 
         video.play().catch(e => console.log('Auto-play defer:', e));
       });

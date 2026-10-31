@@ -24,8 +24,8 @@ async function syncRtnStreams(channelsCatalog) {
     const firstTvStreams = await fetchFirstTvLiveStreams(publicStreams);
     const bridgeStreams = (process.env.RTN_ENABLED === 'true') ? await fetchRtnLiveStreams() : {};
 
-    // Combinar señales activas verificadas
-    const combinedStreams = { ...firstTvStreams, ...publicStreams, ...bridgeStreams };
+    // Combinar señales activas verificadas (1/ST TV H5Live ~2s tiene prioridad sobre iframes públicos de mayor latencia)
+    const combinedStreams = { ...publicStreams, ...firstTvStreams, ...bridgeStreams };
 
     // 2. Resetear el estado onAir previo salvo los canales fijados manualmente por el Administrador
     channelsCatalog.forEach(c => {
