@@ -80,7 +80,8 @@ async function handleStreamProxy(req, res, targetUrl) {
 
     const isM3U8 = targetUrl.includes('.m3u8');
     const host = req.headers.host || 'localhost:3500';
-    const protocol = req.protocol || 'http';
+    const forwardedProto = req.headers['x-forwarded-proto'];
+    const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : (req.protocol || 'http');
 
     if (isM3U8) {
       const cacheKey = `${protocol}://${host}|${targetUrl}`;
