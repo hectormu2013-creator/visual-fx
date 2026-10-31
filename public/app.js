@@ -296,10 +296,10 @@ function stopAndDestroyPlayer(cellNum) {
 
 // Cell Assignations
 const cellChannels = {
-  1: "aqueduct-racetrack",
-  2: "woodbine",
-  3: "hipodromo-camarero",
-  4: "sky-racing-1"
+  1: "gulfstream-park",
+  2: "santa-anita-park",
+  3: "laurel-park",
+  4: "aqueduct-racetrack"
 };
 
 // DOM Elements
@@ -1562,6 +1562,26 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
 
   const primaryUrl = `${proxyUrl}&deviceId=${currentDeviceId}`;
 
+  // Streams progresivos fMP4 de baja latencia (1/ST TV / RCNCDN H5Live)
+  if (rawStreamUrl && rawStreamUrl.includes('ws.rcncdn.com')) {
+    video.src = primaryUrl;
+    const hideLoader = () => { if (loader) loader.style.display = 'none'; };
+    video.addEventListener('loadeddata', hideLoader, { once: true });
+    video.addEventListener('playing', hideLoader, { once: true });
+    video.addEventListener('error', () => {
+      console.warn(`[1/ST Direct MP4] Reconectando señal en celda ${cellNum}...`);
+      setTimeout(() => {
+        if (cellChannels[cellNum]) {
+          video.src = `${primaryUrl}&_t=${Date.now()}`;
+          video.play().catch(() => {});
+        }
+      }, 2500);
+    });
+    video.muted = (cellNum !== activeAudioCell);
+    video.play().catch(e => console.log('Auto-play defer:', e));
+    return;
+  }
+
   function startHls(targetUrl, isFallback = false) {
     if (Hls.isSupported()) {
       const isMultiCell = activeGridMode > 1;
@@ -2587,6 +2607,15 @@ function previewChannelInMonitor(streamUrl, channelName, type = 'hls') {
   video.style.height = '100%';
   video.style.objectFit = 'contain';
   wrapper.appendChild(video);
+
+  if (streamUrl.includes('ws.rcncdn.com')) {
+    const proxied = streamUrl.startsWith('/api/stream/proxy')
+      ? streamUrl
+      : `/api/stream/proxy?url=${encodeURIComponent(streamUrl)}&deviceId=${currentDeviceId}`;
+    video.src = proxied;
+    video.play().catch(e => console.warn('Autoplay error on test monitor:', e));
+    return;
+  }
 
   if (Hls.isSupported()) {
     testHlsPlayer = new Hls({ enableWorker: true, lowLatencyMode: true });

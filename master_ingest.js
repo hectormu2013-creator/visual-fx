@@ -1,5 +1,6 @@
 const { fetchRtnLiveStreams } = require('./rtn_bridge');
 const { fetchPublicLiveStreams } = require('./public_streams_bridge');
+const { fetchFirstTvLiveStreams } = require('./first_tv_bridge');
 
 // Estado del Ingestor Máster
 const masterState = {
@@ -18,12 +19,13 @@ async function syncRtnStreams(channelsCatalog) {
   }
   syncInProgress = true;
   try {
-    // 1. Obtener señales desde RTN (si está habilitado) y desde el puente de señales públicas en vivo
-    const bridgeStreams = (process.env.RTN_ENABLED === 'true') ? await fetchRtnLiveStreams() : {};
+    // 1. Obtener señales desde el puente de señales públicas, 1/ST TV y RTN (si está habilitado)
     const publicStreams = await fetchPublicLiveStreams();
+    const firstTvStreams = await fetchFirstTvLiveStreams(publicStreams);
+    const bridgeStreams = (process.env.RTN_ENABLED === 'true') ? await fetchRtnLiveStreams() : {};
 
-    // Combinar dando prioridad a RTN si existe, o usando la señal pública en vivo como respaldo
-    const combinedStreams = { ...publicStreams, ...bridgeStreams };
+    // Combinar señales activas verificadas
+    const combinedStreams = { ...firstTvStreams, ...publicStreams, ...bridgeStreams };
 
     // 2. Resetear el estado onAir previo salvo los canales fijados manualmente por el Administrador
     channelsCatalog.forEach(c => {

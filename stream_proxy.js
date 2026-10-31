@@ -20,9 +20,12 @@ setInterval(() => {
 
 function originHeaders(targetUrl) {
   const parsedTarget = url.parse(targetUrl);
+  const referer = (parsedTarget.host && parsedTarget.host.includes('rcncdn.com'))
+    ? 'https://stream.robertsstream.com/'
+    : `${parsedTarget.protocol}//${parsedTarget.host}/`;
   return {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Referer': `${parsedTarget.protocol}//${parsedTarget.host}/`
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Referer': referer
   };
 }
 
@@ -43,6 +46,38 @@ async function fetchPlaylistText(targetUrl) {
 
 async function handleStreamProxy(req, res, targetUrl) {
   try {
+    // Caso especial 1/ST TV / RCNCDN H5Live: resolver playlist.m3u8 -> stream.mp4 progresivo en vivo
+    if (targetUrl.includes('ws.rcncdn.com/h5live/http/playlist.m3u8')) {
+      const m3u8Text = await fetchPlaylistText(targetUrl);
+      const mp4Line = m3u8Text.split('\n').map(l => l.trim()).find(l => l.startsWith('http'));
+      if (!mp4Line) {
+        res.writeHead(502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+        return res.end('No live fMP4 stream found in RCNCDN playlist');
+      }
+
+      const mp4Response = await fetch(mp4Line, {
+        headers: originHeaders(mp4Line),
+        timeout: FETCH_TIMEOUT_MS
+      });
+
+      if (!mp4Response.ok) {
+        mp4Response.body.resume();
+        res.writeHead(mp4Response.status, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+        return res.end(`Error proxying RCNCDN live stream: ${mp4Response.statusText}`);
+      }
+
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': '*',
+        'Content-Type': mp4Response.headers.get('content-type') || 'video/mp4',
+        'Cache-Control': 'no-cache, no-store'
+      });
+
+      res.on('close', () => { if (!res.writableEnded) mp4Response.body.destroy(); });
+      mp4Response.body.on('error', () => { if (!res.writableEnded) res.destroy(); });
+      return mp4Response.body.pipe(res);
+    }
+
     const isM3U8 = targetUrl.includes('.m3u8');
     const host = req.headers.host || 'localhost:3500';
     const protocol = req.protocol || 'http';
