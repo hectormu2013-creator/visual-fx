@@ -8,6 +8,15 @@ let cachedCookieHeader = null;
 let cachedCookieTimestamp = 0;
 const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // Reutilizar sesión por 4 horas
 
+// Caché de URLs de reproductores por hipódromo (Evita abrir 25 reproductores en ráfaga cada ciclo)
+const trackStreamCache = new Map();
+const TRACK_STREAM_TTL_MS = 90 * 60 * 1000; // 90 minutos de caché por pista
+const MAX_NEW_FETCHES_PER_CYCLE = 4; // Máximo 4 pistas nuevas por ciclo para simular navegación humana
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Credenciales Oficiales RTN.tv (SOLO desde variables de entorno RTN_USER / RTN_PASS en Render)
 const RTN_CREDS = {
   loginUrl: 'https://online.rtn.tv/index.php',
@@ -29,7 +38,7 @@ const RTN_TRACK_MAP = {
   'century mile': 'century-mile',
   'charles town': 'charles-town',
   'churchill': 'churchill-downs',
-  'clinton': 'clinton-raceway',
+  'clinton': 'clicts-raceway',
   'colonial': 'colonial-downs',
   'del mar': 'del-mar',
   'delaware': 'delaware-park',
@@ -94,7 +103,7 @@ async function fetchRtnLiveStreams() {
     return activeStreams;
   }
 
-  console.log('📡 [RTN Bridge] Conectando a RTN.tv con credenciales de Fénix...');
+  console.log('📡 [RTN Bridge] Conectando a RTN.tv en Modo Sigiloso (Sesión Persistente)...');
 
   try {
     const now = Date.now();
@@ -163,8 +172,17 @@ async function fetchRtnLiveStreams() {
 
     const tracksHtml = await tracksRes.text();
 
+    if (tracksHtml.includes('Account Has Been Disabled') || tracksHtml.includes('Must be a current RTN subscriber')) {
+      console.error('🛑 [RTN Bridge] Sesión invalidada o cuenta deshabilitada. Activando Circuit Breaker.');
+      rtnCircuitTripped = true;
+      RTN_ENABLED = false;
+      cachedCookieHeader = null;
+      return activeStreams;
+    }
+
     // 3. Extraer metadata de cada hipódromo activo usando Regex en data-linkInfo
     const linkInfoMatches = tracksHtml.match(/data-linkInfo=(['"])([\s\S]*?)\1/gi) || [];
+    let newFetchesCount = 0;
 
     for (const matchStr of linkInfoMatches) {
       try {
@@ -174,7 +192,6 @@ async function fetchRtnLiveStreams() {
 
         const trackNameLower = (info.trackName || '').toLowerCase().trim();
 
-        // Buscar correspondencia en mapa o generar ID dinámico para cualquier hipódromo de RTN
         let matchedId = null;
         for (const [key, val] of Object.entries(RTN_TRACK_MAP)) {
           if (trackNameLower.includes(key)) {
@@ -187,7 +204,26 @@ async function fetchRtnLiveStreams() {
         }
 
         if (matchedId) {
-          // 4. Solicitar el reproductor en vivo para este hipódromo
+          // Verificar si ya tenemos el stream en caché vigente para no pedir page_live otra vez
+          const cachedTrack = trackStreamCache.get(matchedId);
+          if (cachedTrack && (Date.now() - cachedTrack.timestamp) < TRACK_STREAM_TTL_MS) {
+            activeStreams[matchedId] = {
+              ...cachedTrack.data,
+              mtp: info.mtp || info.MTP || cachedTrack.data.mtp || '',
+              race: info.race || info.Race || cachedTrack.data.race || ''
+            };
+            continue;
+          }
+
+          // Limitar peticiones nuevas por ciclo para evitar ráfagas sospechosas
+          if (newFetchesCount >= MAX_NEW_FETCHES_PER_CYCLE) {
+            continue;
+          }
+
+          // Pausa aleatoria humana (1.8s - 3.2s) antes de pedir el reproductor
+          await sleep(1800 + Math.floor(Math.random() * 1400));
+          newFetchesCount++;
+
           const playerParams = new URLSearchParams();
           playerParams.append('pageQueue', 'page_live');
           playerParams.append('trackName', info.trackName);
@@ -215,7 +251,7 @@ async function fetchRtnLiveStreams() {
 
           if (iframeMatch && iframeMatch[1]) {
             const streamUrl = iframeMatch[1].replace(/&amp;/g, '&');
-            activeStreams[matchedId] = {
+            const streamData = {
               id: matchedId,
               streamUrl,
               type: 'iframe',
@@ -226,7 +262,9 @@ async function fetchRtnLiveStreams() {
               race: info.race || info.Race || '',
               onAirTime: info.onAirTime || ''
             };
-            console.log(`✅ [RTN Bridge] Señal EN VIVO obtenida para '${matchedId}' (${info.trackName}): ${streamUrl.substring(0, 75)}...`);
+            activeStreams[matchedId] = streamData;
+            trackStreamCache.set(matchedId, { timestamp: Date.now(), data: streamData });
+            console.log(`✅ [RTN Bridge] Señal EN VIVO obtenida y cacheada para '${matchedId}' (${info.trackName})`);
           }
         }
       } catch (err) {

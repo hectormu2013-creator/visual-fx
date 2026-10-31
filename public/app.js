@@ -297,9 +297,9 @@ function stopAndDestroyPlayer(cellNum) {
 // Cell Assignations
 const cellChannels = {
   1: "gulfstream-park",
-  2: "saratoga",
-  3: "aqueduct",
-  4: "parx-racing"
+  2: "aqueduct-racetrack",
+  3: "keeneland",
+  4: "woodbine"
 };
 
 // DOM Elements
@@ -1319,10 +1319,12 @@ async function loadChannelCatalog() {
     window._catalogHasLoadedOnce = true;
 
     if (isInitialCatalogLoad) {
-      // Solo en la carga inicial de inicio asignar canales por defecto si las celdas están vacías
+      // Auto-asignar hipódromos que estén realmente EN VIVO (onAir === true) si el asignado por defecto está fuera de aire
       if (activeChannels.length > 0) {
         [1, 2, 3, 4].forEach((num, idx) => {
-          if (!cellChannels[num]) {
+          const currentId = cellChannels[num];
+          const currentObj = channelCatalog.find(c => c.id === currentId);
+          if (!currentId || !currentObj || !currentObj.onAir) {
             cellChannels[num] = activeChannels[idx % activeChannels.length].id;
           }
         });

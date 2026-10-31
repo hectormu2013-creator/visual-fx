@@ -1,4 +1,5 @@
 const { fetchRtnLiveStreams } = require('./rtn_bridge');
+const { fetchPublicLiveStreams } = require('./public_streams_bridge');
 
 // Estado del Ingestor Máster
 const masterState = {
@@ -10,20 +11,28 @@ const masterState = {
 let syncInProgress = false;
 
 async function syncRtnStreams(channelsCatalog) {
-  // Evitar sincronizaciones solapadas: si RTN tarda más de 3 min, no acumular ciclos en memoria
+  // Evitar sincronizaciones solapadas
   if (syncInProgress) {
-    console.warn('⏳ [Master Ingest RTN] Sincronización anterior aún en curso, se omite este ciclo.');
+    console.warn('⏳ [Master Ingest] Sincronización anterior aún en curso, se omite este ciclo.');
     return;
   }
   syncInProgress = true;
   try {
-    // 1. Resetear el estado onAir previo de todos los canales
+    // 1. Obtener señales desde RTN (si está habilitado) y desde el puente de señales públicas en vivo
+    const bridgeStreams = (process.env.RTN_ENABLED === 'true') ? await fetchRtnLiveStreams() : {};
+    const publicStreams = await fetchPublicLiveStreams();
+
+    // Combinar dando prioridad a RTN si existe, o usando la señal pública en vivo como respaldo
+    const combinedStreams = { ...publicStreams, ...bridgeStreams };
+
+    // 2. Resetear el estado onAir previo salvo los canales fijados manualmente por el Administrador
     channelsCatalog.forEach(c => {
-      c.onAir = false;
+      if (!c.manualOverride) {
+        c.onAir = false;
+      }
     });
 
-    const bridgeStreams = await fetchRtnLiveStreams();
-    for (const [chId, data] of Object.entries(bridgeStreams)) {
+    for (const [chId, data] of Object.entries(combinedStreams)) {
       masterState.activeStreams.set(chId, {
         id: chId,
         name: data.name || chId,
@@ -35,42 +44,50 @@ async function syncRtnStreams(channelsCatalog) {
 
       let chInCatalog = channelsCatalog.find(c => c.id === chId);
       if (chInCatalog) {
-        chInCatalog.streamUrl = data.streamUrl;
-        chInCatalog.iframeUrl = data.streamUrl;
-        chInCatalog.type = data.type;
-        chInCatalog.onAir = true;
-        if (data.race) chInCatalog.nextRace = `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}`;
+        if (!chInCatalog.manualOverride) {
+          chInCatalog.streamUrl = data.streamUrl;
+          chInCatalog.iframeUrl = data.streamUrl;
+          chInCatalog.type = data.type || 'iframe';
+          chInCatalog.onAir = true;
+          if (data.statusText) chInCatalog.statusText = data.statusText;
+          if (data.race) {
+            chInCatalog.nextRace = `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}`;
+          } else if (data.nextRace) {
+            chInCatalog.nextRace = data.nextRace;
+          }
+        }
       } else {
-        // Agregar dinámicamente cualquier nuevo hipódromo de RTN en vivo
+        // Agregar dinámicamente cualquier nuevo hipódromo en vivo (ej. Valencia, Camarero, Monterrico)
         chInCatalog = {
           id: chId,
           name: data.name || data.trackName || chId,
-          flag: "🏇",
-          location: "RTN.tv Live Simulcast",
+          flag: data.flag || "🏇",
+          location: data.location || "Live Simulcast",
           type: data.type || "iframe",
           aliases: [chId],
           streamUrl: data.streamUrl,
           iframeUrl: data.streamUrl,
-          officialSource: "RTN.tv Live Official",
-          statusText: "Carreras en Vivo • RTN HD Directo",
-          nextRace: data.race ? `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}` : "Siguiente Carrera en Vivo",
+          officialSource: data.statusText || "Official Live Stream",
+          statusText: data.statusText || "Carreras en Vivo • Señal HD Directo",
+          nextRace: data.race ? `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}` : (data.nextRace || "Siguiente Carrera en Vivo"),
           onAir: true
         };
         channelsCatalog.push(chInCatalog);
       }
     }
-    masterState.healthyChannelsCount = masterState.activeStreams.size;
+
+    masterState.healthyChannelsCount = channelsCatalog.filter(c => c.onAir).length;
     masterState.lastCheck = new Date().toISOString();
-    console.log(`📡 [Master Ingest RTN] Sincronización exitosa (${Object.keys(bridgeStreams).length} señales EN VIVO activas).`);
+    console.log(`📡 [Master Ingest] Sincronización exitosa (${masterState.healthyChannelsCount} señales EN VIVO activas).`);
   } catch (e) {
-    console.error('⚠️ [Master Ingest RTN] Error en chequeo automático:', e.message);
+    console.error('⚠️ [Master Ingest] Error en chequeo automático:', e.message);
   } finally {
     syncInProgress = false;
   }
 }
 
 function initMasterIngest(channelsCatalog) {
-  console.log('📡 [Master Ingest RTN] Motor Relay Oficial RTN.tv Iniciado para Agencias Fénix.');
+  console.log('📡 [Master Ingest] Motor de Señales en Vivo Iniciado para Agencias Fénix.');
 
   channelsCatalog.forEach(ch => {
     masterState.activeStreams.set(ch.id, {
@@ -86,13 +103,11 @@ function initMasterIngest(channelsCatalog) {
   masterState.healthyChannelsCount = masterState.activeStreams.size;
   masterState.lastCheck = new Date().toISOString();
 
-  // puente RTN desactivado por defecto para proteger la cuenta contra bloqueos automáticos
-  if (process.env.RTN_ENABLED === 'true') {
-    syncRtnStreams(channelsCatalog);
-    setInterval(() => syncRtnStreams(channelsCatalog), 1800000); // 30 min cuando se habilite
-  } else {
-    console.log('🛑 [Master Ingest RTN] Polling automático a RTN.tv APAGADO.');
-  }
+  // Sincronización inicial inmediata (usa Public Streams si RTN está apagado)
+  syncRtnStreams(channelsCatalog);
+
+  // Actualizar señales en vivo cada 10 minutos
+  setInterval(() => syncRtnStreams(channelsCatalog), 10 * 60 * 1000);
 }
 
 function getMasterState() {
