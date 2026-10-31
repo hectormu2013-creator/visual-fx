@@ -86,11 +86,13 @@ function initMasterIngest(channelsCatalog) {
   masterState.healthyChannelsCount = masterState.activeStreams.size;
   masterState.lastCheck = new Date().toISOString();
 
-  // Sincronización inicial inmediata
-  syncRtnStreams(channelsCatalog);
-
-  // Ejecutar verificación y puente RTN cada 3 minutos
-  setInterval(() => syncRtnStreams(channelsCatalog), 180000);
+  // puente RTN desactivado por defecto para proteger la cuenta contra bloqueos automáticos
+  if (process.env.RTN_ENABLED === 'true') {
+    syncRtnStreams(channelsCatalog);
+    setInterval(() => syncRtnStreams(channelsCatalog), 1800000); // 30 min cuando se habilite
+  } else {
+    console.log('🛑 [Master Ingest RTN] Polling automático a RTN.tv APAGADO.');
+  }
 }
 
 function getMasterState() {

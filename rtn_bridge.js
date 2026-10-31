@@ -1,6 +1,13 @@
 // Módulo de Integración Automática RTN.tv (Racetrack Television Network) para Agencias Fénix
 const fetch = require('node-fetch');
 
+// Interruptor Maestro RTN (APAGADO por defecto para evitar bloqueos y actividad en cuenta suspendida)
+let RTN_ENABLED = process.env.RTN_ENABLED === 'true';
+let rtnCircuitTripped = false;
+let cachedCookieHeader = null;
+let cachedCookieTimestamp = 0;
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // Reutilizar sesión por 4 horas
+
 // Credenciales Oficiales RTN.tv (SOLO desde variables de entorno RTN_USER / RTN_PASS en Render)
 const RTN_CREDS = {
   loginUrl: 'https://online.rtn.tv/index.php',
@@ -75,39 +82,61 @@ const RTN_TRACK_MAP = {
 };
 
 async function fetchRtnLiveStreams() {
-  console.log('📡 [RTN Bridge] Conectando a RTN.tv con credenciales de Fénix...');
   const activeStreams = {};
+
+  if (!RTN_ENABLED || rtnCircuitTripped) {
+    console.log('⏸️ [RTN Bridge] Sincronización RTN.tv DESACTIVADA (Modo Seguro Activo - Cero peticiones enviadas).');
+    return activeStreams;
+  }
 
   if (!RTN_CREDS.username || !RTN_CREDS.password) {
     console.error('⚠️ [RTN Bridge] Faltan RTN_USER / RTN_PASS en variables de entorno. Sincronización omitida.');
     return activeStreams;
   }
 
+  console.log('📡 [RTN Bridge] Conectando a RTN.tv con credenciales de Fénix...');
+
   try {
-    // 1. Iniciar Sesión en RTN.tv
-    const bodyParams = new URLSearchParams();
-    bodyParams.append('submitted', 'submitted');
-    bodyParams.append('login', RTN_CREDS.username);
-    bodyParams.append('password', RTN_CREDS.password);
+    const now = Date.now();
+    // 1. Reutilizar cookie de sesión existente o iniciar sesión solo si expiró
+    if (!cachedCookieHeader || (now - cachedCookieTimestamp) > SESSION_TTL_MS) {
+      const bodyParams = new URLSearchParams();
+      bodyParams.append('submitted', 'submitted');
+      bodyParams.append('login', RTN_CREDS.username);
+      bodyParams.append('password', RTN_CREDS.password);
 
-    const loginRes = await fetch(RTN_CREDS.loginUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      body: bodyParams.toString(),
-      ...FETCH_LIMITS
-    });
-    loginRes.body.resume(); // descartar body no usado y liberar el socket
+      const loginRes = await fetch(RTN_CREDS.loginUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        body: bodyParams.toString(),
+        ...FETCH_LIMITS
+      });
 
-    const rawCookies = loginRes.headers.get('set-cookie') || '';
-    const cookieHeader = rawCookies.split(',').map(c => c.split(';')[0]).join('; ');
+      const loginHtml = await loginRes.text();
+      if (loginHtml.includes('Account Has Been Disabled') || loginHtml.includes('Must be a current RTN subscriber')) {
+        console.error('🛑 [RTN Bridge] Cuenta RTN deshabilitada o sin suscripción activa. Cortando intentos automáticamente (Circuit Breaker).');
+        rtnCircuitTripped = true;
+        RTN_ENABLED = false;
+        cachedCookieHeader = null;
+        return activeStreams;
+      }
 
-    if (!cookieHeader || !cookieHeader.includes('PHPSESSID')) {
-      console.error('⚠️ [RTN Bridge] No se pudo obtener la cookie de sesión de RTN.tv.');
-      return activeStreams;
+      const rawCookies = loginRes.headers.get('set-cookie') || '';
+      const cookieHeader = rawCookies.split(',').map(c => c.split(';')[0]).join('; ');
+
+      if (!cookieHeader || !cookieHeader.includes('PHPSESSID')) {
+        console.error('⚠️ [RTN Bridge] No se pudo obtener la cookie de sesión de RTN.tv.');
+        return activeStreams;
+      }
+
+      cachedCookieHeader = cookieHeader;
+      cachedCookieTimestamp = now;
     }
+
+    const cookieHeader = cachedCookieHeader;
 
     // 2. Obtener Lista de Hipódromos en Transmisión Hoy
     const dateNow = new Date();
