@@ -20,12 +20,9 @@ setInterval(() => {
 
 function originHeaders(targetUrl) {
   const parsedTarget = url.parse(targetUrl);
-  const referer = (parsedTarget.host && parsedTarget.host.includes('rcncdn.com'))
-    ? 'https://stream.robertsstream.com/'
-    : `${parsedTarget.protocol}//${parsedTarget.host}/`;
   return {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Referer': referer
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Referer': `${parsedTarget.protocol}//${parsedTarget.host}/`
   };
 }
 
@@ -49,11 +46,14 @@ async function handleStreamProxy(req, res, targetUrl) {
     // Caso especial 1/ST TV / RCNCDN H5Live: resolver playlist.m3u8 -> stream.mp4 progresivo en vivo
     if (targetUrl.includes('ws.rcncdn.com/h5live/http/playlist.m3u8')) {
       const m3u8Text = await fetchPlaylistText(targetUrl);
-      const mp4Line = m3u8Text.split('\n').map(l => l.trim()).find(l => l.startsWith('http'));
-      if (!mp4Line) {
+      const rawLine = m3u8Text.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('#'));
+      if (!rawLine) {
         res.writeHead(502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
         return res.end('No live fMP4 stream found in RCNCDN playlist');
       }
+      const mp4Line = rawLine.startsWith('http')
+        ? rawLine
+        : `https://ws.rcncdn.com/h5live/http/${rawLine.replace(/^\/+/, '')}`;
 
       const mp4Response = await fetch(mp4Line, {
         headers: originHeaders(mp4Line),

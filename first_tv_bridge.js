@@ -96,12 +96,14 @@ async function resolveFirstTvTrackM3u8(trackCode) {
   }
 
   const flashUrl = ajaxData.data.url;
-  const liveUrl = flashUrl.replace('streamflash.php', 'streamlive.php');
+  const liveUrl = flashUrl
+    .replace('streamflash.php', 'streamlive.php')
+    .replace(/&optp=[^&]+/, '');
 
   const liveRes = await fetch(liveUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Referer': 'https://1st.tv/'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://stream.robertsstream.com/'
     },
     timeout: 10000
   });
@@ -144,21 +146,24 @@ async function probeRcnStreamIsLive(m3u8Url) {
     const res = await fetch(m3u8Url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://stream.robertsstream.com/'
+        'Referer': 'https://ws.rcncdn.com/'
       },
       timeout: 6000
     });
     if (!res.ok) return false;
     const text = await res.text();
-    const mp4Url = text.split('\n').map(l => l.trim()).find(l => l.startsWith('http'));
-    if (!mp4Url) return false;
+    const rawLine = text.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('#'));
+    if (!rawLine) return false;
+    const mp4Url = rawLine.startsWith('http')
+      ? rawLine
+      : `https://ws.rcncdn.com/h5live/http/${rawLine.replace(/^\/+/, '')}`;
 
     return await new Promise((resolve) => {
       const client = mp4Url.startsWith('https') ? https : http;
       const req = client.get(mp4Url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://stream.robertsstream.com/'
+          'Referer': 'https://ws.rcncdn.com/'
         }
       }, (streamRes) => {
         if (streamRes.statusCode !== 200) {
