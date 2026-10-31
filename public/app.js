@@ -296,10 +296,10 @@ function stopAndDestroyPlayer(cellNum) {
 
 // Cell Assignations
 const cellChannels = {
-  1: "gulfstream-park",
-  2: "aqueduct-racetrack",
-  3: "keeneland",
-  4: "woodbine"
+  1: "aqueduct-racetrack",
+  2: "woodbine",
+  3: "hipodromo-camarero",
+  4: "sky-racing-1"
 };
 
 // DOM Elements

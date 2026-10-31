@@ -1,21 +1,11 @@
-// Puente Automático de Señales Públicas en Vivo (YouTube Live Oficial + Señales HLS .m3u8 24/7)
-// Opera de forma 100% autónoma sin depender de RTN.tv
+// Puente Automático de Señales Oficiales en Vivo (Solo Hipódromos Oficiales + HLS 24/7)
+// Bloquea estrictamente canales de pronosticadores, narradores externos o charlas
 const fetch = require('node-fetch');
 
 const FETCH_TIMEOUT = 10000;
 
-// Señales HLS (.m3u8) Directas 24/7 Verificadas (Reproducción nativa en HLS.js sin bloqueos)
+// Señales HLS (.m3u8) Directas 24/7 Oficiales (Reproducción nativa en HLS.js sin bloqueos)
 const DIRECT_HLS_24_7_CHANNELS = [
-  {
-    id: 'vsin',
-    name: 'VSiN Sports Network',
-    flag: '🇺🇸',
-    location: 'Las Vegas, Nevada, EE.UU.',
-    streamUrl: 'https://vsin-sgrewind.streamguys1.com/scte/live-2k/playlist.m3u8',
-    type: 'hls',
-    statusText: 'En Vivo 24/7 • VSiN HD Directo',
-    nextRace: 'Apuestas y Análisis en Directo'
-  },
   {
     id: 'sky-racing-1',
     name: 'Sky Racing 1 Simulcast',
@@ -23,7 +13,7 @@ const DIRECT_HLS_24_7_CHANNELS = [
     location: 'Internacional 24/7',
     streamUrl: 'https://636ffd31f0e12.streamlock.net/RacingStream1/RacingStream1/playlist.m3u8',
     type: 'hls',
-    statusText: 'En Vivo 24/7 • Sky Racing HD',
+    statusText: 'En Vivo 24/7 • Sky Racing Oficial HD',
     nextRace: 'Carreras Internacionales en Vivo'
   },
   {
@@ -33,7 +23,7 @@ const DIRECT_HLS_24_7_CHANNELS = [
     location: 'Santiago, Chile',
     streamUrl: 'https://tvturf4.janus.cl/playlist/stream.m3u8?d=w&id=',
     type: 'hls',
-    statusText: 'En Vivo • Teletrak Red Hípica HD',
+    statusText: 'En Vivo • Teletrak Red Hípica Oficial',
     nextRace: 'Jornada Hípica en Directo'
   },
   {
@@ -43,7 +33,7 @@ const DIRECT_HLS_24_7_CHANNELS = [
     location: 'París, Francia',
     streamUrl: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/equidia/live2.m3u8',
     type: 'hls',
-    statusText: 'En Vivo 24/7 • Equidia 1080p HD',
+    statusText: 'En Vivo 24/7 • Equidia 1080p Oficial',
     nextRace: 'Carreras en Vivo • Señal Oficial'
   },
   {
@@ -53,8 +43,18 @@ const DIRECT_HLS_24_7_CHANNELS = [
     location: 'Simulcast Internacional',
     streamUrl: 'https://tjktv-live.tjk.org/tjktv.m3u8',
     type: 'hls',
-    statusText: 'En Vivo 24/7 • Jockey Club 1080p HD',
+    statusText: 'En Vivo 24/7 • Jockey Club 1080p Oficial',
     nextRace: 'Carreras en Directo'
+  },
+  {
+    id: 'vsin',
+    name: 'VSiN Sports Network',
+    flag: '🇺🇸',
+    location: 'Las Vegas, Nevada, EE.UU.',
+    streamUrl: 'https://vsin-sgrewind.streamguys1.com/scte/live-2k/playlist.m3u8',
+    type: 'hls',
+    statusText: 'En Vivo 24/7 • VSiN HD Directo',
+    nextRace: 'Transmisión Oficial Las Vegas'
   },
   {
     id: 'horse-tv',
@@ -68,51 +68,154 @@ const DIRECT_HLS_24_7_CHANNELS = [
   }
 ];
 
-// Consultas dirigidas para detectar transmisiones EN VIVO reales (sp=EgJAAQ%3D%3D = filtro LIVE de YouTube)
+// Palabras prohibidas para descartar youtubers, pronosticadores, podcasts y cámaras ajenas
+const BLOCKED_KEYWORDS_REGEX = /picks|pronostico|pronóstico|handicapping|podcast|show ever|sportsmoneynetwork|deportes max|equinedge|seminar|preview show|railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox|caballos de historia/i;
+
+// Consultas dirigidas exclusivamente a señales oficiales de hipódromos en vivo
 const LIVE_SEARCH_TARGETS = [
   {
     query: 'America\'s Day at the Races NYRA live',
     assignTo: [
-      { id: 'aqueduct-racetrack', name: 'Aqueduct Racetrack', flag: '🇺🇸', location: 'Queens, New York, EE.UU.', matchKeywords: ['america', 'nyra', 'aqueduct', 'belmont', 'saratoga'] },
-      { id: 'belmont-park', name: 'Belmont Park', flag: '🇺🇸', location: 'Elmont, New York, EE.UU.', matchKeywords: ['america', 'nyra', 'belmont', 'aqueduct'] }
-    ]
-  },
-  {
-    query: 'Hipodromo en vivo',
-    assignTo: [
-      { id: 'hipodromo-valencia', name: 'Hipódromo de Valencia', flag: '🇻🇪', location: 'Valencia, Venezuela', matchKeywords: ['valencia'] },
-      { id: 'hipodromo-camarero', name: 'Hipódromo Camarero', flag: '🇵🇷', location: 'Canóvanas, Puerto Rico', matchKeywords: ['camarero'] },
-      { id: 'hipodromo-palermo', name: 'Hipódromo de Palermo', flag: '🇦🇷', location: 'Buenos Aires, Argentina', matchKeywords: ['palermo'] },
-      { id: 'la-rinconada', name: 'La Rinconada', flag: '🇻🇪', location: 'Caracas, Venezuela', matchKeywords: ['rinconada', 'inh'] },
-      { id: 'hipodromo-monterrico', name: 'Hipódromo de Monterrico', flag: '🇵🇪', location: 'Lima, Perú', matchKeywords: ['monterrico'] },
-      { id: 'hipodromo-las-piedras', name: 'Hipódromo Las Piedras', flag: '🇺🇾', location: 'Las Piedras, Uruguay', matchKeywords: ['piedras', 'maroñas', 'uruguay'] }
+      {
+        id: 'aqueduct-racetrack',
+        name: 'Aqueduct Racetrack',
+        flag: '🇺🇸',
+        location: 'Queens, New York, EE.UU.',
+        matchKeywords: ['america\'s day at the races', 'new york racing association', 'nyra'],
+        requireOfficialChannel: /new york racing|nyra/i
+      },
+      {
+        id: 'belmont-park',
+        name: 'Belmont Park',
+        flag: '🇺🇸',
+        location: 'Elmont, New York, EE.UU.',
+        matchKeywords: ['america\'s day at the races', 'new york racing association', 'nyra'],
+        requireOfficialChannel: /new york racing|nyra/i
+      }
     ]
   },
   {
     query: 'Woodbine Racetrack live',
     assignTo: [
-      { id: 'woodbine', name: 'Woodbine', flag: '🇨🇦', location: 'Toronto, Ontario, Canadá', matchKeywords: ['woodbine'] }
+      {
+        id: 'woodbine',
+        name: 'Woodbine',
+        flag: '🇨🇦',
+        location: 'Toronto, Ontario, Canadá',
+        matchKeywords: ['woodbine racetrack'],
+        requireOfficialChannel: /woodbine/i
+      }
     ]
   },
   {
-    query: 'Keeneland Breeders Cup live',
+    query: 'Hipodromo en vivo',
     assignTo: [
-      { id: 'keeneland', name: 'Keeneland', flag: '🇺🇸', location: 'Lexington, Kentucky, EE.UU.', matchKeywords: ['keeneland', 'breeders', 'horse racing'] },
-      { id: 'churchill-downs', name: 'Churchill Downs', flag: '🇺🇸', location: 'Louisville, Kentucky, EE.UU.', matchKeywords: ['churchill', 'breeders', 'keeneland', 'horse racing'] }
+      {
+        id: 'hipodromo-camarero',
+        name: 'Hipódromo Camarero',
+        flag: '🇵🇷',
+        location: 'Canóvanas, Puerto Rico',
+        matchKeywords: ['camarero'],
+        requireOfficialChannel: /camarero/i
+      },
+      {
+        id: 'hipodromo-palermo',
+        name: 'Hipódromo de Palermo',
+        flag: '🇦🇷',
+        location: 'Buenos Aires, Argentina',
+        matchKeywords: ['palermo'],
+        requireOfficialChannel: /palermo/i
+      },
+      {
+        id: 'hipodromo-san-isidro',
+        name: 'Hipódromo de San Isidro',
+        flag: '🇦🇷',
+        location: 'San Isidro, Argentina',
+        matchKeywords: ['san isidro'],
+        requireOfficialChannel: /san isidro/i
+      },
+      {
+        id: 'hipodromo-valencia',
+        name: 'Hipódromo de Valencia',
+        flag: '🇻🇪',
+        location: 'Valencia, Venezuela',
+        matchKeywords: ['reunion', 'hipodromo de valencia'],
+        requireOfficialChannel: /valencia|inh|hinava/i
+      },
+      {
+        id: 'la-rinconada',
+        name: 'La Rinconada',
+        flag: '🇻🇪',
+        location: 'Caracas, Venezuela',
+        matchKeywords: ['rinconada', 'inh oficial'],
+        requireOfficialChannel: /inh|rinconada|hipica/i
+      },
+      {
+        id: 'hipodromo-monterrico',
+        name: 'Hipódromo de Monterrico',
+        flag: '🇵🇪',
+        location: 'Lima, Perú',
+        matchKeywords: ['monterrico'],
+        requireOfficialChannel: /monterrico/i
+      },
+      {
+        id: 'hipodromo-las-piedras',
+        name: 'Hipódromo Las Piedras',
+        flag: '🇺🇾',
+        location: 'Las Piedras, Uruguay',
+        matchKeywords: ['las piedras', 'maroñas'],
+        requireOfficialChannel: /hipica|maroñas|piedras/i
+      }
     ]
   },
   {
-    query: 'Gulfstream Park live',
+    query: 'Hipica TV Gulfstream Laurel Santa Anita live',
     assignTo: [
-      { id: 'gulfstream-park', name: 'Gulfstream Park', flag: '🇺🇸', location: 'Hallandale Beach, Florida, EE.UU.', matchKeywords: ['gulfstream', 'hipica', 'horse racing', 'breeders', 'live'] }
+      {
+        id: 'gulfstream-park',
+        name: 'Gulfstream Park',
+        flag: '🇺🇸',
+        location: 'Hallandale Beach, Florida, EE.UU.',
+        matchKeywords: ['gulfstream', 'hípica tv', 'hipica tv'],
+        requireOfficialChannel: /hipica tv|hípica tv|gulfstream|1\/st/i
+      },
+      {
+        id: 'laurel-park',
+        name: 'Laurel Park',
+        flag: '🇺🇸',
+        location: 'Laurel, Maryland, EE.UU.',
+        matchKeywords: ['laurel', 'maryland', 'hípica tv', 'hipica tv'],
+        requireOfficialChannel: /maryland|laurel|hipica tv|hípica tv/i
+      },
+      {
+        id: 'santa-anita-park',
+        name: 'Santa Anita Park',
+        flag: '🇺🇸',
+        location: 'Arcadia, California, EE.UU.',
+        matchKeywords: ['santa anita', 'hípica tv', 'hipica tv'],
+        requireOfficialChannel: /santa anita|hipica tv|hípica tv|1\/st/i
+      }
     ]
   },
   {
-    query: 'Laurel Park Santa Anita Parx live horse racing',
+    query: 'Keeneland Breeders Cup Tampa Bay Downs live',
     assignTo: [
-      { id: 'laurel-park', name: 'Laurel Park', flag: '🇺🇸', location: 'Laurel, Maryland, EE.UU.', matchKeywords: ['laurel', 'maryland', 'horse racing', 'live'] },
-      { id: 'santa-anita-park', name: 'Santa Anita Park', flag: '🇺🇸', location: 'Arcadia, California, EE.UU.', matchKeywords: ['santa anita', 'quigley', 'horse racing', 'breeders'] },
-      { id: 'parx-racing', name: 'Parx Racing', flag: '🇺🇸', location: 'Bensalem, Pennsylvania, EE.UU.', matchKeywords: ['parx', 'philadelphia', 'horse racing', 'live'] }
+      {
+        id: 'keeneland',
+        name: 'Keeneland',
+        flag: '🇺🇸',
+        location: 'Lexington, Kentucky, EE.UU.',
+        matchKeywords: ['keeneland', 'breeders\' cup'],
+        requireOfficialChannel: /keeneland|breeders/i
+      },
+      {
+        id: 'tampa-bay-downs',
+        name: 'Tampa Bay Downs',
+        flag: '🇺🇸',
+        location: 'Tampa, Florida, EE.UU.',
+        matchKeywords: ['tampa bay downs'],
+        requireOfficialChannel: /tampa bay/i
+      }
     ]
   }
 ];
@@ -160,9 +263,9 @@ async function searchYouTubeLiveVideos(query) {
 
 async function fetchPublicLiveStreams() {
   const activeStreams = {};
-  console.log('🌐 [Public Streams Bridge] Sincronizando señales hípicas abiertas (YouTube Live + HLS 24/7)...');
+  console.log('🌐 [Public Streams Bridge] Sincronizando únicamente señales hípicas OFICIALES verificadas...');
 
-  // 1. Cargar canales HLS (.m3u8) 24/7 verificados
+  // 1. Cargar canales HLS (.m3u8) 24/7 oficiales verificados
   for (const hlsCh of DIRECT_HLS_24_7_CHANNELS) {
     activeStreams[hlsCh.id] = {
       ...hlsCh,
@@ -171,7 +274,7 @@ async function fetchPublicLiveStreams() {
     };
   }
 
-  // 2. Detectar hipódromos transmitiendo en vivo ahora mismo
+  // 2. Detectar hipódromos oficiales transmitiendo en vivo ahora mismo
   const allLiveVideos = [];
   for (const group of LIVE_SEARCH_TARGETS) {
     const videos = await searchYouTubeLiveVideos(group.query);
@@ -187,7 +290,12 @@ async function fetchPublicLiveStreams() {
       const pool = [...videos, ...allLiveVideos];
       const matchedVideo = pool.find(v => {
         const combined = `${v.title} ${v.channel}`.toLowerCase();
-        if (/railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox/i.test(combined)) {
+        // Descartar estrictamente pronosticadores, shows de picks y canales no oficiales
+        if (BLOCKED_KEYWORDS_REGEX.test(combined)) {
+          return false;
+        }
+        // Exigir coincidencia del canal oficial del hipódromo/asociación
+        if (target.requireOfficialChannel && !target.requireOfficialChannel.test(combined)) {
           return false;
         }
         return target.matchKeywords.some(kw => combined.includes(kw.toLowerCase()));
@@ -204,10 +312,10 @@ async function fetchPublicLiveStreams() {
           streamUrl: embedUrl,
           type: 'iframe',
           onAir: true,
-          statusText: `En Vivo • ${matchedVideo.channel || 'Señal Abierta HD'}`,
+          statusText: `Señal Oficial HD • ${matchedVideo.channel}`,
           nextRace: matchedVideo.title.substring(0, 58)
         };
-        console.log(`✅ [Public Streams] '${target.name}' EN VIVO -> [${matchedVideo.videoId}] ${matchedVideo.title}`);
+        console.log(`✅ [Señal Oficial] '${target.name}' EN VIVO -> [${matchedVideo.videoId}] ${matchedVideo.title} (${matchedVideo.channel})`);
       }
     }
   }
