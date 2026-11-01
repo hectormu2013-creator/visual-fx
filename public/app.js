@@ -1608,7 +1608,8 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
   const safeProxyUrl = (window.location.protocol === 'https:' && proxyUrl && proxyUrl.startsWith('http://'))
     ? proxyUrl.replace(/^http:\/\//, 'https://')
     : proxyUrl;
-  const primaryUrl = `${safeProxyUrl}&deviceId=${currentDeviceId}`;
+  const tokenParam = currentToken ? `&token=${encodeURIComponent(currentToken)}` : '';
+  const primaryUrl = `${safeProxyUrl}&deviceId=${currentDeviceId}${tokenParam}`;
 
   // Streams progresivos fMP4 de baja latencia (1/ST TV / RCNCDN H5Live)
   if (rawStreamUrl && rawStreamUrl.includes('ws.rcncdn.com')) {

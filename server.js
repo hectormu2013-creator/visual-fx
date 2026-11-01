@@ -632,7 +632,8 @@ app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
 // Lista de Canales / Hipódromos
 app.get('/api/channels', (req, res) => {
   const host = req.headers.host || `localhost:${PORT}`;
-  const protocol = req.protocol || 'http';
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : (req.protocol || 'http');
   
   const mappedChannels = CHANNELS.map(ch => ({
     ...ch,
@@ -663,15 +664,11 @@ app.get('/api/stream/proxy', (req, res) => {
     decodedUser = verifyToken(token);
   }
 
-  // Super Admin y Clientes autenticados transmiten sin restricción de hardware
-  if (decodedUser && (decodedUser.role === ROLES.SUPER_ADMIN || decodedUser.role === ROLES.CLIENT_MANAGER)) {
-    return handleStreamProxy(req, res, targetUrl);
-  }
-
-  if (deviceId) {
+  // Si viene token autenticado, verificar únicamente que la cuenta o cliente no esté SUSPENDIDO.
+  if (decodedUser && deviceId) {
     const devStatus = checkDeviceStatus(deviceId, 'hipica', null, decodedUser);
-    if (devStatus.status === 'UNAUTHORIZED' || devStatus.status === 'SUSPENDED' || devStatus.status === 'EXPIRED') {
-      return res.status(403).send('Dispositivo No Autorizado para transmitir.');
+    if (devStatus.status === 'SUSPENDED') {
+      return res.status(403).send('Dispositivo Suspendido.');
     }
   }
 

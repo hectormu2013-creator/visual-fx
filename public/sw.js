@@ -1,5 +1,5 @@
 // Visual-FX Service Worker - Network First (Siempre versión más reciente)
-const CACHE_NAME = 'visual-fx-live-v6';
+const CACHE_NAME = 'visual-fx-live-v8';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

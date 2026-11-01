@@ -69,7 +69,7 @@ const DIRECT_HLS_24_7_CHANNELS = [
 ];
 
 // Palabras prohibidas para descartar youtubers, pronosticadores, podcasts y cámaras ajenas
-const BLOCKED_KEYWORDS_REGEX = /picks|pronostico|pronóstico|handicapping|podcast|show ever|sportsmoneynetwork|deportes max|equinedge|seminar|preview show|railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox|caballos de historia/i;
+const BLOCKED_KEYWORDS_REGEX = /picks|pronostico|pronóstico|handicapping|podcast|show ever|sportsmoneynetwork|deportes max|equinedge|seminar|preview show|railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox|caballos de historia|la odisea|grupo hipico|grupo hípico|solo audio|narracion|narración/i;
 
 // Consultas dirigidas exclusivamente a señales oficiales de hipódromos en vivo
 const LIVE_SEARCH_TARGETS = [
@@ -147,8 +147,8 @@ const LIVE_SEARCH_TARGETS = [
         name: 'La Rinconada',
         flag: '🇻🇪',
         location: 'Caracas, Venezuela',
-        matchKeywords: ['rinconada', 'inh oficial'],
-        requireOfficialChannel: /inh|rinconada|hipica/i
+        matchKeywords: ['rinconada', 'inh', 'reunión', 'reunion'],
+        requireOfficialChannel: /inh|instituto nacional de hipodromos|instituto nacional de hipódromos|oficialinh/i
       },
       {
         id: 'hipodromo-monterrico',
@@ -290,12 +290,13 @@ async function fetchPublicLiveStreams() {
       const pool = [...videos, ...allLiveVideos];
       const matchedVideo = pool.find(v => {
         const combined = `${v.title} ${v.channel}`.toLowerCase();
+        const channelNameOnly = (v.channel || '').toLowerCase();
         // Descartar estrictamente pronosticadores, shows de picks y canales no oficiales
         if (BLOCKED_KEYWORDS_REGEX.test(combined)) {
           return false;
         }
-        // Exigir coincidencia del canal oficial del hipódromo/asociación
-        if (target.requireOfficialChannel && !target.requireOfficialChannel.test(combined)) {
+        // Exigir coincidencia del canal propietario oficial del hipódromo/asociación
+        if (target.requireOfficialChannel && !target.requireOfficialChannel.test(channelNameOnly)) {
           return false;
         }
         return target.matchKeywords.some(kw => combined.includes(kw.toLowerCase()));

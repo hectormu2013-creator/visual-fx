@@ -45,19 +45,26 @@ async function handleStreamProxy(req, res, targetUrl) {
   try {
     // Caso especial 1/ST TV / RCNCDN H5Live: resolver playlist.m3u8 -> stream.mp4 progresivo en vivo
     if (targetUrl.includes('ws.rcncdn.com/h5live/http/playlist.m3u8')) {
-      const m3u8Text = await fetchPlaylistText(targetUrl);
-      const rawLine = m3u8Text.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('#'));
-      if (!rawLine) {
-        res.writeHead(502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
-        return res.end('No live fMP4 stream found in RCNCDN playlist');
+      const rcnCacheKey = `rcn_mp4|${targetUrl}`;
+      const now = Date.now();
+      const cachedMp4 = playlistCache.get(rcnCacheKey);
+      let mp4Line = (cachedMp4 && (now - cachedMp4.timestamp < 30000)) ? cachedMp4.content : null;
+
+      if (!mp4Line) {
+        const m3u8Text = await fetchPlaylistText(targetUrl);
+        const rawLine = m3u8Text.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('#'));
+        if (!rawLine) {
+          res.writeHead(502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+          return res.end('No live fMP4 stream found in RCNCDN playlist');
+        }
+        mp4Line = rawLine.startsWith('http')
+          ? rawLine
+          : `https://ws.rcncdn.com/h5live/http/${rawLine.replace(/^\/+/, '')}`;
+        playlistCache.set(rcnCacheKey, { timestamp: now, content: mp4Line });
       }
-      const mp4Line = rawLine.startsWith('http')
-        ? rawLine
-        : `https://ws.rcncdn.com/h5live/http/${rawLine.replace(/^\/+/, '')}`;
 
       const mp4Response = await fetch(mp4Line, {
-        headers: originHeaders(mp4Line),
-        timeout: FETCH_TIMEOUT_MS
+        headers: originHeaders(mp4Line)
       });
 
       if (!mp4Response.ok) {
