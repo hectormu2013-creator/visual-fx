@@ -119,7 +119,9 @@ async function resolveFirstTvTrackM3u8(trackCode) {
 
   const ajaxData = await ajaxRes.json();
   if (!ajaxData || !ajaxData.success || !ajaxData.data || !ajaxData.data.url) {
-    if (ajaxData?.data?.error === 'not_logged_in' || ajaxData?.data?.logged_out) {
+    // Nota: 1st.tv devuelve { logged_out: true } también cuando un código de hipódromo no tiene evento activo ese día.
+    // Solo disparar expiración de sesión si el hipódromo base 'GP' devuelve error de sesión.
+    if (trackCode === 'GP' && (ajaxData?.data?.error === 'not_logged_in' || ajaxData?.data?.logged_out)) {
       throw new Error('FIRST_TV_SESSION_EXPIRED');
     }
     return null;

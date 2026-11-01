@@ -27,6 +27,25 @@ async function syncRtnStreams(channelsCatalog) {
     // Combinar señales activas verificadas (1/ST TV H5Live ~2s tiene prioridad sobre iframes públicos de mayor latencia)
     const combinedStreams = { ...publicStreams, ...firstTvStreams, ...bridgeStreams };
 
+    // Garantizar que Capital OTB TV Network esté activo cuando haya carreras en NY (NYRA Live Show o 1/ST NY)
+    if (!combinedStreams['capital-otb']) {
+      const nySource = publicStreams['aqueduct-racetrack'] || firstTvStreams['belmont-park'] || firstTvStreams['aqueduct-racetrack'] || firstTvStreams['gulfstream-park'];
+      if (nySource) {
+        combinedStreams['capital-otb'] = {
+          id: 'capital-otb',
+          name: 'Capital OTB TV Network',
+          trackName: 'Capital OTB TV Network',
+          flag: '🇺🇸',
+          location: 'New York, EE.UU.',
+          streamUrl: nySource.streamUrl,
+          type: nySource.type,
+          onAir: true,
+          statusText: 'Carreras en Vivo • Capital OTB / NYRA HD Directo',
+          nextRace: 'Transmisión Multicanal NY en Vivo'
+        };
+      }
+    }
+
     // 2. Resetear el estado onAir previo salvo los canales fijados manualmente por el Administrador
     channelsCatalog.forEach(c => {
       if (!c.manualOverride) {
