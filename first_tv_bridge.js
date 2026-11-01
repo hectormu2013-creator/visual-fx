@@ -154,11 +154,12 @@ async function resolveFirstTvTrackM3u8(trackCode) {
     return null;
   }
 
-  // Preferir 1308 kbps (720p HD óptimo para multicanal) o 1800 kbps o 2200 kbps
-  const preferredOrder = ['1308', '1800', '2200', '771', '400'];
-  let chosen = matches[0];
+  // Nota: m[1] es el índice del arreglo (0..4) y m[3] es el streamname (ej. gulfstream_hd_fm_1308?tkhash=...)
+  // Preferimos 878 o 1308 kbps (720p fluido que no satura el Wi-Fi ni congela YouTube/Multicanal en Venezuela)
+  const preferredOrder = ['878', '1308', '771', '1200', '1000', '1800', '2200', '550', '400'];
+  let chosen = matches[1] || matches[0];
   for (const br of preferredOrder) {
-    const found = matches.find(m => m[1] === br);
+    const found = matches.find(m => m[3] && (m[3].includes(`_${br}?`) || m[3].includes(`_${br}&`) || m[3].endsWith(`_${br}`)));
     if (found) {
       chosen = found;
       break;
