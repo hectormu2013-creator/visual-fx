@@ -120,6 +120,9 @@ async function resolveFirstTvTrackM3u8(trackCode) {
 
   const ajaxData = await ajaxRes.json();
   if (!ajaxData || !ajaxData.success || !ajaxData.data || !ajaxData.data.url) {
+    if (trackCode === 'GP') {
+      console.warn('[1/ST TV Bridge Diag] GP ajaxData sin URL:', JSON.stringify(ajaxData).slice(0, 200));
+    }
     // Nota: 1st.tv devuelve { logged_out: true } también cuando un código de hipódromo no tiene evento activo ese día.
     // Solo disparar expiración de sesión si el hipódromo base 'GP' devuelve error de sesión.
     if (trackCode === 'GP' && (ajaxData?.data?.error === 'not_logged_in' || ajaxData?.data?.logged_out)) {
@@ -142,16 +145,19 @@ async function resolveFirstTvTrackM3u8(trackCode) {
   });
 
   if (!liveRes.ok) {
+    if (trackCode === 'GP') console.warn('[1/ST TV Bridge Diag] GP liveRes status:', liveRes.status);
     return null;
   }
 
   const html = await liveRes.text();
   if (html.includes('geoblock') || html.includes('Request Rejected')) {
+    if (trackCode === 'GP') console.warn('[1/ST TV Bridge Diag] GP liveRes geoblock/rejected');
     return null;
   }
 
   const matches = [...html.matchAll(/sources\[(\d+)\]\s*=\s*\{[\s\S]*?'url'\s*:\s*"([^"]+)"[\s\S]*?'streamname'\s*:\s*'([^']+)'[\s\S]*?'params'\s*:\s*\{\s*'h'\s*:\s*'([^']+)'\s*,\s*'e'\s*:\s*'([^']+)'/g)];
   if (matches.length === 0) {
+    if (trackCode === 'GP') console.warn('[1/ST TV Bridge Diag] GP 0 matches en HTML len:', html.length);
     return null;
   }
 
@@ -168,36 +174,54 @@ async function resolveFirstTvTrackM3u8(trackCode) {
     return `https://ws.rcncdn.com/h5live/http/playlist.m3u8?url=${encodeURIComponent(rtmpUrl)}&stream=${encodeURIComponent(streamname)}&h=${h}&e=${e}`;
   }
 
-  // Por defecto (AUTO / LIGHT / Multicanal) priorizar 400–550 kbps (~50 KB/s) para que en enlaces de ~1 Mbps
-  // de Venezuela nunca congele el video ni sature el ancho de banda cuando el usuario tiene YouTube abierto.
+  // Extraer las 3 variantes (400 kbps, 771 kbps y 1308 kbps) desde el mismo HTML sin llamadas extra a 1st.tv
   const lightUrl = toM3u8(pickMatchByOrder(['400', '550', '771', '878', '1308', '1200', '1000', '1800', '2200']));
   const mediumUrl = toM3u8(pickMatchByOrder(['771', '878', '550', '400', '1308', '1200', '1000']));
   const fullUrl = toM3u8(pickMatchByOrder(['1308', '1200', '1000', '878', '771', '1800', '2200', '400']));
 
-  variantUrlMap.set(lightUrl, {
+  const variantObj = {
     LIGHT: lightUrl,
     MEDIUM: mediumUrl,
     FULL: fullUrl
-  });
+  };
+
+  variantUrlMap.set(lightUrl, variantObj);
+  variantUrlMap.set(mediumUrl, variantObj);
+  variantUrlMap.set(fullUrl, variantObj);
+  const prefix = extractStreamPrefix(lightUrl);
+  if (prefix) variantUrlMap.set(`prefix:${prefix}`, variantObj);
 
   return lightUrl;
 }
 
+function extractStreamPrefix(m3u8Url) {
+  try {
+    const decoded = decodeURIComponent(m3u8Url || '');
+    const m = decoded.match(/stream=([a-zA-Z0-9_]+?)_\d+\?/);
+    return m ? m[1] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function resolveRcnQualityUrl(baseM3u8Url, qualityMode = 'AUTO', gridCount = 1) {
-  const variants = variantUrlMap.get(baseM3u8Url);
+  let variants = variantUrlMap.get(baseM3u8Url);
+  if (!variants) {
+    const prefix = extractStreamPrefix(baseM3u8Url);
+    if (prefix) variants = variantUrlMap.get(`prefix:${prefix}`);
+  }
   if (!variants) return baseM3u8Url;
   const grid = parseInt(gridCount, 10) || 1;
-  // Si hay más de 1 pantalla activa o está en modo AUTO / LIGHT, usar siempre la variante ultraligera (400 kbps)
   if (grid > 1 || qualityMode === 'LIGHT' || qualityMode === 'AUTO' || !qualityMode) {
-    return variants.LIGHT || baseM3u8Url;
+    return variants.LIGHT || variants.MEDIUM || variants.FULL || baseM3u8Url;
   }
   if (qualityMode === 'MEDIUM') {
-    return variants.MEDIUM || variants.LIGHT || baseM3u8Url;
+    return variants.MEDIUM || variants.LIGHT || variants.FULL || baseM3u8Url;
   }
   if (qualityMode === 'FULL') {
-    return variants.FULL || variants.MEDIUM || baseM3u8Url;
+    return variants.FULL || variants.MEDIUM || variants.LIGHT || baseM3u8Url;
   }
-  return variants.LIGHT || baseM3u8Url;
+  return variants.LIGHT || variants.MEDIUM || baseM3u8Url;
 }
 
 /**
@@ -290,8 +314,27 @@ async function checkSingleTrack(trackDef, activeStreams) {
     return didFirstTvAjax ? 'FIRST_TV_AJAX' : 'CDN_PROBE_ONLY';
   }
 
-  const isLive = await probeRcnStreamIsLive(m3u8Url);
-  if (isLive) {
+  const variants = variantUrlMap.get(m3u8Url) || { LIGHT: m3u8Url, MEDIUM: m3u8Url, FULL: m3u8Url };
+  const uniqueCandidates = [...new Set([variants.LIGHT, variants.MEDIUM, variants.FULL].filter(Boolean))];
+  let verifiedUrl = null;
+
+  for (const candidateUrl of uniqueCandidates) {
+    const ok = await probeRcnStreamIsLive(candidateUrl);
+    if (ok) {
+      verifiedUrl = candidateUrl;
+      break;
+    }
+  }
+
+  if (verifiedUrl) {
+    // Asegurar que LIGHT siempre apunte a una variante verificada como activa en RCNCDN
+    if (verifiedUrl !== variants.LIGHT) {
+      variants.LIGHT = verifiedUrl;
+      if (verifiedUrl === variants.FULL) {
+        variants.MEDIUM = verifiedUrl;
+      }
+    }
+    m3u8Url = verifiedUrl;
     const streamData = {
       id: trackDef.id,
       name: trackDef.name,
@@ -312,7 +355,8 @@ async function checkSingleTrack(trackDef, activeStreams) {
       streamData
     });
     activeStreams[trackDef.id] = streamData;
-    console.log(`✅ [1/ST TV Bridge] Señal HD EN VIVO activa para '${trackDef.id}' (${trackDef.name})`);
+    const brMatch = decodeURIComponent(m3u8Url).match(/_(\d+)\?/);
+    console.log(`✅ [1/ST TV Bridge] Señal HD EN VIVO activa para '${trackDef.id}' (${trackDef.name}) [${brMatch ? brMatch[1] + ' kbps' : 'OK'}]`);
   } else {
     trackStateCache.set(trackDef.id, {
       m3u8Url,
