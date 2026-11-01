@@ -76,7 +76,15 @@ let selectedQualityMode = localStorage.getItem('vfx_stream_quality_mode') || 'AU
 
 function getEffectiveQualityTier() {
   if (selectedQualityMode === 'AUTO') {
-    return hardwareProfile.detectedTier;
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn && (conn.saveData || (typeof conn.downlink === 'number' && conn.downlink > 0 && conn.downlink <= 2.5))) {
+      return HARDWARE_TIERS.LIGHT;
+    }
+    if (hardwareProfile.detectedTier === HARDWARE_TIERS.LIGHT) {
+      return HARDWARE_TIERS.LIGHT;
+    }
+    // En modo AUTO usar como tope MEDIUM (720p / buffers moderados) para no saturar enlaces Wi-Fi de 1–3 Mbps ni congelar YouTube.
+    return HARDWARE_TIERS.MEDIUM;
   }
   return selectedQualityMode;
 }
@@ -297,6 +305,11 @@ function setStreamQualityMode(mode) {
     if (hls) {
       applyResolutionCap(cellNum, hls, activeGridMode, currentMaximizedCellNum === cellNum);
       tuneHlsBuffers(hls, getEffectiveQualityTier(), activeGridMode);
+    } else if (cellNum <= activeGridMode && cellChannels[cellNum] && selectedService === 'hipica') {
+      const ch = channelCatalog.find(c => c.id === cellChannels[cellNum]);
+      if (ch && ch.streamUrl && ch.streamUrl.includes('ws.rcncdn.com')) {
+        assignChannelToCell(cellNum, cellChannels[cellNum]);
+      }
     }
   });
 }
@@ -871,6 +884,7 @@ function initDeviceId() {
 }
 
 let devicePollingTimer = null;
+let lastAppliedConfigJson = '';
 
 // Device Authorization Check with Telemetry Heartbeat & Concurrency Detection
 async function checkDeviceAuthorization() {
@@ -905,9 +919,9 @@ async function checkDeviceAuthorization() {
       }
       elements.deviceBadgeText.textContent = data.device ? `${data.device.tvName} [AUTORIZADO]` : `Consola Administrador [AUTORIZADO]`;
       
-      // Mantener heartbeat periódico para detectar si otro dispositivo inicia sesión con esta cuenta
+      // Mantener heartbeat periódico cada 15s sin saturar hilo principal ni red
       if (!devicePollingTimer) {
-        devicePollingTimer = setInterval(checkDeviceAuthorization, 3500);
+        devicePollingTimer = setInterval(checkDeviceAuthorization, 15000);
       }
 
       // 1. Marca Dinámica por Cliente: Reemplazar por el nombre real del cliente
@@ -938,25 +952,34 @@ async function checkDeviceAuthorization() {
         if (profileArea) profileArea.style.display = 'flex';
       }
 
-      // Aplicar configuración remota del servidor como fuente suprema de verdad
+      // Aplicar configuración remota del servidor solo cuando realmente cambia
       const serverConfig = data.config || (data.device && data.device.config);
       if (serverConfig) {
-        applyScreenConfig(serverConfig);
-        if (currentUser) {
-          currentUser.config = serverConfig;
+        const cfgJson = JSON.stringify(serverConfig);
+        if (cfgJson !== lastAppliedConfigJson) {
+          lastAppliedConfigJson = cfgJson;
+          applyScreenConfig(serverConfig);
+          if (currentUser) {
+            currentUser.config = serverConfig;
+            try {
+              localStorage.setItem('visual_fx_user', JSON.stringify(currentUser));
+            } catch (e) {}
+          }
           try {
-            localStorage.setItem('visual_fx_user', JSON.stringify(currentUser));
+            localStorage.setItem('visual_fx_screen_config', cfgJson);
           } catch (e) {}
         }
-        try {
-          localStorage.setItem('visual_fx_screen_config', JSON.stringify(serverConfig));
-        } catch (e) {}
       } else if (currentUser && currentUser.config) {
-        applyScreenConfig(currentUser.config);
+        const cfgJson = JSON.stringify(currentUser.config);
+        if (cfgJson !== lastAppliedConfigJson) {
+          lastAppliedConfigJson = cfgJson;
+          applyScreenConfig(currentUser.config);
+        }
       } else {
         const localSaved = localStorage.getItem('visual_fx_screen_config');
-        if (localSaved) {
+        if (localSaved && localSaved !== lastAppliedConfigJson) {
           try {
+            lastAppliedConfigJson = localSaved;
             applyScreenConfig(JSON.parse(localSaved));
           } catch (e) {}
         }
@@ -1623,22 +1646,24 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
     ? proxyUrl.replace(/^http:\/\//, 'https://')
     : proxyUrl;
   const tokenParam = currentToken ? `&token=${encodeURIComponent(currentToken)}` : '';
-  const primaryUrl = `${safeProxyUrl}&deviceId=${currentDeviceId}${tokenParam}`;
+  const qualityParam = `&quality=${encodeURIComponent(selectedQualityMode || 'AUTO')}&grid=${activeGridMode || 1}`;
+  const primaryUrl = `${safeProxyUrl}&deviceId=${currentDeviceId}${tokenParam}${qualityParam}`;
 
   // Streams progresivos fMP4 de baja latencia (1/ST TV / RCNCDN H5Live)
   if (rawStreamUrl && rawStreamUrl.includes('ws.rcncdn.com')) {
     video._destroyed = false;
+    video._primaryUrl = primaryUrl;
     video.src = primaryUrl;
     const hideLoader = () => { if (loader) loader.style.display = 'none'; };
     video.addEventListener('loadeddata', hideLoader, { once: true });
     video.addEventListener('playing', hideLoader, { once: true });
     startLiveEdgeCatchup(cellNum, video, true);
     video.onerror = () => {
-      if (video._destroyed || !video.isConnected || document.getElementById(`video-${cellNum}`) !== video) return;
+      if (video._destroyed || video._pausedByHidden || !video.isConnected || document.getElementById(`video-${cellNum}`) !== video) return;
       console.warn(`[1/ST Direct MP4] Reconectando señal en celda ${cellNum}...`);
       if (video._reconnectTimer) clearTimeout(video._reconnectTimer);
       video._reconnectTimer = setTimeout(() => {
-        if (video._destroyed || !video.isConnected || document.getElementById(`video-${cellNum}`) !== video) return;
+        if (video._destroyed || video._pausedByHidden || !video.isConnected || document.getElementById(`video-${cellNum}`) !== video) return;
         if (cellChannels[cellNum]) {
           video.src = `${primaryUrl}&_t=${Date.now()}`;
           video.play().catch(() => {});
@@ -1774,6 +1799,23 @@ document.addEventListener('visibilitychange', () => {
         hls.stopLoad();
       } else if (cellNum <= activeGridMode) {
         hls.startLoad();
+      }
+      return;
+    }
+    // Para streams fMP4 progresivos (ws.rcncdn.com): si la pestaña pasa a segundo plano (ej. viendo YouTube)
+    // y la celda está silenciada, pausar la descarga HTTP para liberar el 100% del ancho de banda.
+    const video = document.getElementById(`video-${cellNum}`);
+    if (video && video._primaryUrl && cellNum <= activeGridMode && selectedService === 'hipica') {
+      if (isHidden && cellNum !== activeAudioCell) {
+        video._pausedByHidden = true;
+        if (video._reconnectTimer) clearTimeout(video._reconnectTimer);
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      } else if (!isHidden && video._pausedByHidden) {
+        video._pausedByHidden = false;
+        video.src = `${video._primaryUrl}&_t=${Date.now()}`;
+        video.play().catch(() => {});
       }
     }
   });

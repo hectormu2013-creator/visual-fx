@@ -19,6 +19,7 @@ const LIVE_STATUS_TTL_MS = 35 * 60 * 1000;
 const OFFAIR_STATUS_TTL_MS = 10 * 60 * 1000;
 
 const trackStateCache = new Map();
+const variantUrlMap = new Map();
 let startupSyncCompleted = false;
 
 // Hipódromos Prioritarios (1/ST TV & principales del día en baja latencia H5Live ~2s)
@@ -154,21 +155,49 @@ async function resolveFirstTvTrackM3u8(trackCode) {
     return null;
   }
 
-  // Nota: m[1] es el índice del arreglo (0..4) y m[3] es el streamname (ej. gulfstream_hd_fm_1308?tkhash=...)
-  // Preferimos 878 o 1308 kbps (720p fluido que no satura el Wi-Fi ni congela YouTube/Multicanal en Venezuela)
-  const preferredOrder = ['878', '1308', '771', '1200', '1000', '1800', '2200', '550', '400'];
-  let chosen = matches[1] || matches[0];
-  for (const br of preferredOrder) {
-    const found = matches.find(m => m[3] && (m[3].includes(`_${br}?`) || m[3].includes(`_${br}&`) || m[3].endsWith(`_${br}`)));
-    if (found) {
-      chosen = found;
-      break;
+  function pickMatchByOrder(orderList) {
+    for (const br of orderList) {
+      const found = matches.find(m => m[1] === br || (m[3] && (m[3].includes(`_${br}?`) || m[3].includes(`_${br}&`) || m[3].endsWith(`_${br}`))));
+      if (found) return found;
     }
+    return matches[matches.length - 1] || matches[0];
   }
 
-  const [, , rtmpUrl, streamname, h, e] = chosen;
-  const m3u8Url = `https://ws.rcncdn.com/h5live/http/playlist.m3u8?url=${encodeURIComponent(rtmpUrl)}&stream=${encodeURIComponent(streamname)}&h=${h}&e=${e}`;
-  return m3u8Url;
+  function toM3u8(matchItem) {
+    const [, , rtmpUrl, streamname, h, e] = matchItem;
+    return `https://ws.rcncdn.com/h5live/http/playlist.m3u8?url=${encodeURIComponent(rtmpUrl)}&stream=${encodeURIComponent(streamname)}&h=${h}&e=${e}`;
+  }
+
+  // Por defecto (AUTO / LIGHT / Multicanal) priorizar 400–550 kbps (~50 KB/s) para que en enlaces de ~1 Mbps
+  // de Venezuela nunca congele el video ni sature el ancho de banda cuando el usuario tiene YouTube abierto.
+  const lightUrl = toM3u8(pickMatchByOrder(['400', '550', '771', '878', '1308', '1200', '1000', '1800', '2200']));
+  const mediumUrl = toM3u8(pickMatchByOrder(['771', '878', '550', '400', '1308', '1200', '1000']));
+  const fullUrl = toM3u8(pickMatchByOrder(['1308', '1200', '1000', '878', '771', '1800', '2200', '400']));
+
+  variantUrlMap.set(lightUrl, {
+    LIGHT: lightUrl,
+    MEDIUM: mediumUrl,
+    FULL: fullUrl
+  });
+
+  return lightUrl;
+}
+
+function resolveRcnQualityUrl(baseM3u8Url, qualityMode = 'AUTO', gridCount = 1) {
+  const variants = variantUrlMap.get(baseM3u8Url);
+  if (!variants) return baseM3u8Url;
+  const grid = parseInt(gridCount, 10) || 1;
+  // Si hay más de 1 pantalla activa o está en modo AUTO / LIGHT, usar siempre la variante ultraligera (400 kbps)
+  if (grid > 1 || qualityMode === 'LIGHT' || qualityMode === 'AUTO' || !qualityMode) {
+    return variants.LIGHT || baseM3u8Url;
+  }
+  if (qualityMode === 'MEDIUM') {
+    return variants.MEDIUM || variants.LIGHT || baseM3u8Url;
+  }
+  if (qualityMode === 'FULL') {
+    return variants.FULL || variants.MEDIUM || baseM3u8Url;
+  }
+  return variants.LIGHT || baseM3u8Url;
 }
 
 /**
@@ -388,11 +417,13 @@ function updateFirstTvCookie(newCookie) {
     currentFirstTvCookie = newCookie.trim();
     circuitPausedUntil = 0;
     trackStateCache.clear();
+    variantUrlMap.clear();
     console.log('🔑 [1/ST TV Bridge] Cookie de sesión actualizada manualmente.');
   }
 }
 
 module.exports = {
   fetchFirstTvLiveStreams,
-  updateFirstTvCookie
+  updateFirstTvCookie,
+  resolveRcnQualityUrl
 };

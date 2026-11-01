@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const url = require('url');
+const { resolveRcnQualityUrl } = require('./first_tv_bridge');
 
 // Límites de seguridad de memoria para Render
 const FETCH_TIMEOUT_MS = 10000;                 // no dejar conexiones colgadas acumulando RAM
@@ -45,13 +46,14 @@ async function handleStreamProxy(req, res, targetUrl) {
   try {
     // Caso especial 1/ST TV / RCNCDN H5Live: resolver playlist.m3u8 -> stream.mp4 progresivo en vivo
     if (targetUrl.includes('ws.rcncdn.com/h5live/http/playlist.m3u8')) {
-      const rcnCacheKey = `rcn_mp4|${targetUrl}`;
+      const effectiveRcnUrl = resolveRcnQualityUrl(targetUrl, req.query && req.query.quality, req.query && req.query.grid);
+      const rcnCacheKey = `rcn_mp4|${effectiveRcnUrl}`;
       const now = Date.now();
       const cachedMp4 = playlistCache.get(rcnCacheKey);
       let mp4Line = (cachedMp4 && (now - cachedMp4.timestamp < 30000)) ? cachedMp4.content : null;
 
       if (!mp4Line) {
-        const m3u8Text = await fetchPlaylistText(targetUrl);
+        const m3u8Text = await fetchPlaylistText(effectiveRcnUrl);
         const rawLine = m3u8Text.split('\n').map(l => l.trim()).find(l => l && !l.startsWith('#'));
         if (!rawLine) {
           res.writeHead(502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
