@@ -27,28 +27,22 @@ async function syncRtnStreams(channelsCatalog) {
     // Combinar señales activas verificadas (1/ST TV H5Live ~2s tiene prioridad sobre iframes públicos de mayor latencia)
     const combinedStreams = { ...publicStreams, ...firstTvStreams, ...bridgeStreams };
 
-    // Garantizar que Capital OTB TV Network esté activo cuando haya carreras en NY (NYRA Live Show, Finger Lakes NY o Costa Este)
-    if (!combinedStreams['capital-otb']) {
-      const nySource =
-        publicStreams['aqueduct-racetrack'] ||
-        firstTvStreams['belmont-park'] ||
-        firstTvStreams['aqueduct-racetrack'] ||
-        firstTvStreams['saratoga'] ||
-        firstTvStreams['finger-lakes'] ||
-        firstTvStreams['parx-racing'] ||
-        firstTvStreams['gulfstream-park'];
-      if (nySource) {
+    // Garantizar que Capital OTB TV Network funcione siempre en modo Multicanal (Mosaico 4 hipódromos NY/EE.UU. en vivo)
+    if (!bridgeStreams['capital-otb']) {
+      const hasLiveUsTracks = Object.keys(firstTvStreams).length > 0 || Boolean(publicStreams['aqueduct-racetrack'] || publicStreams['belmont-park']);
+      if (hasLiveUsTracks) {
         combinedStreams['capital-otb'] = {
           id: 'capital-otb',
           name: 'Capital OTB TV Network',
           trackName: 'Capital OTB TV Network',
           flag: '🇺🇸',
-          location: 'New York, EE.UU.',
-          streamUrl: nySource.streamUrl,
-          type: nySource.type,
+          location: 'New York, EE.UU. (Multicanal)',
+          streamUrl: '/capital-otb.html',
+          type: 'iframe',
           onAir: true,
-          statusText: 'Carreras en Vivo • Capital OTB / NY HD Directo',
-          nextRace: 'Transmisión Multicanal NY en Vivo'
+          activeToday: true,
+          statusText: 'Multicanal en Vivo • Capital OTB Simulcast HD',
+          nextRace: 'Mosaico Multicanal NY/EE.UU. en Vivo'
         };
       }
     }
@@ -57,6 +51,7 @@ async function syncRtnStreams(channelsCatalog) {
     channelsCatalog.forEach(c => {
       if (!c.manualOverride && !combinedStreams[c.id]) {
         c.onAir = false;
+        c.activeToday = false;
         const offairUrl = `/offair.html?track=${encodeURIComponent(c.name || c.id)}&flag=${encodeURIComponent(c.flag || '🏇')}&loc=${encodeURIComponent(c.location || '')}`;
         c.streamUrl = offairUrl;
         c.iframeUrl = offairUrl;
@@ -80,6 +75,7 @@ async function syncRtnStreams(channelsCatalog) {
           chInCatalog.iframeUrl = data.streamUrl;
           chInCatalog.type = data.type || 'iframe';
           chInCatalog.onAir = true;
+          chInCatalog.activeToday = data.activeToday !== undefined ? Boolean(data.activeToday) : true;
           if (data.statusText) chInCatalog.statusText = data.statusText;
           if (data.race) {
             chInCatalog.nextRace = `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}`;
@@ -101,7 +97,8 @@ async function syncRtnStreams(channelsCatalog) {
           officialSource: data.statusText || "Official Live Stream",
           statusText: data.statusText || "Carreras en Vivo • Señal HD Directo",
           nextRace: data.race ? `Carrera ${data.race} ${data.mtp ? `(MTP ${data.mtp})` : ''}` : (data.nextRace || "Siguiente Carrera en Vivo"),
-          onAir: true
+          onAir: true,
+          activeToday: data.activeToday !== undefined ? Boolean(data.activeToday) : true
         };
         channelsCatalog.push(chInCatalog);
       }

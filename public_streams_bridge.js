@@ -91,14 +91,6 @@ const LIVE_SEARCH_TARGETS = [
         location: 'Elmont, New York, EE.UU.',
         matchKeywords: ['america\'s day at the races', 'new york racing association', 'nyra'],
         requireOfficialChannel: /new york racing|nyra/i
-      },
-      {
-        id: 'capital-otb',
-        name: 'Capital OTB TV Network',
-        flag: '🇺🇸',
-        location: 'New York, EE.UU.',
-        matchKeywords: ['america\'s day at the races', 'new york racing association', 'nyra', 'capital otb', 'racing across america'],
-        requireOfficialChannel: /new york racing|nyra|capital otb/i
       }
     ]
   },

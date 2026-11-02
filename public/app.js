@@ -1620,8 +1620,13 @@ function playIframeInCell(cellNum, iframeUrl) {
   const wrapper = cell.querySelector('.video-wrapper');
   if (!wrapper) return;
 
+  const sep = iframeUrl.includes('?') ? '&' : '?';
+  const effectiveUrl = iframeUrl.startsWith('/capital-otb.html')
+    ? `${iframeUrl}${sep}cell=${cellNum}&muted=${cellNum === activeAudioCell ? '0' : '1'}`
+    : iframeUrl;
+
   wrapper.innerHTML = `
-    <iframe src="${iframeUrl}" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    <iframe id="iframe-${cellNum}" src="${effectiveUrl}" style="width:100%; height:100%; border:none; display:block;" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
   `;
 }
 
@@ -1833,11 +1838,17 @@ function setAudioFocus(targetCellNum) {
   
   [1, 2, 3, 4].forEach(num => {
     const video = document.getElementById(`video-${num}`);
+    const iframe = document.getElementById(`iframe-${num}`);
     const btnAudio = document.getElementById(`btnAudio${num}`);
     
     const isThisCellAudio = (num === activeAudioCell);
     if (video) {
       video.muted = !isThisCellAudio;
+    }
+    if (iframe && iframe.contentWindow) {
+      try {
+        iframe.contentWindow.postMessage({ type: 'VFX_AUDIO_STATE', muted: !isThisCellAudio }, '*');
+      } catch (e) {}
     }
     
     if (btnAudio) {

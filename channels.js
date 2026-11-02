@@ -43,14 +43,14 @@ const CHANNELS = [
     id: "capital-otb",
     name: "Capital OTB TV Network",
     flag: "🇺🇸",
-    location: "New York, EE.UU.",
+    location: "New York, EE.UU. (Multicanal)",
     type: "iframe",
     aliases: ["capital otb", "capitalotb"],
     streamUrl: "/offair.html?track=Capital%20OTB%20TV%20Network&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=New%20York%2C%20EE.UU.",
     iframeUrl: "/offair.html?track=Capital%20OTB%20TV%20Network&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=New%20York%2C%20EE.UU.",
-    officialSource: "Capital OTB Official Feed",
-    statusText: "Carreras en Vivo • OTB HD Directo",
-    nextRace: "Siguiente Carrera en Vivo"
+    officialSource: "Capital OTB Multicanal Simulcast",
+    statusText: "Multicanal en Vivo • Capital OTB Simulcast HD",
+    nextRace: "Mosaico Multicanal NY/EE.UU. en Vivo"
   },
   {
     id: "churchill-downs",

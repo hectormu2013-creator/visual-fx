@@ -386,6 +386,8 @@ async function checkSingleTrack(trackDef, activeStreams) {
     const statusTtl = cached.onAir ? LIVE_STATUS_TTL_MS : OFFAIR_STATUS_TTL_MS;
     if ((now - cached.lastProbeAt) < statusTtl && (!cached.onAir || now < cached.tokenExpiresAt)) {
       if (cached.onAir && cached.streamData) {
+        const vetDayNow = new Date(Date.now() - 4 * 3600 * 1000).getUTCDay();
+        cached.streamData.activeToday = Boolean(trackDef.activeDays && trackDef.activeDays.includes(vetDayNow));
         activeStreams[trackDef.id] = cached.streamData;
       }
       return 'CACHED'; // No hizo falta petición de red
@@ -434,6 +436,7 @@ async function checkSingleTrack(trackDef, activeStreams) {
       }
     }
     m3u8Url = verifiedUrl;
+    const vetDayNow = new Date(Date.now() - 4 * 3600 * 1000).getUTCDay();
     const streamData = {
       id: trackDef.id,
       name: trackDef.name,
@@ -443,6 +446,7 @@ async function checkSingleTrack(trackDef, activeStreams) {
       streamUrl: m3u8Url,
       type: 'hls',
       onAir: true,
+      activeToday: Boolean(trackDef.activeDays && trackDef.activeDays.includes(vetDayNow)),
       statusText: 'Carreras en Vivo • 1/ST TV HD Oficial',
       nextRace: 'En Directo • 1/ST HD'
     };
