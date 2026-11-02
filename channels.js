@@ -172,7 +172,7 @@ const CHANNELS = [
   {
     id: "hipodromo-palermo",
     name: "Hipódromo de Palermo",
-    flag: "🇦 repertorio",
+    flag: "🇦🇷",
     location: "Buenos Aires, Argentina",
     type: "iframe",
     aliases: ["palermo", "hipodromopalermo"],
@@ -228,8 +228,8 @@ const CHANNELS = [
     location: "Caracas, Venezuela",
     type: "iframe",
     aliases: ["rinconada", "inh", "larinconada"],
-    streamUrl: "https://www.youtube.com/embed/live_stream?channel=UC_INH_OFICIAL",
-    iframeUrl: "https://www.youtube.com/embed/live_stream?channel=UC_INH_OFICIAL",
+    streamUrl: "/offair.html?track=La%20Rinconada&flag=%F0%9F%87%BB%F0%9F%87%AA&loc=Caracas%2C%20Venezuela",
+    iframeUrl: "/offair.html?track=La%20Rinconada&flag=%F0%9F%87%BB%F0%9F%87%AA&loc=Caracas%2C%20Venezuela",
     officialSource: "INH Oficial (Instituto Nacional de Hipódromos)",
     statusText: "Carreras en Vivo • INH Oficial HD Directo",
     nextRace: "Jornada Dominical en Vivo"

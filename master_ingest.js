@@ -27,9 +27,16 @@ async function syncRtnStreams(channelsCatalog) {
     // Combinar señales activas verificadas (1/ST TV H5Live ~2s tiene prioridad sobre iframes públicos de mayor latencia)
     const combinedStreams = { ...publicStreams, ...firstTvStreams, ...bridgeStreams };
 
-    // Garantizar que Capital OTB TV Network esté activo cuando haya carreras en NY (NYRA Live Show o 1/ST NY)
+    // Garantizar que Capital OTB TV Network esté activo cuando haya carreras en NY (NYRA Live Show, Finger Lakes NY o Costa Este)
     if (!combinedStreams['capital-otb']) {
-      const nySource = publicStreams['aqueduct-racetrack'] || firstTvStreams['belmont-park'] || firstTvStreams['aqueduct-racetrack'] || firstTvStreams['gulfstream-park'];
+      const nySource =
+        publicStreams['aqueduct-racetrack'] ||
+        firstTvStreams['belmont-park'] ||
+        firstTvStreams['aqueduct-racetrack'] ||
+        firstTvStreams['saratoga'] ||
+        firstTvStreams['finger-lakes'] ||
+        firstTvStreams['parx-racing'] ||
+        firstTvStreams['gulfstream-park'];
       if (nySource) {
         combinedStreams['capital-otb'] = {
           id: 'capital-otb',
@@ -40,16 +47,19 @@ async function syncRtnStreams(channelsCatalog) {
           streamUrl: nySource.streamUrl,
           type: nySource.type,
           onAir: true,
-          statusText: 'Carreras en Vivo • Capital OTB / NYRA HD Directo',
+          statusText: 'Carreras en Vivo • Capital OTB / NY HD Directo',
           nextRace: 'Transmisión Multicanal NY en Vivo'
         };
       }
     }
 
-    // 2. Resetear el estado onAir previo salvo los canales fijados manualmente por el Administrador
+    // 2. Resetear el estado onAir y URL previa de los canales sin actividad hoy salvo los fijados manualmente
     channelsCatalog.forEach(c => {
-      if (!c.manualOverride) {
+      if (!c.manualOverride && !combinedStreams[c.id]) {
         c.onAir = false;
+        const offairUrl = `/offair.html?track=${encodeURIComponent(c.name || c.id)}&flag=${encodeURIComponent(c.flag || '🏇')}&loc=${encodeURIComponent(c.location || '')}`;
+        c.streamUrl = offairUrl;
+        c.iframeUrl = offairUrl;
       }
     });
 
@@ -156,5 +166,6 @@ function updateChannelSource(channelId, newStreamUrl, type = 'hls') {
 module.exports = {
   initMasterIngest,
   getMasterState,
-  updateChannelSource
+  updateChannelSource,
+  syncRtnStreams
 };

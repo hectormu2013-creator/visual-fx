@@ -35,7 +35,8 @@ const {
   kickDeviceSession,
   syncDatabaseWithCloud
 } = require('./auth_device');
-const { initMasterIngest, getMasterState, updateChannelSource } = require('./master_ingest');
+const { initMasterIngest, getMasterState, updateChannelSource, syncRtnStreams } = require('./master_ingest');
+const { updateFirstTvCookie, getFirstTvStatus } = require('./first_tv_bridge');
 const {
   TOP_10_GAMES,
   initLotteryEngine,
@@ -630,6 +631,20 @@ app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
 });
 
 // Lista de Canales / Hipódromos
+app.get('/api/admin/first-tv/status', (req, res) => {
+  return res.json(getFirstTvStatus());
+});
+
+app.post('/api/admin/first-tv/cookie', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
+  const { cookie, auth0Cookie } = req.body;
+  if (!cookie && !auth0Cookie) {
+    return res.status(400).json({ error: 'Se requiere cookie o auth0Cookie.' });
+  }
+  updateFirstTvCookie(cookie, auth0Cookie);
+  syncRtnStreams(CHANNELS);
+  return res.json({ success: true, message: 'Sesión 1/ST TV actualizada e ingesta disparada.', status: getFirstTvStatus() });
+});
+
 app.get('/api/channels', (req, res) => {
   const host = req.headers.host || `localhost:${PORT}`;
   const forwardedProto = req.headers['x-forwarded-proto'];

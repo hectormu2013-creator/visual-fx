@@ -69,7 +69,7 @@ const DIRECT_HLS_24_7_CHANNELS = [
 ];
 
 // Palabras prohibidas para descartar youtubers, pronosticadores, podcasts y cámaras ajenas
-const BLOCKED_KEYWORDS_REGEX = /picks|pronostico|pronóstico|handicapping|podcast|show ever|sportsmoneynetwork|deportes max|equinedge|seminar|preview show|railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox|caballos de historia|la odisea|grupo hipico|grupo hípico|solo audio|narracion|narración/i;
+const BLOCKED_KEYWORDS_REGEX = /picks|pronostico|pronóstico|handicapping|podcast|show ever|sportsmoneynetwork|deportes max|equinedge|seminar|preview show|railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox|caballos de historia|la odisea|grupo hipico|grupo hípico|solo audio|narracion|narración|mas hipica|más hípica|sint rocha|hipodromo de rocha/i;
 
 // Consultas dirigidas exclusivamente a señales oficiales de hipódromos en vivo
 const LIVE_SEARCH_TARGETS = [
@@ -184,24 +184,24 @@ const LIVE_SEARCH_TARGETS = [
         name: 'Gulfstream Park',
         flag: '🇺🇸',
         location: 'Hallandale Beach, Florida, EE.UU.',
-        matchKeywords: ['gulfstream', 'hípica tv', 'hipica tv'],
-        requireOfficialChannel: /hipica tv|hípica tv|gulfstream|1\/st/i
+        matchKeywords: ['gulfstream'],
+        requireOfficialChannel: /^(hipica tv|hípica tv|gulfstream|1\/st)/i
       },
       {
         id: 'laurel-park',
         name: 'Laurel Park',
         flag: '🇺🇸',
         location: 'Laurel, Maryland, EE.UU.',
-        matchKeywords: ['laurel', 'maryland', 'hípica tv', 'hipica tv'],
-        requireOfficialChannel: /maryland|laurel|hipica tv|hípica tv/i
+        matchKeywords: ['laurel', 'maryland jockey'],
+        requireOfficialChannel: /^(maryland|laurel|hipica tv|hípica tv|1\/st)/i
       },
       {
         id: 'santa-anita-park',
         name: 'Santa Anita Park',
         flag: '🇺🇸',
         location: 'Arcadia, California, EE.UU.',
-        matchKeywords: ['santa anita', 'hípica tv', 'hipica tv'],
-        requireOfficialChannel: /santa anita|hipica tv|hípica tv|1\/st/i
+        matchKeywords: ['santa anita'],
+        requireOfficialChannel: /^(santa anita|hipica tv|hípica tv|1\/st)/i
       }
     ]
   },

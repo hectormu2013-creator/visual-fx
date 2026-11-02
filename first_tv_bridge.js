@@ -9,8 +9,10 @@ const DEFAULT_FIRST_TV_COOKIE = [
 ].join('; ');
 
 let currentFirstTvCookie = process.env.FIRST_TV_COOKIE || DEFAULT_FIRST_TV_COOKIE;
+let currentAuth0Cookie = process.env.FIRST_TV_AUTH0_COOKIE || '';
 let firstTvEnabled = process.env.FIRST_TV_ENABLED !== 'false';
 let circuitPausedUntil = 0;
+let lastSessionError = null;
 
 // Caché de tokens (los tokens tkendtime de 1st.tv duran 12 horas; renovamos cada 6 horas)
 const TOKEN_TTL_MS = 6 * 60 * 60 * 1000;
@@ -22,57 +24,62 @@ const trackStateCache = new Map();
 const variantUrlMap = new Map();
 let startupSyncCompleted = false;
 
-// Hipódromos Prioritarios (1/ST TV & principales del día en baja latencia H5Live ~2s)
-const PRIORITY_TRACKS = [
-  { id: 'gulfstream-park', code: 'GP', name: 'Gulfstream Park', flag: '🇺🇸', location: 'Hallandale Beach, Florida, EE.UU.' },
-  { id: 'santa-anita-park', code: 'SA', name: 'Santa Anita Park', flag: '🇺🇸', location: 'Arcadia, California, EE.UU.' },
-  { id: 'laurel-park', code: 'LRL', name: 'Laurel Park', flag: '🇺🇸', location: 'Laurel, Maryland, EE.UU.' },
-  { id: 'keeneland', code: 'KEE', name: 'Keeneland', flag: '🇺🇸', location: 'Lexington, Kentucky, EE.UU.' },
-  { id: 'aqueduct-racetrack', code: 'AQU', name: 'Aqueduct Racetrack', flag: '🇺🇸', location: 'Queens, New York, EE.UU.' },
-  { id: 'belmont-park', code: 'BEL', name: 'Belmont Park', flag: '🇺🇸', location: 'Elmont, New York, EE.UU.' },
-  { id: 'woodbine', code: 'WO', name: 'Woodbine Racetrack', flag: '🇨🇦', location: 'Toronto, Ontario, Canadá' },
-  { id: 'tampa-bay-downs', code: 'TAM', name: 'Tampa Bay Downs', flag: '🇺🇸', location: 'Tampa, Florida, EE.UU.' },
-  { id: 'parx-racing', code: 'PRX', name: 'Parx Racing', flag: '🇺🇸', location: 'Bensalem, Pennsylvania, EE.UU.' }
-];
+// Catálogo completo de hipódromos soportados por 1/ST TV (H5Live ~2s)
+// activeDays: 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+const ALL_FIRST_TV_TRACKS = [
+  // Principales fin de semana / jueves a domingo
+  { id: 'gulfstream-park', code: 'GP', name: 'Gulfstream Park', flag: '🇺🇸', location: 'Hallandale Beach, Florida, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5, 6] },
+  { id: 'santa-anita-park', code: 'SA', name: 'Santa Anita Park', flag: '🇺🇸', location: 'Arcadia, California, EE.UU.', schedule: 'BOTH', activeDays: [0, 4, 5, 6] },
+  { id: 'laurel-park', code: 'LRL', name: 'Laurel Park', flag: '🇺🇸', location: 'Laurel, Maryland, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5, 6] },
+  { id: 'aqueduct-racetrack', code: 'AQU', name: 'Aqueduct Racetrack', flag: '🇺🇸', location: 'Queens, New York, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5, 6] },
+  { id: 'belmont-park', code: 'BEL', name: 'Belmont Park', flag: '🇺🇸', location: 'Elmont, New York, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5, 6] },
+  { id: 'woodbine', code: 'WO', name: 'Woodbine Racetrack', flag: '🇨🇦', location: 'Toronto, Ontario, Canadá', schedule: 'BOTH', activeDays: [0, 4, 5, 6] },
+  { id: 'keeneland', code: 'KEE', name: 'Keeneland', flag: '🇺🇸', location: 'Lexington, Kentucky, EE.UU.', schedule: 'DAY', activeDays: [0, 3, 4, 5, 6] },
+  { id: 'churchill-downs', code: 'CD', name: 'Churchill Downs', flag: '🇺🇸', location: 'Louisville, Kentucky, EE.UU.', schedule: 'BOTH', activeDays: [0, 3, 4, 5, 6] },
+  { id: 'del-mar', code: 'DMR', name: 'Del Mar', flag: '🇺🇸', location: 'Del Mar, California, EE.UU.', schedule: 'BOTH', activeDays: [0, 4, 5, 6] },
+  { id: 'tampa-bay-downs', code: 'TAM', name: 'Tampa Bay Downs', flag: '🇺🇸', location: 'Tampa, Florida, EE.UU.', schedule: 'DAY', activeDays: [0, 3, 5, 6] },
+  { id: 'saratoga', code: 'SAR', name: 'Saratoga Race Course', flag: '🇺🇸', location: 'Saratoga Springs, New York, EE.UU.', schedule: 'DAY', activeDays: [0, 3, 4, 5, 6] },
 
-// Hipódromos Secundarios clasificados por franja horaria (Hora de Venezuela VET = UTC-4)
-// DAY: 11:30 am - 5:15 pm | BOTH: 2:00 pm - 8:30 pm | NIGHT: 5:00 pm - 11:59 pm
-const SECONDARY_TRACKS = [
-  // Tarde / Noche (BOTH)
-  { id: 'churchill-downs', code: 'CD', name: 'Churchill Downs', flag: '🇺🇸', location: 'Louisville, Kentucky, EE.UU.', schedule: 'BOTH' },
-  { id: 'del-mar', code: 'DMR', name: 'Del Mar', flag: '🇺🇸', location: 'Del Mar, California, EE.UU.', schedule: 'BOTH' },
-  { id: 'horseshoe-indianapolis', code: 'IND', name: 'Horseshoe Indianapolis', flag: '🇺🇸', location: 'Shelbyville, Indiana, EE.UU.', schedule: 'BOTH' },
-  { id: 'presque-isle', code: 'PID', name: 'Presque Isle Downs', flag: '🇺🇸', location: 'Erie, Pennsylvania, EE.UU.', schedule: 'BOTH' },
-  { id: 'hawthorne', code: 'HAW', name: 'Hawthorne Race Course', flag: '🇺🇸', location: 'Stickney/Cicero, Illinois, EE.UU.', schedule: 'BOTH' },
-  // Nocturnos (NIGHT: >= 5:00 pm VET)
-  { id: 'charles-town', code: 'CT', name: 'Charles Town Races', flag: '🇺🇸', location: 'Charles Town, West Virginia, EE.UU.', schedule: 'NIGHT' },
-  { id: 'penn-national', code: 'PEN', name: 'Penn National', flag: '🇺🇸', location: 'Grantville, Pennsylvania, EE.UU.', schedule: 'NIGHT' },
-  { id: 'mountaineer-park', code: 'MNR', name: 'Mountaineer Park', flag: '🇺🇸', location: 'New Cumberland, West Virginia, EE.UU.', schedule: 'NIGHT' },
-  { id: 'remington-park', code: 'RP', name: 'Remington Park', flag: '🇺🇸', location: 'Oklahoma City, Oklahoma, EE.UU.', schedule: 'NIGHT' },
-  { id: 'delta-downs', code: 'DED', name: 'Delta Downs', flag: '🇺🇸', location: 'Vinton, Louisiana, EE.UU.', schedule: 'NIGHT' },
-  { id: 'evangeline-downs', code: 'EVD', name: 'Evangeline Downs', flag: '🇺🇸', location: 'Opelousas, Louisiana, EE.UU.', schedule: 'NIGHT' },
-  { id: 'turfway-park', code: 'TP', name: 'Turfway Park', flag: '🇺🇸', location: 'Florence, Kentucky, EE.UU.', schedule: 'NIGHT' },
-  { id: 'los-alamitos', code: 'LRC', name: 'Los Alamitos', flag: '🇺🇸', location: 'Cypress, California, EE.UU.', schedule: 'NIGHT' },
-  // Diurnos (DAY: 11:30 am - 5:15 pm VET)
-  { id: 'saratoga', code: 'SAR', name: 'Saratoga Race Course', flag: '🇺🇸', location: 'Saratoga Springs, New York, EE.UU.', schedule: 'DAY' },
-  { id: 'delaware-park', code: 'DEL', name: 'Delaware Park', flag: '🇺🇸', location: 'Wilmington, Delaware, EE.UU.', schedule: 'DAY' },
-  { id: 'finger-lakes', code: 'FL', name: 'Finger Lakes', flag: '🇺🇸', location: 'Farmington, New York, EE.UU.', schedule: 'DAY' },
-  { id: 'thistledown', code: 'TDN', name: 'Thistledown', flag: '🇺🇸', location: 'North Randall, Ohio, EE.UU.', schedule: 'DAY' },
-  { id: 'monmouth-park', code: 'MTH', name: 'Monmouth Park', flag: '🇺🇸', location: 'Oceanport, New Jersey, EE.UU.', schedule: 'DAY' },
-  { id: 'mahoning-valley', code: 'MVR', name: 'Mahoning Valley', flag: '🇺🇸', location: 'Youngstown, Ohio, EE.UU.', schedule: 'DAY' },
-  { id: 'oaklawn-park', code: 'OP', name: 'Oaklawn Park', flag: '🇺🇸', location: 'Hot Springs, Arkansas, EE.UU.', schedule: 'DAY' },
-  { id: 'fair-grounds', code: 'FG', name: 'Fair Grounds', flag: '🇺🇸', location: 'New Orleans, Louisiana, EE.UU.', schedule: 'DAY' }
+  // Hipódromos activos Lunes, Martes y Miércoles (además de resto de semana)
+  { id: 'parx-racing', code: 'PRX', name: 'Parx Racing', flag: '🇺🇸', location: 'Bensalem, Pennsylvania, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3] },
+  { id: 'finger-lakes', code: 'FL', name: 'Finger Lakes', flag: '🇺🇸', location: 'Farmington, New York, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3] },
+  { id: 'thistledown', code: 'TDN', name: 'Thistledown', flag: '🇺🇸', location: 'North Randall, Ohio, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3, 4] },
+  { id: 'mahoning-valley', code: 'MVR', name: 'Mahoning Valley', flag: '🇺🇸', location: 'Youngstown, Ohio, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3, 4, 6] },
+  { id: 'horseshoe-indianapolis', code: 'IND', name: 'Horseshoe Indianapolis', flag: '🇺🇸', location: 'Shelbyville, Indiana, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4] },
+  { id: 'presque-isle', code: 'PID', name: 'Presque Isle Downs', flag: '🇺🇸', location: 'Erie, Pennsylvania, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4] },
+  { id: 'turf-paradise', code: 'TUP', name: 'Turf Paradise', flag: '🇺🇸', location: 'Phoenix, Arizona, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4, 5, 6] },
+  { id: 'zia-park', code: 'ZIA', name: 'Zia Park', flag: '🇺🇸', location: 'Hobbs, New Mexico, EE.UU.', schedule: 'BOTH', activeDays: [0, 1, 2] },
+  { id: 'mountaineer-park', code: 'MNR', name: 'Mountaineer Park', flag: '🇺🇸', location: 'New Cumberland, West Virginia, EE.UU.', schedule: 'NIGHT', activeDays: [0, 1, 2, 3] },
+
+  // Otros hipódromos diurnos y nocturnos de la semana
+  { id: 'delaware-park', code: 'DEL', name: 'Delaware Park', flag: '🇺🇸', location: 'Wilmington, Delaware, EE.UU.', schedule: 'DAY', activeDays: [3, 4, 5, 6] },
+  { id: 'hawthorne', code: 'HAW', name: 'Hawthorne Race Course', flag: '🇺🇸', location: 'Stickney/Cicero, Illinois, EE.UU.', schedule: 'BOTH', activeDays: [0, 4, 5, 6] },
+  { id: 'charles-town', code: 'CT', name: 'Charles Town Races', flag: '🇺🇸', location: 'Charles Town, West Virginia, EE.UU.', schedule: 'NIGHT', activeDays: [3, 4, 5, 6] },
+  { id: 'penn-national', code: 'PEN', name: 'Penn National', flag: '🇺🇸', location: 'Grantville, Pennsylvania, EE.UU.', schedule: 'NIGHT', activeDays: [3, 4, 5] },
+  { id: 'remington-park', code: 'RP', name: 'Remington Park', flag: '🇺🇸', location: 'Oklahoma City, Oklahoma, EE.UU.', schedule: 'NIGHT', activeDays: [3, 4, 5, 6] },
+  { id: 'delta-downs', code: 'DED', name: 'Delta Downs', flag: '🇺🇸', location: 'Vinton, Louisiana, EE.UU.', schedule: 'NIGHT', activeDays: [2, 3, 4, 5, 6] },
+  { id: 'evangeline-downs', code: 'EVD', name: 'Evangeline Downs', flag: '🇺🇸', location: 'Opelousas, Louisiana, EE.UU.', schedule: 'NIGHT', activeDays: [3, 4, 5, 6] },
+  { id: 'turfway-park', code: 'TP', name: 'Turfway Park', flag: '🇺🇸', location: 'Florence, Kentucky, EE.UU.', schedule: 'NIGHT', activeDays: [3, 4, 5, 6] },
+  { id: 'los-alamitos', code: 'LRC', name: 'Los Alamitos', flag: '🇺🇸', location: 'Cypress, California, EE.UU.', schedule: 'NIGHT', activeDays: [0, 5, 6] },
+  { id: 'monmouth-park', code: 'MTH', name: 'Monmouth Park', flag: '🇺🇸', location: 'Oceanport, New Jersey, EE.UU.', schedule: 'DAY', activeDays: [0, 5, 6] },
+  { id: 'oaklawn-park', code: 'OP', name: 'Oaklawn Park', flag: '🇺🇸', location: 'Hot Springs, Arkansas, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5, 6] },
+  { id: 'fair-grounds', code: 'FG', name: 'Fair Grounds', flag: '🇺🇸', location: 'New Orleans, Louisiana, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5, 6] },
+  { id: 'colonial-downs', code: 'CNL', name: 'Colonial Downs', flag: '🇺🇸', location: 'New Kent, Virginia, EE.UU.', schedule: 'DAY', activeDays: [4, 5, 6] },
+  { id: 'kentucky-downs', code: 'KD', name: 'Kentucky Downs', flag: '🇺🇸', location: 'Franklin, Kentucky, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 6] },
+  { id: 'ellis-park', code: 'ELP', name: 'Ellis Park', flag: '🇺🇸', location: 'Henderson, Kentucky, EE.UU.', schedule: 'DAY', activeDays: [0, 1, 5, 6] }
 ];
 
 /**
- * Ordena los hipódromos secundarios según la hora actual en Venezuela (UTC-4)
- * para priorizar los diurnos entre 11am-5pm y los nocturnos desde las 5pm en adelante.
+ * Separa los hipódromos en Prioritarios del Día (según día de semana y hora en Venezuela UTC-4)
+ * y Secundarios ordenados por franja horaria.
  */
-function getTimePrioritizedSecondaryTracks() {
-  const vetHour = (new Date().getUTCHours() - 4 + 24) % 24;
-  const isEveningVet = (vetHour >= 17 || vetHour < 2); // 5:00 PM a 1:59 AM VET
+function getCategorizedTracksForNow() {
+  const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
+  const vetDay = vetDate.getUTCDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
+  const vetHour = vetDate.getUTCHours();
+  const isEveningVet = (vetHour >= 17 || vetHour < 2);
 
-  const weight = (track) => {
+  const timeWeight = (track) => {
     if (isEveningVet) {
       if (track.schedule === 'NIGHT') return 1;
       if (track.schedule === 'BOTH') return 2;
@@ -84,7 +91,24 @@ function getTimePrioritizedSecondaryTracks() {
     }
   };
 
-  return [...SECONDARY_TRACKS].sort((a, b) => weight(a) - weight(b));
+  const todayActive = [];
+  const otherTracks = [];
+
+  for (const t of ALL_FIRST_TV_TRACKS) {
+    if (t.activeDays && t.activeDays.includes(vetDay)) {
+      todayActive.push(t);
+    } else {
+      otherTracks.push(t);
+    }
+  }
+
+  todayActive.sort((a, b) => timeWeight(a) - timeWeight(b));
+  otherTracks.sort((a, b) => timeWeight(a) - timeWeight(b));
+
+  return {
+    priorityTracks: todayActive.slice(0, 10),
+    secondaryTracks: [...todayActive.slice(10), ...otherTracks]
+  };
 }
 
 function sleep(ms) {
@@ -92,9 +116,81 @@ function sleep(ms) {
 }
 
 /**
+ * Si se dispone de la cookie SSO de auth.1st.com (currentAuth0Cookie), renueva silenciosamente
+ * la sesión de WordPress en 1st.tv sin requerir contraseña ni captcha.
+ */
+async function refreshFirstTvSessionViaAuth0() {
+  if (!currentAuth0Cookie) return false;
+  try {
+    console.log('🔄 [1/ST TV Bridge] Intentando renovación silenciosa SSO vía auth.1st.com...');
+    const r1 = await fetch('https://1st.tv/wp-login.php', {
+      redirect: 'manual',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      },
+      timeout: 10000
+    });
+    const wpInitCookies = (r1.headers.raw()['set-cookie'] || []).map(c => c.split(';')[0]).join('; ');
+    const authUrl = r1.headers.get('location');
+    if (!authUrl || !authUrl.includes('auth.1st.com')) return false;
+
+    const r2 = await fetch(authUrl, {
+      redirect: 'manual',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Cookie': currentAuth0Cookie
+      },
+      timeout: 10000
+    });
+    const newAuth0Set = r2.headers.raw()['set-cookie'] || [];
+    if (newAuth0Set.length > 0) {
+      const mergedMap = new Map();
+      for (const part of currentAuth0Cookie.split(';')) {
+        const idx = part.indexOf('=');
+        if (idx > 0) mergedMap.set(part.slice(0, idx).trim(), part.slice(idx + 1).trim());
+      }
+      for (const c of newAuth0Set) {
+        const kv = c.split(';')[0];
+        const idx = kv.indexOf('=');
+        if (idx > 0) mergedMap.set(kv.slice(0, idx).trim(), kv.slice(idx + 1).trim());
+      }
+      currentAuth0Cookie = Array.from(mergedMap.entries()).map(([k, v]) => `${k}=${v}`).join('; ');
+    }
+
+    const cbUrl = r2.headers.get('location');
+    if (!cbUrl || !cbUrl.includes('1st.tv') || !cbUrl.includes('code=')) {
+      return false;
+    }
+
+    const r3 = await fetch(cbUrl, {
+      redirect: 'manual',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Cookie': wpInitCookies
+      },
+      timeout: 10000
+    });
+    const wpCookies = (r3.headers.raw()['set-cookie'] || [])
+      .map(c => c.split(';')[0])
+      .filter(kv => kv.startsWith('wordpress_logged_in_') || kv.startsWith('wordpress_sec_'));
+
+    if (wpCookies.length >= 2) {
+      currentFirstTvCookie = wpCookies.join('; ');
+      lastSessionError = null;
+      console.log('✅ [1/ST TV Bridge] Sesión 1st.tv renovada automáticamente vía Auth0 SSO.');
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.warn('⚠️ [1/ST TV Bridge] Falló renovación SSO Auth0:', err.message);
+    return false;
+  }
+}
+
+/**
  * Obtiene la URL firmada de Roberts Stream desde 1st.tv y extrae el manifiesto H5Live de RCNCDN.
  */
-async function resolveFirstTvTrackM3u8(trackCode) {
+async function resolveFirstTvTrackM3u8(trackCode, isRetry = false) {
   const params = new URLSearchParams();
   params.append('action', 'vcl_get_track_video_popup');
   params.append('track', trackCode);
@@ -120,12 +216,15 @@ async function resolveFirstTvTrackM3u8(trackCode) {
 
   const ajaxData = await ajaxRes.json();
   if (!ajaxData || !ajaxData.success || !ajaxData.data || !ajaxData.data.url) {
-    if (trackCode === 'GP') {
-      console.warn('[1/ST TV Bridge Diag] GP ajaxData sin URL:', JSON.stringify(ajaxData).slice(0, 200));
-    }
-    // Nota: 1st.tv devuelve { logged_out: true } también cuando un código de hipódromo no tiene evento activo ese día.
-    // Solo disparar expiración de sesión si el hipódromo base 'GP' devuelve error de sesión.
-    if (trackCode === 'GP' && (ajaxData?.data?.error === 'not_logged_in' || ajaxData?.data?.logged_out)) {
+    console.warn(`[1/ST TV Bridge Diag] ${trackCode} ajaxData sin URL:`, JSON.stringify(ajaxData).slice(0, 200));
+    if (ajaxData?.data?.error === 'not_logged_in' || ajaxData?.data?.logged_out) {
+      if (!isRetry && currentAuth0Cookie) {
+        const refreshed = await refreshFirstTvSessionViaAuth0();
+        if (refreshed) {
+          return await resolveFirstTvTrackM3u8(trackCode, true);
+        }
+      }
+      lastSessionError = `Sesión 1st.tv expirada (${new Date().toISOString()})`;
       throw new Error('FIRST_TV_SESSION_EXPIRED');
     }
     return null;
@@ -391,8 +490,10 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
   }
 
   try {
-    // 1. Verificar siempre los hipódromos prioritarios (GP, SA, LRL, KEE, AQU, BEL, WO, TAM, PRX)
-    for (const track of PRIORITY_TRACKS) {
+    const { priorityTracks, secondaryTracks: orderedSecondary } = getCategorizedTracksForNow();
+
+    // 1. Verificar siempre los hipódromos prioritarios según el día de la semana y hora en Venezuela (UTC-4)
+    for (const track of priorityTracks) {
       if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
       try {
         const callType = await checkSingleTrack(track, activeStreams);
@@ -409,7 +510,6 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
     }
 
     // 2. Poblar en activeStreams los secundarios que ya estén en caché como onAir
-    const orderedSecondary = getTimePrioritizedSecondaryTracks();
     for (const track of orderedSecondary) {
       if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
       const cached = trackStateCache.get(track.id);
@@ -456,18 +556,35 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
   return activeStreams;
 }
 
-function updateFirstTvCookie(newCookie) {
+function updateFirstTvCookie(newCookie, newAuth0Cookie) {
   if (newCookie && typeof newCookie === 'string') {
     currentFirstTvCookie = newCookie.trim();
-    circuitPausedUntil = 0;
-    trackStateCache.clear();
-    variantUrlMap.clear();
-    console.log('🔑 [1/ST TV Bridge] Cookie de sesión actualizada manualmente.');
   }
+  if (newAuth0Cookie && typeof newAuth0Cookie === 'string') {
+    currentAuth0Cookie = newAuth0Cookie.trim();
+  }
+  circuitPausedUntil = 0;
+  lastSessionError = null;
+  trackStateCache.clear();
+  variantUrlMap.clear();
+  console.log('🔑 [1/ST TV Bridge] Cookie de sesión 1st.tv actualizada en caliente.');
+}
+
+function getFirstTvStatus() {
+  return {
+    enabled: firstTvEnabled,
+    hasCookie: Boolean(currentFirstTvCookie),
+    hasAuth0Cookie: Boolean(currentAuth0Cookie),
+    circuitPausedUntil: circuitPausedUntil > Date.now() ? new Date(circuitPausedUntil).toISOString() : null,
+    lastSessionError,
+    cachedTracksCount: trackStateCache.size,
+    liveTracks: Array.from(trackStateCache.entries()).filter(([, v]) => v.onAir).map(([k]) => k)
+  };
 }
 
 module.exports = {
   fetchFirstTvLiveStreams,
   updateFirstTvCookie,
+  getFirstTvStatus,
   resolveRcnQualityUrl
 };
