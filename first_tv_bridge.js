@@ -21,8 +21,15 @@ const LIVE_STATUS_TTL_MS = 35 * 60 * 1000;
 const OFFAIR_STATUS_TTL_MS = 10 * 60 * 1000;
 
 const trackStateCache = new Map();
+const robertsLiveUrlCache = new Map();
 const variantUrlMap = new Map();
+const recentDiagnostics = [];
 let startupSyncCompleted = false;
+
+function recordDiag(trackCode, step, detail) {
+  recentDiagnostics.push({ t: new Date().toISOString().slice(11, 19), trackCode, step, detail });
+  if (recentDiagnostics.length > 25) recentDiagnostics.shift();
+}
 
 // Catálogo completo de hipódromos soportados por 1/ST TV (H5Live ~2s)
 // activeDays: 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
@@ -77,17 +84,21 @@ function getCategorizedTracksForNow() {
   const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
   const vetDay = vetDate.getUTCDay(); // 0=Dom, 1=Lun, ..., 6=Sáb
   const vetHour = vetDate.getUTCHours();
-  const isEveningVet = (vetHour >= 17 || vetHour < 2);
+  // En EE.UU. las carreras nocturnas (Charles Town, Mountaineer, Remington, Penn National) inician a las 7:00 PM EST = 8:00 PM Venezuela (vetHour >= 20)
+  const isEveningVet = (vetHour >= 20 || vetHour < 2);
+
+  const VEN_TOP_FAVS = ['gulfstream-park', 'laurel-park', 'parx-racing', 'finger-lakes', 'saratoga', 'belmont-park', 'aqueduct-racetrack', 'tampa-bay-downs', 'santa-anita-park', 'woodbine'];
 
   const timeWeight = (track) => {
+    const favBonus = VEN_TOP_FAVS.includes(track.id) ? -0.4 : 0;
     if (isEveningVet) {
-      if (track.schedule === 'NIGHT') return 1;
-      if (track.schedule === 'BOTH') return 2;
-      return 3;
+      if (track.schedule === 'NIGHT') return 1 + favBonus;
+      if (track.schedule === 'BOTH') return 2 + favBonus;
+      return 3 + favBonus;
     } else {
-      if (track.schedule === 'DAY') return 1;
-      if (track.schedule === 'BOTH') return 2;
-      return 3;
+      if (track.schedule === 'DAY') return 1 + favBonus;
+      if (track.schedule === 'BOTH') return 2 + favBonus;
+      return 3 + favBonus;
     }
   };
 
@@ -95,7 +106,8 @@ function getCategorizedTracksForNow() {
   const otherTracks = [];
 
   for (const t of ALL_FIRST_TV_TRACKS) {
-    if (t.activeDays && t.activeDays.includes(vetDay)) {
+    // Incluir siempre los favoritos principales de Venezuela (Gulfstream y Laurel) en la revisión prioritaria diurna
+    if ((t.activeDays && t.activeDays.includes(vetDay)) || (!isEveningVet && (t.id === 'gulfstream-park' || t.id === 'laurel-park'))) {
       todayActive.push(t);
     } else {
       otherTracks.push(t);
@@ -106,8 +118,8 @@ function getCategorizedTracksForNow() {
   otherTracks.sort((a, b) => timeWeight(a) - timeWeight(b));
 
   return {
-    priorityTracks: todayActive.slice(0, 10),
-    secondaryTracks: [...todayActive.slice(10), ...otherTracks]
+    priorityTracks: todayActive.slice(0, 12),
+    secondaryTracks: [...todayActive.slice(12), ...otherTracks]
   };
 }
 
@@ -188,9 +200,87 @@ async function refreshFirstTvSessionViaAuth0() {
 }
 
 /**
- * Obtiene la URL firmada de Roberts Stream desde 1st.tv y extrae el manifiesto H5Live de RCNCDN.
+ * Extrae las variantes H5Live (LIGHT, MEDIUM, FULL) desde la URL de Roberts Stream (sin tocar 1st.tv).
+ */
+async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl) {
+  const liveRes = await fetch(liveUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Referer': 'https://1st.tv/'
+    },
+    timeout: 10000
+  });
+
+  if (!liveRes.ok) {
+    recordDiag(trackCode, 'ROBERTS_HTTP_ERR', liveRes.status);
+    return null;
+  }
+
+  const html = await liveRes.text();
+  if (html.includes('geoblock') || html.includes('Request Rejected')) {
+    recordDiag(trackCode, 'ROBERTS_WAF_GEOBLOCK', html.slice(0, 120));
+    return null;
+  }
+
+  const matches = [...html.matchAll(/sources\[(\d+)\]\s*=\s*\{[\s\S]*?'url'\s*:\s*"([^"]+)"[\s\S]*?'streamname'\s*:\s*'([^']+)'[\s\S]*?'params'\s*:\s*\{\s*'h'\s*:\s*'([^']+)'\s*,\s*'e'\s*:\s*'([^']+)'/g)];
+  if (matches.length === 0) {
+    recordDiag(trackCode, 'ROBERTS_NO_SOURCES', `len=${html.length}`);
+    return null;
+  }
+
+  function pickMatchByOrder(orderList) {
+    for (const br of orderList) {
+      const found = matches.find(m => m[1] === br || (m[3] && (m[3].includes(`_${br}?`) || m[3].includes(`_${br}&`) || m[3].endsWith(`_${br}`))));
+      if (found) return found;
+    }
+    return matches[matches.length - 1] || matches[0];
+  }
+
+  function toM3u8(matchItem) {
+    const [, , rtmpUrl, streamname, h, e] = matchItem;
+    return `https://ws.rcncdn.com/h5live/http/playlist.m3u8?url=${encodeURIComponent(rtmpUrl)}&stream=${encodeURIComponent(streamname)}&h=${h}&e=${e}`;
+  }
+
+  const lightMatch = pickMatchByOrder(['400', '550', '771', '878', '1308', '1200', '1000', '1800', '2200']);
+  const lightUrl = toM3u8(lightMatch);
+  const mediumUrl = toM3u8(pickMatchByOrder(['771', '878', '550', '400', '1308', '1200', '1000']));
+  const fullUrl = toM3u8(pickMatchByOrder(['1308', '1200', '1000', '878', '771', '1800', '2200', '400']));
+  const eUnixSec = parseInt(lightMatch[5], 10) || 0;
+  const rcnExpiresAt = eUnixSec > 0 ? (eUnixSec * 1000) : (Date.now() + 20 * 60 * 1000);
+
+  const prefix = extractStreamPrefix(lightUrl);
+  const variantObj = {
+    LIGHT: lightUrl,
+    MEDIUM: mediumUrl,
+    FULL: fullUrl,
+    rcnExpiresAt,
+    trackCode,
+    liveUrl,
+    prefix
+  };
+
+  variantUrlMap.set(lightUrl, variantObj);
+  variantUrlMap.set(mediumUrl, variantObj);
+  variantUrlMap.set(fullUrl, variantObj);
+  if (prefix) variantUrlMap.set(`prefix:${prefix}`, variantObj);
+
+  recordDiag(trackCode, 'ROBERTS_OK', `sources=${matches.length},e=${eUnixSec}`);
+  return { lightUrl, variantObj };
+}
+
+/**
+ * Obtiene la URL firmada de Roberts Stream desde 1st.tv (con caché de 6h) y extrae el manifiesto H5Live de RCNCDN.
  */
 async function resolveFirstTvTrackM3u8(trackCode, isRetry = false) {
+  const now = Date.now();
+  const cachedRoberts = robertsLiveUrlCache.get(trackCode);
+  if (cachedRoberts && now < cachedRoberts.expiresAt) {
+    const extracted = await extractRcnVariantsFromLiveUrl(trackCode, cachedRoberts.liveUrl);
+    if (extracted) {
+      return { m3u8Url: extracted.lightUrl, didAjax: false };
+    }
+  }
+
   const params = new URLSearchParams();
   params.append('action', 'vcl_get_track_video_popup');
   params.append('track', trackCode);
@@ -211,11 +301,13 @@ async function resolveFirstTvTrackM3u8(trackCode, isRetry = false) {
   });
 
   if (!ajaxRes.ok) {
+    recordDiag(trackCode, 'AJAX_HTTP_ERR', ajaxRes.status);
     throw new Error(`HTTP ${ajaxRes.status} from 1st.tv AJAX`);
   }
 
   const ajaxData = await ajaxRes.json();
   if (!ajaxData || !ajaxData.success || !ajaxData.data || !ajaxData.data.url) {
+    recordDiag(trackCode, 'AJAX_NO_URL', JSON.stringify(ajaxData).slice(0, 100));
     console.warn(`[1/ST TV Bridge Diag] ${trackCode} ajaxData sin URL:`, JSON.stringify(ajaxData).slice(0, 200));
     if (ajaxData?.data?.error === 'not_logged_in' || ajaxData?.data?.logged_out) {
       if (!isRetry && currentAuth0Cookie) {
@@ -227,7 +319,7 @@ async function resolveFirstTvTrackM3u8(trackCode, isRetry = false) {
       lastSessionError = `Sesión 1st.tv expirada (${new Date().toISOString()})`;
       throw new Error('FIRST_TV_SESSION_EXPIRED');
     }
-    return null;
+    return { m3u8Url: null, didAjax: true };
   }
 
   const flashUrl = ajaxData.data.url;
@@ -235,62 +327,14 @@ async function resolveFirstTvTrackM3u8(trackCode, isRetry = false) {
     .replace('streamflash.php', 'streamlive.php')
     .replace(/&optp=[^&]+/, '');
 
-  const liveRes = await fetch(liveUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Referer': 'https://stream.robertsstream.com/'
-    },
-    timeout: 10000
+  // Guardar liveUrl (válida por 12h en Roberts Stream) durante 6h para no volver a tocar 1st.tv por este hipódromo
+  robertsLiveUrlCache.set(trackCode, {
+    liveUrl,
+    expiresAt: now + TOKEN_TTL_MS
   });
 
-  if (!liveRes.ok) {
-    if (trackCode === 'GP') console.warn('[1/ST TV Bridge Diag] GP liveRes status:', liveRes.status);
-    return null;
-  }
-
-  const html = await liveRes.text();
-  if (html.includes('geoblock') || html.includes('Request Rejected')) {
-    if (trackCode === 'GP') console.warn('[1/ST TV Bridge Diag] GP liveRes geoblock/rejected');
-    return null;
-  }
-
-  const matches = [...html.matchAll(/sources\[(\d+)\]\s*=\s*\{[\s\S]*?'url'\s*:\s*"([^"]+)"[\s\S]*?'streamname'\s*:\s*'([^']+)'[\s\S]*?'params'\s*:\s*\{\s*'h'\s*:\s*'([^']+)'\s*,\s*'e'\s*:\s*'([^']+)'/g)];
-  if (matches.length === 0) {
-    if (trackCode === 'GP') console.warn('[1/ST TV Bridge Diag] GP 0 matches en HTML len:', html.length);
-    return null;
-  }
-
-  function pickMatchByOrder(orderList) {
-    for (const br of orderList) {
-      const found = matches.find(m => m[1] === br || (m[3] && (m[3].includes(`_${br}?`) || m[3].includes(`_${br}&`) || m[3].endsWith(`_${br}`))));
-      if (found) return found;
-    }
-    return matches[matches.length - 1] || matches[0];
-  }
-
-  function toM3u8(matchItem) {
-    const [, , rtmpUrl, streamname, h, e] = matchItem;
-    return `https://ws.rcncdn.com/h5live/http/playlist.m3u8?url=${encodeURIComponent(rtmpUrl)}&stream=${encodeURIComponent(streamname)}&h=${h}&e=${e}`;
-  }
-
-  // Extraer las 3 variantes (400 kbps, 771 kbps y 1308 kbps) desde el mismo HTML sin llamadas extra a 1st.tv
-  const lightUrl = toM3u8(pickMatchByOrder(['400', '550', '771', '878', '1308', '1200', '1000', '1800', '2200']));
-  const mediumUrl = toM3u8(pickMatchByOrder(['771', '878', '550', '400', '1308', '1200', '1000']));
-  const fullUrl = toM3u8(pickMatchByOrder(['1308', '1200', '1000', '878', '771', '1800', '2200', '400']));
-
-  const variantObj = {
-    LIGHT: lightUrl,
-    MEDIUM: mediumUrl,
-    FULL: fullUrl
-  };
-
-  variantUrlMap.set(lightUrl, variantObj);
-  variantUrlMap.set(mediumUrl, variantObj);
-  variantUrlMap.set(fullUrl, variantObj);
-  const prefix = extractStreamPrefix(lightUrl);
-  if (prefix) variantUrlMap.set(`prefix:${prefix}`, variantObj);
-
-  return lightUrl;
+  const extracted = await extractRcnVariantsFromLiveUrl(trackCode, liveUrl);
+  return { m3u8Url: extracted ? extracted.lightUrl : null, didAjax: true };
 }
 
 function extractStreamPrefix(m3u8Url) {
@@ -321,6 +365,24 @@ function resolveRcnQualityUrl(baseM3u8Url, qualityMode = 'AUTO', gridCount = 1) 
     return variants.FULL || variants.MEDIUM || variants.LIGHT || baseM3u8Url;
   }
   return variants.LIGHT || variants.MEDIUM || baseM3u8Url;
+}
+
+/**
+ * Si un token h/e de ws.rcncdn.com expiró mientras una TV está viendo la carrera,
+ * refresca el token directamente desde Roberts Stream (liveUrl en caché) sin tocar 1st.tv.
+ */
+async function refreshRcnUrlIfNeeded(baseM3u8Url, qualityMode = 'AUTO', gridCount = 1, forceRefresh = false) {
+  let variants = variantUrlMap.get(baseM3u8Url);
+  if (!variants) {
+    const prefix = extractStreamPrefix(baseM3u8Url);
+    if (prefix) variants = variantUrlMap.get(`prefix:${prefix}`);
+  }
+  if (variants && variants.liveUrl && (forceRefresh || (variants.rcnExpiresAt && Date.now() >= variants.rcnExpiresAt - 60000))) {
+    try {
+      await extractRcnVariantsFromLiveUrl(variants.trackCode || 'RCN', variants.liveUrl);
+    } catch (e) {}
+  }
+  return resolveRcnQualityUrl(baseM3u8Url, qualityMode, gridCount);
 }
 
 /**
@@ -394,20 +456,26 @@ async function checkSingleTrack(trackDef, activeStreams) {
     }
   }
 
-  let m3u8Url = cached && cached.m3u8Url && (now < cached.tokenExpiresAt) ? cached.m3u8Url : null;
-  let tokenExpiresAt = cached ? cached.tokenExpiresAt : 0;
+  let m3u8Url = null;
   let didFirstTvAjax = false;
+  const cachedVariants = cached && cached.m3u8Url ? variantUrlMap.get(cached.m3u8Url) : null;
+  const rcnStillValid = Boolean(cachedVariants && cachedVariants.rcnExpiresAt && now < (cachedVariants.rcnExpiresAt - 60000));
 
-  if (!m3u8Url) {
-    m3u8Url = await resolveFirstTvTrackM3u8(trackDef.code);
-    tokenExpiresAt = now + TOKEN_TTL_MS;
-    didFirstTvAjax = true;
+  if (cached && cached.m3u8Url && rcnStillValid) {
+    m3u8Url = cached.m3u8Url;
+  } else {
+    const resolved = await resolveFirstTvTrackM3u8(trackDef.code);
+    m3u8Url = resolved ? resolved.m3u8Url : null;
+    didFirstTvAjax = Boolean(resolved && resolved.didAjax);
   }
+
+  const robertsEntry = robertsLiveUrlCache.get(trackDef.code);
+  const tokenExpiresAt = robertsEntry ? robertsEntry.expiresAt : (now + TOKEN_TTL_MS);
 
   if (!m3u8Url) {
     trackStateCache.set(trackDef.id, {
       m3u8Url: null,
-      tokenExpiresAt: 0,
+      tokenExpiresAt,
       lastProbeAt: now,
       onAir: false,
       streamData: null
@@ -428,7 +496,6 @@ async function checkSingleTrack(trackDef, activeStreams) {
   }
 
   if (verifiedUrl) {
-    // Asegurar que LIGHT siempre apunte a una variante verificada como activa en RCNCDN
     if (verifiedUrl !== variants.LIGHT) {
       variants.LIGHT = verifiedUrl;
       if (verifiedUrl === variants.FULL) {
@@ -459,8 +526,10 @@ async function checkSingleTrack(trackDef, activeStreams) {
     });
     activeStreams[trackDef.id] = streamData;
     const brMatch = decodeURIComponent(m3u8Url).match(/_(\d+)\?/);
+    recordDiag(trackDef.code, 'LIVE_OK', brMatch ? `${brMatch[1]}k` : 'OK');
     console.log(`✅ [1/ST TV Bridge] Señal HD EN VIVO activa para '${trackDef.id}' (${trackDef.name}) [${brMatch ? brMatch[1] + ' kbps' : 'OK'}]`);
   } else {
+    recordDiag(trackDef.code, 'PROBE_OFFAIR', '0 bytes live');
     trackStateCache.set(trackDef.id, {
       m3u8Url,
       tokenExpiresAt,
@@ -523,7 +592,7 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
     }
 
     // 3. Escanear secundarios priorizando la franja horaria actual (Diurna vs. Nocturna):
-    //    - Si ya tiene token válido de 6h en caché, probar el CDN ws.rcncdn.com cuesta 0 peticiones a 1st.tv.
+    //    - Si ya tiene liveUrl válida de 6h en robertsLiveUrlCache, consultar Roberts/RCNCDN cuesta 0 peticiones a 1st.tv.
     //    - Si requiere pedir token nuevo a 1st.tv, limitar a máx. 5 tokens nuevos por ciclo con pausa humana.
     const maxNewTokensPerCycle = 5;
     let newTokensFetched = 0;
@@ -531,10 +600,10 @@ async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
     for (const track of orderedSecondary) {
       if (existingPublicStreams[track.id] && existingPublicStreams[track.id].type === 'hls') continue;
 
-      const cached = trackStateCache.get(track.id);
-      const hasValidToken = Boolean(cached && cached.m3u8Url && Date.now() < cached.tokenExpiresAt);
+      const robertsCached = robertsLiveUrlCache.get(track.code);
+      const hasValidRobertsToken = Boolean(robertsCached && Date.now() < robertsCached.expiresAt);
 
-      if (!hasValidToken && newTokensFetched >= maxNewTokensPerCycle) {
+      if (!hasValidRobertsToken && newTokensFetched >= maxNewTokensPerCycle) {
         continue;
       }
 
@@ -570,6 +639,7 @@ function updateFirstTvCookie(newCookie, newAuth0Cookie) {
   circuitPausedUntil = 0;
   lastSessionError = null;
   trackStateCache.clear();
+  robertsLiveUrlCache.clear();
   variantUrlMap.clear();
   console.log('🔑 [1/ST TV Bridge] Cookie de sesión 1st.tv actualizada en caliente.');
 }
@@ -582,7 +652,9 @@ function getFirstTvStatus() {
     circuitPausedUntil: circuitPausedUntil > Date.now() ? new Date(circuitPausedUntil).toISOString() : null,
     lastSessionError,
     cachedTracksCount: trackStateCache.size,
-    liveTracks: Array.from(trackStateCache.entries()).filter(([, v]) => v.onAir).map(([k]) => k)
+    robertsCachedCount: robertsLiveUrlCache.size,
+    liveTracks: Array.from(trackStateCache.entries()).filter(([, v]) => v.onAir).map(([k]) => k),
+    recentDiagnostics
   };
 }
 
@@ -590,5 +662,6 @@ module.exports = {
   fetchFirstTvLiveStreams,
   updateFirstTvCookie,
   getFirstTvStatus,
-  resolveRcnQualityUrl
+  resolveRcnQualityUrl,
+  refreshRcnUrlIfNeeded
 };
