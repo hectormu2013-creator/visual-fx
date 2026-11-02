@@ -4,8 +4,8 @@ const http = require('http');
 
 // Cookie de sesión WordPress de 1st.tv (configurable por variable de entorno FIRST_TV_COOKIE)
 const DEFAULT_FIRST_TV_COOKIE = [
-  'wordpress_logged_in_b6990e60552c4f503541a16b265584be=Hectormu2013%7C1793652701%7Ckcr9HsgWS3TRpQR5atLacDGBNHos5aDQquVpJu32dMv%7C46165b890b54e811edaefb3217e079b7f7a99ff382d9b8a21ad6cf9754430516',
-  'wordpress_sec_b6990e60552c4f503541a16b265584be=Hectormu2013%7C1793652701%7Ckcr9HsgWS3TRpQR5atLacDGBNHos5aDQquVpJu32dMv%7Cd7f6eb9cbef5d0b62d9257fcfb1353dd541ef2b4661de22b0ce95c52180f98cd'
+  'wordpress_logged_in_b6990e60552c4f503541a16b265584be=Hectormu2013%7C1793816472%7CxgpUVPchNoSGYMleLZrOHHTYrGTgn3jXpzHMuuc5KAy%7C688b385b7b350fcf32c537307c6ae303edb9e78edbb5f530ae718626ef14dc62',
+  'wordpress_sec_b6990e60552c4f503541a16b265584be=Hectormu2013%7C1793816472%7CxgpUVPchNoSGYMleLZrOHHTYrGTgn3jXpzHMuuc5KAy%7C6429d0e502743d9f14b2b954b627055419cf69866f6f7ddb40e89ba9a95c5742'
 ].join('; ');
 
 let currentFirstTvCookie = process.env.FIRST_TV_COOKIE || DEFAULT_FIRST_TV_COOKIE;
