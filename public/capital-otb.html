@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Capital OTB TV Network • Multicanal Simulcast</title>
+  <title>Multicanal 4 en 1 • Visual-FX Simulcast</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js"></script>
   <style>
     * {
@@ -47,10 +47,27 @@
       justify-content: center;
       overflow: hidden;
       border: 1px solid rgba(56, 189, 248, 0.16);
+      cursor: pointer;
     }
     .cotb-quad.audio-active {
-      border-color: rgba(16, 185, 129, 0.75);
-      box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.45);
+      border-color: rgba(16, 185, 129, 0.85);
+      box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.5);
+    }
+    .quad-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      z-index: 1;
+      display: none;
+    }
+    .quad-media {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
     }
     .cotb-quad video,
     .cotb-quad iframe {
@@ -60,6 +77,21 @@
       border: none;
       display: block;
       background: #000;
+    }
+    .quad-hold-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      z-index: 9;
+      background: rgba(15, 23, 42, 0.84);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+      font-size: 0.64rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      display: none;
+      pointer-events: none;
     }
     .quad-overlay {
       position: absolute;
@@ -71,7 +103,7 @@
       justify-content: space-between;
       pointer-events: none;
       z-index: 10;
-      opacity: 0.92;
+      opacity: 0.94;
       transition: opacity 0.25s ease;
     }
     .cotb-quad:hover .quad-overlay {
@@ -82,7 +114,7 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      background: rgba(9, 14, 28, 0.82);
+      background: rgba(9, 14, 28, 0.86);
       border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: 6px;
       padding: 3px 7px;
@@ -120,7 +152,7 @@
       gap: 4px;
     }
     .quad-btn {
-      background: rgba(9, 14, 28, 0.82);
+      background: rgba(9, 14, 28, 0.86);
       color: #cbd5e1;
       border: 1px solid rgba(148, 163, 184, 0.28);
       border-radius: 5px;
@@ -164,11 +196,32 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    .cotb-brand-watermark {
+    .cotb-top-bar {
       position: absolute;
       top: 6px;
       right: 8px;
       z-index: 15;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cotb-tv-safe-btn {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #cbd5e1;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    }
+    .cotb-tv-safe-btn.active {
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.92), rgba(4, 120, 87, 0.88));
+      border-color: #10b981;
+      color: #ecfdf5;
+    }
+    .cotb-brand-watermark {
       pointer-events: none;
       background: linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(30, 58, 138, 0.82));
       border: 1px solid rgba(56, 189, 248, 0.35);
@@ -184,60 +237,74 @@
   </style>
 </head>
 <body>
-  <div class="cotb-brand-watermark">🇺🇸 CAPITAL OTB • MULTICANAL SIMULCAST</div>
+  <div class="cotb-top-bar">
+    <button type="button" class="cotb-tv-safe-btn" id="btnSmartTvSafe" title="Evita congelamientos en Smart TVs limitando a 2 decodificadores simultáneos con retención de cuadro en vivo">
+      📺 Modo Smart TV: OFF
+    </button>
+    <div class="cotb-brand-watermark" id="lblMosaicTitle">📺 MULTICANAL 4 EN 1 • SIMULCAST</div>
+  </div>
+
   <div class="cotb-mosaic" id="mosaicGrid">
     <div class="cotb-quad" id="quad-1" data-quad="1">
-      <div class="quad-media" id="media-1" style="width:100%;height:100%;"></div>
+      <canvas class="quad-canvas" id="canvas-1" width="640" height="360"></canvas>
+      <div class="quad-media" id="media-1"></div>
+      <div class="quad-hold-badge" id="hold-1">⚡ Smart TV Sync • Clic para Fijar</div>
       <div class="quad-loader" id="loader-1"><div class="quad-spinner"></div><span>Señal 1...</span></div>
       <div class="quad-overlay">
         <div class="quad-pill">
-          <span class="quad-num">OTB 1</span>
+          <span class="quad-num">CH 1</span>
           <select class="quad-select" id="sel-1"></select>
         </div>
         <div class="quad-actions">
-          <button class="quad-btn" id="aud-1" title="Activar/Silenciar Audio de esta pista">🔇</button>
+          <button class="quad-btn" id="aud-1" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
           <button class="quad-btn" id="zoom-1" title="Ampliar/Restaurar esta pista">⛶</button>
         </div>
       </div>
     </div>
     <div class="cotb-quad" id="quad-2" data-quad="2">
-      <div class="quad-media" id="media-2" style="width:100%;height:100%;"></div>
+      <canvas class="quad-canvas" id="canvas-2" width="640" height="360"></canvas>
+      <div class="quad-media" id="media-2"></div>
+      <div class="quad-hold-badge" id="hold-2">⚡ Smart TV Sync • Clic para Fijar</div>
       <div class="quad-loader" id="loader-2"><div class="quad-spinner"></div><span>Señal 2...</span></div>
       <div class="quad-overlay">
         <div class="quad-pill">
-          <span class="quad-num">OTB 2</span>
+          <span class="quad-num">CH 2</span>
           <select class="quad-select" id="sel-2"></select>
         </div>
         <div class="quad-actions">
-          <button class="quad-btn" id="aud-2" title="Activar/Silenciar Audio de esta pista">🔇</button>
+          <button class="quad-btn" id="aud-2" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
           <button class="quad-btn" id="zoom-2" title="Ampliar/Restaurar esta pista">⛶</button>
         </div>
       </div>
     </div>
     <div class="cotb-quad" id="quad-3" data-quad="3">
-      <div class="quad-media" id="media-3" style="width:100%;height:100%;"></div>
+      <canvas class="quad-canvas" id="canvas-3" width="640" height="360"></canvas>
+      <div class="quad-media" id="media-3"></div>
+      <div class="quad-hold-badge" id="hold-3">⚡ Smart TV Sync • Clic para Fijar</div>
       <div class="quad-loader" id="loader-3"><div class="quad-spinner"></div><span>Señal 3...</span></div>
       <div class="quad-overlay">
         <div class="quad-pill">
-          <span class="quad-num">OTB 3</span>
+          <span class="quad-num">CH 3</span>
           <select class="quad-select" id="sel-3"></select>
         </div>
         <div class="quad-actions">
-          <button class="quad-btn" id="aud-3" title="Activar/Silenciar Audio de esta pista">🔇</button>
+          <button class="quad-btn" id="aud-3" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
           <button class="quad-btn" id="zoom-3" title="Ampliar/Restaurar esta pista">⛶</button>
         </div>
       </div>
     </div>
     <div class="cotb-quad" id="quad-4" data-quad="4">
-      <div class="quad-media" id="media-4" style="width:100%;height:100%;"></div>
+      <canvas class="quad-canvas" id="canvas-4" width="640" height="360"></canvas>
+      <div class="quad-media" id="media-4"></div>
+      <div class="quad-hold-badge" id="hold-4">⚡ Smart TV Sync • Clic para Fijar</div>
       <div class="quad-loader" id="loader-4"><div class="quad-spinner"></div><span>Señal 4...</span></div>
       <div class="quad-overlay">
         <div class="quad-pill">
-          <span class="quad-num">OTB 4</span>
+          <span class="quad-num">CH 4</span>
           <select class="quad-select" id="sel-4"></select>
         </div>
         <div class="quad-actions">
-          <button class="quad-btn" id="aud-4" title="Activar/Silenciar Audio de esta pista">🔇</button>
+          <button class="quad-btn" id="aud-4" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
           <button class="quad-btn" id="zoom-4" title="Ampliar/Restaurar esta pista">⛶</button>
         </div>
       </div>
@@ -245,7 +312,6 @@
   </div>
 
   <script>
-    // Orden de prioridad oficial de Capital OTB TV Network (NY + Costa Este + Circuito Americano)
     const CAPITAL_OTB_PRIORITY_ORDER = [
       'aqueduct-racetrack',
       'belmont-park',
@@ -275,20 +341,46 @@
       'hawthorne',
       'oaklawn-park',
       'fair-grounds',
-      'remington-park',
-      'evangeline-downs',
-      'delta-downs',
-      'los-alamitos'
+      'remington-park'
     ];
 
     const urlParams = new URLSearchParams(window.location.search);
+    const requestedTracksParam = (urlParams.get('tracks') || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const customTitleParam = urlParams.get('title') || '';
+
+    const lblTitle = document.getElementById('lblMosaicTitle');
+    if (lblTitle && customTitleParam) {
+      lblTitle.textContent = `📺 ${customTitleParam}`;
+    }
+
     let parentAllowsAudio = urlParams.get('muted') === '0';
     let activeAudioQuad = parentAllowsAudio ? 1 : null;
+    let primaryFocusedQuad = 1;
     let zoomedQuad = null;
+
+    // Detección automática de Smart TV / TV Box (donde el hardware solo soporta máx. 2 decodificadores <video>)
+    const ua = navigator.userAgent || '';
+    const isDetectedSmartTv = /smarttv|tizen|webos|hbbtv|netcast|vizio|hisense|vidaa|philips|bravia|panasonic|tcl|haier|opera tv|appletv|firetv|aft[a-z0-9]*|roku|android tv|googletv|tv box|mibox|chromecast/i.test(ua);
+    const storedSafePref = localStorage.getItem('vfx_multicanal_tv_safe');
+    let isSmartTvSafeMode = storedSafePref !== null ? (storedSafePref === '1') : isDetectedSmartTv;
 
     let liveChannels = [];
     const quadAssigned = { 1: null, 2: null, 3: null, 4: null };
     const quadHls = { 1: null, 2: null, 3: null, 4: null };
+    let smartTvCycleTimer = null;
+    let currentSecondaryQuad = 2;
+
+    function updateSmartTvBtnUI() {
+      const btn = document.getElementById('btnSmartTvSafe');
+      if (!btn) return;
+      btn.classList.toggle('active', isSmartTvSafeMode);
+      btn.textContent = isSmartTvSafeMode
+        ? '📺 Modo Smart TV (Anti-Freeze): ACTIVO'
+        : '📺 Modo Smart TV: OFF (4 Decodificadores)';
+    }
 
     function getAuthQuery() {
       const token = localStorage.getItem('visual_fx_token') || '';
@@ -301,24 +393,44 @@
       const isUsRcn = ch.streamUrl && ch.streamUrl.includes('ws.rcncdn.com');
       const isScheduledToday = ch.activeToday !== false;
 
-      // Máxima prioridad: Hipódromos de EE.UU./NY con jornada activa hoy en el orden oficial de Capital OTB
-      if (isUsRcn && isScheduledToday) {
-        return idx !== -1 ? idx : 50;
-      }
-      // Segunda prioridad: Señales NYRA en vivo
-      if (idx !== -1 && idx <= 2 && isScheduledToday) {
-        return idx;
-      }
-      // Tercera prioridad: Otros hipódromos de 1/ST TV encendidos
-      if (isUsRcn) {
-        return 100 + (idx !== -1 ? idx : 50);
-      }
-      // Cuarta prioridad: Hipódromos internacionales en vivo (excluyendo canales 24/7 no hípicos de carreras puras como VSiN)
+      if (isUsRcn && isScheduledToday) return idx !== -1 ? idx : 50;
+      if (idx !== -1 && idx <= 2 && isScheduledToday) return idx;
+      if (isUsRcn) return 100 + (idx !== -1 ? idx : 50);
       if (ch.id === 'vsin' || ch.id === 'horse-tv') return 900;
       return 300 + (idx !== -1 ? idx : 100);
     }
 
-    function destroyQuadPlayer(q) {
+    // Captura el último cuadro nítido del <video> en el <canvas> del cuadrante antes de liberar el decodificador en Smart TV
+    function freezeQuadFrameToCanvas(q) {
+      const media = document.getElementById(`media-${q}`);
+      const canvas = document.getElementById(`canvas-${q}`);
+      const holdBadge = document.getElementById(`hold-${q}`);
+      const loader = document.getElementById(`loader-${q}`);
+      if (!media || !canvas) return;
+      const v = media.querySelector('video');
+      if (v && v.readyState >= 2 && v.videoWidth > 0) {
+        try {
+          canvas.width = v.videoWidth;
+          canvas.height = v.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+          canvas.style.display = 'block';
+          if (holdBadge) holdBadge.style.display = 'block';
+          if (loader) loader.style.display = 'none';
+        } catch (e) {}
+      }
+    }
+
+    function destroyQuadPlayer(q, keepCanvas = false) {
+      if (keepCanvas) {
+        freezeQuadFrameToCanvas(q);
+      } else {
+        const canvas = document.getElementById(`canvas-${q}`);
+        const holdBadge = document.getElementById(`hold-${q}`);
+        if (canvas) canvas.style.display = 'none';
+        if (holdBadge) holdBadge.style.display = 'none';
+      }
+
       if (quadHls[q]) {
         try {
           quadHls[q].stopLoad();
@@ -352,7 +464,7 @@
         const isUnmuted = (activeAudioQuad === q);
 
         if (v) v.muted = !isUnmuted;
-        if (quadEl) quadEl.classList.toggle('audio-active', isUnmuted);
+        if (quadEl) quadEl.classList.toggle('audio-active', isUnmuted || (isSmartTvSafeMode && primaryFocusedQuad === q));
         if (audBtn) {
           audBtn.classList.toggle('active', isUnmuted);
           audBtn.textContent = isUnmuted ? '🔊' : '🔇';
@@ -368,25 +480,36 @@
       const sel = document.getElementById(`sel-${q}`);
       if (sel && sel.value !== channelId) sel.value = channelId;
 
-      destroyQuadPlayer(q);
+      destroyQuadPlayer(q, false);
 
       const media = document.getElementById(`media-${q}`);
       const loader = document.getElementById(`loader-${q}`);
+      const canvas = document.getElementById(`canvas-${q}`);
+      const holdBadge = document.getElementById(`hold-${q}`);
       if (!media) return;
-      if (loader) loader.style.display = 'flex';
+
+      if (!canvas || canvas.style.display === 'none') {
+        if (loader) loader.style.display = 'flex';
+      }
 
       const rawUrl = ch.streamUrl || ch.iframeUrl;
       if (ch.type === 'iframe') {
         if (loader) loader.style.display = 'none';
+        if (canvas) canvas.style.display = 'none';
+        if (holdBadge) holdBadge.style.display = 'none';
         media.innerHTML = `<iframe src="${rawUrl}" allow="autoplay; fullscreen; encrypted-media"></iframe>`;
         return;
       }
 
       media.innerHTML = `<video id="v-${q}" autoplay muted playsinline></video>`;
       const video = document.getElementById(`v-${q}`);
-      const hideLoader = () => { if (loader) loader.style.display = 'none'; };
-      video.addEventListener('loadeddata', hideLoader, { once: true });
-      video.addEventListener('playing', hideLoader, { once: true });
+      const hideLoaderAndCanvas = () => {
+        if (loader) loader.style.display = 'none';
+        if (canvas) canvas.style.display = 'none';
+        if (holdBadge) holdBadge.style.display = 'none';
+      };
+      video.addEventListener('loadeddata', hideLoaderAndCanvas, { once: true });
+      video.addEventListener('playing', hideLoaderAndCanvas, { once: true });
 
       const safeProxy = (window.location.protocol === 'https:' && ch.proxyUrl && ch.proxyUrl.startsWith('http://'))
         ? ch.proxyUrl.replace(/^http:\/\//, 'https://')
@@ -425,7 +548,7 @@
         hls.loadSource(primaryUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          hideLoader();
+          hideLoaderAndCanvas();
           hls.autoLevelCappedAt = 0;
           video.muted = (activeAudioQuad !== q);
           video.play().catch(() => {});
@@ -436,6 +559,64 @@
         video.muted = (activeAudioQuad !== q);
         video.play().catch(() => {});
       }
+    }
+
+    // Motor Multiplexor Anti-Congelamiento para Smart TVs (Máximo 2 decodificadores <video> activos a la vez)
+    function applyPlaybackStrategy() {
+      if (smartTvCycleTimer) {
+        clearInterval(smartTvCycleTimer);
+        smartTvCycleTimer = null;
+      }
+      updateSmartTvBtnUI();
+
+      if (!isSmartTvSafeMode) {
+        // Modo PC / 4 Decodificadores simultáneos
+        [1, 2, 3, 4].forEach(q => {
+          const hasVideo = Boolean(document.querySelector(`#media-${q} video, #media-${q} iframe`));
+          if (!hasVideo && quadAssigned[q]) {
+            playQuadChannel(q, quadAssigned[q]);
+          }
+        });
+        updateAudioStates();
+        return;
+      }
+
+      // Modo Smart TV Safe: Decodificador #1 fijo en primaryFocusedQuad; Decodificador #2 rotando cada 6s entre los otros 3
+      const primaryQ = activeAudioQuad || primaryFocusedQuad || 1;
+      primaryFocusedQuad = primaryQ;
+      const otherQuads = [1, 2, 3, 4].filter(q => q !== primaryQ);
+      if (!otherQuads.includes(currentSecondaryQuad)) {
+        currentSecondaryQuad = otherQuads[0];
+      }
+
+      // Asegurar que primaryQ y currentSecondaryQuad estén reproduciendo, y los otros 2 en retención de cuadro Canvas
+      [1, 2, 3, 4].forEach(q => {
+        if (q === primaryQ || q === currentSecondaryQuad) {
+          const hasVideo = Boolean(document.querySelector(`#media-${q} video, #media-${q} iframe`));
+          if (!hasVideo && quadAssigned[q]) {
+            playQuadChannel(q, quadAssigned[q]);
+          }
+        } else {
+          destroyQuadPlayer(q, true);
+        }
+      });
+      updateAudioStates();
+
+      smartTvCycleTimer = setInterval(() => {
+        if (!isSmartTvSafeMode || document.hidden || zoomedQuad) return;
+        const pQ = activeAudioQuad || primaryFocusedQuad || 1;
+        const others = [1, 2, 3, 4].filter(q => q !== pQ);
+        const prevSec = currentSecondaryQuad;
+        const nextIdx = (others.indexOf(prevSec) + 1) % others.length;
+        currentSecondaryQuad = others[nextIdx];
+
+        if (prevSec !== pQ) {
+          destroyQuadPlayer(prevSec, true);
+        }
+        if (quadAssigned[currentSecondaryQuad]) {
+          playQuadChannel(currentSecondaryQuad, quadAssigned[currentSecondaryQuad]);
+        }
+      }, 6500);
     }
 
     function populateQuadSelectors() {
@@ -451,24 +632,60 @@
           sel.appendChild(opt);
         });
         sel.onchange = (e) => {
-          playQuadChannel(q, e.target.value);
+          quadAssigned[q] = e.target.value;
+          primaryFocusedQuad = q;
+          if (isSmartTvSafeMode) {
+            applyPlaybackStrategy();
+          } else {
+            playQuadChannel(q, e.target.value);
+          }
         };
       });
     }
 
     function setupQuadControls() {
+      const btnSafe = document.getElementById('btnSmartTvSafe');
+      if (btnSafe) {
+        btnSafe.addEventListener('click', (e) => {
+          e.stopPropagation();
+          isSmartTvSafeMode = !isSmartTvSafeMode;
+          localStorage.setItem('vfx_multicanal_tv_safe', isSmartTvSafeMode ? '1' : '0');
+          applyPlaybackStrategy();
+        });
+      }
+
       [1, 2, 3, 4].forEach(q => {
         const audBtn = document.getElementById(`aud-${q}`);
         const zoomBtn = document.getElementById(`zoom-${q}`);
         const quadEl = document.getElementById(`quad-${q}`);
+        const selEl = document.getElementById(`sel-${q}`);
+
+        if (selEl) {
+          selEl.addEventListener('click', e => e.stopPropagation());
+        }
 
         if (audBtn) {
           audBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             activeAudioQuad = (activeAudioQuad === q) ? null : q;
-            updateAudioStates();
+            primaryFocusedQuad = q;
+            if (isSmartTvSafeMode) {
+              applyPlaybackStrategy();
+            } else {
+              updateAudioStates();
+            }
           });
         }
+
+        if (quadEl) {
+          quadEl.addEventListener('click', () => {
+            primaryFocusedQuad = q;
+            if (isSmartTvSafeMode) {
+              applyPlaybackStrategy();
+            }
+          });
+        }
+
         const toggleZoom = (e) => {
           if (e) e.stopPropagation();
           const grid = document.getElementById('mosaicGrid');
@@ -476,10 +693,16 @@
             zoomedQuad = null;
             grid.classList.remove('zoomed-mode');
             [1, 2, 3, 4].forEach(n => document.getElementById(`quad-${n}`).classList.remove('zoomed'));
+            applyPlaybackStrategy();
           } else {
             zoomedQuad = q;
+            primaryFocusedQuad = q;
             grid.classList.add('zoomed-mode');
             [1, 2, 3, 4].forEach(n => document.getElementById(`quad-${n}`).classList.toggle('zoomed', n === q));
+            const hasVideo = Boolean(document.querySelector(`#media-${q} video, #media-${q} iframe`));
+            if (!hasVideo && quadAssigned[q]) {
+              playQuadChannel(q, quadAssigned[q]);
+            }
           }
         };
         if (zoomBtn) zoomBtn.addEventListener('click', toggleZoom);
@@ -487,20 +710,18 @@
       });
     }
 
-    // Escuchar comando de audio desde la celda principal de Visual-FX
     window.addEventListener('message', (event) => {
       const data = event.data;
       if (data && data.type === 'VFX_AUDIO_STATE') {
         if (data.muted) {
           activeAudioQuad = null;
         } else if (!activeAudioQuad) {
-          activeAudioQuad = 1;
+          activeAudioQuad = primaryFocusedQuad || 1;
         }
         updateAudioStates();
       }
     });
 
-    // Liberar ancho de banda cuando la pestaña está oculta
     document.addEventListener('visibilitychange', () => {
       const isHidden = document.hidden;
       [1, 2, 3, 4].forEach(q => {
@@ -528,31 +749,55 @@
 
     async function initCapitalOtbMosaic() {
       setupQuadControls();
+      updateSmartTvBtnUI();
       try {
         const res = await fetch('/api/channels');
         const data = await res.json();
-        const all = (data.channels || []).filter(c => c.onAir && c.id !== 'capital-otb');
+        const all = (data.channels || []).filter(c => c.onAir && !c.isMulticanal && c.id !== 'capital-otb');
 
         all.sort((a, b) => scoreChannelForCapitalOtb(a) - scoreChannelForCapitalOtb(b));
         liveChannels = all;
 
         if (liveChannels.length === 0) return;
 
+        // Si el Multicanal viene con pistas preconfiguradas o elegidas por la agencia (?tracks=...), usarlas
+        const validRequested = requestedTracksParam.filter(tid => liveChannels.some(c => c.id === tid));
         [1, 2, 3, 4].forEach((q, idx) => {
-          const ch = liveChannels[idx % liveChannels.length];
-          quadAssigned[q] = ch.id;
+          if (validRequested[idx]) {
+            quadAssigned[q] = validRequested[idx];
+          } else {
+            const fallback = liveChannels.find(c => !Object.values(quadAssigned).includes(c.id)) || liveChannels[idx % liveChannels.length];
+            quadAssigned[q] = fallback.id;
+          }
         });
 
         populateQuadSelectors();
 
-        // Iniciar las 4 sub-señales con ligero escalonamiento (250ms) para evitar picos de red simultáneos
-        for (let q = 1; q <= 4; q++) {
-          playQuadChannel(q, quadAssigned[q]);
-          await new Promise(r => setTimeout(r, 250));
+        if (isSmartTvSafeMode) {
+          // En Smart TV: precargar un primer cuadro de los 4 cuadrantes de 2 en 2 y luego dejar activo el Modo Smart TV (2 decodificadores)
+          playQuadChannel(1, quadAssigned[1]);
+          playQuadChannel(2, quadAssigned[2]);
+          setTimeout(() => {
+            if (!isSmartTvSafeMode) return;
+            destroyQuadPlayer(2, true);
+            playQuadChannel(3, quadAssigned[3]);
+            setTimeout(() => {
+              if (!isSmartTvSafeMode) return;
+              destroyQuadPlayer(3, true);
+              currentSecondaryQuad = 4;
+              playQuadChannel(4, quadAssigned[4]);
+              applyPlaybackStrategy();
+            }, 3200);
+          }, 3200);
+        } else {
+          for (let q = 1; q <= 4; q++) {
+            playQuadChannel(q, quadAssigned[q]);
+            await new Promise(r => setTimeout(r, 250));
+          }
         }
         updateAudioStates();
       } catch (err) {
-        console.error('Error iniciando Capital OTB Multicanal:', err);
+        console.error('Error iniciando Multicanal:', err);
       }
     }
 

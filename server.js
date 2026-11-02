@@ -37,6 +37,7 @@ const {
 } = require('./auth_device');
 const { initMasterIngest, getMasterState, updateChannelSource, syncRtnStreams } = require('./master_ingest');
 const { updateFirstTvCookie, getFirstTvStatus } = require('./first_tv_bridge');
+const { syncMulticanalChannels, createOrReuseMulticanal } = require('./multicanal_manager');
 const {
   TOP_10_GAMES,
   initLotteryEngine,
@@ -643,6 +644,27 @@ app.post('/api/admin/first-tv/cookie', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
   updateFirstTvCookie(cookie, auth0Cookie);
   syncRtnStreams(CHANNELS);
   return res.json({ success: true, message: 'Sesión 1/ST TV actualizada e ingesta disparada.', status: getFirstTvStatus() });
+});
+
+// Lista y Creador de Multicanales (4 en 1) con Deduplicación de Combinaciones
+app.get('/api/multicanales', (req, res) => {
+  syncMulticanalChannels(CHANNELS);
+  const multicanales = CHANNELS.filter(c => c.onAir && (c.isMulticanal || c.id === 'capital-otb'));
+  const individualTracks = CHANNELS.filter(c => c.onAir && !c.isMulticanal && c.id !== 'capital-otb' && c.id !== 'vsin' && c.id !== 'horse-tv');
+  return res.json({
+    success: true,
+    multicanales,
+    individualTracks
+  });
+});
+
+app.post('/api/multicanales', (req, res) => {
+  const { tracks, title } = req.body || {};
+  const result = createOrReuseMulticanal(CHANNELS, tracks, title);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  return res.json(result);
 });
 
 app.get('/api/channels', (req, res) => {

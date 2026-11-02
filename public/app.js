@@ -1475,55 +1475,62 @@ function renderChannelList(channels) {
     return;
   }
 
-  // Si está en modo "Todos", separar explícitamente los activos de los inactivos con cabeceras visuales
-  if (sidebarFilterMode === 'all') {
-    const activeList = channels.filter(c => c.onAir);
-    const inactiveList = channels.filter(c => !c.onAir);
+  const activeMulti = channels.filter(c => c.onAir && (c.isMulticanal || c.id === 'capital-otb'));
+  const activeIndiv = channels.filter(c => c.onAir && !c.isMulticanal && c.id !== 'capital-otb');
+  const inactiveList = channels.filter(c => !c.onAir);
 
-    if (activeList.length > 0) {
-      const hActive = document.createElement('div');
-      hActive.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.12); border-left: 3px solid #10b981; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;';
-      hActive.textContent = `🟢 En Vivo (${activeList.length} Hipódromos con Carreras Activas)`;
-      elements.channelListContainer.appendChild(hActive);
+  if (activeMulti.length > 0) {
+    const hMulti = document.createElement('div');
+    hMulti.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.14); border-left: 3px solid #0284c7; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;';
+    hMulti.textContent = `📺 Multicanales 4 en 1 (${activeMulti.length} Disponibles)`;
+    elements.channelListContainer.appendChild(hMulti);
 
-      activeList.forEach(ch => renderSingleChannelCard(ch));
-    }
-
-    if (inactiveList.length > 0) {
-      const hInactive = document.createElement('div');
-      hInactive.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #94a3b8; background: rgba(255, 255, 255, 0.05); border-left: 3px solid #64748b; border-radius: 4px; margin: 18px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;';
-      hInactive.textContent = `⚪ Fuera de Aire (${inactiveList.length} Hipódromos Sin Actividad Hoy)`;
-      elements.channelListContainer.appendChild(hInactive);
-
-      inactiveList.forEach(ch => renderSingleChannelCard(ch));
-    }
-    return;
+    activeMulti.forEach(ch => renderSingleChannelCard(ch));
   }
 
-  // En modo "En Vivo" (Por defecto): Cabecera y solo canales activos
-  const hOnlyActive = document.createElement('div');
-  hOnlyActive.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.12); border-left: 3px solid #10b981; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;';
-  hOnlyActive.textContent = `🟢 Solo Hipódromos con Carreras Activas (${channels.length})`;
-  elements.channelListContainer.appendChild(hOnlyActive);
+  if (activeIndiv.length > 0) {
+    const hActive = document.createElement('div');
+    hActive.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.12); border-left: 3px solid #10b981; border-radius: 4px; margin: 10px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;';
+    hActive.textContent = `🟢 Hipódromos Individuales en Vivo (${activeIndiv.length})`;
+    elements.channelListContainer.appendChild(hActive);
 
-  channels.forEach(ch => renderSingleChannelCard(ch));
+    activeIndiv.forEach(ch => renderSingleChannelCard(ch));
+  }
+
+  if (sidebarFilterMode === 'all' && inactiveList.length > 0) {
+    const hInactive = document.createElement('div');
+    hInactive.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #94a3b8; background: rgba(255, 255, 255, 0.05); border-left: 3px solid #64748b; border-radius: 4px; margin: 18px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;';
+    hInactive.textContent = `⚪ Fuera de Aire (${inactiveList.length} Hipódromos Sin Actividad Hoy)`;
+    elements.channelListContainer.appendChild(hInactive);
+
+    inactiveList.forEach(ch => renderSingleChannelCard(ch));
+  }
 }
 
 function renderSingleChannelCard(ch) {
   const card = document.createElement('div');
+  const isMulti = Boolean(ch.isMulticanal || ch.id === 'capital-otb');
   card.className = `channel-card ${ch.onAir ? 'on-air' : 'off-air'}`;
+  if (isMulti && ch.onAir) {
+    card.style.border = '1px solid rgba(56, 189, 248, 0.45)';
+    card.style.background = 'linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(12, 74, 110, 0.35))';
+  }
   card.setAttribute('tabindex', '0');
   
   const liveBadgeHtml = ch.onAir
-    ? `<span class="badge-live active"><span class="live-dot green"></span> EN VIVO</span>`
+    ? `<span class="badge-live active"><span class="live-dot green"></span> ${isMulti ? '4 EN 1' : 'EN VIVO'}</span>`
     : `<span class="badge-live off"><span class="live-dot gray"></span> FUERA DE AIRE</span>`;
+
+  const multiTracksBanner = (isMulti && ch.multicanalSummary)
+    ? `<div style="margin: 5px 0 6px 0; padding: 5px 8px; background: rgba(2, 6, 23, 0.65); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 6px; font-size: 0.75rem; color: #7dd3fc; font-weight: 700; line-height: 1.35;">📺 Trae: ${ch.multicanalSummary}</div>`
+    : '';
 
   card.innerHTML = `
     <div class="channel-card-top">
       <span class="channel-card-name">${ch.flag || '🏇'} ${ch.name}</span>
       ${liveBadgeHtml}
     </div>
-    <div class="channel-card-loc">📍 ${ch.location || 'Simulcast'} • ${ch.nextRace || (ch.onAir ? 'Transmisión RTN HD' : 'Sin carreras')}</div>
+    ${multiTracksBanner || `<div class="channel-card-loc">📍 ${ch.location || 'Simulcast'} • ${ch.nextRace || (ch.onAir ? 'Transmisión RTN HD' : 'Sin carreras')}</div>`}
     <div class="channel-card-actions">
       <button class="btn-assign-cell" data-cell="1" data-channel="${ch.id}" title="Transmitir en Pantalla 1">P1</button>
       <button class="btn-assign-cell" data-cell="2" data-channel="${ch.id}" title="Transmitir en Pantalla 2">P2</button>
@@ -1551,6 +1558,9 @@ function renderSingleChannelCard(ch) {
 // Populate Select Dropdowns inside each Video Cell (Únicamente Hipódromos EN VIVO - Requisito 2)
 function populateSelectDropdowns() {
   const activeChannels = channelCatalog.filter(c => c.onAir);
+  const multiChannels = activeChannels.filter(c => c.isMulticanal || c.id === 'capital-otb');
+  const indivChannels = activeChannels.filter(c => !c.isMulticanal && c.id !== 'capital-otb');
+  const sortedActive = [...multiChannels, ...indivChannels];
 
   [1, 2, 3, 4].forEach(cellNum => {
     const select = document.getElementById(`selectCell${cellNum}`);
@@ -1558,7 +1568,7 @@ function populateSelectDropdowns() {
     
     select.innerHTML = '';
 
-    if (activeChannels.length === 0) {
+    if (sortedActive.length === 0) {
       const option = document.createElement('option');
       option.value = '';
       option.textContent = '⚠️ Sin carreras en vivo en este momento';
@@ -1566,10 +1576,15 @@ function populateSelectDropdowns() {
       return;
     }
 
-    activeChannels.forEach(ch => {
+    sortedActive.forEach(ch => {
       const option = document.createElement('option');
       option.value = ch.id;
-      option.textContent = `🟢 ${ch.flag || '🏇'} ${ch.name}${ch.nextRace ? ' • ' + ch.nextRace : ''}`;
+      const isMulti = Boolean(ch.isMulticanal || ch.id === 'capital-otb');
+      if (isMulti && ch.multicanalSummary) {
+        option.textContent = `📺 [4 en 1] ${ch.name} (${ch.multicanalSummary})`;
+      } else {
+        option.textContent = `🟢 ${ch.flag || '🏇'} ${ch.name}${ch.nextRace ? ' • ' + ch.nextRace : ''}`;
+      }
       if (ch.id === cellChannels[cellNum]) {
         option.selected = true;
       }
@@ -1585,6 +1600,170 @@ function populateSelectDropdowns() {
     };
   });
 }
+
+// =========================================================
+// GESTOR INTERACTIVO DE MULTICANALES (4 EN 1) PARA AGENCIAS
+// =========================================================
+const VEN_FAV_ORDER = [
+  'gulfstream-park', 'saratoga', 'belmont-park', 'aqueduct-racetrack',
+  'laurel-park', 'tampa-bay-downs', 'parx-racing', 'finger-lakes',
+  'santa-anita-park', 'del-mar', 'woodbine', 'keeneland', 'churchill-downs',
+  'mahoning-valley', 'thistledown', 'horseshoe-indianapolis', 'mountaineer-park',
+  'charles-town', 'la-rinconada', 'hipodromo-valencia', 'hipodromo-camarero',
+  'hipodromo-palermo', 'hipodromo-san-isidro', 'hipodromo-monterrico'
+];
+
+window.openMulticanalBuilderModal = async function() {
+  const modal = document.getElementById('multicanalBuilderModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  const feedback = document.getElementById('customMultiFeedback');
+  if (feedback) feedback.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/channels');
+    const data = await res.json();
+    if (data && Array.isArray(data.channels)) {
+      channelCatalog = data.channels;
+      filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.toLowerCase() : '');
+      populateSelectDropdowns();
+    }
+  } catch (e) {}
+
+  renderMulticanalModalContent();
+};
+
+window.closeMulticanalBuilderModal = function() {
+  const modal = document.getElementById('multicanalBuilderModal');
+  if (modal) modal.style.display = 'none';
+};
+
+function renderMulticanalModalContent() {
+  const presetsGrid = document.getElementById('multicanalPresetsGrid');
+  if (!presetsGrid) return;
+
+  const multicanales = channelCatalog.filter(c => c.onAir && (c.isMulticanal || c.id === 'capital-otb'));
+  const indivTracks = channelCatalog
+    .filter(c => c.onAir && !c.isMulticanal && c.id !== 'capital-otb' && c.id !== 'vsin' && c.id !== 'horse-tv')
+    .sort((a, b) => {
+      const aToday = a.activeToday !== false ? 0 : 1;
+      const bToday = b.activeToday !== false ? 0 : 1;
+      if (aToday !== bToday) return aToday - bToday;
+      const idxA = VEN_FAV_ORDER.indexOf(a.id);
+      const idxB = VEN_FAV_ORDER.indexOf(b.id);
+      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+    });
+
+  if (multicanales.length === 0) {
+    presetsGrid.innerHTML = `<div style="color:#94a3b8; font-size:0.85rem; padding:12px;">No hay multicanales activos en este momento.</div>`;
+  } else {
+    presetsGrid.innerHTML = multicanales.map(mc => {
+      const trackPills = (mc.multicanalSummary || mc.nextRace || '')
+        .replace(/^Incluye:\s*/i, '')
+        .split('•')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map((tName, idx) => `<span style="background:rgba(15,23,42,0.9); border:1px solid rgba(56,189,248,0.3); color:#e0f2fe; border-radius:5px; padding:3px 7px; font-size:0.74rem; font-weight:700;">${idx + 1}. ${tName}</span>`)
+        .join('');
+
+      return `
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(12, 74, 110, 0.32)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px;">
+              <strong style="color: #fff; font-size: 0.92rem;">${mc.flag || '📺'} ${mc.name}</strong>
+              <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.66rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">4 EN 1</span>
+            </div>
+            <div style="font-size: 0.73rem; color: #94a3b8; margin-bottom: 8px;">Canales incluidos en esta señal:</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+              ${trackPills}
+            </div>
+          </div>
+          <button type="button" onclick="window.selectMulticanalForTv('${mc.id}')" style="width: 100%; background: linear-gradient(135deg, #0284c7, #10b981); border: none; color: #fff; font-weight: 800; font-size: 0.8rem; padding: 8px 10px; border-radius: 6px; cursor: pointer;">
+            ▶️ Ver este Multicanal en mi TV (1 Canal)
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Poblar los 4 selectores del creador personalizado con los hipódromos activos hoy
+  [1, 2, 3, 4].forEach((q, idx) => {
+    const sel = document.getElementById(`selCustomMulti${q}`);
+    if (!sel) return;
+    sel.innerHTML = '';
+    indivTracks.forEach((ch, chIdx) => {
+      const opt = document.createElement('option');
+      opt.value = ch.id;
+      opt.textContent = `${ch.flag || '🏇'} ${ch.name}${ch.activeToday !== false ? ' (Carreras Hoy)' : ''}`;
+      if (chIdx === (idx % Math.max(1, indivTracks.length))) {
+        opt.selected = true;
+      }
+      sel.appendChild(opt);
+    });
+  });
+}
+
+window.selectMulticanalForTv = function(channelId) {
+  // Cambiar automáticamente a Vista de 1 sola pantalla para que al Smart TV le llegue 1 solo canal fluido ya dividido en 4
+  if (activeGridMode !== 1) {
+    updateGridView(1);
+  }
+  assignChannelToCell(1, channelId);
+  window.closeMulticanalBuilderModal();
+};
+
+window.handleCreateCustomMulticanal = async function() {
+  const tracks = [1, 2, 3, 4]
+    .map(q => document.getElementById(`selCustomMulti${q}`)?.value)
+    .filter(Boolean);
+  const titleInput = document.getElementById('txtCustomMultiTitle');
+  const feedback = document.getElementById('customMultiFeedback');
+  const title = titleInput ? titleInput.value.trim() : '';
+
+  try {
+    const res = await fetch('/api/multicanales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tracks, title })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.style.color = '#f87171';
+        feedback.textContent = data.error || 'No se pudo crear el Multicanal.';
+      }
+      return;
+    }
+
+    // Recargar catálogo para que el nuevo (o reutilizado) Multicanal aparezca en la lista y selectores
+    const chRes = await fetch('/api/channels');
+    const chData = await chRes.json();
+    if (chData && Array.isArray(chData.channels)) {
+      channelCatalog = chData.channels;
+      filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.toLowerCase() : '');
+      populateSelectDropdowns();
+    }
+
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.color = '#34d399';
+      feedback.textContent = `✅ ${data.message}`;
+    }
+
+    if (titleInput) titleInput.value = '';
+    setTimeout(() => {
+      window.selectMulticanalForTv(data.channel.id);
+    }, 600);
+  } catch (err) {
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.color = '#f87171';
+      feedback.textContent = 'Error de conexión al crear el Multicanal.';
+    }
+  }
+};
 
 // Assign Channel to Cell & Play (Requisito 3: Seguro y sin errores de DOM)
 function assignChannelToCell(cellNum, channelId) {

@@ -1,6 +1,7 @@
 const { fetchRtnLiveStreams } = require('./rtn_bridge');
 const { fetchPublicLiveStreams } = require('./public_streams_bridge');
 const { fetchFirstTvLiveStreams } = require('./first_tv_bridge');
+const { syncMulticanalChannels } = require('./multicanal_manager');
 
 // Estado del Ingestor Máster
 const masterState = {
@@ -27,29 +28,9 @@ async function syncRtnStreams(channelsCatalog) {
     // Combinar señales activas verificadas (1/ST TV H5Live ~2s tiene prioridad sobre iframes públicos de mayor latencia)
     const combinedStreams = { ...publicStreams, ...firstTvStreams, ...bridgeStreams };
 
-    // Garantizar que Capital OTB TV Network funcione siempre en modo Multicanal (Mosaico 4 hipódromos NY/EE.UU. en vivo)
-    if (!bridgeStreams['capital-otb']) {
-      const hasLiveUsTracks = Object.keys(firstTvStreams).length > 0 || Boolean(publicStreams['aqueduct-racetrack'] || publicStreams['belmont-park']);
-      if (hasLiveUsTracks) {
-        combinedStreams['capital-otb'] = {
-          id: 'capital-otb',
-          name: 'Capital OTB TV Network',
-          trackName: 'Capital OTB TV Network',
-          flag: '🇺🇸',
-          location: 'New York, EE.UU. (Multicanal)',
-          streamUrl: '/capital-otb.html',
-          type: 'iframe',
-          onAir: true,
-          activeToday: true,
-          statusText: 'Multicanal en Vivo • Capital OTB Simulcast HD',
-          nextRace: 'Mosaico Multicanal NY/EE.UU. en Vivo'
-        };
-      }
-    }
-
     // 2. Resetear el estado onAir y URL previa de los canales sin actividad hoy salvo los fijados manualmente
     channelsCatalog.forEach(c => {
-      if (!c.manualOverride && !combinedStreams[c.id]) {
+      if (!c.manualOverride && !c.isMulticanal && !combinedStreams[c.id]) {
         c.onAir = false;
         c.activeToday = false;
         const offairUrl = `/offair.html?track=${encodeURIComponent(c.name || c.id)}&flag=${encodeURIComponent(c.flag || '🏇')}&loc=${encodeURIComponent(c.location || '')}`;
@@ -102,6 +83,19 @@ async function syncRtnStreams(channelsCatalog) {
         };
         channelsCatalog.push(chInCatalog);
       }
+    }
+
+    // 3. Sincronizar los Multicanales Preconfigurados y Personalizados (Capital OTB, Favoritos USA, Mixto, etc.)
+    const activeMulticanales = syncMulticanalChannels(channelsCatalog);
+    for (const mc of activeMulticanales) {
+      masterState.activeStreams.set(mc.id, {
+        id: mc.id,
+        name: mc.name,
+        streamUrl: mc.streamUrl,
+        type: mc.type,
+        status: 'ONLINE',
+        lastUpdate: new Date().toISOString()
+      });
     }
 
     masterState.healthyChannelsCount = channelsCatalog.filter(c => c.onAir).length;
