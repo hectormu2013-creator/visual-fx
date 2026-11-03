@@ -4,6 +4,7 @@ const https = require('https');
 const { pipeline } = require('stream');
 const url = require('url');
 const { resolveRcnQualityUrl, refreshRcnUrlIfNeeded } = require('./first_tv_bridge');
+const { getRacingScheduleStatus } = require('./schedule_manager');
 
 // Límites de seguridad de memoria para Render
 const FETCH_TIMEOUT_MS = 10000;                 // no dejar conexiones colgadas acumulando RAM
@@ -48,6 +49,20 @@ async function fetchPlaylistText(targetUrl) {
 
 async function handleStreamProxy(req, res, targetUrl) {
   try {
+    // Regla de Horario Oficial: fuera del horario de carreras (salvo Force Open), cortar 100% del flujo de video (0 MB)
+    const schedStatus = getRacingScheduleStatus();
+    if (!schedStatus.isRacingAllowed) {
+      res.writeHead(403, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(JSON.stringify({
+        error: 'OFF_HOURS',
+        message: schedStatus.statusReason,
+        fallbackService: 'loteria'
+      }));
+    }
+
     // Caso especial 1/ST TV / RCNCDN H5Live: resolver playlist.m3u8 -> stream.mp4 progresivo en vivo
     if (targetUrl.includes('ws.rcncdn.com/h5live/http/playlist.m3u8')) {
       const qMode = req.query && req.query.quality;

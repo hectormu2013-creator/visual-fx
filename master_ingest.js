@@ -2,6 +2,7 @@ const { fetchRtnLiveStreams } = require('./rtn_bridge');
 const { fetchPublicLiveStreams } = require('./public_streams_bridge');
 const { fetchFirstTvLiveStreams } = require('./first_tv_bridge');
 const { syncMulticanalChannels } = require('./multicanal_manager');
+const { getRacingScheduleStatus } = require('./schedule_manager');
 
 // Estado del Ingestor Máster
 const masterState = {
@@ -12,7 +13,15 @@ const masterState = {
 
 let syncInProgress = false;
 
-async function syncRtnStreams(channelsCatalog) {
+async function syncRtnStreams(channelsCatalog, forceManual = false) {
+  const schedStatus = getRacingScheduleStatus();
+  // Pre-calentar catálogo 15 min antes de abrir horario; fuera de horario no hacer peticiones a 1st.tv
+  const preWarmStatus = getRacingScheduleStatus(Date.now() + 15 * 60 * 1000);
+  if (!forceManual && !schedStatus.isRacingAllowed && !preWarmStatus.isRacingAllowed) {
+    console.log(`🌙 [Master Ingest] Fuera de horario hípico (${schedStatus.statusReason}). Ingesta pausada (0 MB).`);
+    return;
+  }
+
   // Evitar sincronizaciones solapadas
   if (syncInProgress) {
     console.warn('⏳ [Master Ingest] Sincronización anterior aún en curso, se omite este ciclo.');

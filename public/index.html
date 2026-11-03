@@ -802,6 +802,69 @@
 
         <!-- TAB 3: MASTER CONTROL DE HIPÓDROMOS (SUPER ADMIN & TÉCNICO) -->
         <div class="tab-pane" id="tab-channels">
+          <!-- Panel de Control de Horarios Oficiales de Transmisión de Carreras -->
+          <div class="admin-section-box" style="margin-bottom:16px; border:1px solid rgba(16, 185, 129, 0.45); background:linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(6, 78, 59, 0.25));">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+              <div>
+                <h4 style="margin:0; color:#34d399; display:flex; align-items:center; gap:8px;">
+                  ⏰ Horario Oficial de Transmisión de Carreras (Conmutación Automática a Loterías)
+                </h4>
+                <p class="section-desc" style="margin:4px 0 0 0;">
+                  Fuera de este horario (hora de Venezuela UTC-4), todos los televisores cambian automáticamente a <strong>Modo Loterías</strong> y el servidor corta la descarga de video (0 MB consumidos).
+                </p>
+              </div>
+              <div id="lblScheduleLiveStatusBadge" style="background:rgba(56, 189, 248, 0.15); border:1px solid #38bdf8; color:#e0f2fe; padding:6px 14px; border-radius:20px; font-weight:800; font-size:0.82rem;">
+                ⏳ Verificando horario...
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:12px;">
+              <div style="background:rgba(15, 23, 42, 0.78); border:1px solid rgba(148, 163, 184, 0.25); border-radius:8px; padding:10px 12px;">
+                <label style="display:block; font-size:0.78rem; font-weight:800; color:#38bdf8; margin-bottom:6px;">⚙️ Modo de Control:</label>
+                <select id="selScheduleMode" style="width:100%; background:#090d16; color:#fff; border:1px solid rgba(56, 189, 248, 0.4); border-radius:6px; padding:7px 10px; font-weight:700; font-size:0.84rem;">
+                  <option value="AUTO">🤖 Automático según Horario (Recomendado)</option>
+                  <option value="FORCE_OPEN">🟢 Forzar Transmisión Hípica Abierta Ahora</option>
+                  <option value="FORCE_LOTTERY">🎲 Forzar Todos los TVs a Loterías Ahora</option>
+                </select>
+              </div>
+
+              <div style="background:rgba(15, 23, 42, 0.78); border:1px solid rgba(148, 163, 184, 0.25); border-radius:8px; padding:10px 12px;">
+                <label style="display:block; font-size:0.78rem; font-weight:800; color:#fbbf24; margin-bottom:6px;">📅 Lunes a Jueves (Hora Venezuela):</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="flex:1;">
+                    <small style="color:#94a3b8; font-size:0.7rem; display:block;">Inicia:</small>
+                    <input type="time" id="inpSchedMonThuStart" value="11:30" style="width:100%; background:#090d16; color:#fff; border:1px solid rgba(251, 191, 36, 0.4); border-radius:6px; padding:5px 8px; font-weight:700;">
+                  </div>
+                  <div style="flex:1;">
+                    <small style="color:#94a3b8; font-size:0.7rem; display:block;">Finaliza:</small>
+                    <input type="time" id="inpSchedMonThuEnd" value="19:00" style="width:100%; background:#090d16; color:#fff; border:1px solid rgba(251, 191, 36, 0.4); border-radius:6px; padding:5px 8px; font-weight:700;">
+                  </div>
+                </div>
+              </div>
+
+              <div style="background:rgba(15, 23, 42, 0.78); border:1px solid rgba(148, 163, 184, 0.25); border-radius:8px; padding:10px 12px;">
+                <label style="display:block; font-size:0.78rem; font-weight:800; color:#34d399; margin-bottom:6px;">🏁 Viernes a Domingo (Hora Venezuela):</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div style="flex:1;">
+                    <small style="color:#94a3b8; font-size:0.7rem; display:block;">Inicia:</small>
+                    <input type="time" id="inpSchedFriSunStart" value="11:00" style="width:100%; background:#090d16; color:#fff; border:1px solid rgba(16, 185, 129, 0.4); border-radius:6px; padding:5px 8px; font-weight:700;">
+                  </div>
+                  <div style="flex:1;">
+                    <small style="color:#94a3b8; font-size:0.7rem; display:block;">Finaliza:</small>
+                    <input type="time" id="inpSchedFriSunEnd" value="20:00" style="width:100%; background:#090d16; color:#fff; border:1px solid rgba(16, 185, 129, 0.4); border-radius:6px; padding:5px 8px; font-weight:700;">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div id="schedSaveFeedback" style="font-size:0.84rem; font-weight:700; color:#34d399;"></div>
+              <button type="button" id="btnSaveRacingSchedule" onclick="window.saveRacingScheduleFromAdmin()" style="background:linear-gradient(135deg, #0284c7, #10b981); border:none; color:#fff; font-weight:800; padding:8px 18px; border-radius:8px; cursor:pointer; font-size:0.85rem;">
+                💾 Guardar Horario de Transmisión
+              </button>
+            </div>
+          </div>
+
           <div class="admin-section-box">
             <h4>➕ Agregar Nuevo Hipódromo al Catálogo Máster</h4>
             <p class="section-desc">Registre un nuevo canal con su URL de transmisión en vivo:</p>

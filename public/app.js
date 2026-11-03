@@ -413,8 +413,187 @@ const SERVICES_MAP = {
   'publicidad': { name: 'Publicidad del Negocio', panelId: 'panelAds' }
 };
 
+// =========================================================
+// CONTROLADOR DE HORARIOS OFICIALES DE TRANSMISIÓN HÍPICA
+// Lun-Jue: 11:30 AM - 7:00 PM | Vie-Dom: 11:00 AM - 8:00 PM (UTC-4)
+// Fuera de horario: Cambio automático de todos los TVs a Modo Loterías
+// =========================================================
+let latestScheduleStatus = null;
+
+function parseHHMMToMin(str, fallback) {
+  if (!str || typeof str !== 'string') return fallback;
+  const [h, m] = str.split(':').map(n => parseInt(n, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return fallback;
+  return h * 60 + m;
+}
+
+function getLocalVenezuelaScheduleCheck() {
+  const sched = (latestScheduleStatus && latestScheduleStatus.schedule) || {
+    enabled: true,
+    mode: 'AUTO',
+    monThuStart: '11:30',
+    monThuEnd: '19:00',
+    friSunStart: '11:00',
+    friSunEnd: '20:00'
+  };
+  if (!sched.enabled || sched.mode === 'FORCE_OPEN') {
+    return { isRacingAllowed: true, statusReason: 'Transmisión Hípica Habilitada' };
+  }
+  if (sched.mode === 'FORCE_LOTTERY') {
+    return { isRacingAllowed: false, statusReason: 'Modo Loterías Forzado por Administración' };
+  }
+  const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
+  const vetDay = vetDate.getUTCDay(); // 0=Dom, 5=Vie, 6=Sáb
+  const curMin = vetDate.getUTCHours() * 60 + vetDate.getUTCMinutes();
+  const isWeekend = (vetDay === 0 || vetDay === 5 || vetDay === 6);
+  const startMin = parseHHMMToMin(isWeekend ? sched.friSunStart : sched.monThuStart, isWeekend ? 660 : 690);
+  const endMin = parseHHMMToMin(isWeekend ? sched.friSunEnd : sched.monThuEnd, isWeekend ? 1200 : 1140);
+  const allowed = (curMin >= startMin && curMin < endMin);
+  return {
+    isRacingAllowed: allowed,
+    statusReason: allowed
+      ? 'En horario de transmisión hípica'
+      : `Fuera de horario hípico (${isWeekend ? 'Vie-Dom 11:00 AM - 8:00 PM' : 'Lun-Jue 11:30 AM - 7:00 PM'}) • Modo Loterías Activo`
+  };
+}
+
+function showScheduleBannerToast(text) {
+  let banner = document.getElementById('vfxScheduleFloatingNotice');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'vfxScheduleFloatingNotice';
+    banner.style.cssText = 'position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:99999; background:rgba(9,14,28,0.95); border:1px solid #10b981; color:#e0f2fe; padding:10px 18px; border-radius:10px; font-weight:700; font-size:0.86rem; box-shadow:0 8px 24px rgba(0,0,0,0.6); pointer-events:none; transition:opacity 0.3s ease;';
+    document.body.appendChild(banner);
+  }
+  banner.textContent = `⏰ ${text}`;
+  banner.style.opacity = '1';
+  banner.style.display = 'block';
+  if (banner._hideTimer) clearTimeout(banner._hideTimer);
+  banner._hideTimer = setTimeout(() => {
+    banner.style.opacity = '0';
+    setTimeout(() => { banner.style.display = 'none'; }, 300);
+  }, 5500);
+}
+
+function enforceRacingSchedule(serverSchedStatus = null) {
+  if (serverSchedStatus && typeof serverSchedStatus === 'object') {
+    latestScheduleStatus = serverSchedStatus;
+    updateAdminScheduleUI(serverSchedStatus);
+  }
+  const check = getLocalVenezuelaScheduleCheck();
+  if (!check.isRacingAllowed) {
+    if (selectedService === 'hipica') {
+      sessionStorage.setItem('vfx_auto_switched_to_loteria', '1');
+      [1, 2, 3, 4].forEach(n => stopAndDestroyPlayer(n));
+      applyActiveServiceView('loteria');
+      showScheduleBannerToast(check.statusReason);
+    }
+  } else {
+    // Si ya entró en horario de carreras y la pantalla había sido pasada automáticamente a Loterías, restaurar Hípica
+    if (sessionStorage.getItem('vfx_auto_switched_to_loteria') === '1' && selectedService === 'loteria') {
+      sessionStorage.removeItem('vfx_auto_switched_to_loteria');
+      applyActiveServiceView('hipica');
+    }
+  }
+}
+
+setInterval(() => {
+  enforceRacingSchedule();
+}, 30000);
+
+function updateAdminScheduleUI(statusObj) {
+  if (!statusObj) return;
+  const badge = document.getElementById('lblScheduleLiveStatusBadge');
+  if (badge) {
+    if (statusObj.isRacingAllowed) {
+      badge.style.background = 'rgba(16, 185, 129, 0.2)';
+      badge.style.borderColor = '#10b981';
+      badge.style.color = '#34d399';
+      badge.textContent = `🟢 HÍPICA ACTIVA (${statusObj.vetDayName || ''} ${statusObj.vetTime12 || ''})`;
+    } else {
+      badge.style.background = 'rgba(245, 158, 11, 0.2)';
+      badge.style.borderColor = '#f59e0b';
+      badge.style.color = '#fbbf24';
+      badge.textContent = `🎲 MODO LOTERÍAS ACTIVO (${statusObj.vetDayName || ''} ${statusObj.vetTime12 || ''})`;
+    }
+  }
+  const sched = statusObj.schedule;
+  if (!sched) return;
+  const selMode = document.getElementById('selScheduleMode');
+  const inpMTStart = document.getElementById('inpSchedMonThuStart');
+  const inpMTEnd = document.getElementById('inpSchedMonThuEnd');
+  const inpFSStart = document.getElementById('inpSchedFriSunStart');
+  const inpFSEnd = document.getElementById('inpSchedFriSunEnd');
+  if (selMode && document.activeElement !== selMode) selMode.value = sched.mode || 'AUTO';
+  if (inpMTStart && document.activeElement !== inpMTStart) inpMTStart.value = sched.monThuStart || '11:30';
+  if (inpMTEnd && document.activeElement !== inpMTEnd) inpMTEnd.value = sched.monThuEnd || '19:00';
+  if (inpFSStart && document.activeElement !== inpFSStart) inpFSStart.value = sched.friSunStart || '11:00';
+  if (inpFSEnd && document.activeElement !== inpFSEnd) inpFSEnd.value = sched.friSunEnd || '20:00';
+}
+
+async function loadAdminRacingSchedule() {
+  try {
+    const res = await fetch('/api/schedule');
+    const data = await res.json();
+    if (data && data.schedule) {
+      latestScheduleStatus = data;
+      updateAdminScheduleUI(data);
+    }
+  } catch (e) {}
+}
+
+window.saveRacingScheduleFromAdmin = async function() {
+  const mode = document.getElementById('selScheduleMode')?.value || 'AUTO';
+  const monThuStart = document.getElementById('inpSchedMonThuStart')?.value || '11:30';
+  const monThuEnd = document.getElementById('inpSchedMonThuEnd')?.value || '19:00';
+  const friSunStart = document.getElementById('inpSchedFriSunStart')?.value || '11:00';
+  const friSunEnd = document.getElementById('inpSchedFriSunEnd')?.value || '20:00';
+  const feedback = document.getElementById('schedSaveFeedback');
+
+  try {
+    const res = await fetch('/api/schedule', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {})
+      },
+      body: JSON.stringify({
+        enabled: true,
+        mode,
+        monThuStart,
+        monThuEnd,
+        friSunStart,
+        friSunEnd
+      })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      enforceRacingSchedule(data);
+      if (feedback) {
+        feedback.style.color = '#34d399';
+        feedback.textContent = `✅ Horario guardado (${data.statusReason})`;
+      }
+    } else if (feedback) {
+      feedback.style.color = '#f87171';
+      feedback.textContent = data.error || 'No se pudo guardar el horario.';
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.style.color = '#f87171';
+      feedback.textContent = 'Error de conexión al guardar horario.';
+    }
+  }
+};
+
 function applyActiveServiceView(serviceId) {
-  selectedService = serviceId || 'hipica';
+  let targetService = serviceId || 'hipica';
+  const schedCheck = getLocalVenezuelaScheduleCheck();
+  if (targetService === 'hipica' && !schedCheck.isRacingAllowed) {
+    sessionStorage.setItem('vfx_auto_switched_to_loteria', '1');
+    targetService = 'loteria';
+    showScheduleBannerToast(schedCheck.statusReason);
+  }
+  selectedService = targetService;
   localStorage.setItem('visual_fx_service', selectedService);
 
   // Requisito 1: Sincronizar selector desplegable "Otros"
@@ -993,6 +1172,10 @@ async function checkDeviceAuthorization() {
           applyActiveServiceView(remoteDefault);
         }
       }
+
+      if (data.scheduleStatus) {
+        enforceRacingSchedule(data.scheduleStatus);
+      }
     } else {
       if (elements.unauthorizedBanner) elements.unauthorizedBanner.style.display = 'flex';
       elements.deviceBadgeText.textContent = `Sin Sesión Activa`;
@@ -1374,6 +1557,9 @@ async function loadChannelCatalog() {
   try {
     const res = await fetch('/api/channels');
     const data = await res.json();
+    if (data && data.scheduleStatus) {
+      enforceRacingSchedule(data.scheduleStatus);
+    }
     channelCatalog = data.channels || [];
 
     // Ordenar: Primero los hipódromos EN VIVO (onAir), luego alfabéticamente por nombre
@@ -2218,6 +2404,7 @@ function switchAdminTab(targetTabId) {
     const selAnalytics = document.getElementById('selFilterAnalyticsClient');
     loadSystemAnalytics(selAnalytics ? selAnalytics.value : 'ALL');
   } else if (targetTabId === 'tab-channels') {
+    loadAdminRacingSchedule();
     populateAdminChannelsTable();
   } else if (targetTabId === 'tab-users') {
     loadSystemUsersList();

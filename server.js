@@ -38,6 +38,7 @@ const {
 const { initMasterIngest, getMasterState, updateChannelSource, syncRtnStreams } = require('./master_ingest');
 const { updateFirstTvCookie, getFirstTvStatus } = require('./first_tv_bridge');
 const { syncMulticanalChannels, createOrReuseMulticanal } = require('./multicanal_manager');
+const { initScheduleManager, updateRacingSchedule, getRacingScheduleStatus } = require('./schedule_manager');
 const {
   TOP_10_GAMES,
   initLotteryEngine,
@@ -106,8 +107,10 @@ app.get(['/app', '/download/apk', '/visual-fx-tv.apk'], (req, res) => {
   return res.redirect('https://github.com/hectormu2013-creator/visual-fx/releases/download/v1.0-tv/visual-fx-tv.apk');
 });
 
-// Inicializar Ingestor Máster y Motor de Loterías
-initMasterIngest(CHANNELS);
+// Inicializar Gestor de Horarios Oficiales, Ingestor Máster y Motor de Loterías
+initScheduleManager().then(() => {
+  initMasterIngest(CHANNELS);
+});
 initLotteryEngine();
 
 // Middleware para verificar Roles
@@ -167,6 +170,7 @@ app.get('/api/device/verify', (req, res) => {
   }
   
   const status = checkDeviceStatus(deviceId, activeService, clientIp, decodedUser);
+  status.scheduleStatus = getRacingScheduleStatus();
   return res.json(status);
 });
 
@@ -646,6 +650,36 @@ app.post('/api/admin/first-tv/cookie', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
   return res.json({ success: true, message: 'Sesión 1/ST TV actualizada e ingesta disparada.', status: getFirstTvStatus() });
 });
 
+// Control de Horario Oficial de Transmisión de Carreras (Lun-Jue 11:30am-7pm | Vie-Dom 11am-8pm)
+app.get(['/api/schedule', '/api/admin/schedule'], (req, res) => {
+  return res.json({
+    success: true,
+    ...getRacingScheduleStatus()
+  });
+});
+
+app.post(['/api/schedule', '/api/admin/schedule'], async (req, res) => {
+  try {
+    let updatedBy = 'Admin';
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const decoded = verifyToken(authHeader.split(' ')[1]);
+      if (decoded) updatedBy = decoded.name || decoded.username || 'Admin';
+    }
+    const status = await updateRacingSchedule(req.body || {}, updatedBy);
+    if (status.isRacingAllowed) {
+      syncRtnStreams(CHANNELS, true);
+    }
+    return res.json({
+      success: true,
+      message: 'Horario de transmisión hípica actualizado y sincronizado en la nube.',
+      ...status
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Error al actualizar el horario.' });
+  }
+});
+
 // Lista y Creador de Multicanales (4 en 1) con Deduplicación de Combinaciones
 app.get('/api/multicanales', (req, res) => {
   syncMulticanalChannels(CHANNELS);
@@ -679,7 +713,8 @@ app.get('/api/channels', (req, res) => {
 
   return res.json({
     total: mappedChannels.length,
-    channels: mappedChannels
+    channels: mappedChannels,
+    scheduleStatus: getRacingScheduleStatus()
   });
 });
 
