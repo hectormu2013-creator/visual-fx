@@ -4,69 +4,8 @@ const fetch = require('node-fetch');
 
 const FETCH_TIMEOUT = 10000;
 
-// Señales HLS (.m3u8) Directas 24/7 Oficiales (Reproducción nativa en HLS.js sin bloqueos)
-const DIRECT_HLS_24_7_CHANNELS = [
-  {
-    id: 'sky-racing-1',
-    name: 'Sky Racing 1 Simulcast',
-    flag: '🇦🇺',
-    location: 'Internacional 24/7',
-    streamUrl: 'https://636ffd31f0e12.streamlock.net/RacingStream1/RacingStream1/playlist.m3u8',
-    type: 'hls',
-    statusText: 'En Vivo 24/7 • Sky Racing Oficial HD',
-    nextRace: 'Carreras Internacionales en Vivo'
-  },
-  {
-    id: 'turf-movil',
-    name: 'Teletrak / Turf Chile HD',
-    flag: '🇨🇱',
-    location: 'Santiago, Chile',
-    streamUrl: 'https://tvturf4.janus.cl/playlist/stream.m3u8?d=w&id=',
-    type: 'hls',
-    statusText: 'En Vivo • Teletrak Red Hípica Oficial',
-    nextRace: 'Jornada Hípica en Directo'
-  },
-  {
-    id: 'equidia-hd',
-    name: 'Equidia Racing HD',
-    flag: '🇫🇷',
-    location: 'París, Francia',
-    streamUrl: 'https://raw.githubusercontent.com/Paradise-91/ParaTV/main/streams/equidia/live2.m3u8',
-    type: 'hls',
-    statusText: 'En Vivo 24/7 • Equidia 1080p Oficial',
-    nextRace: 'Carreras en Vivo • Señal Oficial'
-  },
-  {
-    id: 'tjk-tv',
-    name: 'TJK Jockey Club TV',
-    flag: '🏇',
-    location: 'Simulcast Internacional',
-    streamUrl: 'https://tjktv-live.tjk.org/tjktv.m3u8',
-    type: 'hls',
-    statusText: 'En Vivo 24/7 • Jockey Club 1080p Oficial',
-    nextRace: 'Carreras en Directo'
-  },
-  {
-    id: 'vsin',
-    name: 'VSiN Sports Network',
-    flag: '🇺🇸',
-    location: 'Las Vegas, Nevada, EE.UU.',
-    streamUrl: 'https://vsin-sgrewind.streamguys1.com/scte/live-2k/playlist.m3u8',
-    type: 'hls',
-    statusText: 'En Vivo 24/7 • VSiN HD Directo',
-    nextRace: 'Transmisión Oficial Las Vegas'
-  },
-  {
-    id: 'horse-tv',
-    name: 'Horse TV Network',
-    flag: '🇺🇸',
-    location: 'EE.UU. • Canal Ecuestre 24/7',
-    streamUrl: 'https://a-cdn.klowdtv.com/live2/horsetv_720p/playlist.m3u8',
-    type: 'hls',
-    statusText: 'En Vivo 24/7 • Horse TV 720p',
-    nextRace: 'Transmisión Continua'
-  }
-];
+// Señales HLS (.m3u8) Directas 24/7 desactivadas (no se comercializan en los sistemas de Agencias Fénix)
+const DIRECT_HLS_24_7_CHANNELS = [];
 
 // Palabras prohibidas para descartar youtubers, pronosticadores, podcasts y cámaras ajenas
 const BLOCKED_KEYWORDS_REGEX = /picks|pronostico|pronóstico|handicapping|podcast|show ever|sportsmoneynetwork|deportes max|equinedge|seminar|preview show|railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox|caballos de historia|la odisea|grupo hipico|grupo hípico|solo audio|narracion|narración|mas hipica|más hípica|sint rocha|hipodromo de rocha/i;
@@ -108,32 +47,8 @@ const LIVE_SEARCH_TARGETS = [
     ]
   },
   {
-    query: 'Hipodromo en vivo',
+    query: 'Hipodromo La Rinconada Valencia INH en vivo',
     assignTo: [
-      {
-        id: 'hipodromo-camarero',
-        name: 'Hipódromo Camarero',
-        flag: '🇵🇷',
-        location: 'Canóvanas, Puerto Rico',
-        matchKeywords: ['camarero'],
-        requireOfficialChannel: /camarero/i
-      },
-      {
-        id: 'hipodromo-palermo',
-        name: 'Hipódromo de Palermo',
-        flag: '🇦🇷',
-        location: 'Buenos Aires, Argentina',
-        matchKeywords: ['palermo'],
-        requireOfficialChannel: /palermo/i
-      },
-      {
-        id: 'hipodromo-san-isidro',
-        name: 'Hipódromo de San Isidro',
-        flag: '🇦🇷',
-        location: 'San Isidro, Argentina',
-        matchKeywords: ['san isidro'],
-        requireOfficialChannel: /san isidro/i
-      },
       {
         id: 'hipodromo-valencia',
         name: 'Hipódromo de Valencia',
@@ -149,22 +64,6 @@ const LIVE_SEARCH_TARGETS = [
         location: 'Caracas, Venezuela',
         matchKeywords: ['rinconada', 'inh', 'reunión', 'reunion'],
         requireOfficialChannel: /inh|instituto nacional de hipodromos|instituto nacional de hipódromos|oficialinh/i
-      },
-      {
-        id: 'hipodromo-monterrico',
-        name: 'Hipódromo de Monterrico',
-        flag: '🇵🇪',
-        location: 'Lima, Perú',
-        matchKeywords: ['monterrico'],
-        requireOfficialChannel: /monterrico/i
-      },
-      {
-        id: 'hipodromo-las-piedras',
-        name: 'Hipódromo Las Piedras',
-        flag: '🇺🇾',
-        location: 'Las Piedras, Uruguay',
-        matchKeywords: ['las piedras', 'maroñas'],
-        requireOfficialChannel: /hipica|maroñas|piedras/i
       }
     ]
   },

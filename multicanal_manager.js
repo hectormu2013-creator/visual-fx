@@ -32,16 +32,16 @@ const VENEZUELA_US_FAVORITES = [
   'hawthorne'               // 27. Hawthorne
 ];
 
-// Orden de preferencia de Capital OTB (NY + Costa Este primero)
+// Orden de preferencia de Capital OTB (NY + Costa Este y Lunes a Miércoles: Parx, Finger Lakes, Indiana Grand, Mahoning Valley)
 const CAPITAL_OTB_FAVORITES = [
+  'parx-racing',
+  'finger-lakes',
+  'horseshoe-indianapolis',
+  'mahoning-valley',
   'aqueduct-racetrack',
   'belmont-park',
   'saratoga',
-  'finger-lakes',
-  'parx-racing',
-  'mahoning-valley',
   'thistledown',
-  'horseshoe-indianapolis',
   'gulfstream-park',
   'laurel-park',
   'tampa-bay-downs',
@@ -58,16 +58,10 @@ const CAPITAL_OTB_FAVORITES = [
   'del-mar'
 ];
 
-// Hipódromos Sudamericanos y del Caribe favoritos en Venezuela
+// Hipódromos Nacionales comercializados en Venezuela (INH)
 const LATAM_FAVORITES = [
   'la-rinconada',
-  'hipodromo-valencia',
-  'hipodromo-camarero',
-  'hipodromo-palermo',
-  'hipodromo-san-isidro',
-  'hipodromo-monterrico',
-  'turf-movil',
-  'hipodromo-las-piedras'
+  'hipodromo-valencia'
 ];
 
 // Almacén en memoria de Multicanales personalizados creados por agencias hoy

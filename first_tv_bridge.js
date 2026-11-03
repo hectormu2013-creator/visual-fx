@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const https = require('https');
 const http = require('http');
+const { saveToCloud, loadFromCloud } = require('./supabase_sync');
 
 // Cookie de sesión WordPress de 1st.tv (configurable por variable de entorno FIRST_TV_COOKIE)
 const DEFAULT_FIRST_TV_COOKIE = [
@@ -50,9 +51,9 @@ const ALL_FIRST_TV_TRACKS = [
   // Hipódromos activos Lunes, Martes y Miércoles (además de resto de semana)
   { id: 'parx-racing', code: 'PRX', name: 'Parx Racing', flag: '🇺🇸', location: 'Bensalem, Pennsylvania, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3] },
   { id: 'finger-lakes', code: 'FL', name: 'Finger Lakes', flag: '🇺🇸', location: 'Farmington, New York, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3] },
-  { id: 'thistledown', code: 'TDN', name: 'Thistledown', flag: '🇺🇸', location: 'North Randall, Ohio, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3, 4] },
+  { id: 'horseshoe-indianapolis', code: 'IND', name: 'Indiana Grand (Horseshoe)', flag: '🇺🇸', location: 'Shelbyville, Indiana, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4] },
   { id: 'mahoning-valley', code: 'MVR', name: 'Mahoning Valley', flag: '🇺🇸', location: 'Youngstown, Ohio, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3, 4, 6] },
-  { id: 'horseshoe-indianapolis', code: 'IND', name: 'Horseshoe Indianapolis', flag: '🇺🇸', location: 'Shelbyville, Indiana, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4] },
+  { id: 'thistledown', code: 'TDN', name: 'Thistledown', flag: '🇺🇸', location: 'North Randall, Ohio, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 3, 4] },
   { id: 'presque-isle', code: 'PID', name: 'Presque Isle Downs', flag: '🇺🇸', location: 'Erie, Pennsylvania, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4] },
   { id: 'turf-paradise', code: 'TUP', name: 'Turf Paradise', flag: '🇺🇸', location: 'Phoenix, Arizona, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4, 5, 6] },
   { id: 'zia-park', code: 'ZIA', name: 'Zia Park', flag: '🇺🇸', location: 'Hobbs, New Mexico, EE.UU.', schedule: 'BOTH', activeDays: [0, 1, 2] },
@@ -87,9 +88,17 @@ function getCategorizedTracksForNow() {
   // En EE.UU. las carreras nocturnas (Charles Town, Mountaineer, Remington, Penn National) inician a las 7:00 PM EST = 8:00 PM Venezuela (vetHour >= 20)
   const isEveningVet = (vetHour >= 20 || vetHour < 2);
 
-  const VEN_TOP_FAVS = ['gulfstream-park', 'laurel-park', 'parx-racing', 'finger-lakes', 'saratoga', 'belmont-park', 'aqueduct-racetrack', 'tampa-bay-downs', 'santa-anita-park', 'woodbine'];
+  // Lunes a Miércoles (1, 2, 3): Prioridad absoluta a los 4 hipódromos principales que venden los sistemas de Fénix
+  const MON_WED_TOP_4 = ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley'];
+  const VEN_TOP_FAVS = (vetDay >= 1 && vetDay <= 3)
+    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'thistledown', 'mountaineer-park', 'presque-isle', 'turf-paradise']
+    : ['gulfstream-park', 'laurel-park', 'saratoga', 'belmont-park', 'aqueduct-racetrack', 'tampa-bay-downs', 'santa-anita-park', 'woodbine', 'parx-racing', 'finger-lakes'];
 
   const timeWeight = (track) => {
+    const monWedIdx = (vetDay >= 1 && vetDay <= 3) ? MON_WED_TOP_4.indexOf(track.id) : -1;
+    if (monWedIdx !== -1 && !isEveningVet) {
+      return monWedIdx * 0.1; // #1 Parx (0.0), #2 Finger Lakes (0.1), #3 Indiana Grand (0.2), #4 Mahoning Valley (0.3)
+    }
     const favBonus = VEN_TOP_FAVS.includes(track.id) ? -0.4 : 0;
     if (isEveningVet) {
       if (track.schedule === 'NIGHT') return 1 + favBonus;
@@ -106,8 +115,7 @@ function getCategorizedTracksForNow() {
   const otherTracks = [];
 
   for (const t of ALL_FIRST_TV_TRACKS) {
-    // Incluir siempre los favoritos principales de Venezuela (Gulfstream y Laurel) en la revisión prioritaria diurna
-    if ((t.activeDays && t.activeDays.includes(vetDay)) || (!isEveningVet && (t.id === 'gulfstream-park' || t.id === 'laurel-park'))) {
+    if (t.activeDays && t.activeDays.includes(vetDay)) {
       todayActive.push(t);
     } else {
       otherTracks.push(t);
@@ -549,6 +557,18 @@ async function checkSingleTrack(trackDef, activeStreams) {
 async function fetchFirstTvLiveStreams(existingPublicStreams = {}) {
   const activeStreams = {};
 
+  // Sincronizar desde Supabase si existe una llave más reciente guardada en la nube
+  try {
+    const cloudSession = await loadFromCloud('first_tv_session');
+    if (cloudSession && cloudSession.cookie && cloudSession.cookie !== currentFirstTvCookie) {
+      currentFirstTvCookie = cloudSession.cookie;
+      if (cloudSession.auth0Cookie) currentAuth0Cookie = cloudSession.auth0Cookie;
+      circuitPausedUntil = 0;
+      lastSessionError = null;
+      console.log('☁️ [1/ST TV Bridge] Cookie de sesión 1st.tv sincronizada desde Supabase.');
+    }
+  } catch (e) {}
+
   if (!firstTvEnabled || !currentFirstTvCookie) {
     return activeStreams;
   }
@@ -641,7 +661,12 @@ function updateFirstTvCookie(newCookie, newAuth0Cookie) {
   trackStateCache.clear();
   robertsLiveUrlCache.clear();
   variantUrlMap.clear();
-  console.log('🔑 [1/ST TV Bridge] Cookie de sesión 1st.tv actualizada en caliente.');
+  saveToCloud('first_tv_session', {
+    cookie: currentFirstTvCookie,
+    auth0Cookie: currentAuth0Cookie,
+    updatedAt: new Date().toISOString()
+  }).catch(() => {});
+  console.log('🔑 [1/ST TV Bridge] Cookie de sesión 1st.tv actualizada en caliente y persistida en Supabase.');
 }
 
 function getFirstTvStatus() {

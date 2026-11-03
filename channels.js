@@ -170,28 +170,15 @@ const CHANNELS = [
     nextRace: "Siguiente Carrera en Vivo"
   },
   {
-    id: "hipodromo-palermo",
-    name: "Hipódromo de Palermo",
-    flag: "🇦🇷",
-    location: "Buenos Aires, Argentina",
-    type: "iframe",
-    aliases: ["palermo", "hipodromopalermo"],
-    streamUrl: "/offair.html?track=Hip%C3%B3dromo%20de%20Palermo&flag=%F0%9F%87%A6%F0%9F%87%B7&loc=Buenos%20Aires%2C%20Argentina",
-    iframeUrl: "/offair.html?track=Hip%C3%B3dromo%20de%20Palermo&flag=%F0%9F%87%A6%F0%9F%87%B7&loc=Buenos%20Aires%2C%20Argentina",
-    officialSource: "Hipódromo de Palermo Oficial",
-    statusText: "Carreras en Vivo • Palermo HD Directo",
-    nextRace: "Siguiente Carrera en Vivo"
-  },
-  {
     id: "horseshoe-indianapolis",
-    name: "Horseshoe Indianapolis",
+    name: "Indiana Grand (Horseshoe)",
     flag: "🇺🇸",
     location: "Shelbyville, Indiana, EE.UU.",
     type: "iframe",
-    aliases: ["indianapolis", "indiana", "horseshoe"],
-    streamUrl: "/offair.html?track=Horseshoe%20Indianapolis&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Shelbyville%2C%20Indiana%2C%20EE.UU.",
-    iframeUrl: "/offair.html?track=Horseshoe%20Indianapolis&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Shelbyville%2C%20Indiana%2C%20EE.UU.",
-    officialSource: "Horseshoe Indiana Official Live Feed",
+    aliases: ["indiana grand", "indianagrand", "indianapolis", "indiana", "horseshoe"],
+    streamUrl: "/offair.html?track=Indiana%20Grand%20(Horseshoe)&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Shelbyville%2C%20Indiana%2C%20EE.UU.",
+    iframeUrl: "/offair.html?track=Indiana%20Grand%20(Horseshoe)&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Shelbyville%2C%20Indiana%2C%20EE.UU.",
+    officialSource: "Indiana Grand / Horseshoe Official Live Feed",
     statusText: "Carreras en Vivo • Feed Oficial HD",
     nextRace: "Siguiente Carrera en Vivo"
   },
@@ -261,6 +248,19 @@ const CHANNELS = [
     nextRace: "Siguiente Carrera en Vivo"
   },
   {
+    id: "mahoning-valley",
+    name: "Mahoning Valley",
+    flag: "🇺🇸",
+    location: "Youngstown, Ohio, EE.UU.",
+    type: "iframe",
+    aliases: ["mahoning valley", "mahoney valley", "mahoning", "mvr"],
+    streamUrl: "/offair.html?track=Mahoning%20Valley&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Youngstown%2C%20Ohio%2C%20EE.UU.",
+    iframeUrl: "/offair.html?track=Mahoning%20Valley&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Youngstown%2C%20Ohio%2C%20EE.UU.",
+    officialSource: "Mahoning Valley Race Course Official Feed",
+    statusText: "Carreras en Vivo • Feed Oficial HD",
+    nextRace: "Siguiente Carrera en Vivo"
+  },
+  {
     id: "monmouth-park",
     name: "Monmouth Park",
     flag: "🇺🇸",
@@ -292,7 +292,7 @@ const CHANNELS = [
     flag: "🇺🇸",
     location: "Bensalem, Pennsylvania, EE.UU.",
     type: "iframe",
-    aliases: ["parx", "parxracing"],
+    aliases: ["parx", "parxracing", "park racing", "parkracing"],
     streamUrl: "/offair.html?track=Parx%20Racing&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Bensalem%2C%20Pennsylvania%2C%20EE.UU.",
     iframeUrl: "/offair.html?track=Parx%20Racing&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Bensalem%2C%20Pennsylvania%2C%20EE.UU.",
     officialSource: "Parx Racing Live Feed",
@@ -363,19 +363,6 @@ const CHANNELS = [
     officialSource: "Thistledown Gaming & Racing Official Feed",
     statusText: "Carreras en Vivo • Feed Oficial HD",
     nextRace: "Siguiente Carrera en Vivo"
-  },
-  {
-    id: "vsin",
-    name: "VSiN Sports Network",
-    flag: "🇺🇸",
-    location: "Las Vegas, Nevada, EE.UU.",
-    type: "iframe",
-    aliases: ["vsin", "vsin sports"],
-    streamUrl: "/offair.html?track=VSiN%20Sports%20Network&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Las%20Vegas%2C%20Nevada%2C%20EE.UU.",
-    iframeUrl: "/offair.html?track=VSiN%20Sports%20Network&flag=%F0%9F%87%BA%F0%9F%87%B8&loc=Las%20Vegas%2C%20Nevada%2C%20EE.UU.",
-    officialSource: "VSiN Live Sports Network",
-    statusText: "Transmisión en Vivo • VSiN HD Directo",
-    nextRace: "En Directo"
   },
   {
     id: "woodbine",
