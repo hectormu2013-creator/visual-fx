@@ -21,7 +21,7 @@ const ROBERTS_TOKEN_TTL_MS = 6 * 60 * 60 * 1000;
 const TRACK_LIST_TTL_MS = 45 * 60 * 1000;
 const LIVE_STATUS_TTL_MS = 35 * 60 * 1000;
 const OFFAIR_STATUS_TTL_MS = 15 * 60 * 1000;
-const MAX_NEW_FETCHES_PER_CYCLE = 2;
+const MAX_NEW_FETCHES_PER_CYCLE = 4;
 const MAX_SIMULTANEOUS_RTN_TRACKS = 2;
 
 let cachedCookieHeader = null;
@@ -91,19 +91,35 @@ const RTN_TRACK_MAP = {
 function getPriorityRankForTrack(trackId) {
   const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
   const vetDay = vetDate.getUTCDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
+  const vetHour = vetDate.getUTCHours(); // Hora en Venezuela (UTC-4)
 
-  const monWedOrder = [
-    'parx-racing',
-    'finger-lakes',
-    'horseshoe-indianapolis',
-    'mahoning-valley',
-    'thistledown',
-    'mountaineer-park',
-    'presque-isle',
-    'turf-paradise',
-    'zia-park',
-    'delta-downs'
-  ];
+  // De Lunes a Miércoles después de las 4:00 PM (UTC-4), Parx y Mahoning suelen haber cerrado,
+  // mientras Indiana Grand (Horseshoe), Finger Lakes y Mountaineer están en plena acción.
+  const monWedOrder = (vetHour >= 16)
+    ? [
+        'horseshoe-indianapolis',
+        'finger-lakes',
+        'parx-racing',
+        'mahoning-valley',
+        'mountaineer-park',
+        'turf-paradise',
+        'presque-isle',
+        'thistledown',
+        'zia-park',
+        'delta-downs'
+      ]
+    : [
+        'parx-racing',
+        'finger-lakes',
+        'horseshoe-indianapolis',
+        'mahoning-valley',
+        'thistledown',
+        'mountaineer-park',
+        'presque-isle',
+        'turf-paradise',
+        'zia-park',
+        'delta-downs'
+      ];
 
   const thuSunOrder = [
     'gulfstream-park',
@@ -168,14 +184,37 @@ async function restoreRtnCacheFromCloud() {
         console.log('☁️ [RTN Bridge] Sesión PHPSESSID restaurada desde Supabase (ahorro de login en RTN).');
       }
     }
+    if (saved && saved.robertsUrls && typeof saved.robertsUrls === 'object') {
+      const now = Date.now();
+      for (const [trackId, entry] of Object.entries(saved.robertsUrls)) {
+        if (entry && entry.expiresAt && entry.expiresAt > now) {
+          robertsUrlCache.set(trackId, entry);
+        }
+      }
+    }
+    if (saved && saved.candidateTracks && saved.candidateDateStr && saved.candidateTracksAt) {
+      if ((Date.now() - saved.candidateTracksAt) < TRACK_LIST_TTL_MS) {
+        cachedCandidateTracks = saved.candidateTracks;
+        cachedCandidateDateStr = saved.candidateDateStr;
+        cachedCandidateTracksAt = saved.candidateTracksAt;
+      }
+    }
   } catch (e) {}
 }
 
 async function persistRtnCacheToCloud() {
   try {
+    const robertsUrls = {};
+    for (const [k, v] of robertsUrlCache.entries()) {
+      robertsUrls[k] = v;
+    }
     await saveToCloud('rtn_bridge_cache', {
       cookieHeader: cachedCookieHeader,
       cookieTimestamp: cachedCookieTimestamp,
+      robertsUrls,
+      candidateTracks: cachedCandidateTracks,
+      candidateDateStr: cachedCandidateDateStr,
+      candidateTracksAt: cachedCandidateTracksAt,
       updatedAt: new Date().toISOString()
     });
   } catch (e) {}
