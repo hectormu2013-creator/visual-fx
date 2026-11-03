@@ -38,6 +38,7 @@ const {
 const { initMasterIngest, getMasterState, updateChannelSource, syncRtnStreams } = require('./master_ingest');
 const { updateFirstTvCookie, getFirstTvStatus } = require('./first_tv_bridge');
 const { syncMulticanalChannels, createOrReuseMulticanal } = require('./multicanal_manager');
+const { evaluateMulticanalDirector, streamCompositeMulticanalMp4 } = require('./multicanal_director');
 const { initScheduleManager, updateRacingSchedule, getRacingScheduleStatus } = require('./schedule_manager');
 const { initBandwidthTracker, getBandwidthSummary, updateBandwidthLimits } = require('./bandwidth_tracker');
 const {
@@ -744,6 +745,32 @@ app.post('/api/multicanales', (req, res) => {
     return res.status(400).json(result);
   }
   return res.json(result);
+});
+
+// Estado en Vivo del Director Automático Capital OTB (Mosaico 4 en 1 vs. Pantalla Completa en Partida + Carrera + 1 min Resultados)
+app.get('/api/multicanal/director-state', async (req, res) => {
+  try {
+    const requestedTracks = (req.query.tracks || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const state = await evaluateMulticanalDirector(CHANNELS, requestedTracks);
+    return res.json({
+      success: true,
+      ...state
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Error evaluando Director Capital OTB.' });
+  }
+});
+
+// Flujo Único 4 en 1 mezclado en Servidor (1 solo reproductor <video> ligero para Smart TVs)
+app.get('/api/multicanal/composite.mp4', (req, res) => {
+  const requestedTracks = (req.query.tracks || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+  return streamCompositeMulticanalMp4(CHANNELS, requestedTracks, req, res, PORT);
 });
 
 app.get('/api/channels', (req, res) => {

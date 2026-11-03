@@ -1,0 +1,719 @@
+// multicanal_director.js - Motor Capital OTB: Compositor 4-en-1 en Servidor (1 solo flujo ligero)
+// + Director Automático de Carrera (Pantalla Completa en MTP=0 + Carrera + 1 min Resultados Oficiales -> Regreso a 4 en 1)
+
+const fetch = require('node-fetch');
+const { spawn } = require('child_process');
+const ffmpegPath = require('ffmpeg-static');
+const {
+  recordBytesSent,
+  onStreamConnectionOpen,
+  onStreamConnectionClose
+} = require('./bandwidth_tracker');
+
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.19041.4780';
+
+// Mapeo de ID de canal Visual-FX a código oficial Equibase (USA/CAN)
+const TRACK_ID_TO_EQB_CODE = {
+  'parx-racing': 'PRX',
+  'finger-lakes': 'FL',
+  'horseshoe-indianapolis': 'IND',
+  'mahoning-valley': 'MVR',
+  'mountaineer-park': 'MNR',
+  'thistledown': 'TDN',
+  'presque-isle': 'PID',
+  'turf-paradise': 'TUP',
+  'zia-park': 'ZIA',
+  'gulfstream-park': 'GP',
+  'laurel-park': 'LRL',
+  'santa-anita-park': 'SA',
+  'aqueduct-racetrack': 'AQU',
+  'belmont-park': 'BEL',
+  'saratoga': 'SAR',
+  'tampa-bay-downs': 'TAM',
+  'woodbine': 'WO',
+  'keeneland': 'KEE',
+  'churchill-downs': 'CD',
+  'del-mar': 'DMR',
+  'oaklawn-park': 'OP',
+  'fair-grounds': 'FG',
+  'delaware-park': 'DEL',
+  'monmouth-park': 'MTH',
+  'colonial-downs': 'CNL',
+  'charles-town': 'CT',
+  'penn-national': 'PEN',
+  'remington-park': 'RP',
+  'delta-downs': 'DED',
+  'evangeline-downs': 'EVD',
+  'turfway-park': 'TP',
+  'hawthorne': 'HAW',
+  'los-alamitos': 'LRC',
+  'ellis-park': 'ELP',
+  'kentucky-downs': 'KD',
+  'sam-houston': 'HOU'
+};
+
+// Caché de Cartelera Oficial del Día (Post Times) por trackId
+// { dateKey, fetchedAt, races: [{ raceNumber, purse, raceType, distance, surface, starters, postTimeEt, postTimestampMs }] }
+const raceCardCache = new Map();
+
+// Caché de Resultados Oficiales y Dividendos del Día por trackId
+// { dateKey, fetchedAt, completedRaces: Map<raceNumber, { raceNumber, top3: [{pgm, horse, win, place, show}], exotics: [{type, nums, payoff}], detectedAt }> }
+const raceSummaryCache = new Map();
+
+// Estado del Director Automático por pista para controlar la ventana de Carrera + 1 minuto de Resultados
+// Map<trackId, { raceNumber, startedAtMs, resultsPostedAtMs, holdUntilMs }>
+const activeRaceHoldState = new Map();
+
+// Hubs compartidos 1-a-N del Compositor 2x2 de FFmpeg por combinación de 4 pistas
+const compositeHubs = new Map();
+
+const RACE_CARD_TTL_MS = 20 * 60 * 1000;      // 20 minutos para horarios de salida
+const SUMMARY_TTL_MS = 35 * 1000;             // 35 segundos para detectar llegada oficial y dividendos
+const PRE_POST_TAKEOVER_SEC = 45;             // Tomar pantalla completa 45s antes del Post Time (MTP = 0 / Partida)
+const DEFAULT_RACE_RUN_DURATION_SEC = 155;    // ~2m35s duración promedio mientras corre la carrera
+const POST_RESULTS_HOLD_SEC = 60;             // 1 minuto exacto mostrando resultados/dividendos antes de volver al 4 en 1
+const MAX_TOTAL_FULLSCREEN_SEC = 260;         // Tope de seguridad (4m20s máx en pantalla completa por carrera)
+
+function getUsEasternDateParts() {
+  // EE.UU. Eastern Time: UTC-4 (EDT) o UTC-5 (EST). En noviembre/invierno EST es UTC-5, Venezuela es UTC-4.
+  // Usamos Intl.DateTimeFormat en America/New_York para exactitud total con horario de verano/invierno.
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = {};
+  for (const p of fmt.formatToParts(now)) {
+    parts[p.type] = p.value;
+  }
+  const mm = parts.month;
+  const dd = parts.day;
+  const yyyy = parts.year;
+  const yy = yyyy.slice(-2);
+  return {
+    mmddyy: `${mm}${dd}${yy}`,
+    dateKey: `${yyyy}-${mm}-${dd}`,
+    year: parseInt(yyyy, 10),
+    month: parseInt(mm, 10),
+    day: parseInt(dd, 10),
+    hour: parseInt(parts.hour, 10),
+    minute: parseInt(parts.minute, 10),
+    second: parseInt(parts.second, 10)
+  };
+}
+
+/**
+ * Convierte una hora "1:30 PM ET" del día actual en America/New_York a timestamp UTC en milisegundos.
+ */
+function parseEtPostTimeToEpochMs(postTimeStr) {
+  if (!postTimeStr) return null;
+  const m = String(postTimeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return null;
+  let hour = parseInt(m[1], 10);
+  const minute = parseInt(m[2], 10);
+  const ampm = m[3].toUpperCase();
+  if (ampm === 'PM' && hour < 12) hour += 12;
+  if (ampm === 'AM' && hour === 12) hour = 0;
+
+  const etNow = getUsEasternDateParts();
+  const nowMs = Date.now();
+  const etCurrentSecOfDay = (etNow.hour * 3600) + (etNow.minute * 60) + etNow.second;
+  const targetSecOfDay = (hour * 3600) + (minute * 60);
+  const diffSec = targetSecOfDay - etCurrentSecOfDay;
+  return nowMs + (diffSec * 1000);
+}
+
+/**
+ * Descarga y parsea la cartelera oficial del día (RaceCardIndex) desde Equibase CDN (sin autenticación).
+ */
+async function fetchTrackRaceCard(trackId) {
+  const eqbCode = TRACK_ID_TO_EQB_CODE[trackId];
+  if (!eqbCode) return [];
+
+  const { mmddyy, dateKey } = getUsEasternDateParts();
+  const cached = raceCardCache.get(trackId);
+  if (cached && cached.dateKey === dateKey && (Date.now() - cached.fetchedAt) < RACE_CARD_TTL_MS) {
+    return cached.races;
+  }
+
+  const country = (trackId === 'woodbine') ? 'CAN' : 'USA';
+  const url = `https://www.equibase.com/static/entry/RaceCardIndex${eqbCode}${mmddyy}${country}-EQB.html`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA },
+      timeout: 6500
+    });
+    if (!res.ok) {
+      raceCardCache.set(trackId, { dateKey, fetchedAt: Date.now(), races: [] });
+      return [];
+    }
+    const html = await res.text();
+    const trMatches = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
+    const races = [];
+
+    for (const tr of trMatches) {
+      const tdMatches = tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+      if (!tdMatches || tdMatches.length < 7) continue;
+
+      const cells = tdMatches.map(td =>
+        td.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+      );
+      const raceNum = parseInt(cells[0], 10);
+      const postTimeEt = cells[6] || '';
+      if (!raceNum || Number.isNaN(raceNum) || !/\d{1,2}:\d{2}\s*(AM|PM)/i.test(postTimeEt)) {
+        continue;
+      }
+
+      const postTimestampMs = parseEtPostTimeToEpochMs(postTimeEt);
+      races.push({
+        raceNumber: raceNum,
+        purse: cells[1] || '',
+        raceType: cells[2] || '',
+        distance: cells[3] || '',
+        surface: cells[4] || '',
+        starters: cells[5] || '',
+        postTimeEt: postTimeEt.replace(/\s*ET$/i, '').trim(),
+        postTimestampMs
+      });
+    }
+
+    races.sort((a, b) => a.raceNumber - b.raceNumber);
+    raceCardCache.set(trackId, { dateKey, fetchedAt: Date.now(), races });
+    return races;
+  } catch (e) {
+    return cached ? cached.races : [];
+  }
+}
+
+/**
+ * Descarga y parsea los Resultados Oficiales y Dividendos (Win/Place/Show y Exacta/Trifecta) desde Equibase CDN.
+ */
+async function fetchTrackSummaryResults(trackId) {
+  const eqbCode = TRACK_ID_TO_EQB_CODE[trackId];
+  if (!eqbCode) return new Map();
+
+  const { mmddyy, dateKey } = getUsEasternDateParts();
+  const cached = raceSummaryCache.get(trackId);
+  if (cached && cached.dateKey === dateKey && (Date.now() - cached.fetchedAt) < SUMMARY_TTL_MS) {
+    return cached.completedRaces;
+  }
+
+  const isInitialLoad = !cached || cached.dateKey !== dateKey;
+  const prevMap = (!isInitialLoad && cached.completedRaces) ? cached.completedRaces : new Map();
+  const country = (trackId === 'woodbine') ? 'CAN' : 'USA';
+  const url = `https://www.equibase.com/static/chart/summary/${eqbCode}${mmddyy}${country}-eqb.html`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA },
+      timeout: 6500
+    });
+    if (!res.ok) {
+      raceSummaryCache.set(trackId, { dateKey, fetchedAt: Date.now(), completedRaces: prevMap });
+      return prevMap;
+    }
+
+    const html = await res.text();
+    const completedRaces = new Map(prevMap);
+
+    // Dividir por bloques de "Race X"
+    const sections = html.split(/Race\s+(\d+)/i);
+    // sections[0] = intro, luego pares: [raceNumStr, content, raceNumStr, content...]
+    for (let i = 1; i < sections.length - 1; i += 2) {
+      const raceNum = parseInt(sections[i], 10);
+      const block = sections[i + 1] || '';
+      if (!raceNum || Number.isNaN(raceNum)) continue;
+
+      const trMatches = block.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
+      const top3 = [];
+      const exotics = [];
+
+      for (const tr of trMatches) {
+        const tdMatches = tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+        if (!tdMatches || tdMatches.length < 3) continue;
+        const cells = tdMatches.map(td =>
+          td.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+        );
+
+        // Detectar fila de caballo (Pgm# Horse Jockey Win Place Show o Pgm# - Horse Win Place Show)
+        if (cells.length >= 4 && /^\d+[A-Z]?$/.test(cells[0]) && !cells[0].includes('$')) {
+          const pgm = cells[0];
+          const horse = cells[1];
+          // En la tabla corta son 5 celdas [pgm, horse, win, place, show]; en la tabla con jockey son 6 [pgm, horse, jockey, win, place, show]
+          const win = cells.length >= 6 ? cells[3] : cells[2];
+          const place = cells.length >= 6 ? cells[4] : cells[3];
+          const show = cells.length >= 6 ? cells[5] : (cells[4] || '');
+          if (horse && (win || place || show) && top3.length < 3) {
+            top3.push({ pgm, horse, win, place, show });
+          }
+        } else if (cells.length === 3 && /^\$?\d/.test(cells[0]) && /exacta|trifecta|superfecta|double/i.test(cells[0])) {
+          if (exotics.length < 3) {
+            exotics.push({
+              type: cells[0],
+              nums: cells[1],
+              payoff: cells[2]
+            });
+          }
+        }
+      }
+
+      if (top3.length > 0) {
+        const existing = completedRaces.get(raceNum);
+        completedRaces.set(raceNum, {
+          raceNumber: raceNum,
+          top3,
+          exotics,
+          detectedAt: existing ? existing.detectedAt : (isInitialLoad ? 0 : Date.now())
+        });
+      }
+    }
+
+    raceSummaryCache.set(trackId, { dateKey, fetchedAt: Date.now(), completedRaces });
+    return completedRaces;
+  } catch (e) {
+    return prevMap;
+  }
+}
+
+/**
+ * Evalúa el estado en tiempo real de los 4 hipódromos de un Multicanal y decide si debe estar
+ * en modo MOSAIC_4 (4 hipódromos fijos) o FULLSCREEN_RACE (1 hipódromo en pantalla completa por Partida + Carrera + 1 min Resultados).
+ */
+async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = []) {
+  const catalogMap = new Map();
+  for (const ch of channelsCatalog) {
+    if (!ch.isMulticanal && ch.id !== 'capital-otb') {
+      catalogMap.set(ch.id, ch);
+    }
+  }
+
+  // Asegurar las 4 pistas fijas del Multicanal (Lunes a Miércoles: Parx, Finger Lakes, Indiana Grand, Mahoning Valley)
+  const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
+  const vetDay = vetDate.getUTCDay();
+  const defaultOrder = (vetDay >= 1 && vetDay <= 3)
+    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'mountaineer-park', 'thistledown']
+    : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'santa-anita-park', 'tampa-bay-downs', 'parx-racing', 'woodbine'];
+
+  const fixedFourIds = [];
+  for (const tid of requestedTrackIds) {
+    if (tid && catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) break;
+  }
+
+  // Preferir primero pistas onAir dentro del orden oficial, y completar hasta 4 con las pistas oficiales del día
+  if (fixedFourIds.length < 4) {
+    for (const tid of defaultOrder) {
+      const ch = catalogMap.get(tid);
+      if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
+        fixedFourIds.push(tid);
+      }
+      if (fixedFourIds.length === 4) break;
+    }
+  }
+  if (fixedFourIds.length < 4) {
+    for (const tid of defaultOrder) {
+      if (catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
+        fixedFourIds.push(tid);
+      }
+      if (fixedFourIds.length === 4) break;
+    }
+  }
+
+  const now = Date.now();
+  const quads = [];
+  let fullscreenCandidate = null;
+
+  for (let i = 0; i < 4; i++) {
+    const trackId = fixedFourIds[i];
+    const ch = catalogMap.get(trackId);
+    if (!ch) continue;
+
+    const [races, completedRaces] = await Promise.all([
+      fetchTrackRaceCard(trackId),
+      fetchTrackSummaryResults(trackId)
+    ]);
+
+    // Encontrar la última carrera oficial completada y la próxima carrera pendiente
+    let lastCompleted = null;
+    for (const [, resObj] of completedRaces.entries()) {
+      if (!lastCompleted || resObj.raceNumber > lastCompleted.raceNumber) {
+        lastCompleted = resObj;
+      }
+    }
+
+    const nextRace = races.find(r => !completedRaces.has(r.raceNumber)) || null;
+    let mtpMinutes = null;
+    let secFromPost = null;
+
+    if (nextRace && nextRace.postTimestampMs) {
+      secFromPost = Math.round((now - nextRace.postTimestampMs) / 1000);
+      mtpMinutes = Math.max(0, Math.ceil((nextRace.postTimestampMs - now) / 60000));
+    }
+
+    // Verificar ventana de Director Automático (Partida -> Carrera -> +60s de Resultados Oficiales)
+    let trackPhase = 'MOSAIC';
+    let holdRemainingSec = 0;
+    let activeRaceInfo = null;
+
+    // Caso A: La última carrera acaba de publicar resultados oficiales hace menos de 60 segundos (1 minuto de resultados en pantalla)
+    if (lastCompleted && (now - lastCompleted.detectedAt) <= POST_RESULTS_HOLD_SEC * 1000 && ch.onAir) {
+      trackPhase = 'RESULTS_HOLD';
+      holdRemainingSec = Math.max(1, Math.ceil(((lastCompleted.detectedAt + POST_RESULTS_HOLD_SEC * 1000) - now) / 1000));
+      const matchedRaceMeta = races.find(r => r.raceNumber === lastCompleted.raceNumber);
+      activeRaceInfo = {
+        raceNumber: lastCompleted.raceNumber,
+        distance: matchedRaceMeta ? matchedRaceMeta.distance : '',
+        surface: matchedRaceMeta ? matchedRaceMeta.surface : '',
+        officialResult: lastCompleted
+      };
+    }
+    // Caso B: La próxima carrera está dando la partida (45s antes del Post Time hasta que termina la carrera + 1 min)
+    else if (
+      nextRace &&
+      secFromPost !== null &&
+      secFromPost >= -PRE_POST_TAKEOVER_SEC &&
+      secFromPost <= (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC) &&
+      ch.onAir
+    ) {
+      if (secFromPost <= DEFAULT_RACE_RUN_DURATION_SEC) {
+        trackPhase = secFromPost < 10 ? 'STARTING' : 'RACING';
+        holdRemainingSec = (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC) - secFromPost;
+      } else {
+        trackPhase = 'RESULTS_HOLD';
+        holdRemainingSec = (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC) - secFromPost;
+      }
+      activeRaceInfo = {
+        raceNumber: nextRace.raceNumber,
+        distance: nextRace.distance,
+        surface: nextRace.surface,
+        postTimeEt: nextRace.postTimeEt,
+        officialResult: lastCompleted && lastCompleted.raceNumber === nextRace.raceNumber ? lastCompleted : null
+      };
+    }
+
+    const allRacesDone = races.length > 0 && !nextRace && completedRaces.size >= races.length;
+    let statusBadge = 'SEÑAL EN VIVO';
+    if (trackPhase === 'STARTING') {
+      statusBadge = `🏁 ¡PARTIDA! CARRERA ${nextRace.raceNumber}`;
+    } else if (trackPhase === 'RACING') {
+      statusBadge = `🏇 EN CARRERA • R${nextRace.raceNumber} (${nextRace.distance})`;
+    } else if (trackPhase === 'RESULTS_HOLD') {
+      statusBadge = `🏆 RESULTADOS OFICIALES • R${activeRaceInfo.raceNumber} (${holdRemainingSec}s)`;
+    } else if (nextRace) {
+      statusBadge = `CARRERA ${nextRace.raceNumber} • MTP ${mtpMinutes} MIN (${nextRace.postTimeEt})`;
+    } else if (allRacesDone) {
+      statusBadge = `JORNADA FINALIZADA (${completedRaces.size} CARRERAS)`;
+    }
+
+    const quadData = {
+      quadIndex: i + 1,
+      id: ch.id,
+      name: ch.name,
+      flag: ch.flag || '🇺🇸',
+      onAir: Boolean(ch.onAir),
+      type: ch.type || 'hls',
+      streamUrl: ch.streamUrl || ch.iframeUrl,
+      proxyUrl: `/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl || ch.iframeUrl)}`,
+      trackPhase,
+      holdRemainingSec,
+      statusBadge,
+      nextRace: nextRace
+        ? {
+            raceNumber: nextRace.raceNumber,
+            distance: nextRace.distance,
+            surface: nextRace.surface,
+            purse: nextRace.purse,
+            postTimeEt: nextRace.postTimeEt,
+            mtpMinutes
+          }
+        : null,
+      lastResult: lastCompleted
+        ? {
+            raceNumber: lastCompleted.raceNumber,
+            top3: lastCompleted.top3,
+            exotics: lastCompleted.exotics
+          }
+        : null
+    };
+
+    quads.push(quadData);
+
+    if ((trackPhase === 'STARTING' || trackPhase === 'RACING' || trackPhase === 'RESULTS_HOLD') && !fullscreenCandidate) {
+      fullscreenCandidate = {
+        quadIndex: i + 1,
+        trackId: ch.id,
+        name: ch.name,
+        flag: ch.flag || '🇺🇸',
+        phase: trackPhase,
+        holdRemainingSec,
+        proxyUrl: quadData.proxyUrl,
+        type: quadData.type,
+        streamUrl: quadData.streamUrl,
+        raceInfo: activeRaceInfo,
+        lastResult: quadData.lastResult
+      };
+    }
+  }
+
+  return {
+    mode: fullscreenCandidate ? 'FULLSCREEN_RACE' : 'MOSAIC_4',
+    fullscreenTrack: fullscreenCandidate,
+    quads,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+/**
+ * Compositor de Servidor 4 en 1 (FFmpeg xstack 2x2 -> 1 solo stream fMP4 ligero de 852x480 a 15fps).
+ * Permite que cualquier Smart TV decodifique los 4 hipódromos usando UN SOLO reproductor <video>.
+ */
+function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, res, localPort = 3500) {
+  const catalogMap = new Map();
+  for (const ch of channelsCatalog) {
+    if (!ch.isMulticanal && ch.id !== 'capital-otb') {
+      catalogMap.set(ch.id, ch);
+    }
+  }
+
+  const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
+  const vetDay = vetDate.getUTCDay();
+  const defaultOrder = (vetDay >= 1 && vetDay <= 3)
+    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'mountaineer-park', 'thistledown']
+    : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'santa-anita-park', 'tampa-bay-downs', 'parx-racing', 'woodbine'];
+
+  const fixedFourIds = [];
+  for (const tid of (requestedTrackIds || [])) {
+    if (tid && catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) break;
+  }
+  if (fixedFourIds.length < 4) {
+    for (const tid of defaultOrder) {
+      const ch = catalogMap.get(tid);
+      if (ch && ch.onAir && !fixedFourIds.includes(tid)) fixedFourIds.push(tid);
+      if (fixedFourIds.length === 4) break;
+    }
+  }
+  if (fixedFourIds.length < 4) {
+    for (const tid of defaultOrder) {
+      if (catalogMap.has(tid) && !fixedFourIds.includes(tid)) fixedFourIds.push(tid);
+      if (fixedFourIds.length === 4) break;
+    }
+  }
+
+  const signature = fixedFourIds.map(tid => {
+    const c = catalogMap.get(tid);
+    const isDirectVideo = c && c.onAir && c.type !== 'iframe' && c.streamUrl;
+    return `${tid}:${isDirectVideo ? 'LIVE' : 'SLATE'}`;
+  }).join('|');
+
+  const hubKey = fixedFourIds.join(',') || 'default';
+  let hub = compositeHubs.get(hubKey);
+
+  if (hub && hub.signature !== signature && hub.cleanup) {
+    hub.cleanup();
+    hub = null;
+  }
+
+  if (!hub) {
+    hub = {
+      hubKey,
+      signature,
+      clients: new Set(),
+      initSegment: null,
+      latestFragment: null,
+      running: false,
+      ffmpegProc: null,
+      idleTimer: null,
+      cleanup: null
+    };
+    compositeHubs.set(hubKey, hub);
+  }
+
+  if (hub.idleTimer) {
+    clearTimeout(hub.idleTimer);
+    hub.idleTimer = null;
+  }
+
+  res.setHeader('Content-Type', 'video/mp4');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Connection', 'keep-alive');
+
+  const deviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv-cotb';
+  const clientObj = { res, sentInit: false, deviceId, connCounted: true };
+  onStreamConnectionOpen();
+
+  if (hub.initSegment) {
+    try {
+      res.write(hub.initSegment);
+      clientObj.sentInit = true;
+      recordBytesSent(hub.initSegment.length, deviceId);
+      if (hub.latestFragment) {
+        res.write(hub.latestFragment);
+        recordBytesSent(hub.latestFragment.length, deviceId);
+      }
+    } catch (e) {}
+  }
+
+  hub.clients.add(clientObj);
+
+  if (!hub.running) {
+    hub.running = true;
+    const ffArgs = ['-loglevel', 'warning'];
+
+    for (let i = 0; i < 4; i++) {
+      const tid = fixedFourIds[i];
+      const ch = catalogMap.get(tid);
+      const isDirectVideo = ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl;
+      if (isDirectVideo) {
+        const localStreamUrl = `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR`;
+        ffArgs.push(
+          '-reconnect', '1',
+          '-reconnect_streamed', '1',
+          '-reconnect_delay_max', '4',
+          '-rw_timeout', '8000000',
+          '-i', localStreamUrl
+        );
+      } else {
+        ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=15');
+      }
+    }
+
+    ffArgs.push(
+      '-filter_complex',
+      '[0:v]scale=426:240,fps=15,setsar=1[v0];' +
+      '[1:v]scale=426:240,fps=15,setsar=1[v1];' +
+      '[2:v]scale=426:240,fps=15,setsar=1[v2];' +
+      '[3:v]scale=426:240,fps=15,setsar=1[v3];' +
+      '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
+      '-map', '[v]',
+      '-an',
+      '-c:v', 'libx264',
+      '-preset', 'ultrafast',
+      '-tune', 'zerolatency',
+      '-profile:v', 'baseline',
+      '-level', '3.0',
+      '-pix_fmt', 'yuv420p',
+      '-b:v', '800k',
+      '-maxrate', '950k',
+      '-bufsize', '1600k',
+      '-g', '15',
+      '-keyint_min', '15',
+      '-sc_threshold', '0',
+      '-f', 'mp4',
+      '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+      'pipe:1'
+    );
+
+    const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+    hub.ffmpegProc = ffProc;
+
+    let pendingBuf = Buffer.alloc(0);
+    let ftypBox = null;
+    let moovBox = null;
+    let currentMoof = null;
+
+    const cleanup = () => {
+      hub.running = false;
+      if (hub.ffmpegProc) {
+        try { hub.ffmpegProc.kill('SIGKILL'); } catch (e) {}
+        hub.ffmpegProc = null;
+      }
+    };
+    hub.cleanup = cleanup;
+
+    ffProc.stdout.on('data', (chunk) => {
+      pendingBuf = Buffer.concat([pendingBuf, chunk]);
+      while (pendingBuf.length >= 8) {
+        const boxSize = pendingBuf.readUInt32BE(0);
+        const boxType = pendingBuf.slice(4, 8).toString('ascii');
+        if (boxSize < 8 || boxSize > 8 * 1024 * 1024) {
+          pendingBuf = Buffer.alloc(0);
+          break;
+        }
+        if (pendingBuf.length < boxSize) break;
+
+        const box = Buffer.from(pendingBuf.slice(0, boxSize));
+        pendingBuf = pendingBuf.slice(boxSize);
+
+        if (boxType === 'ftyp') {
+          ftypBox = box;
+        } else if (boxType === 'moov') {
+          moovBox = box;
+          if (ftypBox) {
+            hub.initSegment = Buffer.concat([ftypBox, moovBox]);
+            for (const c of hub.clients) {
+              if (!c.sentInit && !c.res.writableEnded) {
+                try {
+                  c.res.write(hub.initSegment);
+                  c.sentInit = true;
+                  recordBytesSent(hub.initSegment.length, c.deviceId);
+                } catch (e) {}
+              }
+            }
+          }
+        } else if (boxType === 'moof') {
+          currentMoof = box;
+        } else if (boxType === 'mdat' && currentMoof) {
+          const fragment = Buffer.concat([currentMoof, box]);
+          currentMoof = null;
+          hub.latestFragment = fragment;
+          for (const c of hub.clients) {
+            if (c.res.writableEnded) continue;
+            try {
+              if (!c.sentInit && hub.initSegment) {
+                c.res.write(hub.initSegment);
+                c.sentInit = true;
+                recordBytesSent(hub.initSegment.length, c.deviceId);
+              }
+              if (c.sentInit) {
+                c.res.write(fragment);
+                recordBytesSent(fragment.length, c.deviceId);
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    });
+
+    ffProc.on('close', () => {
+      cleanup();
+    });
+  }
+
+  const removeClient = () => {
+    if (clientObj.connCounted) {
+      clientObj.connCounted = false;
+      onStreamConnectionClose();
+    }
+    hub.clients.delete(clientObj);
+    if (hub.clients.size === 0 && !hub.idleTimer) {
+      hub.idleTimer = setTimeout(() => {
+        if (hub.clients.size === 0 && hub.cleanup) {
+          hub.cleanup();
+          hub.initSegment = null;
+          hub.latestFragment = null;
+        }
+      }, 20000);
+    }
+  };
+
+  req.on('close', removeClient);
+  res.on('close', removeClient);
+  res.on('error', removeClient);
+}
+
+module.exports = {
+  evaluateMulticanalDirector,
+  streamCompositeMulticanalMp4
+};

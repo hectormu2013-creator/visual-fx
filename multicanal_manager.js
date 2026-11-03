@@ -151,10 +151,20 @@ function syncMulticanalChannels(channelsCatalog) {
       }
       if (validIds.length === 4) break;
     }
-    // Rellenar hasta 4 si faltan pistas
+    // Rellenar hasta 4 si faltan pistas (primero con activas, luego con las 4 oficiales del día)
     if (validIds.length < 4) {
       for (const fallback of venTodaySorted.concat(activeIndividual)) {
         if (!validIds.includes(fallback.id)) validIds.push(fallback.id);
+        if (validIds.length === 4) break;
+      }
+    }
+    if (validIds.length < 4) {
+      const vetDay = new Date(Date.now() - 4 * 3600 * 1000).getUTCDay();
+      const dayDefaults = (vetDay >= 1 && vetDay <= 3)
+        ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley']
+        : ['gulfstream-park', 'laurel-park', 'belmont-park', 'santa-anita-park', 'parx-racing', 'tampa-bay-downs'];
+      for (const defId of dayDefaults) {
+        if (catalogMap.has(defId) && !validIds.includes(defId)) validIds.push(defId);
         if (validIds.length === 4) break;
       }
     }

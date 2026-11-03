@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Multicanal 4 en 1 • Visual-FX Simulcast</title>
+  <title>Capital OTB TV Network • Multicanal 4 en 1</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js"></script>
   <style>
     * {
@@ -15,802 +15,636 @@
     html, body {
       width: 100%;
       height: 100%;
-      background: #050811;
+      background: #040814;
       color: #f8fafc;
       font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       overflow: hidden;
     }
-    .cotb-mosaic {
+
+    /* Contenedor raíz del canal único */
+    .cotb-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* Único decodificador <video> para máxima ligereza en Smart TVs */
+    #cotbSingleVideo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      background: #030712;
+      z-index: 1;
+    }
+
+    /* Rejilla gráfica 2x2 transparente sobre el video compuesto (sin selectores ni botones editables) */
+    .cotb-hud-grid {
+      position: absolute;
+      inset: 0;
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
-      gap: 3px;
-      width: 100%;
-      height: 100%;
-      background: #0f172a;
-    }
-    .cotb-mosaic.zoomed-mode .cotb-quad {
-      display: none;
-    }
-    .cotb-mosaic.zoomed-mode .cotb-quad.zoomed {
-      display: flex;
-      grid-column: 1 / -1;
-      grid-row: 1 / -1;
-    }
-    .cotb-quad {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background: #020617;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      border: 1px solid rgba(56, 189, 248, 0.16);
-      cursor: pointer;
-    }
-    .cotb-quad.audio-active {
-      border-color: rgba(16, 185, 129, 0.85);
-      box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.5);
-    }
-    .quad-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: #000;
-      z-index: 1;
-      display: none;
-    }
-    .quad-media {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-    }
-    .cotb-quad video,
-    .cotb-quad iframe {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      border: none;
-      display: block;
-      background: #000;
-    }
-    .quad-hold-badge {
-      position: absolute;
-      top: 6px;
-      left: 6px;
-      z-index: 9;
-      background: rgba(15, 23, 42, 0.84);
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      color: #7dd3fc;
-      font-size: 0.64rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 5px;
-      display: none;
+      z-index: 5;
       pointer-events: none;
     }
-    .quad-overlay {
-      position: absolute;
-      bottom: 6px;
-      left: 6px;
-      right: 6px;
+    .cotb-Stage-Fullscreen .cotb-hud-grid {
+      display: none;
+    }
+
+    .hud-cell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border: 1px solid rgba(56, 189, 248, 0.22);
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: space-between;
-      pointer-events: none;
-      z-index: 10;
-      opacity: 0.94;
-      transition: opacity 0.25s ease;
+      padding: 8px 10px;
+      overflow: hidden;
     }
-    .cotb-quad:hover .quad-overlay {
-      opacity: 1;
-    }
-    .quad-pill {
-      pointer-events: auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(9, 14, 28, 0.86);
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      border-radius: 6px;
-      padding: 3px 7px;
-      backdrop-filter: blur(4px);
-      max-width: 76%;
-    }
-    .quad-num {
-      font-size: 0.68rem;
-      font-weight: 800;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.14);
-      padding: 1px 5px;
-      border-radius: 4px;
-      letter-spacing: 0.4px;
-    }
-    .quad-select {
-      background: transparent;
-      color: #f1f5f9;
-      border: none;
-      font-size: 0.74rem;
-      font-weight: 700;
-      outline: none;
-      cursor: pointer;
-      max-width: 190px;
-      text-overflow: ellipsis;
-    }
-    .quad-select option {
-      background: #0f172a;
-      color: #f8fafc;
-    }
-    .quad-actions {
-      pointer-events: auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .quad-btn {
-      background: rgba(9, 14, 28, 0.86);
-      color: #cbd5e1;
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      border-radius: 5px;
-      padding: 3px 6px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .quad-btn:hover {
-      background: rgba(30, 41, 59, 0.95);
-      color: #fff;
-    }
-    .quad-btn.active {
-      background: rgba(16, 185, 129, 0.24);
-      border-color: #10b981;
-      color: #34d399;
-    }
-    .quad-loader {
+
+    /* Pizarra informativa cuando un cuadrante ya finalizó su jornada o espera la 1ra carrera */
+    .hud-slate-box {
       position: absolute;
       inset: 0;
-      display: flex;
+      background: radial-gradient(circle at center, rgba(15, 23, 42, 0.92), rgba(4, 8, 20, 0.97));
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 14px 18px;
+      text-align: center;
+      z-index: 2;
+    }
+    .hud-cell.off-air .hud-slate-box {
+      display: flex;
+    }
+    .slate-track-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+    .slate-sub {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .slate-results-table {
+      width: 92%;
+      max-width: 360px;
+      background: rgba(9, 14, 28, 0.88);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+    }
+    .slate-res-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .slate-res-row:last-child {
+      border-bottom: none;
+    }
+    .slate-horse {
+      font-weight: 700;
+      color: #e2e8f0;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 60%;
+    }
+    .slate-pay {
+      font-weight: 800;
+      color: #34d399;
+    }
+
+    /* Cintillo inferior fijo de cada cuadrante (Estilo TV Satelital Capital OTB) */
+    .hud-bottom-bar {
+      position: relative;
+      z-index: 4;
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 8px;
-      background: rgba(2, 6, 23, 0.68);
-      color: #94a3b8;
-      font-size: 0.76rem;
-      font-weight: 600;
-      pointer-events: none;
-      z-index: 5;
+      background: linear-gradient(90deg, rgba(6, 11, 25, 0.92), rgba(15, 23, 42, 0.85));
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      border-left: 3px solid #38bdf8;
+      border-radius: 5px;
+      padding: 4px 9px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
     }
-    .quad-spinner {
-      width: 22px;
-      height: 22px;
-      border: 2.5px solid rgba(56, 189, 248, 0.22);
-      border-top-color: #38bdf8;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .cotb-top-bar {
-      position: absolute;
-      top: 6px;
-      right: 8px;
-      z-index: 15;
+    .hud-track-id {
       display: flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
     }
-    .cotb-tv-safe-btn {
-      background: rgba(15, 23, 42, 0.88);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      border-radius: 6px;
-      padding: 3px 8px;
+    .hud-ch-tag {
       font-size: 0.65rem;
+      font-weight: 900;
+      color: #040814;
+      background: #38bdf8;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.4px;
+      flex-shrink: 0;
+    }
+    .hud-track-name {
+      font-size: 0.78rem;
       font-weight: 800;
-      color: #cbd5e1;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .cotb-tv-safe-btn.active {
-      background: linear-gradient(135deg, rgba(6, 78, 59, 0.92), rgba(4, 120, 87, 0.88));
-      border-color: #10b981;
-      color: #ecfdf5;
+    .hud-race-badge {
+      font-size: 0.69rem;
+      font-weight: 800;
+      color: #fde047;
+      background: rgba(234, 179, 8, 0.14);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
-    .cotb-brand-watermark {
+    .hud-race-badge.imminent {
+      background: linear-gradient(135deg, #dc2626, #ea580c);
+      border-color: #fca5a5;
+      color: #ffffff;
+      animation: pulseAlert 1s infinite alternate;
+    }
+    @keyframes pulseAlert {
+      from { opacity: 0.85; transform: scale(0.99); }
+      to { opacity: 1; transform: scale(1.02); }
+    }
+
+    /* Marca de agua superior del canal Multicanal */
+    .cotb-network-bug {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      z-index: 12;
       pointer-events: none;
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(30, 58, 138, 0.82));
-      border: 1px solid rgba(56, 189, 248, 0.35);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: linear-gradient(135deg, rgba(6, 11, 25, 0.92), rgba(30, 58, 138, 0.86));
+      border: 1px solid rgba(56, 189, 248, 0.4);
       border-radius: 6px;
-      padding: 3px 8px;
-      font-size: 0.66rem;
-      font-weight: 800;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      font-weight: 900;
       letter-spacing: 0.6px;
       color: #e0f2fe;
       text-transform: uppercase;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+    }
+    .bug-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    /* Overlay de PANTALLA COMPLETA AUTOMÁTICA (En Carrera + 1 Minuto de Resultados) */
+    .cotb-fullscreen-hud {
+      position: absolute;
+      inset: 0;
+      z-index: 9;
+      pointer-events: none;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px 18px;
+    }
+    .cotb-Stage-Fullscreen .cotb-fullscreen-hud {
+      display: flex;
+    }
+
+    .fs-top-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      align-self: flex-start;
+      background: linear-gradient(90deg, rgba(153, 27, 27, 0.94), rgba(15, 23, 42, 0.92));
+      border: 1px solid rgba(248, 113, 113, 0.55);
+      border-left: 4px solid #ef4444;
+      border-radius: 7px;
+      padding: 7px 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
+    }
+    .fs-top-banner.results-mode {
+      background: linear-gradient(90deg, rgba(6, 78, 59, 0.95), rgba(15, 23, 42, 0.92));
+      border-color: rgba(52, 211, 153, 0.55);
+      border-left-color: #10b981;
+    }
+    .fs-live-pill {
+      background: #ef4444;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 900;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .fs-top-banner.results-mode .fs-live-pill {
+      background: #10b981;
+      color: #022c22;
+    }
+    .fs-track-title {
+      font-size: 1rem;
+      font-weight: 900;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .fs-race-meta {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fde047;
+    }
+
+    /* Pizarra Inferior de Resultados y Dividendos Oficiales (1 Minuto post-carrera) */
+    .fs-bottom-results {
+      align-self: center;
+      width: 96%;
+      max-width: 900px;
+      background: linear-gradient(180deg, rgba(9, 14, 28, 0.94), rgba(3, 7, 18, 0.97));
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      border-radius: 10px;
+      padding: 10px 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+      display: none;
+    }
+    .fs-bottom-results.visible {
+      display: block;
+    }
+    .fs-res-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+      padding-bottom: 5px;
+      margin-bottom: 7px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #34d399;
+      text-transform: uppercase;
+    }
+    .fs-res-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    .fs-top3-table {
+      width: 100%;
+      font-size: 0.82rem;
+      border-collapse: collapse;
+    }
+    .fs-top3-table th {
+      text-align: left;
+      color: #94a3b8;
+      font-size: 0.68rem;
+      padding-bottom: 3px;
+      text-transform: uppercase;
+    }
+    .fs-top3-table td {
+      padding: 2px 4px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+    .fs-pgm-badge {
+      display: inline-block;
+      min-width: 22px;
+      text-align: center;
+      background: #38bdf8;
+      color: #040814;
+      font-weight: 900;
+      border-radius: 4px;
+      padding: 1px 5px;
+      margin-right: 6px;
+    }
+    .fs-exotics-box {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+    }
+    .fs-exotic-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      font-weight: 700;
+    }
+    .fs-exotic-pay {
+      color: #fde047;
+      font-weight: 900;
     }
   </style>
 </head>
 <body>
-  <div class="cotb-top-bar">
-    <button type="button" class="cotb-tv-safe-btn" id="btnSmartTvSafe" title="Evita congelamientos en Smart TVs limitando a 2 decodificadores simultáneos con retención de cuadro en vivo">
-      📺 Modo Smart TV: OFF
-    </button>
-    <div class="cotb-brand-watermark" id="lblMosaicTitle">📺 MULTICANAL 4 EN 1 • SIMULCAST</div>
-  </div>
+  <div class="cotb-stage" id="cotbStage">
+    <!-- Único reproductor <video> para el televisor (reproduce el Mosaico 4-en-1 de servidor o la Carrera en Pantalla Completa) -->
+    <video id="cotbSingleVideo" autoplay muted playsinline></video>
 
-  <div class="cotb-mosaic" id="mosaicGrid">
-    <div class="cotb-quad" id="quad-1" data-quad="1">
-      <canvas class="quad-canvas" id="canvas-1" width="640" height="360"></canvas>
-      <div class="quad-media" id="media-1"></div>
-      <div class="quad-hold-badge" id="hold-1">⚡ Smart TV Sync • Clic para Fijar</div>
-      <div class="quad-loader" id="loader-1"><div class="quad-spinner"></div><span>Señal 1...</span></div>
-      <div class="quad-overlay">
-        <div class="quad-pill">
-          <span class="quad-num">CH 1</span>
-          <select class="quad-select" id="sel-1"></select>
+    <div class="cotb-network-bug">
+      <span class="bug-dot"></span>
+      <span id="lblNetworkTitle">CAPITAL OTB TV NETWORK • 4 EN 1</span>
+    </div>
+
+    <!-- Cintillos fijos de los 4 cuadrantes cuando está en Modo Mosaico 4 en 1 -->
+    <div class="cotb-hud-grid" id="cotbHudGrid">
+      <div class="hud-cell" id="cell-1">
+        <div class="hud-slate-box" id="slate-1"></div>
+        <div class="hud-bottom-bar">
+          <div class="hud-track-id">
+            <span class="hud-ch-tag">CH 1</span>
+            <span class="hud-track-name" id="name-1">CARGANDO...</span>
+          </div>
+          <span class="hud-race-badge" id="badge-1">EN VIVO</span>
         </div>
-        <div class="quad-actions">
-          <button class="quad-btn" id="aud-1" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
-          <button class="quad-btn" id="zoom-1" title="Ampliar/Restaurar esta pista">⛶</button>
+      </div>
+
+      <div class="hud-cell" id="cell-2">
+        <div class="hud-slate-box" id="slate-2"></div>
+        <div class="hud-bottom-bar">
+          <div class="hud-track-id">
+            <span class="hud-ch-tag">CH 2</span>
+            <span class="hud-track-name" id="name-2">CARGANDO...</span>
+          </div>
+          <span class="hud-race-badge" id="badge-2">EN VIVO</span>
+        </div>
+      </div>
+
+      <div class="hud-cell" id="cell-3">
+        <div class="hud-slate-box" id="slate-3"></div>
+        <div class="hud-bottom-bar">
+          <div class="hud-track-id">
+            <span class="hud-ch-tag">CH 3</span>
+            <span class="hud-track-name" id="name-3">CARGANDO...</span>
+          </div>
+          <span class="hud-race-badge" id="badge-3">EN VIVO</span>
+        </div>
+      </div>
+
+      <div class="hud-cell" id="cell-4">
+        <div class="hud-slate-box" id="slate-4"></div>
+        <div class="hud-bottom-bar">
+          <div class="hud-track-id">
+            <span class="hud-ch-tag">CH 4</span>
+            <span class="hud-track-name" id="name-4">CARGANDO...</span>
+          </div>
+          <span class="hud-race-badge" id="badge-4">EN VIVO</span>
         </div>
       </div>
     </div>
-    <div class="cotb-quad" id="quad-2" data-quad="2">
-      <canvas class="quad-canvas" id="canvas-2" width="640" height="360"></canvas>
-      <div class="quad-media" id="media-2"></div>
-      <div class="quad-hold-badge" id="hold-2">⚡ Smart TV Sync • Clic para Fijar</div>
-      <div class="quad-loader" id="loader-2"><div class="quad-spinner"></div><span>Señal 2...</span></div>
-      <div class="quad-overlay">
-        <div class="quad-pill">
-          <span class="quad-num">CH 2</span>
-          <select class="quad-select" id="sel-2"></select>
-        </div>
-        <div class="quad-actions">
-          <button class="quad-btn" id="aud-2" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
-          <button class="quad-btn" id="zoom-2" title="Ampliar/Restaurar esta pista">⛶</button>
-        </div>
+
+    <!-- Overlay cuando 1 de los 4 hipódromos toma toda la pantalla (Partida -> Carrera -> +1 min Resultados) -->
+    <div class="cotb-fullscreen-hud" id="cotbFullscreenHud">
+      <div class="fs-top-banner" id="fsTopBanner">
+        <span class="fs-live-pill" id="fsLivePill">🏁 EN CARRERA</span>
+        <span class="fs-track-title" id="fsTrackTitle">HIPÓDROMO</span>
+        <span class="fs-race-meta" id="fsRaceMeta">CARRERA EN VIVO</span>
       </div>
-    </div>
-    <div class="cotb-quad" id="quad-3" data-quad="3">
-      <canvas class="quad-canvas" id="canvas-3" width="640" height="360"></canvas>
-      <div class="quad-media" id="media-3"></div>
-      <div class="quad-hold-badge" id="hold-3">⚡ Smart TV Sync • Clic para Fijar</div>
-      <div class="quad-loader" id="loader-3"><div class="quad-spinner"></div><span>Señal 3...</span></div>
-      <div class="quad-overlay">
-        <div class="quad-pill">
-          <span class="quad-num">CH 3</span>
-          <select class="quad-select" id="sel-3"></select>
+
+      <div class="fs-bottom-results" id="fsBottomResults">
+        <div class="fs-res-header">
+          <span id="fsResTitle">🏆 RESULTADOS Y DIVIDENDOS OFICIALES</span>
+          <span id="fsResTimer">Volviendo al Mosaico 4 en 1 en 60s...</span>
         </div>
-        <div class="quad-actions">
-          <button class="quad-btn" id="aud-3" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
-          <button class="quad-btn" id="zoom-3" title="Ampliar/Restaurar esta pista">⛶</button>
-        </div>
-      </div>
-    </div>
-    <div class="cotb-quad" id="quad-4" data-quad="4">
-      <canvas class="quad-canvas" id="canvas-4" width="640" height="360"></canvas>
-      <div class="quad-media" id="media-4"></div>
-      <div class="quad-hold-badge" id="hold-4">⚡ Smart TV Sync • Clic para Fijar</div>
-      <div class="quad-loader" id="loader-4"><div class="quad-spinner"></div><span>Señal 4...</span></div>
-      <div class="quad-overlay">
-        <div class="quad-pill">
-          <span class="quad-num">CH 4</span>
-          <select class="quad-select" id="sel-4"></select>
-        </div>
-        <div class="quad-actions">
-          <button class="quad-btn" id="aud-4" title="Activar/Silenciar Audio y Fijar esta pista">🔇</button>
-          <button class="quad-btn" id="zoom-4" title="Ampliar/Restaurar esta pista">⛶</button>
-        </div>
+        <div class="fs-res-grid" id="fsResBody"></div>
       </div>
     </div>
   </div>
 
   <script>
-    const CAPITAL_OTB_PRIORITY_ORDER = [
-      'parx-racing',
-      'finger-lakes',
-      'horseshoe-indianapolis',
-      'mahoning-valley',
-      'aqueduct-racetrack',
-      'belmont-park',
-      'saratoga',
-      'thistledown',
-      'presque-isle',
-      'gulfstream-park',
-      'laurel-park',
-      'tampa-bay-downs',
-      'delaware-park',
-      'monmouth-park',
-      'colonial-downs',
-      'woodbine',
-      'keeneland',
-      'churchill-downs',
-      'zia-park',
-      'turf-paradise',
-      'mountaineer-park',
-      'charles-town',
-      'penn-national',
-      'santa-anita-park',
-      'del-mar',
-      'hawthorne',
-      'oaklawn-park',
-      'fair-grounds',
-      'remington-park'
-    ];
-
     const urlParams = new URLSearchParams(window.location.search);
-    const requestedTracksParam = (urlParams.get('tracks') || '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-    const customTitleParam = urlParams.get('title') || '';
-
-    const lblTitle = document.getElementById('lblMosaicTitle');
-    if (lblTitle && customTitleParam) {
-      lblTitle.textContent = `📺 ${customTitleParam}`;
-    }
-
+    const tracksQuery = urlParams.get('tracks') || '';
+    const customTitle = urlParams.get('title') || '';
     let parentAllowsAudio = urlParams.get('muted') === '0';
-    let activeAudioQuad = parentAllowsAudio ? 1 : null;
-    let primaryFocusedQuad = 1;
-    let zoomedQuad = null;
 
-    // Detección automática de Smart TV / TV Box (donde el hardware solo soporta máx. 2 decodificadores <video>)
-    const ua = navigator.userAgent || '';
-    const isDetectedSmartTv = /smarttv|tizen|webos|hbbtv|netcast|vizio|hisense|vidaa|philips|bravia|panasonic|tcl|haier|opera tv|appletv|firetv|aft[a-z0-9]*|roku|android tv|googletv|tv box|mibox|chromecast/i.test(ua);
-    const storedSafePref = localStorage.getItem('vfx_multicanal_tv_safe');
-    let isSmartTvSafeMode = storedSafePref !== null ? (storedSafePref === '1') : isDetectedSmartTv;
-
-    let liveChannels = [];
-    const quadAssigned = { 1: null, 2: null, 3: null, 4: null };
-    const quadHls = { 1: null, 2: null, 3: null, 4: null };
-    let smartTvCycleTimer = null;
-    let currentSecondaryQuad = 2;
-
-    function updateSmartTvBtnUI() {
-      const btn = document.getElementById('btnSmartTvSafe');
-      if (!btn) return;
-      btn.classList.toggle('active', isSmartTvSafeMode);
-      btn.textContent = isSmartTvSafeMode
-        ? '📺 Modo Smart TV (Anti-Freeze): ACTIVO'
-        : '📺 Modo Smart TV: OFF (4 Decodificadores)';
+    const lblTitle = document.getElementById('lblNetworkTitle');
+    if (lblTitle && customTitle) {
+      lblTitle.textContent = `${customTitle.toUpperCase()} • AUTO-DIRECTOR`;
     }
 
-    function getAuthQuery() {
+    const videoEl = document.getElementById('cotbSingleVideo');
+    const stageEl = document.getElementById('cotbStage');
+    let currentVideoSourceKey = '';
+    let activeHls = null;
+
+    function getAuthSuffix() {
       const token = localStorage.getItem('visual_fx_token') || '';
       const deviceId = localStorage.getItem('visual_fx_device_id') || 'TV-COTB';
-      return `&deviceId=${encodeURIComponent(deviceId)}${token ? `&token=${encodeURIComponent(token)}` : ''}&quality=LIGHT&grid=4`;
+      return `&deviceId=${encodeURIComponent(deviceId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
     }
 
-    function scoreChannelForCapitalOtb(ch) {
-      const idx = CAPITAL_OTB_PRIORITY_ORDER.indexOf(ch.id);
-      const isUsRcn = ch.streamUrl && ch.streamUrl.includes('ws.rcncdn.com');
-      const isScheduledToday = ch.activeToday !== false;
-
-      if (isUsRcn && isScheduledToday) return idx !== -1 ? idx : 50;
-      if (idx !== -1 && idx <= 2 && isScheduledToday) return idx;
-      if (isUsRcn) return 100 + (idx !== -1 ? idx : 50);
-      if (ch.id === 'vsin' || ch.id === 'horse-tv') return 900;
-      return 300 + (idx !== -1 ? idx : 100);
-    }
-
-    // Captura el último cuadro nítido del <video> en el <canvas> del cuadrante antes de liberar el decodificador en Smart TV
-    function freezeQuadFrameToCanvas(q) {
-      const media = document.getElementById(`media-${q}`);
-      const canvas = document.getElementById(`canvas-${q}`);
-      const holdBadge = document.getElementById(`hold-${q}`);
-      const loader = document.getElementById(`loader-${q}`);
-      if (!media || !canvas) return;
-      const v = media.querySelector('video');
-      if (v && v.readyState >= 2 && v.videoWidth > 0) {
-        try {
-          canvas.width = v.videoWidth;
-          canvas.height = v.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-          canvas.style.display = 'block';
-          if (holdBadge) holdBadge.style.display = 'block';
-          if (loader) loader.style.display = 'none';
-        } catch (e) {}
-      }
-    }
-
-    function destroyQuadPlayer(q, keepCanvas = false) {
-      if (keepCanvas) {
-        freezeQuadFrameToCanvas(q);
-      } else {
-        const canvas = document.getElementById(`canvas-${q}`);
-        const holdBadge = document.getElementById(`hold-${q}`);
-        if (canvas) canvas.style.display = 'none';
-        if (holdBadge) holdBadge.style.display = 'none';
-      }
-
-      if (quadHls[q]) {
-        try {
-          quadHls[q].stopLoad();
-          quadHls[q].detachMedia();
-          quadHls[q].destroy();
-        } catch (e) {}
-        quadHls[q] = null;
-      }
-      const media = document.getElementById(`media-${q}`);
-      if (media) {
-        const v = media.querySelector('video');
-        if (v) {
-          try {
-            v._destroyed = true;
-            if (v._reconnectTimer) clearTimeout(v._reconnectTimer);
-            v.onerror = null;
-            v.pause();
-            v.removeAttribute('src');
-            v.load();
-          } catch (e) {}
-        }
-        media.innerHTML = '';
-      }
-    }
-
-    function updateAudioStates() {
-      [1, 2, 3, 4].forEach(q => {
-        const quadEl = document.getElementById(`quad-${q}`);
-        const audBtn = document.getElementById(`aud-${q}`);
-        const v = document.querySelector(`#media-${q} video`);
-        const isUnmuted = (activeAudioQuad === q);
-
-        if (v) v.muted = !isUnmuted;
-        if (quadEl) quadEl.classList.toggle('audio-active', isUnmuted || (isSmartTvSafeMode && primaryFocusedQuad === q));
-        if (audBtn) {
-          audBtn.classList.toggle('active', isUnmuted);
-          audBtn.textContent = isUnmuted ? '🔊' : '🔇';
-        }
-      });
-    }
-
-    function playQuadChannel(q, channelId) {
-      const ch = liveChannels.find(c => c.id === channelId);
-      if (!ch) return;
-
-      quadAssigned[q] = channelId;
-      const sel = document.getElementById(`sel-${q}`);
-      if (sel && sel.value !== channelId) sel.value = channelId;
-
-      destroyQuadPlayer(q, false);
-
-      const media = document.getElementById(`media-${q}`);
-      const loader = document.getElementById(`loader-${q}`);
-      const canvas = document.getElementById(`canvas-${q}`);
-      const holdBadge = document.getElementById(`hold-${q}`);
-      if (!media) return;
-
-      if (!canvas || canvas.style.display === 'none') {
-        if (loader) loader.style.display = 'flex';
-      }
-
-      const rawUrl = ch.streamUrl || ch.iframeUrl;
-      if (ch.type === 'iframe') {
-        if (loader) loader.style.display = 'none';
-        if (canvas) canvas.style.display = 'none';
-        if (holdBadge) holdBadge.style.display = 'none';
-        media.innerHTML = `<iframe src="${rawUrl}" allow="autoplay; fullscreen; encrypted-media"></iframe>`;
+    function switchSingleVideoStream(sourceKey, streamUrl, enableAudio) {
+      if (currentVideoSourceKey === sourceKey && !videoEl.paused && !videoEl.ended) {
+        videoEl.muted = !(enableAudio && parentAllowsAudio);
         return;
       }
+      currentVideoSourceKey = sourceKey;
 
-      media.innerHTML = `<video id="v-${q}" autoplay muted playsinline></video>`;
-      const video = document.getElementById(`v-${q}`);
-      const hideLoaderAndCanvas = () => {
-        if (loader) loader.style.display = 'none';
-        if (canvas) canvas.style.display = 'none';
-        if (holdBadge) holdBadge.style.display = 'none';
-      };
-      video.addEventListener('loadeddata', hideLoaderAndCanvas, { once: true });
-      video.addEventListener('playing', hideLoaderAndCanvas, { once: true });
-
-      const safeProxy = (window.location.protocol === 'https:' && ch.proxyUrl && ch.proxyUrl.startsWith('http://'))
-        ? ch.proxyUrl.replace(/^http:\/\//, 'https://')
-        : ch.proxyUrl;
-      const primaryUrl = `${safeProxy}${getAuthQuery()}`;
-
-      if (rawUrl && rawUrl.includes('ws.rcncdn.com')) {
-        video._destroyed = false;
-        video._primaryUrl = primaryUrl;
-        video.src = primaryUrl;
-        video.onerror = () => {
-          if (video._destroyed || video._pausedByHidden) return;
-          if (video._reconnectTimer) clearTimeout(video._reconnectTimer);
-          video._reconnectTimer = setTimeout(() => {
-            if (video._destroyed || video._pausedByHidden) return;
-            video.src = `${primaryUrl}&_t=${Date.now()}`;
-            video.play().catch(() => {});
-          }, 3000);
-        };
-        video.muted = (activeAudioQuad !== q);
-        video.play().catch(() => {});
-        return;
+      if (activeHls) {
+        try {
+          activeHls.stopLoad();
+          activeHls.detachMedia();
+          activeHls.destroy();
+        } catch (e) {}
+        activeHls = null;
       }
 
-      if (window.Hls && Hls.isSupported()) {
+      if (videoEl._reconnectTimer) {
+        clearTimeout(videoEl._reconnectTimer);
+        videoEl._reconnectTimer = null;
+      }
+
+      const isHlsManifest = streamUrl.includes('.m3u8');
+      videoEl.muted = !(enableAudio && parentAllowsAudio);
+
+      if (isHlsManifest && window.Hls && Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: false,
           lowLatencyMode: false,
-          capLevelToPlayerSize: true,
           backBufferLength: 0,
-          maxBufferLength: 3,
-          maxMaxBufferLength: 5,
-          maxBufferSize: 2 * 1024 * 1024,
-          startLevel: 0
+          maxBufferLength: 4,
+          maxMaxBufferLength: 6
         });
-        const initialHlsUrl = (rawUrl && rawUrl.startsWith('https://')) ? rawUrl : primaryUrl;
-        let usedProxyFallback = (initialHlsUrl === primaryUrl);
-        hls.loadSource(initialHlsUrl);
-        hls.attachMedia(video);
+        hls.loadSource(streamUrl);
+        hls.attachMedia(videoEl);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          hideLoaderAndCanvas();
-          hls.autoLevelCappedAt = 0;
-          video.muted = (activeAudioQuad !== q);
-          video.play().catch(() => {});
+          videoEl.play().catch(() => {});
         });
-        hls.on(Hls.Events.ERROR, (ev, data) => {
-          if (data && data.fatal && !usedProxyFallback) {
-            usedProxyFallback = true;
-            hls.loadSource(primaryUrl);
-            hls.startLoad();
-          }
-        });
-        quadHls[q] = hls;
+        activeHls = hls;
       } else {
-        video.src = primaryUrl;
-        video.muted = (activeAudioQuad !== q);
-        video.play().catch(() => {});
+        videoEl.src = streamUrl;
+        videoEl.onerror = () => {
+          if (videoEl._reconnectTimer) clearTimeout(videoEl._reconnectTimer);
+          videoEl._reconnectTimer = setTimeout(() => {
+            if (currentVideoSourceKey === sourceKey) {
+              const sep = streamUrl.includes('?') ? '&' : '?';
+              videoEl.src = `${streamUrl}${sep}_t=${Date.now()}`;
+              videoEl.play().catch(() => {});
+            }
+          }, 3000);
+        };
+        videoEl.play().catch(() => {});
       }
     }
 
-    // Motor Multiplexor Anti-Congelamiento para Smart TVs (Máximo 2 decodificadores <video> activos a la vez)
-    function applyPlaybackStrategy() {
-      if (smartTvCycleTimer) {
-        clearInterval(smartTvCycleTimer);
-        smartTvCycleTimer = null;
+    function renderSlateResultHtml(quad) {
+      let html = `<div class="slate-track-title">${quad.flag || '🇺🇸'} ${quad.name}</div>`;
+      html += `<div class="slate-sub">${quad.statusBadge || 'SEÑAL EN ESPERA'}</div>`;
+      if (quad.lastResult && quad.lastResult.top3 && quad.lastResult.top3.length > 0) {
+        html += `<div class="slate-results-table">`;
+        html += `<div style="font-size:0.66rem;color:#94a3b8;font-weight:800;margin-bottom:3px;text-transform:uppercase;">Último Resultado Oficial • Carrera ${quad.lastResult.raceNumber}</div>`;
+        quad.lastResult.top3.slice(0, 3).forEach((r, idx) => {
+          const pay = r.win || r.place || r.show || '';
+          html += `<div class="slate-res-row"><span class="slate-horse">${idx + 1}º #${r.pgm} ${r.horse}</span><span class="slate-pay">${pay ? '$' + pay : ''}</span></div>`;
+        });
+        html += `</div>`;
       }
-      updateSmartTvBtnUI();
+      return html;
+    }
 
-      if (!isSmartTvSafeMode) {
-        // Modo PC / 4 Decodificadores simultáneos
-        [1, 2, 3, 4].forEach(q => {
-          const hasVideo = Boolean(document.querySelector(`#media-${q} video, #media-${q} iframe`));
-          if (!hasVideo && quadAssigned[q]) {
-            playQuadChannel(q, quadAssigned[q]);
+    function renderFullscreenResultsHtml(resultObj) {
+      if (!resultObj || !resultObj.top3 || resultObj.top3.length === 0) return '';
+      let rows = '';
+      resultObj.top3.slice(0, 3).forEach((r) => {
+        rows += `<tr>
+          <td><span class="fs-pgm-badge">${r.pgm}</span>${r.horse}</td>
+          <td style="color:#34d399;">${r.win ? '$' + r.win : '-'}</td>
+          <td style="color:#7dd3fc;">${r.place ? '$' + r.place : '-'}</td>
+          <td style="color:#cbd5e1;">${r.show ? '$' + r.show : '-'}</td>
+        </tr>`;
+      });
+
+      let exoticsHtml = '';
+      if (resultObj.exotics && resultObj.exotics.length > 0) {
+        resultObj.exotics.slice(0, 3).forEach(ex => {
+          exoticsHtml += `<div class="fs-exotic-item"><span>${ex.type} (${ex.nums})</span><span class="fs-exotic-pay">$${ex.payoff}</span></div>`;
+        });
+      } else {
+        exoticsHtml = `<div style="color:#94a3b8;font-size:0.74rem;">Dividendos oficiales confirmados en pizarra.</div>`;
+      }
+
+      return `
+        <table class="fs-top3-table">
+          <thead><tr><th>Ejemplar</th><th>Win</th><th>Place</th><th>Show</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="fs-exotics-box">${exoticsHtml}</div>
+      `;
+    }
+
+    async function pollDirectorState() {
+      try {
+        const res = await fetch(`/api/multicanal/director-state?tracks=${encodeURIComponent(tracksQuery)}`);
+        const state = await res.json();
+        if (!state || !state.success) return;
+
+        // 1. Actualizar cintillos de los 4 cuadrantes
+        (state.quads || []).forEach(q => {
+          const idx = q.quadIndex;
+          const cellEl = document.getElementById(`cell-${idx}`);
+          const nameEl = document.getElementById(`name-${idx}`);
+          const badgeEl = document.getElementById(`badge-${idx}`);
+          const slateEl = document.getElementById(`slate-${idx}`);
+
+          if (nameEl) nameEl.textContent = `${q.flag || '🇺🇸'} ${q.name}`;
+          if (badgeEl) {
+            badgeEl.textContent = q.statusBadge || 'EN VIVO';
+            const isImminent = q.nextRace && q.nextRace.mtpMinutes !== null && q.nextRace.mtpMinutes <= 2;
+            badgeEl.classList.toggle('imminent', Boolean(isImminent));
+          }
+          if (cellEl) {
+            const isOffAir = !q.onAir;
+            cellEl.classList.toggle('off-air', isOffAir);
+            if (isOffAir && slateEl) {
+              slateEl.innerHTML = renderSlateResultHtml(q);
+            }
           }
         });
-        updateAudioStates();
-        return;
-      }
 
-      // Modo Smart TV Safe: Decodificador #1 fijo en primaryFocusedQuad; Decodificador #2 rotando cada 6s entre los otros 3
-      const primaryQ = activeAudioQuad || primaryFocusedQuad || 1;
-      primaryFocusedQuad = primaryQ;
-      const otherQuads = [1, 2, 3, 4].filter(q => q !== primaryQ);
-      if (!otherQuads.includes(currentSecondaryQuad)) {
-        currentSecondaryQuad = otherQuads[0];
-      }
+        // 2. Evaluar si el Director Automático ordena Pantalla Completa (Partida + Carrera + 1 min Resultados) o Mosaico 4 en 1
+        if (state.mode === 'FULLSCREEN_RACE' && state.fullscreenTrack) {
+          const ft = state.fullscreenTrack;
+          stageEl.classList.add('cotb-Stage-Fullscreen');
 
-      // Asegurar que primaryQ y currentSecondaryQuad estén reproduciendo, y los otros 2 en retención de cuadro Canvas
-      [1, 2, 3, 4].forEach(q => {
-        if (q === primaryQ || q === currentSecondaryQuad) {
-          const hasVideo = Boolean(document.querySelector(`#media-${q} video, #media-${q} iframe`));
-          if (!hasVideo && quadAssigned[q]) {
-            playQuadChannel(q, quadAssigned[q]);
+          const bannerEl = document.getElementById('fsTopBanner');
+          const pillEl = document.getElementById('fsLivePill');
+          const titleEl = document.getElementById('fsTrackTitle');
+          const metaEl = document.getElementById('fsRaceMeta');
+          const resBoxEl = document.getElementById('fsBottomResults');
+          const resTitleEl = document.getElementById('fsResTitle');
+          const resTimerEl = document.getElementById('fsResTimer');
+          const resBodyEl = document.getElementById('fsResBody');
+
+          const isResultsHold = (ft.phase === 'RESULTS_HOLD');
+          if (bannerEl) bannerEl.classList.toggle('results-mode', isResultsHold);
+          if (pillEl) {
+            pillEl.textContent = isResultsHold
+              ? '🏆 OFICIAL / RESULTADOS'
+              : (ft.phase === 'STARTING' ? '🏁 ¡PARTIDA EN VIVO!' : '🏇 EN CARRERA');
           }
+          if (titleEl) titleEl.textContent = `${ft.flag || '🇺🇸'} ${ft.name}`;
+          if (metaEl && ft.raceInfo) {
+            metaEl.textContent = `CARRERA ${ft.raceInfo.raceNumber || ''} ${ft.raceInfo.distance ? '• ' + ft.raceInfo.distance : ''} ${ft.raceInfo.surface ? '(' + ft.raceInfo.surface + ')' : ''}`;
+          }
+
+          const resultToShow = (ft.raceInfo && ft.raceInfo.officialResult) || ft.lastResult;
+          if (isResultsHold && resultToShow && resBoxEl && resBodyEl) {
+            resBoxEl.classList.add('visible');
+            if (resTitleEl) resTitleEl.textContent = `🏆 RESULTADOS OFICIALES — ${ft.name.toUpperCase()} (CARRERA ${resultToShow.raceNumber})`;
+            if (resTimerEl) resTimerEl.textContent = `Volviendo al Mosaico 4 en 1 en ${ft.holdRemainingSec || 60}s...`;
+            resBodyEl.innerHTML = renderFullscreenResultsHtml(resultToShow);
+          } else if (resBoxEl) {
+            resBoxEl.classList.remove('visible');
+          }
+
+          const streamUrl = `${ft.proxyUrl}${getAuthSuffix()}`;
+          switchSingleVideoStream(`FS:${ft.trackId}`, streamUrl, true);
         } else {
-          destroyQuadPlayer(q, true);
+          stageEl.classList.remove('cotb-Stage-Fullscreen');
+          const compositeUrl = `/api/multicanal/composite.mp4?tracks=${encodeURIComponent(tracksQuery)}${getAuthSuffix()}`;
+          switchSingleVideoStream(`MOSAIC:${tracksQuery || 'default'}`, compositeUrl, false);
         }
-      });
-      updateAudioStates();
-
-      smartTvCycleTimer = setInterval(() => {
-        if (!isSmartTvSafeMode || document.hidden || zoomedQuad) return;
-        const pQ = activeAudioQuad || primaryFocusedQuad || 1;
-        const others = [1, 2, 3, 4].filter(q => q !== pQ);
-        const prevSec = currentSecondaryQuad;
-        const nextIdx = (others.indexOf(prevSec) + 1) % others.length;
-        currentSecondaryQuad = others[nextIdx];
-
-        if (prevSec !== pQ) {
-          destroyQuadPlayer(prevSec, true);
-        }
-        if (quadAssigned[currentSecondaryQuad]) {
-          playQuadChannel(currentSecondaryQuad, quadAssigned[currentSecondaryQuad]);
-        }
-      }, 45000);
-    }
-
-    function populateQuadSelectors() {
-      [1, 2, 3, 4].forEach(q => {
-        const sel = document.getElementById(`sel-${q}`);
-        if (!sel) return;
-        sel.innerHTML = '';
-        liveChannels.forEach(ch => {
-          const opt = document.createElement('option');
-          opt.value = ch.id;
-          opt.textContent = `${ch.flag || '🏇'} ${ch.name}`;
-          if (quadAssigned[q] === ch.id) opt.selected = true;
-          sel.appendChild(opt);
-        });
-        sel.onchange = (e) => {
-          quadAssigned[q] = e.target.value;
-          primaryFocusedQuad = q;
-          if (isSmartTvSafeMode) {
-            applyPlaybackStrategy();
-          } else {
-            playQuadChannel(q, e.target.value);
-          }
-        };
-      });
-    }
-
-    function setupQuadControls() {
-      const btnSafe = document.getElementById('btnSmartTvSafe');
-      if (btnSafe) {
-        btnSafe.addEventListener('click', (e) => {
-          e.stopPropagation();
-          isSmartTvSafeMode = !isSmartTvSafeMode;
-          localStorage.setItem('vfx_multicanal_tv_safe', isSmartTvSafeMode ? '1' : '0');
-          applyPlaybackStrategy();
-        });
+      } catch (err) {
+        console.error('Error sincronizando Director Capital OTB:', err);
       }
-
-      [1, 2, 3, 4].forEach(q => {
-        const audBtn = document.getElementById(`aud-${q}`);
-        const zoomBtn = document.getElementById(`zoom-${q}`);
-        const quadEl = document.getElementById(`quad-${q}`);
-        const selEl = document.getElementById(`sel-${q}`);
-
-        if (selEl) {
-          selEl.addEventListener('click', e => e.stopPropagation());
-        }
-
-        if (audBtn) {
-          audBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            activeAudioQuad = (activeAudioQuad === q) ? null : q;
-            primaryFocusedQuad = q;
-            if (isSmartTvSafeMode) {
-              applyPlaybackStrategy();
-            } else {
-              updateAudioStates();
-            }
-          });
-        }
-
-        if (quadEl) {
-          quadEl.addEventListener('click', () => {
-            primaryFocusedQuad = q;
-            if (isSmartTvSafeMode) {
-              applyPlaybackStrategy();
-            }
-          });
-        }
-
-        const toggleZoom = (e) => {
-          if (e) e.stopPropagation();
-          const grid = document.getElementById('mosaicGrid');
-          if (zoomedQuad === q) {
-            zoomedQuad = null;
-            grid.classList.remove('zoomed-mode');
-            [1, 2, 3, 4].forEach(n => document.getElementById(`quad-${n}`).classList.remove('zoomed'));
-            applyPlaybackStrategy();
-          } else {
-            zoomedQuad = q;
-            primaryFocusedQuad = q;
-            grid.classList.add('zoomed-mode');
-            [1, 2, 3, 4].forEach(n => document.getElementById(`quad-${n}`).classList.toggle('zoomed', n === q));
-            const hasVideo = Boolean(document.querySelector(`#media-${q} video, #media-${q} iframe`));
-            if (!hasVideo && quadAssigned[q]) {
-              playQuadChannel(q, quadAssigned[q]);
-            }
-          }
-        };
-        if (zoomBtn) zoomBtn.addEventListener('click', toggleZoom);
-        if (quadEl) quadEl.addEventListener('dblclick', toggleZoom);
-      });
     }
 
     window.addEventListener('message', (event) => {
       const data = event.data;
       if (data && data.type === 'VFX_AUDIO_STATE') {
-        if (data.muted) {
-          activeAudioQuad = null;
-        } else if (!activeAudioQuad) {
-          activeAudioQuad = primaryFocusedQuad || 1;
-        }
-        updateAudioStates();
+        parentAllowsAudio = !data.muted;
+        videoEl.muted = !parentAllowsAudio;
       }
     });
 
-    document.addEventListener('visibilitychange', () => {
-      const isHidden = document.hidden;
-      [1, 2, 3, 4].forEach(q => {
-        if (quadHls[q]) {
-          if (isHidden) quadHls[q].stopLoad();
-          else quadHls[q].startLoad();
-          return;
-        }
-        const v = document.getElementById(`v-${q}`);
-        if (v && v._primaryUrl) {
-          if (isHidden && activeAudioQuad !== q) {
-            v._pausedByHidden = true;
-            if (v._reconnectTimer) clearTimeout(v._reconnectTimer);
-            v.pause();
-            v.removeAttribute('src');
-            v.load();
-          } else if (!isHidden && v._pausedByHidden) {
-            v._pausedByHidden = false;
-            v.src = `${v._primaryUrl}&_t=${Date.now()}`;
-            v.play().catch(() => {});
-          }
-        }
-      });
-    });
-
-    async function initCapitalOtbMosaic() {
-      setupQuadControls();
-      updateSmartTvBtnUI();
-      try {
-        const res = await fetch('/api/channels');
-        const data = await res.json();
-        const all = (data.channels || []).filter(c => c.onAir && !c.isMulticanal && c.id !== 'capital-otb');
-
-        all.sort((a, b) => scoreChannelForCapitalOtb(a) - scoreChannelForCapitalOtb(b));
-        liveChannels = all;
-
-        if (liveChannels.length === 0) return;
-
-        // Si el Multicanal viene con pistas preconfiguradas o elegidas por la agencia (?tracks=...), usarlas
-        const validRequested = requestedTracksParam.filter(tid => liveChannels.some(c => c.id === tid));
-        [1, 2, 3, 4].forEach((q, idx) => {
-          if (validRequested[idx]) {
-            quadAssigned[q] = validRequested[idx];
-          } else {
-            const fallback = liveChannels.find(c => !Object.values(quadAssigned).includes(c.id)) || liveChannels[idx % liveChannels.length];
-            quadAssigned[q] = fallback.id;
-          }
-        });
-
-        populateQuadSelectors();
-
-        if (isSmartTvSafeMode) {
-          // En Smart TV: precargar un primer cuadro de los 4 cuadrantes de 2 en 2 y luego dejar activo el Modo Smart TV (2 decodificadores)
-          playQuadChannel(1, quadAssigned[1]);
-          playQuadChannel(2, quadAssigned[2]);
-          setTimeout(() => {
-            if (!isSmartTvSafeMode) return;
-            destroyQuadPlayer(2, true);
-            playQuadChannel(3, quadAssigned[3]);
-            setTimeout(() => {
-              if (!isSmartTvSafeMode) return;
-              destroyQuadPlayer(3, true);
-              currentSecondaryQuad = 4;
-              playQuadChannel(4, quadAssigned[4]);
-              applyPlaybackStrategy();
-            }, 3200);
-          }, 3200);
-        } else {
-          for (let q = 1; q <= 4; q++) {
-            playQuadChannel(q, quadAssigned[q]);
-            await new Promise(r => setTimeout(r, 250));
-          }
-        }
-        updateAudioStates();
-      } catch (err) {
-        console.error('Error iniciando Multicanal:', err);
-      }
-    }
-
-    initCapitalOtbMosaic();
+    pollDirectorState();
+    setInterval(pollDirectorState, 10000);
   </script>
 </body>
 </html>
