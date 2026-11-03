@@ -401,8 +401,8 @@ async function startMillicastHubUpstream(hub) {
         '-protocol_whitelist', 'file,udp,rtp,crypto,data',
         '-fflags', '+nobuffer+genpts+igndts+discardcorrupt',
         '-flags', 'low_delay',
-        '-analyzeduration', '1500000',
-        '-probesize', '1500000',
+        '-analyzeduration', '5000000',
+        '-probesize', '5000000',
         '-i', sdpPath,
         '-map', '0:v:0',
         '-map', '0:a:0?',
@@ -512,12 +512,25 @@ async function startMillicastHubUpstream(hub) {
       });
     };
 
+    let answerSprop = '';
+
     const forwardVideoRtp = (rtp) => {
       if (!hub.pc || !rtp || !rtp.payload || rtp.payload.length === 0) return;
       hub.lastRtpAt = Date.now();
       if (!videoSsrc && rtp.header && rtp.header.ssrc) {
         videoSsrc = rtp.header.ssrc;
-        try { vt.receiver.sendRtcpPLI(videoSsrc); } catch (e) {}
+      }
+      if (!ffmpegStarted) {
+        startFfmpegProcess(answerSprop);
+        const requestKeyframe = () => {
+          if (videoSsrc && vt && vt.receiver) {
+            try { vt.receiver.sendRtcpPLI(videoSsrc); } catch (e) {}
+          }
+        };
+        requestKeyframe();
+        setTimeout(requestKeyframe, 250);
+        setTimeout(requestKeyframe, 600);
+        setTimeout(requestKeyframe, 1200);
       }
       rtp.header.payloadType = 96;
       try {
@@ -527,7 +540,7 @@ async function startMillicastHubUpstream(hub) {
     };
 
     const forwardAudioRtp = (rtp) => {
-      if (!hub.pc || !rtp || !rtp.payload || rtp.payload.length === 0) return;
+      if (!hub.pc || !rtp || !rtp.payload || rtp.payload.length === 0 || !ffmpegStarted) return;
       rtp.header.payloadType = 111;
       try {
         const buf = rtp.serialize();
@@ -584,7 +597,7 @@ async function startMillicastHubUpstream(hub) {
         if (msg.type === 'response' && msg.data && msg.data.sdp) {
           const answerSdp = msg.data.sdp;
           const spropMatch = answerSdp.match(/sprop-parameter-sets=([^\r\n;]+)/i);
-          startFfmpegProcess(spropMatch ? spropMatch[1] : '');
+          answerSprop = spropMatch ? spropMatch[1] : '';
           await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
           hub.pliInterval = setInterval(() => {
             if (videoSsrc && vt && vt.receiver) {
