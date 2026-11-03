@@ -545,13 +545,22 @@
           maxBufferSize: 2 * 1024 * 1024,
           startLevel: 0
         });
-        hls.loadSource(primaryUrl);
+        const initialHlsUrl = (rawUrl && rawUrl.startsWith('https://')) ? rawUrl : primaryUrl;
+        let usedProxyFallback = (initialHlsUrl === primaryUrl);
+        hls.loadSource(initialHlsUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           hideLoaderAndCanvas();
           hls.autoLevelCappedAt = 0;
           video.muted = (activeAudioQuad !== q);
           video.play().catch(() => {});
+        });
+        hls.on(Hls.Events.ERROR, (ev, data) => {
+          if (data && data.fatal && !usedProxyFallback) {
+            usedProxyFallback = true;
+            hls.loadSource(primaryUrl);
+            hls.startLoad();
+          }
         });
         quadHls[q] = hls;
       } else {

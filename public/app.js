@@ -2086,17 +2086,23 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn('[HLS Network Error] Intentando recuperar...');
-              hls.startLoad();
+              if (!isFallback && targetUrl !== primaryUrl) {
+                console.warn('[HLS Direct] CORS/Red en canal público, usando puente servidor...');
+                stopAndDestroyPlayer(cellNum);
+                startHls(primaryUrl, true);
+              } else {
+                console.warn('[HLS Network Error] Intentando recuperar...');
+                hls.startLoad();
+              }
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               console.warn('[HLS Media Error] Intentando recuperar media...');
               hls.recoverMediaError();
               break;
             default:
-              if (!isFallback && rawStreamUrl) {
+              if (!isFallback && targetUrl !== primaryUrl) {
                 stopAndDestroyPlayer(cellNum);
-                startHls(rawStreamUrl, true);
+                startHls(primaryUrl, true);
               } else {
                 stopAndDestroyPlayer(cellNum);
               }
@@ -2116,7 +2122,9 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
     }
   }
 
-  startHls(primaryUrl);
+  // Canales públicos gratuitos (fuera de 1/ST TV) se reproducen directo primero para ahorrar 100% de ancho de banda del servidor
+  const directFirstUrl = (rawStreamUrl && rawStreamUrl.startsWith('https://')) ? rawStreamUrl : primaryUrl;
+  startHls(directFirstUrl);
   video.muted = (cellNum !== activeAudioCell);
 }
 
