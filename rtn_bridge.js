@@ -155,22 +155,12 @@ async function restoreRtnCacheFromCloud() {
   cloudRestored = true;
   try {
     const saved = await loadFromCloud('rtn_bridge_cache');
-    if (saved) {
-      if (saved.cookieHeader && saved.cookieTimestamp) {
-        const age = Date.now() - saved.cookieTimestamp;
-        if (age > 0 && age < SESSION_TTL_MS) {
-          cachedCookieHeader = saved.cookieHeader;
-          cachedCookieTimestamp = saved.cookieTimestamp;
-          console.log('☁️ [RTN Bridge] Sesión PHPSESSID restaurada desde Supabase (ahorro de login en RTN).');
-        }
-      }
-      if (saved.robertsUrls && typeof saved.robertsUrls === 'object') {
-        const now = Date.now();
-        for (const [k, v] of Object.entries(saved.robertsUrls)) {
-          if (v && v.expiresAt && v.expiresAt > now) {
-            robertsUrlCache.set(k, v);
-          }
-        }
+    if (saved && saved.cookieHeader && saved.cookieTimestamp) {
+      const age = Date.now() - saved.cookieTimestamp;
+      if (age > 0 && age < SESSION_TTL_MS) {
+        cachedCookieHeader = saved.cookieHeader;
+        cachedCookieTimestamp = saved.cookieTimestamp;
+        console.log('☁️ [RTN Bridge] Sesión PHPSESSID restaurada desde Supabase (ahorro de login en RTN).');
       }
     }
   } catch (e) {}
@@ -178,14 +168,9 @@ async function restoreRtnCacheFromCloud() {
 
 async function persistRtnCacheToCloud() {
   try {
-    const robertsUrls = {};
-    for (const [k, v] of robertsUrlCache.entries()) {
-      robertsUrls[k] = v;
-    }
     await saveToCloud('rtn_bridge_cache', {
       cookieHeader: cachedCookieHeader,
       cookieTimestamp: cachedCookieTimestamp,
-      robertsUrls,
       updatedAt: new Date().toISOString()
     });
   } catch (e) {}

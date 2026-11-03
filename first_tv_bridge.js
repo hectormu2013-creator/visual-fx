@@ -25,6 +25,7 @@ const trackStateCache = new Map();
 const robertsLiveUrlCache = new Map();
 const variantUrlMap = new Map();
 const recentDiagnostics = [];
+let lastRobertsScript = '';
 let startupSyncCompleted = false;
 
 function recordDiag(trackCode, step, detail) {
@@ -244,7 +245,8 @@ async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl, customReferer =
     }
   }
   if (matches.length === 0) {
-    const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1].trim()).filter(Boolean).join(' | ');
+    const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1].trim()).filter(Boolean).join('\n---SCRIPT---\n');
+    lastRobertsScript = scripts.slice(0, 16000);
     const bodyText = html.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     const diagSample = (scripts.length > 20 ? scripts : bodyText).slice(0, 700);
     recordDiag(trackCode, 'ROBERTS_NO_SOURCES', `len=${html.length} sample=${diagSample}`);
@@ -694,7 +696,8 @@ function getFirstTvStatus() {
     cachedTracksCount: trackStateCache.size,
     robertsCachedCount: robertsLiveUrlCache.size,
     liveTracks: Array.from(trackStateCache.entries()).filter(([, v]) => v.onAir).map(([k]) => k),
-    recentDiagnostics
+    recentDiagnostics,
+    lastRobertsScript
   };
 }
 
