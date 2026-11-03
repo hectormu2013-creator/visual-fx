@@ -27,7 +27,8 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
-    private static final String DEFAULT_SERVER_URL = "https://visual-fx.onrender.com";
+    private static final String DEFAULT_SERVER_URL = "https://visual-fx.up.railway.app";
+    private static final String LEGACY_RENDER_URL = "https://visual-fx.onrender.com";
     private static final String PREFS_NAME = "VisualFxTvPrefs";
     private static final String KEY_SERVER_URL = "server_url";
 
@@ -179,7 +180,12 @@ public class MainActivity extends Activity {
 
     private String getServerUrl() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL);
+        String saved = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL);
+        if (saved == null || saved.contains("visual-fx.onrender.com")) {
+            prefs.edit().putString(KEY_SERVER_URL, DEFAULT_SERVER_URL).apply();
+            return DEFAULT_SERVER_URL;
+        }
+        return saved;
     }
 
     // Inyectar JavaScript de forma segura al WebView

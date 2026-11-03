@@ -47,7 +47,7 @@ Este es el método más rápido (toma menos de 1 minuto):
 3. **Descargar e Instalar:**
    - Abre **Downloader** y en la barra escribe la URL corta oficial:
      ```text
-     https://visual-fx.onrender.com/app
+     https://visual-fx.up.railway.app/app
      ```
    - Pulsa **Go**. La descarga comenzará automáticamente.
    - Al finalizar, pulsa **Instalar** y luego **Abrir**.
@@ -62,6 +62,6 @@ Este es el método más rápido (toma menos de 1 minuto):
 Los televisores Samsung y LG ejecutan sistemas propietarios (Tizen y webOS) que no admiten archivos `.apk`:
 
 - **Recomendación Operativa:**
-  - Para Samsung / LG sin FireStick: Abrir el navegador del TV en `https://visual-fx.onrender.com`.
+  - Para Samsung / LG sin FireStick: Abrir el navegador del TV en `https://visual-fx.up.railway.app`.
   - Se recomienda usar **1 o 2 pantallas simultáneas**.
   - Si una agencia requiere **3 o 4 pantallas simultáneas a 60 FPS**, se debe conectar un dispositivo económico como **Amazon FireStick Lite / 4K** o **Xiaomi TV Stick** e instalar la app nativa.
