@@ -110,8 +110,9 @@ function syncMulticanalChannels(channelsCatalog) {
     }
   }
 
+  const FILLER_24_7_IDS = new Set(['vsin', 'horse-tv', 'sky-racing-1', 'equidia-hd', 'tjk-tv', 'turf-movil']);
   const activeIndividual = Array.from(catalogMap.values()).filter(
-    c => c.onAir && c.id !== 'vsin' && c.id !== 'horse-tv'
+    c => c.onAir && !FILLER_24_7_IDS.has(c.id)
   );
 
   // 1. Selección para Capital OTB Multicanal (Prioriza pistas de NY/Costa Este con carreras programadas hoy)
