@@ -316,6 +316,7 @@ async function fetchRtnLiveStreams() {
 
     // Ordenar por prioridad del día (Lun-Mié: Parx, Finger Lakes, Indiana Grand, Mahoning Valley primero)
     candidateTracks.sort((a, b) => getPriorityRankForTrack(a.meta.id) - getPriorityRankForTrack(b.meta.id));
+    recordRtnDiag('LIST', 'CANDIDATES', candidateTracks.map(c => `${c.meta.id}(R:${c.info.race || c.info.Race || '-'},MTP:${c.info.mtp || c.info.MTP || '-'})`).join(', '));
 
     let newTokensRequested = 0;
 
