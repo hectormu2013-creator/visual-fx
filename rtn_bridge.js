@@ -8,10 +8,12 @@
 
 const fetch = require('node-fetch');
 const { extractRcnVariantsFromLiveUrl, probeRcnStreamIsLive } = require('./first_tv_bridge');
+const { saveToCloud, loadFromCloud } = require('./supabase_sync');
 
 let RTN_ENABLED = process.env.RTN_ENABLED === 'true';
 let circuitPausedUntil = 0;
 let lastRtnError = null;
+let cloudRestored = false;
 
 // 1. Caché prolongado de sesión y llaves (6 horas)
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
@@ -137,7 +139,45 @@ function matchOfficialTrack(rawTrackName) {
   return null;
 }
 
+const rtnDiagnostics = [];
+function recordRtnDiag(trackCode, step, detail = '') {
+  rtnDiagnostics.unshift({
+    t: new Date().toISOString().slice(11, 19),
+    trackCode,
+    step,
+    detail: String(detail).slice(0, 220)
+  });
+  if (rtnDiagnostics.length > 40) rtnDiagnostics.pop();
+}
+
+async function restoreRtnCacheFromCloud() {
+  if (cloudRestored) return;
+  cloudRestored = true;
+  try {
+    const saved = await loadFromCloud('rtn_bridge_cache');
+    if (saved && saved.cookieHeader && saved.cookieTimestamp) {
+      const age = Date.now() - saved.cookieTimestamp;
+      if (age > 0 && age < SESSION_TTL_MS) {
+        cachedCookieHeader = saved.cookieHeader;
+        cachedCookieTimestamp = saved.cookieTimestamp;
+        console.log('☁️ [RTN Bridge] Sesión PHPSESSID restaurada desde Supabase (ahorro de login en RTN).');
+      }
+    }
+  } catch (e) {}
+}
+
+async function persistRtnCacheToCloud() {
+  try {
+    await saveToCloud('rtn_bridge_cache', {
+      cookieHeader: cachedCookieHeader,
+      cookieTimestamp: cachedCookieTimestamp,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (e) {}
+}
+
 async function ensureRtnSession() {
+  await restoreRtnCacheFromCloud();
   const now = Date.now();
   if (cachedCookieHeader && (now - cachedCookieTimestamp) < SESSION_TTL_MS) {
     return cachedCookieHeader;
@@ -192,6 +232,7 @@ async function ensureRtnSession() {
   cachedCookieHeader = cookieHeader;
   cachedCookieTimestamp = now;
   lastRtnError = null;
+  await persistRtnCacheToCloud();
   console.log('🔑 [RTN Bridge] Sesión autenticada en online.rtn.tv (válida en caché por 6h).');
   return cachedCookieHeader;
 }
@@ -298,8 +339,10 @@ async function fetchRtnLiveStreams() {
       // Verificar si ya tenemos la URL firmada de Robertsstream en caché (dura 6h)
       let robertsEntry = robertsUrlCache.get(trackId);
       let liveUrl = (robertsEntry && Date.now() < robertsEntry.expiresAt) ? robertsEntry.liveUrl : null;
+      let rawIframeUrl = (robertsEntry && Date.now() < robertsEntry.expiresAt) ? robertsEntry.rawIframeUrl : null;
+      const trackCode = (info.tc3 || info.tc2 || trackId).toUpperCase();
 
-      if (!liveUrl) {
+      if (!liveUrl && !rawIframeUrl) {
         // Respetar límite estricto de llaves nuevas por ciclo para evitar ráfagas
         if (newTokensRequested >= MAX_NEW_FETCHES_PER_CYCLE) {
           if (cachedState && cachedState.onAir && cachedState.streamData && Date.now() < cachedState.tokenExpiresAt) {
@@ -314,14 +357,14 @@ async function fetchRtnLiveStreams() {
 
         const playerParams = new URLSearchParams();
         playerParams.append('pageQueue', 'page_live');
-        playerParams.append('trackName', info.trackName);
-        playerParams.append('format', info.format || 'flash');
-        playerParams.append('breed', info.breed || 'NotGH');
-        playerParams.append('tc3', info.tc3 || '');
-        playerParams.append('tc2', info.tc2 || '');
-        playerParams.append('racedate', info.racedate || isoDateStr);
-        playerParams.append('asfFileName', info.asfFileName || '');
-        if (info.tfid) playerParams.append('tfid', info.tfid);
+        for (const [k, v] of Object.entries(info)) {
+          if (k !== 'pageQueue' && v !== undefined && v !== null) {
+            playerParams.append(k, String(v));
+          }
+        }
+        if (!playerParams.has('format')) playerParams.append('format', 'flash');
+        if (!playerParams.has('breed')) playerParams.append('breed', 'NotGH');
+        if (!playerParams.has('racedate')) playerParams.append('racedate', isoDateStr);
 
         const playerRes = await fetch('https://online.rtn.tv/index.php', {
           method: 'POST',
@@ -339,6 +382,7 @@ async function fetchRtnLiveStreams() {
         const playerHtml = await playerRes.text();
         const iframeMatch = playerHtml.match(/iframe\s+src=['"]([^'"]+)['"]/i);
         if (!iframeMatch || !iframeMatch[1]) {
+          recordRtnDiag(trackCode, 'NO_IFRAME', `len=${playerHtml.length}`);
           rtnTrackStateCache.set(trackId, {
             onAir: false,
             lastProbeAt: Date.now(),
@@ -348,21 +392,37 @@ async function fetchRtnLiveStreams() {
           continue;
         }
 
-        // Sanitizar URL de Robertsstream: pasar a streamlive.php (HTML5 H5Live) y limpiar &optp= contra WAF F5 BigIP
-        const rawIframeUrl = iframeMatch[1].replace(/&amp;/g, '&');
-        liveUrl = rawIframeUrl
-          .replace('streamflash.php', 'streamlive.php')
-          .replace(/&optp=[^&]+/, '');
+        rawIframeUrl = iframeMatch[1].replace(/&amp;/g, '&').trim();
+        if (rawIframeUrl.startsWith('//')) rawIframeUrl = `https:${rawIframeUrl}`;
+        recordRtnDiag(trackCode, 'IFRAME_RAW', rawIframeUrl.replace(/(usr|user)=[^&]+/gi, '$1=***'));
+      }
 
+      // 3. Extraer manifiesto H5Live (.m3u8 de ws.rcncdn.com) desde la IP de EE.UU. (NUNCA exponer liveUrl ni iframe a Venezuela)
+      const candidates = liveUrl ? [liveUrl] : [
+        rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C'),
+        rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/&optp=[^&]+/, ''),
+        rawIframeUrl.replace(/\|/g, '%7C')
+      ];
+
+      let extracted = null;
+      let workingCandidate = null;
+      for (const candUrl of candidates) {
+        if (!candUrl) continue;
+        extracted = await extractRcnVariantsFromLiveUrl(trackCode, candUrl, 'https://online.rtn.tv/index.php');
+        if (extracted && extracted.lightUrl) {
+          workingCandidate = candUrl;
+          break;
+        }
+      }
+
+      if (workingCandidate) {
         robertsUrlCache.set(trackId, {
-          liveUrl,
+          liveUrl: workingCandidate,
+          rawIframeUrl,
           expiresAt: Date.now() + ROBERTS_TOKEN_TTL_MS
         });
       }
 
-      // 3. Extraer manifiesto H5Live (.m3u8 de ws.rcncdn.com) desde la IP de EE.UU. (NUNCA exponer liveUrl ni iframe a Venezuela)
-      const trackCode = (info.tc3 || info.tc2 || trackId).toUpperCase();
-      const extracted = await extractRcnVariantsFromLiveUrl(trackCode, liveUrl);
       if (!extracted || !extracted.lightUrl) {
         rtnTrackStateCache.set(trackId, {
           onAir: false,
@@ -398,8 +458,10 @@ async function fetchRtnLiveStreams() {
           tokenExpiresAt: Date.now() + ROBERTS_TOKEN_TTL_MS,
           streamData
         });
+        recordRtnDiag(trackCode, 'LIVE_OK', meta.name);
         console.log(`✅ [RTN Bridge] '${meta.name}' (${trackId}) EN VIVO vía H5Live Proxy (1 sola IP EE.UU.).`);
       } else {
+        recordRtnDiag(trackCode, 'PROBE_OFFAIR', '0 bytes live');
         rtnTrackStateCache.set(trackId, {
           onAir: false,
           lastProbeAt: Date.now(),
@@ -409,6 +471,7 @@ async function fetchRtnLiveStreams() {
       }
     }
   } catch (err) {
+    recordRtnDiag('SYS', 'ERR', err.message);
     console.error('⚠️ [RTN Bridge] Corte preventivo activado:', err.message);
     if (err.message.includes('RTN_')) {
       circuitPausedUntil = Date.now() + 60 * 60 * 1000;
@@ -419,6 +482,20 @@ async function fetchRtnLiveStreams() {
   return activeStreams;
 }
 
+function getRtnStatus() {
+  return {
+    enabled: RTN_ENABLED,
+    hasSessionCookie: Boolean(cachedCookieHeader),
+    sessionAgeMin: cachedCookieTimestamp ? Math.round((Date.now() - cachedCookieTimestamp) / 60000) : null,
+    circuitPausedUntil: circuitPausedUntil > Date.now() ? new Date(circuitPausedUntil).toISOString() : null,
+    lastRtnError,
+    robertsCachedCount: robertsUrlCache.size,
+    liveTracks: Array.from(rtnTrackStateCache.entries()).filter(([, v]) => v.onAir).map(([k]) => k),
+    rtnDiagnostics
+  };
+}
+
 module.exports = {
-  fetchRtnLiveStreams
+  fetchRtnLiveStreams,
+  getRtnStatus
 };

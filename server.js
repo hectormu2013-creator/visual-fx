@@ -657,7 +657,11 @@ app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
 
 // Lista de Canales / Hipódromos
 app.get('/api/admin/first-tv/status', (req, res) => {
-  return res.json(getFirstTvStatus());
+  const { getRtnStatus } = require('./rtn_bridge');
+  return res.json({
+    ...getFirstTvStatus(),
+    rtn: getRtnStatus()
+  });
 });
 
 app.post('/api/admin/first-tv/cookie', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {

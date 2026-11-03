@@ -208,12 +208,12 @@ async function refreshFirstTvSessionViaAuth0() {
 }
 
 /**
- * Extrae las variantes H5Live (LIGHT, MEDIUM, FULL) desde la URL de Roberts Stream (sin tocar 1st.tv).
+ * Extrae las variantes H5Live (LIGHT, MEDIUM, FULL) desde la URL de Roberts Stream (sin tocar 1st.tv ni RTN).
  */
-async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl) {
-  const refererHeader = (liveUrl && /referer=RTN/i.test(liveUrl))
-    ? 'https://online.rtn.tv/'
-    : 'https://1st.tv/';
+async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl, customReferer = null) {
+  const refererHeader = customReferer || ((liveUrl && /rtn/i.test(liveUrl))
+    ? 'https://online.rtn.tv/index.php'
+    : 'https://1st.tv/');
   const liveRes = await fetch(liveUrl, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
