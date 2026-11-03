@@ -4,6 +4,7 @@ const https = require('https');
 const { pipeline } = require('stream');
 const url = require('url');
 const { resolveRcnQualityUrl, refreshRcnUrlIfNeeded } = require('./first_tv_bridge');
+const { parseTrackCodeFromSyntheticUrl, streamMillicastSharedMp4 } = require('./millicast_bridge');
 const { getRacingScheduleStatus } = require('./schedule_manager');
 const {
   recordBytesSent,
@@ -308,6 +309,16 @@ async function handleStreamProxy(req, res, targetUrl) {
         message: schedStatus.statusReason,
         fallbackService: 'loteria'
       }));
+    }
+
+    // Caso especial RTN / Robertsstream Dolby Millicast (1-a-N WebRTC -> fMP4 en servidor EE.UU.)
+    const millicastCode = parseTrackCodeFromSyntheticUrl(targetUrl);
+    if (millicastCode) {
+      if (!isBandwidthWithinLimits()) {
+        res.writeHead(429, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+        return res.end('BANDWIDTH_LIMIT_REACHED');
+      }
+      return streamMillicastSharedMp4(millicastCode, req, res);
     }
 
     // Caso especial 1/ST TV / RCNCDN H5Live: resolver playlist.m3u8 -> stream.mp4 progresivo en vivo

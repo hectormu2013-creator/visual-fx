@@ -2,6 +2,13 @@ const fetch = require('node-fetch');
 const https = require('https');
 const http = require('http');
 const { saveToCloud, loadFromCloud } = require('./supabase_sync');
+const {
+  registerMillicastTrack,
+  getMillicastSyntheticUrl,
+  parseTrackCodeFromSyntheticUrl,
+  probeMillicastTrackIsLive,
+  getMillicastDiagnostics
+} = require('./millicast_bridge');
 
 // Cookie de sesión WordPress de 1st.tv (configurable por variable de entorno FIRST_TV_COOKIE)
 const DEFAULT_FIRST_TV_COOKIE = [
@@ -254,44 +261,31 @@ async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl, customReferer =
       const mStreamName = streamNameMatch[1];
       const mAccountId = accountIdMatch[1];
       const mSubToken = subTokenMatch[1];
-      try {
-        const dirRes = await fetch('https://director.millicast.com/api/director/subscribe', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${mSubToken}`,
-            'Content-Type': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Origin': 'https://stream.robertsstream.com',
-            'Referer': 'https://stream.robertsstream.com/'
-          },
-          body: JSON.stringify({
-            streamAccountId: mAccountId,
-            streamName: mStreamName,
-            unauthorizedSubscribe: true
-          }),
-          timeout: 8000
-        });
-        const dirText = await dirRes.text();
-        let hlsStatus = 'untested';
-        try {
-          const hlsTestUrl = `https://hls.millicast.com/v2/ac/${mAccountId}/${mStreamName}/master.m3u8?token=${encodeURIComponent(mSubToken)}`;
-          const hlsRes = await fetch(hlsTestUrl, {
-            headers: {
-              'Authorization': `Bearer ${mSubToken}`,
-              'Origin': 'https://stream.robertsstream.com',
-              'Referer': 'https://stream.robertsstream.com/'
-            },
-            timeout: 5000
-          });
-          hlsStatus = `${hlsRes.status}`;
-        } catch (he) {
-          hlsStatus = he.message;
-        }
-        recordDiag(trackCode, `MILLICAST_${dirRes.status}`, `stream=${mStreamName} hls=${hlsStatus} body=${dirText.slice(0, 350)}`);
-      } catch (me) {
-        recordDiag(trackCode, 'MILLICAST_ERR', me.message);
-      }
-      return null;
+
+      registerMillicastTrack({
+        trackCode,
+        liveUrl,
+        referer: refererHeader,
+        streamAccountId: mAccountId,
+        streamName: mStreamName,
+        subscriberToken: mSubToken,
+        tokenIssuedAt: Date.now()
+      });
+
+      const lightUrl = getMillicastSyntheticUrl(trackCode);
+      const rcnExpiresAt = Date.now() + 6 * 60 * 60 * 1000;
+      const variantObj = {
+        LIGHT: lightUrl,
+        MEDIUM: lightUrl,
+        FULL: lightUrl,
+        rcnExpiresAt,
+        trackCode,
+        liveUrl,
+        prefix: trackCode
+      };
+      variantUrlMap.set(lightUrl, variantObj);
+      recordDiag(trackCode, 'MILLICAST_REG', `stream=${mStreamName}`);
+      return { lightUrl, variantObj };
     }
 
     const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1].trim()).filter(Boolean).join('\n---SCRIPT---\n');
@@ -463,6 +457,10 @@ async function refreshRcnUrlIfNeeded(baseM3u8Url, qualityMode = 'AUTO', gridCoun
  * Verifica si el stream fMP4 de RCNCDN está transmitiendo bytes reales en vivo en este instante.
  */
 async function probeRcnStreamIsLive(m3u8Url) {
+  const millicastCode = parseTrackCodeFromSyntheticUrl(m3u8Url);
+  if (millicastCode) {
+    return await probeMillicastTrackIsLive(millicastCode);
+  }
   try {
     const res = await fetch(m3u8Url, {
       headers: {
@@ -746,7 +744,8 @@ function getFirstTvStatus() {
     robertsCachedCount: robertsLiveUrlCache.size,
     liveTracks: Array.from(trackStateCache.entries()).filter(([, v]) => v.onAir).map(([k]) => k),
     recentDiagnostics,
-    lastRobertsScript
+    lastRobertsScript,
+    millicast: getMillicastDiagnostics()
   };
 }
 
