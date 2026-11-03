@@ -70,6 +70,20 @@ const PORT = process.env.PORT || 3500;
 app.use(cors());
 app.use(express.json());
 
+// Redirección Permanente (HTTP 301) desde el dominio antiguo de Render hacia el nuevo servidor oficial en Railway
+const OFFICIAL_RAILWAY_ORIGIN = process.env.OFFICIAL_PUBLIC_ORIGIN || 'https://visual-fx.up.railway.app';
+const IS_RENDER_LEGACY_HOST = Boolean(process.env.RENDER || process.env.RENDER_EXTERNAL_URL);
+
+app.use((req, res, next) => {
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
+  if (IS_RENDER_LEGACY_HOST || host.includes('onrender.com')) {
+    const targetUrl = `${OFFICIAL_RAILWAY_ORIGIN}${req.originalUrl || '/'}`;
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.redirect(301, targetUrl);
+  }
+  next();
+});
+
 // Anti-Cache Middleware para forzar la actualización inmediata en Smart TVs y navegadores
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -109,10 +123,15 @@ app.get(['/app', '/download/apk', '/visual-fx-tv.apk'], (req, res) => {
 });
 
 // Inicializar Medidor de Consumo, Gestor de Horarios Oficiales, Ingestor Máster y Motor de Loterías
-Promise.all([initBandwidthTracker(), initScheduleManager()]).then(() => {
-  initMasterIngest(CHANNELS);
-});
-initLotteryEngine();
+// (En Render legado no iniciamos motores de ingesta para que solo actúe como puente 301 de 0 MB)
+if (!IS_RENDER_LEGACY_HOST) {
+  Promise.all([initBandwidthTracker(), initScheduleManager()]).then(() => {
+    initMasterIngest(CHANNELS);
+  });
+  initLotteryEngine();
+} else {
+  console.log(`🔀 [Render Redirector] Modo puente 301 activo -> ${OFFICIAL_RAILWAY_ORIGIN} (0 MB de consumo)`);
+}
 
 // Middleware para verificar Roles
 function requireRoles(...allowedRoles) {
