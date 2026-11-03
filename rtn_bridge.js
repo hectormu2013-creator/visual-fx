@@ -155,12 +155,22 @@ async function restoreRtnCacheFromCloud() {
   cloudRestored = true;
   try {
     const saved = await loadFromCloud('rtn_bridge_cache');
-    if (saved && saved.cookieHeader && saved.cookieTimestamp) {
-      const age = Date.now() - saved.cookieTimestamp;
-      if (age > 0 && age < SESSION_TTL_MS) {
-        cachedCookieHeader = saved.cookieHeader;
-        cachedCookieTimestamp = saved.cookieTimestamp;
-        console.log('☁️ [RTN Bridge] Sesión PHPSESSID restaurada desde Supabase (ahorro de login en RTN).');
+    if (saved) {
+      if (saved.cookieHeader && saved.cookieTimestamp) {
+        const age = Date.now() - saved.cookieTimestamp;
+        if (age > 0 && age < SESSION_TTL_MS) {
+          cachedCookieHeader = saved.cookieHeader;
+          cachedCookieTimestamp = saved.cookieTimestamp;
+          console.log('☁️ [RTN Bridge] Sesión PHPSESSID restaurada desde Supabase (ahorro de login en RTN).');
+        }
+      }
+      if (saved.robertsUrls && typeof saved.robertsUrls === 'object') {
+        const now = Date.now();
+        for (const [k, v] of Object.entries(saved.robertsUrls)) {
+          if (v && v.expiresAt && v.expiresAt > now) {
+            robertsUrlCache.set(k, v);
+          }
+        }
       }
     }
   } catch (e) {}
@@ -168,9 +178,14 @@ async function restoreRtnCacheFromCloud() {
 
 async function persistRtnCacheToCloud() {
   try {
+    const robertsUrls = {};
+    for (const [k, v] of robertsUrlCache.entries()) {
+      robertsUrls[k] = v;
+    }
     await saveToCloud('rtn_bridge_cache', {
       cookieHeader: cachedCookieHeader,
       cookieTimestamp: cachedCookieTimestamp,
+      robertsUrls,
       updatedAt: new Date().toISOString()
     });
   } catch (e) {}
@@ -394,33 +409,28 @@ async function fetchRtnLiveStreams() {
 
         rawIframeUrl = iframeMatch[1].replace(/&amp;/g, '&').trim();
         if (rawIframeUrl.startsWith('//')) rawIframeUrl = `https:${rawIframeUrl}`;
+        liveUrl = rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C');
+        robertsUrlCache.set(trackId, {
+          liveUrl,
+          rawIframeUrl,
+          expiresAt: Date.now() + ROBERTS_TOKEN_TTL_MS
+        });
+        await persistRtnCacheToCloud();
         recordRtnDiag(trackCode, 'IFRAME_RAW', rawIframeUrl.replace(/(usr|user)=[^&]+/gi, '$1=***'));
       }
 
       // 3. Extraer manifiesto H5Live (.m3u8 de ws.rcncdn.com) desde la IP de EE.UU. (NUNCA exponer liveUrl ni iframe a Venezuela)
-      const candidates = liveUrl ? [liveUrl] : [
-        rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C'),
-        rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/&optp=[^&]+/, ''),
-        rawIframeUrl.replace(/\|/g, '%7C')
+      const candidates = [
+        liveUrl || (rawIframeUrl && rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C'))
       ];
 
       let extracted = null;
-      let workingCandidate = null;
       for (const candUrl of candidates) {
         if (!candUrl) continue;
         extracted = await extractRcnVariantsFromLiveUrl(trackCode, candUrl, 'https://online.rtn.tv/index.php');
         if (extracted && extracted.lightUrl) {
-          workingCandidate = candUrl;
           break;
         }
-      }
-
-      if (workingCandidate) {
-        robertsUrlCache.set(trackId, {
-          liveUrl: workingCandidate,
-          rawIframeUrl,
-          expiresAt: Date.now() + ROBERTS_TOKEN_TTL_MS
-        });
       }
 
       if (!extracted || !extracted.lightUrl) {

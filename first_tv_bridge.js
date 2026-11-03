@@ -233,9 +233,21 @@ async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl, customReferer =
     return null;
   }
 
-  const matches = [...html.matchAll(/sources\[(\d+)\]\s*=\s*\{[\s\S]*?'url'\s*:\s*"([^"]+)"[\s\S]*?'streamname'\s*:\s*'([^']+)'[\s\S]*?'params'\s*:\s*\{\s*'h'\s*:\s*'([^']+)'\s*,\s*'e'\s*:\s*'([^']+)'/g)];
+  const matches = [...html.matchAll(/sources\[['"]?(\d+)['"]?\]\s*=\s*\{[\s\S]*?['"]?url['"]?\s*:\s*['"]([^'"]+)['"][\s\S]*?['"]?streamname['"]?\s*:\s*['"]([^'"]+)['"][\s\S]*?['"]?(?:params|security)['"]?\s*:\s*\{\s*['"]?h['"]?\s*:\s*['"]([^'"]+)['"]\s*,\s*['"]?e['"]?\s*:\s*['"]?([^'"}\s,]+)['"]?/g)];
   if (matches.length === 0) {
-    recordDiag(trackCode, 'ROBERTS_NO_SOURCES', `len=${html.length}`);
+    // Intentar regex secundario para bloques h5live / rtmp en NanoPlayer
+    const altMatches = [...html.matchAll(/['"]?url['"]?\s*:\s*['"](rtmp:\/\/[^'"]+)['"][\s\S]{1,350}?['"]?streamname['"]?\s*:\s*['"]([^'"]+)['"][\s\S]{1,350}?['"]?h['"]?\s*:\s*['"]([^'"]+)['"][\s\S]{1,200}?['"]?e['"]?\s*:\s*['"]?(\d+)['"]?/gi)];
+    for (const am of altMatches) {
+      const brMatch = am[2].match(/_(\d+)(?:\?|$)/);
+      const br = brMatch ? brMatch[1] : '800';
+      matches.push([am[0], br, am[1], am[2], am[3], am[4]]);
+    }
+  }
+  if (matches.length === 0) {
+    const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1].trim()).filter(Boolean).join(' | ');
+    const bodyText = html.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const diagSample = (scripts.length > 20 ? scripts : bodyText).slice(0, 700);
+    recordDiag(trackCode, 'ROBERTS_NO_SOURCES', `len=${html.length} sample=${diagSample}`);
     return null;
   }
 
