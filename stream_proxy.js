@@ -23,6 +23,247 @@ const MAX_CACHE_ENTRIES = 100;
 const playlistCache = new Map();
 const inFlight = new Map();
 
+// Multiplexor 1-a-N para RCNCDN / RTN (Concentra 37 TVs de Venezuela en 1 SOLA conexión de video hacia el proveedor en EE.UU.)
+const rcnSharedHubs = new Map();
+
+function extractRcnHubKey(targetUrl, mp4Line) {
+  try {
+    const decoded = decodeURIComponent(targetUrl || '');
+    const m = decoded.match(/stream=([^&]+)/);
+    if (m && m[1]) return m[1].split('?')[0];
+  } catch (e) {}
+  return mp4Line.split('?')[0];
+}
+
+function attachClientToSharedRcnHub(hubKey, mp4Line, req, res) {
+  const deviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv';
+  let hub = rcnSharedHubs.get(hubKey);
+
+  if (!hub || hub.closed) {
+    hub = {
+      hubKey,
+      mp4Line,
+      clients: new Set(),
+      initBoxes: [],
+      curInitChunks: [],
+      initSegment: null,
+      boxState: 'HEADER',
+      headerBuf: Buffer.alloc(0),
+      boxType: '',
+      boxRemaining: 0,
+      upstreamReq: null,
+      upstreamRes: null,
+      idleTimer: null,
+      closed: false
+    };
+    rcnSharedHubs.set(hubKey, hub);
+
+    const netClient = mp4Line.startsWith('https') ? https : http;
+    const upReq = netClient.get(mp4Line, {
+      headers: originHeaders(mp4Line),
+      timeout: FETCH_TIMEOUT_MS
+    }, (upRes) => {
+      hub.upstreamRes = upRes;
+      if (upRes.statusCode !== 200) {
+        upRes.resume();
+        upRes.destroy();
+        closeHub(hub, upRes.statusCode || 502, `Error proxying RCNCDN live stream: ${upRes.statusCode}`);
+        return;
+      }
+
+      upRes.setTimeout(20000, () => {
+        closeHub(hub);
+      });
+
+      upRes.on('data', (chunk) => {
+        if (!chunk || !chunk.length || hub.closed) return;
+        if (!isBandwidthWithinLimits().allowed) {
+          closeHub(hub);
+          return;
+        }
+        processFmp4ChunkForHub(hub, chunk);
+      });
+
+      upRes.on('end', () => closeHub(hub));
+      upRes.on('error', () => closeHub(hub));
+    });
+
+    upReq.on('error', () => closeHub(hub, 502, 'Upstream stream connection error'));
+    hub.upstreamReq = upReq;
+  }
+
+  if (hub.idleTimer) {
+    clearTimeout(hub.idleTimer);
+    hub.idleTimer = null;
+  }
+
+  const clientObj = {
+    res,
+    deviceId,
+    headersSent: false,
+    hasInit: false,
+    waitingForMoof: true,
+    connCounted: true
+  };
+
+  onStreamConnectionOpen();
+  hub.clients.add(clientObj);
+
+  // Si el hub ya capturó la cabecera ftyp+moov del MP4, enviarla de inmediato a esta nueva TV
+  if (hub.initSegment) {
+    sendHeadersAndInitToClient(clientObj, hub.initSegment);
+  }
+
+  const detachClient = () => {
+    if (hub.clients.has(clientObj)) {
+      hub.clients.delete(clientObj);
+    }
+    if (clientObj.connCounted) {
+      clientObj.connCounted = false;
+      onStreamConnectionClose();
+    }
+    if (hub.clients.size === 0 && !hub.closed && !hub.idleTimer) {
+      // Cerrar la conexión única hacia el proveedor 4s después de que la última TV cambie de canal
+      hub.idleTimer = setTimeout(() => {
+        if (hub.clients.size === 0) {
+          closeHub(hub);
+        }
+      }, 4000);
+    }
+  };
+
+  req.once('close', detachClient);
+  res.once('close', detachClient);
+}
+
+function sendHeadersAndInitToClient(c, initBuf) {
+  if (c.hasInit || c.res.writableEnded || c.res.destroyed) return;
+  try {
+    if (!c.headersSent && !c.res.headersSent) {
+      c.res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': '*',
+        'Content-Type': 'video/mp4',
+        'Cache-Control': 'no-cache, no-store'
+      });
+      c.headersSent = true;
+    }
+    c.res.write(initBuf);
+    recordBytesSent(initBuf.length, c.deviceId);
+    c.hasInit = true;
+    c.waitingForMoof = true;
+  } catch (e) {}
+}
+
+function broadcastDataToActiveClients(hub, buf) {
+  if (!buf || !buf.length) return;
+  for (const c of hub.clients) {
+    if (!c.hasInit || c.waitingForMoof) continue;
+    if (c.res.writableEnded || c.res.destroyed) continue;
+    if (c.res.writableLength > MAX_CLIENT_BUFFER_BYTES) {
+      // TV colgada o con red caída: desconectarla sin afectar a las demás agencias
+      try { c.res.destroy(); } catch (e) {}
+      continue;
+    }
+    try {
+      c.res.write(buf);
+      recordBytesSent(buf.length, c.deviceId);
+    } catch (e) {}
+  }
+}
+
+function processFmp4ChunkForHub(hub, chunk) {
+  let offset = 0;
+  while (offset < chunk.length) {
+    if (hub.boxState === 'HEADER') {
+      const needed = 8 - hub.headerBuf.length;
+      const take = Math.min(needed, chunk.length - offset);
+      hub.headerBuf = Buffer.concat([hub.headerBuf, chunk.slice(offset, offset + take)]);
+      offset += take;
+
+      if (hub.headerBuf.length === 8) {
+        const boxSize = hub.headerBuf.readUInt32BE(0);
+        const boxType = hub.headerBuf.toString('ascii', 4, 8);
+        hub.boxType = boxType;
+        hub.boxRemaining = boxSize >= 8 ? (boxSize - 8) : 0;
+        hub.boxState = 'PAYLOAD';
+
+        if (!hub.initSegment && (boxType === 'ftyp' || boxType === 'moov')) {
+          hub.curInitChunks = [hub.headerBuf];
+        } else {
+          // Si empieza un fragmento moof, activar todas las TVs que estaban esperando borde de cuadro limpio
+          if (boxType === 'moof' && hub.initSegment) {
+            for (const c of hub.clients) {
+              if (c.hasInit && c.waitingForMoof) {
+                c.waitingForMoof = false;
+              }
+            }
+          }
+          broadcastDataToActiveClients(hub, hub.headerBuf);
+        }
+        hub.headerBuf = Buffer.alloc(0);
+      }
+    } else {
+      const take = Math.min(hub.boxRemaining, chunk.length - offset);
+      const part = chunk.slice(offset, offset + take);
+      offset += take;
+      hub.boxRemaining -= take;
+
+      if (!hub.initSegment && (hub.boxType === 'ftyp' || hub.boxType === 'moov')) {
+        hub.curInitChunks.push(part);
+        if (hub.boxRemaining === 0) {
+          hub.initBoxes.push(Buffer.concat(hub.curInitChunks));
+          hub.curInitChunks = [];
+          if (hub.boxType === 'moov') {
+            hub.initSegment = Buffer.concat(hub.initBoxes);
+            for (const c of hub.clients) {
+              if (!c.hasInit) {
+                sendHeadersAndInitToClient(c, hub.initSegment);
+              }
+            }
+          }
+        }
+      } else {
+        broadcastDataToActiveClients(hub, part);
+      }
+
+      if (hub.boxRemaining === 0) {
+        hub.boxState = 'HEADER';
+      }
+    }
+  }
+}
+
+function closeHub(hub, statusCode = null, errorMsg = null) {
+  if (!hub || hub.closed) return;
+  hub.closed = true;
+  if (hub.idleTimer) {
+    clearTimeout(hub.idleTimer);
+    hub.idleTimer = null;
+  }
+  if (rcnSharedHubs.get(hub.hubKey) === hub) {
+    rcnSharedHubs.delete(hub.hubKey);
+  }
+  try { if (hub.upstreamReq) hub.upstreamReq.destroy(); } catch (e) {}
+  try { if (hub.upstreamRes) hub.upstreamRes.destroy(); } catch (e) {}
+
+  for (const c of hub.clients) {
+    if (c.connCounted) {
+      c.connCounted = false;
+      onStreamConnectionClose();
+    }
+    try {
+      if (statusCode && !c.res.headersSent) {
+        c.res.writeHead(statusCode, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+        c.res.end(errorMsg || 'Stream closed');
+      } else if (!c.res.writableEnded) {
+        c.res.end();
+      }
+    } catch (e) {}
+  }
+  hub.clients.clear();
+}
+
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of playlistCache.entries()) {
@@ -103,78 +344,9 @@ async function handleStreamProxy(req, res, targetUrl) {
         playlistCache.set(rcnCacheKey, { timestamp: now, content: mp4Line });
       }
 
-      // Usar cliente nativo http/https (sin el PassThrough intermedio de node-fetch que retenía sockets zombies en RAM)
-      const client = mp4Line.startsWith('https') ? https : http;
-      const upstreamReq = client.get(mp4Line, {
-        headers: originHeaders(mp4Line),
-        timeout: FETCH_TIMEOUT_MS
-      }, (upstreamRes) => {
-        if (upstreamRes.statusCode !== 200) {
-          upstreamRes.resume();
-          upstreamRes.destroy();
-          if (!res.headersSent) {
-            res.writeHead(upstreamRes.statusCode || 502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
-            res.end(`Error proxying RCNCDN live stream: ${upstreamRes.statusMessage || upstreamRes.statusCode}`);
-          }
-          return;
-        }
-
-        res.writeHead(200, {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': '*',
-          'Content-Type': upstreamRes.headers['content-type'] || 'video/mp4',
-          'Cache-Control': 'no-cache, no-store'
-        });
-
-        // Si el socket origen queda inactivo por más de 20s, cerrar limpiamente
-        upstreamRes.setTimeout(20000, () => {
-          upstreamReq.destroy();
-          upstreamRes.destroy();
-          if (!res.writableEnded) res.destroy();
-        });
-
-        // Protección anti-OOM y Medidor de Consumo en Tiempo Real (GB / USD)
-        const deviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv';
-        let connCounted = true;
-        onStreamConnectionOpen();
-        const releaseConn = () => {
-          if (connCounted) {
-            connCounted = false;
-            onStreamConnectionClose();
-          }
-        };
-
-        upstreamRes.on('data', (chunk) => {
-          if (chunk && chunk.length) {
-            recordBytesSent(chunk.length, deviceId);
-          }
-          if (res.writableLength > MAX_CLIENT_BUFFER_BYTES || !isBandwidthWithinLimits().allowed) {
-            upstreamReq.destroy();
-            upstreamRes.destroy();
-            if (!res.writableEnded) res.destroy();
-          }
-        });
-
-        pipeline(upstreamRes, res, () => {
-          releaseConn();
-          upstreamReq.destroy();
-          upstreamRes.destroy();
-        });
-      });
-
-      const cleanupUpstream = () => {
-        upstreamReq.destroy();
-      };
-      req.once('close', cleanupUpstream);
-      res.once('close', cleanupUpstream);
-      upstreamReq.on('error', () => {
-        if (!res.headersSent) {
-          res.writeHead(502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
-          res.end('Upstream stream connection error');
-        } else if (!res.writableEnded) {
-          res.destroy();
-        }
-      });
+      // Conectar la TV al Multiplexor Compartido 1-a-N (1 sola conexión hacia el proveedor para todas las agencias)
+      const hubKey = extractRcnHubKey(effectiveRcnUrl, mp4Line);
+      attachClientToSharedRcnHub(hubKey, mp4Line, req, res);
       return;
     }
 
