@@ -1,9 +1,13 @@
 const fetch = require('node-fetch');
+const http = require('http');
+const https = require('https');
+const { pipeline } = require('stream');
 const url = require('url');
 const { resolveRcnQualityUrl, refreshRcnUrlIfNeeded } = require('./first_tv_bridge');
 
 // Límites de seguridad de memoria para Render
 const FETCH_TIMEOUT_MS = 10000;                 // no dejar conexiones colgadas acumulando RAM
+const MAX_CLIENT_BUFFER_BYTES = 1024 * 1024;    // máx 1 MB de buffer de salida por cliente para evitar OOM en TVs lentas/caídas
 const MAX_PLAYLIST_BYTES = 2 * 1024 * 1024;     // un manifiesto M3U8 real pesa pocos KB
 const CACHE_TTL_PLAYLIST = 1000;                // 1 s (igual que antes)
 const MAX_CACHE_ENTRIES = 100;
@@ -78,26 +82,65 @@ async function handleStreamProxy(req, res, targetUrl) {
         playlistCache.set(rcnCacheKey, { timestamp: now, content: mp4Line });
       }
 
-      const mp4Response = await fetch(mp4Line, {
-        headers: originHeaders(mp4Line)
+      // Usar cliente nativo http/https (sin el PassThrough intermedio de node-fetch que retenía sockets zombies en RAM)
+      const client = mp4Line.startsWith('https') ? https : http;
+      const upstreamReq = client.get(mp4Line, {
+        headers: originHeaders(mp4Line),
+        timeout: FETCH_TIMEOUT_MS
+      }, (upstreamRes) => {
+        if (upstreamRes.statusCode !== 200) {
+          upstreamRes.resume();
+          upstreamRes.destroy();
+          if (!res.headersSent) {
+            res.writeHead(upstreamRes.statusCode || 502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+            res.end(`Error proxying RCNCDN live stream: ${upstreamRes.statusMessage || upstreamRes.statusCode}`);
+          }
+          return;
+        }
+
+        res.writeHead(200, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': '*',
+          'Content-Type': upstreamRes.headers['content-type'] || 'video/mp4',
+          'Cache-Control': 'no-cache, no-store'
+        });
+
+        // Si el socket origen queda inactivo por más de 20s, cerrar limpiamente
+        upstreamRes.setTimeout(20000, () => {
+          upstreamReq.destroy();
+          upstreamRes.destroy();
+          if (!res.writableEnded) res.destroy();
+        });
+
+        // Protección anti-OOM: si una TV pierde internet sin cerrar el socket TCP y acumula >1 MB en cola, liberar de inmediato
+        upstreamRes.on('data', () => {
+          if (res.writableLength > MAX_CLIENT_BUFFER_BYTES) {
+            upstreamReq.destroy();
+            upstreamRes.destroy();
+            if (!res.writableEnded) res.destroy();
+          }
+        });
+
+        pipeline(upstreamRes, res, () => {
+          upstreamReq.destroy();
+          upstreamRes.destroy();
+        });
       });
 
-      if (!mp4Response.ok) {
-        mp4Response.body.resume();
-        res.writeHead(mp4Response.status, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
-        return res.end(`Error proxying RCNCDN live stream: ${mp4Response.statusText}`);
-      }
-
-      res.writeHead(200, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': '*',
-        'Content-Type': mp4Response.headers.get('content-type') || 'video/mp4',
-        'Cache-Control': 'no-cache, no-store'
+      const cleanupUpstream = () => {
+        upstreamReq.destroy();
+      };
+      req.once('close', cleanupUpstream);
+      res.once('close', cleanupUpstream);
+      upstreamReq.on('error', () => {
+        if (!res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+          res.end('Upstream stream connection error');
+        } else if (!res.writableEnded) {
+          res.destroy();
+        }
       });
-
-      res.on('close', () => { if (!res.writableEnded) mp4Response.body.destroy(); });
-      mp4Response.body.on('error', () => { if (!res.writableEnded) res.destroy(); });
-      return mp4Response.body.pipe(res);
+      return;
     }
 
     const isM3U8 = targetUrl.includes('.m3u8');
