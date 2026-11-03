@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { saveToCloud, loadFromCloud } = require('./supabase_sync');
+const { isBandwidthWithinLimits, getBandwidthSummary } = require('./bandwidth_tracker');
 
 const SCHEDULE_FILE = path.join(__dirname, 'data', 'racing_schedule.json');
 const CLOUD_KEY = 'racing_schedule';
@@ -160,6 +161,12 @@ function getRacingScheduleStatus(nowMs = Date.now()) {
     statusReason = `Fuera de horario hípico (${vetDayName}: ${format12Hour(todayStart)} a ${format12Hour(todayEnd)}) • Modo Loterías Activo`;
   }
 
+  const bwCheck = isBandwidthWithinLimits();
+  if (isRacingAllowed && !bwCheck.allowed && currentSchedule.mode !== 'FORCE_OPEN') {
+    isRacingAllowed = false;
+    statusReason = bwCheck.reason;
+  }
+
   return {
     isRacingAllowed,
     withinTimeWindow,
@@ -177,7 +184,8 @@ function getRacingScheduleStatus(nowMs = Date.now()) {
       start12: format12Hour(todayStart),
       end12: format12Hour(todayEnd)
     },
-    schedule: { ...currentSchedule }
+    schedule: { ...currentSchedule },
+    bandwidth: getBandwidthSummary()
   };
 }
 

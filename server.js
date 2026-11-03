@@ -39,6 +39,7 @@ const { initMasterIngest, getMasterState, updateChannelSource, syncRtnStreams } 
 const { updateFirstTvCookie, getFirstTvStatus } = require('./first_tv_bridge');
 const { syncMulticanalChannels, createOrReuseMulticanal } = require('./multicanal_manager');
 const { initScheduleManager, updateRacingSchedule, getRacingScheduleStatus } = require('./schedule_manager');
+const { initBandwidthTracker, getBandwidthSummary, updateBandwidthLimits } = require('./bandwidth_tracker');
 const {
   TOP_10_GAMES,
   initLotteryEngine,
@@ -107,8 +108,8 @@ app.get(['/app', '/download/apk', '/visual-fx-tv.apk'], (req, res) => {
   return res.redirect('https://github.com/hectormu2013-creator/visual-fx/releases/download/v1.0-tv/visual-fx-tv.apk');
 });
 
-// Inicializar Gestor de Horarios Oficiales, Ingestor Máster y Motor de Loterías
-initScheduleManager().then(() => {
+// Inicializar Medidor de Consumo, Gestor de Horarios Oficiales, Ingestor Máster y Motor de Loterías
+Promise.all([initBandwidthTracker(), initScheduleManager()]).then(() => {
   initMasterIngest(CHANNELS);
 });
 initLotteryEngine();
@@ -677,6 +678,27 @@ app.post(['/api/schedule', '/api/admin/schedule'], async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Error al actualizar el horario.' });
+  }
+});
+
+// Medidor de Consumo de Ancho de Banda (GB y Costo Estimado USD) + Topes de Seguridad
+app.get(['/api/bandwidth', '/api/admin/bandwidth'], (req, res) => {
+  return res.json({
+    success: true,
+    ...getBandwidthSummary()
+  });
+});
+
+app.post(['/api/bandwidth', '/api/admin/bandwidth'], async (req, res) => {
+  try {
+    const summary = await updateBandwidthLimits(req.body || {});
+    return res.json({
+      success: true,
+      message: 'Topes de seguridad de ancho de banda actualizados.',
+      ...summary
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Error actualizando topes de consumo.' });
   }
 });
 

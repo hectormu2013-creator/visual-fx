@@ -529,7 +529,49 @@ function updateAdminScheduleUI(statusObj) {
   if (inpMTEnd && document.activeElement !== inpMTEnd) inpMTEnd.value = sched.monThuEnd || '19:00';
   if (inpFSStart && document.activeElement !== inpFSStart) inpFSStart.value = sched.friSunStart || '11:00';
   if (inpFSEnd && document.activeElement !== inpFSEnd) inpFSEnd.value = sched.friSunEnd || '20:00';
+
+  if (statusObj.bandwidth) {
+    updateAdminBandwidthUI(statusObj.bandwidth);
+  }
 }
+
+function updateAdminBandwidthUI(bw) {
+  if (!bw) return;
+  const elActive = document.getElementById('lblBwActiveStreams');
+  const elToday = document.getElementById('lblBwTodayGb');
+  const elMonth = document.getElementById('lblBwMonthGb');
+  const inpDaily = document.getElementById('inpBwDailyLimit');
+  const inpMonthly = document.getElementById('inpBwMonthlyLimit');
+  if (elActive) elActive.textContent = `📺 Streams activos: ${bw.activeStreamConnections || 0}`;
+  if (elToday) elToday.textContent = `${Number(bw.todayGb || 0).toFixed(2)} GB ($${Number(bw.todayCostUsd || 0).toFixed(2)} USD)`;
+  if (elMonth) elMonth.textContent = `${Number(bw.monthGb || 0).toFixed(2)} GB ($${Number(bw.estimatedBandwidthCostUsd || 0).toFixed(2)} USD)`;
+  if (inpDaily && document.activeElement !== inpDaily && bw.dailyLimitGb) inpDaily.value = bw.dailyLimitGb;
+  if (inpMonthly && document.activeElement !== inpMonthly && bw.monthlyLimitGb) inpMonthly.value = bw.monthlyLimitGb;
+}
+
+window.saveBandwidthLimitsFromAdmin = async function() {
+  const dailyLimitGb = Number(document.getElementById('inpBwDailyLimit')?.value) || 12;
+  const monthlyLimitGb = Number(document.getElementById('inpBwMonthlyLimit')?.value) || 150;
+  const feedback = document.getElementById('schedSaveFeedback');
+  try {
+    const res = await fetch('/api/bandwidth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(currentToken ? { 'Authorization': `Bearer ${currentToken}` } : {})
+      },
+      body: JSON.stringify({ dailyLimitGb, monthlyLimitGb, capEnabled: true })
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      updateAdminBandwidthUI(data);
+      if (feedback) {
+        feedback.style.color = '#34d399';
+        feedback.textContent = `✅ Topes de seguridad guardados: Máx ${dailyLimitGb} GB/día y ${monthlyLimitGb} GB/mes.`;
+      }
+    }
+  } catch (e) {}
+};
 
 async function loadAdminRacingSchedule() {
   try {

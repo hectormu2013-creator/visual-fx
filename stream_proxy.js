@@ -5,6 +5,12 @@ const { pipeline } = require('stream');
 const url = require('url');
 const { resolveRcnQualityUrl, refreshRcnUrlIfNeeded } = require('./first_tv_bridge');
 const { getRacingScheduleStatus } = require('./schedule_manager');
+const {
+  recordBytesSent,
+  onStreamConnectionOpen,
+  onStreamConnectionClose,
+  isBandwidthWithinLimits
+} = require('./bandwidth_tracker');
 
 // Límites de seguridad de memoria para Render
 const FETCH_TIMEOUT_MS = 10000;                 // no dejar conexiones colgadas acumulando RAM
@@ -127,9 +133,22 @@ async function handleStreamProxy(req, res, targetUrl) {
           if (!res.writableEnded) res.destroy();
         });
 
-        // Protección anti-OOM: si una TV pierde internet sin cerrar el socket TCP y acumula >1 MB en cola, liberar de inmediato
-        upstreamRes.on('data', () => {
-          if (res.writableLength > MAX_CLIENT_BUFFER_BYTES) {
+        // Protección anti-OOM y Medidor de Consumo en Tiempo Real (GB / USD)
+        const deviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv';
+        let connCounted = true;
+        onStreamConnectionOpen();
+        const releaseConn = () => {
+          if (connCounted) {
+            connCounted = false;
+            onStreamConnectionClose();
+          }
+        };
+
+        upstreamRes.on('data', (chunk) => {
+          if (chunk && chunk.length) {
+            recordBytesSent(chunk.length, deviceId);
+          }
+          if (res.writableLength > MAX_CLIENT_BUFFER_BYTES || !isBandwidthWithinLimits().allowed) {
             upstreamReq.destroy();
             upstreamRes.destroy();
             if (!res.writableEnded) res.destroy();
@@ -137,6 +156,7 @@ async function handleStreamProxy(req, res, targetUrl) {
         });
 
         pipeline(upstreamRes, res, () => {
+          releaseConn();
           upstreamReq.destroy();
           upstreamRes.destroy();
         });
@@ -240,6 +260,10 @@ async function handleStreamProxy(req, res, targetUrl) {
     res.writeHead(200, headers);
 
     // Si la TV cierra la conexión (cambio de canal), cortar también la descarga del origen
+    const segDeviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv';
+    response.body.on('data', (chunk) => {
+      if (chunk && chunk.length) recordBytesSent(chunk.length, segDeviceId);
+    });
     res.on('close', () => { if (!res.writableEnded) response.body.destroy(); });
     response.body.on('error', () => { if (!res.writableEnded) res.destroy(); });
     response.body.pipe(res);
