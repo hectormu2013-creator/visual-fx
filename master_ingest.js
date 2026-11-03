@@ -30,12 +30,15 @@ async function syncRtnStreams(channelsCatalog, forceManual = false) {
   syncInProgress = true;
   try {
     // 1. Obtener señales desde el puente de señales públicas, 1/ST TV y RTN (si está habilitado)
+    //    Se pasa publicStreams a RTN para NO tocar RTN en pistas que ya tienen HLS público oficial gratuito.
     const publicStreams = await fetchPublicLiveStreams();
     const firstTvStreams = await fetchFirstTvLiveStreams(publicStreams);
-    const bridgeStreams = (process.env.RTN_ENABLED === 'true') ? await fetchRtnLiveStreams() : {};
+    const bridgeStreams = (process.env.RTN_ENABLED === 'true')
+      ? await fetchRtnLiveStreams({ ...publicStreams, ...firstTvStreams })
+      : {};
 
-    // Combinar señales activas verificadas (1/ST TV H5Live ~2s tiene prioridad sobre iframes públicos de mayor latencia)
-    const combinedStreams = { ...publicStreams, ...firstTvStreams, ...bridgeStreams };
+    // Combinar señales activas verificadas
+    const combinedStreams = { ...bridgeStreams, ...firstTvStreams, ...publicStreams };
 
     // 2. Resetear el estado onAir y URL previa de los canales sin actividad hoy salvo los fijados manualmente
     channelsCatalog.forEach(c => {

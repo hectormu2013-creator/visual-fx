@@ -302,13 +302,32 @@ function bindSocketRandomPort(sock) {
   });
 }
 
+const MAX_CONCURRENT_MILLICAST_HUBS = 2;
+
 /**
  * Inicia el Hub compartido 1-a-N para un hipódromo en Millicast:
  * 1 sola conexión WebRTC desde Railway EE.UU. -> RTP local -> ffmpeg (-c:v copy) -> fMP4 en RAM -> N televisores.
+ * Aplica límite humano estricto: jamás mantener más de 2 streams simultáneos contra Millicast/RTN.
  */
 async function startMillicastHubUpstream(hub) {
   if (hub.connecting || hub.running) return;
+
+  const activeOthers = Array.from(millicastSharedHubs.values()).filter(
+    h => h.trackCode !== hub.trackCode && (h.running || h.connecting)
+  );
+  if (activeOthers.length >= MAX_CONCURRENT_MILLICAST_HUBS) {
+    activeOthers.sort((a, b) => (a.clients.size - b.clients.size) || ((a.startedAt || 0) - (b.startedAt || 0)));
+    const victim = activeOthers[0];
+    if (victim && victim.cleanupUpstream) {
+      recordMillicastDiag(victim.trackCode, 'HUB_CAP_EVICT', `Liberando cupo para ${hub.trackCode} (máx ${MAX_CONCURRENT_MILLICAST_HUBS} simultáneos)`);
+      victim.cleanupUpstream();
+      victim.initSegment = null;
+      victim.latestFragment = null;
+    }
+  }
+
   hub.connecting = true;
+  hub.startedAt = Date.now();
   const code = hub.trackCode;
 
   const cleanupUpstream = () => {

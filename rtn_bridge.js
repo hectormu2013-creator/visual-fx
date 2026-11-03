@@ -15,15 +15,20 @@ let circuitPausedUntil = 0;
 let lastRtnError = null;
 let cloudRestored = false;
 
-// 1. Caché prolongado de sesión y llaves (6 horas)
+// 1. Caché prolongado de sesión y llaves (6 horas) + Límite Humano de Simultaneidad (Máx 2 pistas RTN a la vez)
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 const ROBERTS_TOKEN_TTL_MS = 6 * 60 * 60 * 1000;
+const TRACK_LIST_TTL_MS = 45 * 60 * 1000;
 const LIVE_STATUS_TTL_MS = 35 * 60 * 1000;
-const OFFAIR_STATUS_TTL_MS = 12 * 60 * 1000;
-const MAX_NEW_FETCHES_PER_CYCLE = 4;
+const OFFAIR_STATUS_TTL_MS = 15 * 60 * 1000;
+const MAX_NEW_FETCHES_PER_CYCLE = 2;
+const MAX_SIMULTANEOUS_RTN_TRACKS = 2;
 
 let cachedCookieHeader = null;
 let cachedCookieTimestamp = 0;
+let cachedCandidateTracks = null;
+let cachedCandidateTracksAt = 0;
+let cachedCandidateDateStr = '';
 
 // Caché de URLs firmadas de Robertsstream (válidas por 12h, renovadas cada 6h sin tocar RTN)
 const robertsUrlCache = new Map();
@@ -237,7 +242,7 @@ async function ensureRtnSession() {
   return cachedCookieHeader;
 }
 
-async function fetchRtnLiveStreams() {
+async function fetchRtnLiveStreams(existingPublicStreams = {}) {
   const activeStreams = {};
   RTN_ENABLED = process.env.RTN_ENABLED === 'true';
 
@@ -264,64 +269,88 @@ async function fetchRtnLiveStreams() {
     const vetNow = new Date(Date.now() - 4 * 3600 * 1000);
     const isoDateStr = `${vetNow.getUTCFullYear()}-${String(vetNow.getUTCMonth() + 1).padStart(2, '0')}-${String(vetNow.getUTCDate()).padStart(2, '0')}`;
 
-    // Pausa suave antes de consultar la cartelera del día
-    await sleep(900 + Math.floor(Math.random() * 600));
+    let candidateTracks = [];
 
-    const trackListParams = new URLSearchParams();
-    trackListParams.append('pageQueue', 'page_selecttrack|page_live');
-    trackListParams.append('racedate', isoDateStr);
-    trackListParams.append('today', 'true');
+    // Reutilizar cartelera del día por 45 minutos para no consultar index.php en cada ciclo
+    if (
+      cachedCandidateTracks &&
+      cachedCandidateDateStr === isoDateStr &&
+      (Date.now() - cachedCandidateTracksAt) < TRACK_LIST_TTL_MS
+    ) {
+      candidateTracks = cachedCandidateTracks;
+    } else {
+      // Pausa suave antes de consultar la cartelera del día
+      await sleep(1200 + Math.floor(Math.random() * 900));
 
-    const tracksRes = await fetch('https://online.rtn.tv/index.php', {
-      method: 'POST',
-      headers: {
-        'Cookie': cookieHeader,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': BROWSER_UA,
-        'Origin': 'https://online.rtn.tv',
-        'Referer': 'https://online.rtn.tv/index.php'
-      },
-      body: trackListParams.toString(),
-      ...FETCH_LIMITS
-    });
+      const trackListParams = new URLSearchParams();
+      trackListParams.append('pageQueue', 'page_selecttrack|page_live');
+      trackListParams.append('racedate', isoDateStr);
+      trackListParams.append('today', 'true');
 
-    const tracksHtml = await tracksRes.text();
-    if (tracksHtml.includes('Account Has Been Disabled') || tracksHtml.includes('Must be a current RTN subscriber')) {
-      console.error('🛑 [RTN Bridge] Alerta de sesión en RTN. Activando Circuit Breaker por 60 min.');
-      circuitPausedUntil = Date.now() + 60 * 60 * 1000;
-      cachedCookieHeader = null;
-      return activeStreams;
+      const tracksRes = await fetch('https://online.rtn.tv/index.php', {
+        method: 'POST',
+        headers: {
+          'Cookie': cookieHeader,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': BROWSER_UA,
+          'Origin': 'https://online.rtn.tv',
+          'Referer': 'https://online.rtn.tv/index.php'
+        },
+        body: trackListParams.toString(),
+        ...FETCH_LIMITS
+      });
+
+      const tracksHtml = await tracksRes.text();
+      if (tracksHtml.includes('Account Has Been Disabled') || tracksHtml.includes('Must be a current RTN subscriber')) {
+        console.error('🛑 [RTN Bridge] Alerta de sesión en RTN. Activando Circuit Breaker por 60 min.');
+        circuitPausedUntil = Date.now() + 60 * 60 * 1000;
+        cachedCookieHeader = null;
+        return activeStreams;
+      }
+
+      // 2. Extraer hipódromos del día y filtrarlos estrictamente a los comercializados por Fénix
+      const linkInfoMatches = tracksHtml.match(/data-linkInfo=(['"])([\s\S]*?)\1/gi) || [];
+      const seenTrackIds = new Set();
+
+      for (const matchStr of linkInfoMatches) {
+        try {
+          const jsonText = matchStr.replace(/^data-linkInfo=['"]/, '').replace(/['"]$/, '');
+          const info = JSON.parse(jsonText);
+          if (!info.trackName) continue;
+          // Ignorar pistas de galgos (Greyhound = GH)
+          if (info.breed && /gh|greyhound|harness/i.test(info.breed) && !/notgh|thoroughbred|tb|qh/i.test(info.breed)) {
+            continue;
+          }
+          const meta = matchOfficialTrack(info.trackName);
+          if (!meta || seenTrackIds.has(meta.id)) continue;
+          seenTrackIds.add(meta.id);
+          candidateTracks.push({ meta, info });
+        } catch (e) {}
+      }
+
+      // Ordenar por prioridad del día (Lun-Mié: Parx, Finger Lakes, Indiana Grand, Mahoning Valley primero)
+      candidateTracks.sort((a, b) => getPriorityRankForTrack(a.meta.id) - getPriorityRankForTrack(b.meta.id));
+      cachedCandidateTracks = candidateTracks;
+      cachedCandidateTracksAt = Date.now();
+      cachedCandidateDateStr = isoDateStr;
+      recordRtnDiag('LIST', 'CANDIDATES', candidateTracks.map(c => `${c.meta.id}(R:${c.info.race || c.info.Race || '-'},MTP:${c.info.mtp || c.info.MTP || '-'})`).join(', '));
     }
-
-    // 2. Extraer hipódromos del día y filtrarlos estrictamente a los comercializados por Fénix
-    const linkInfoMatches = tracksHtml.match(/data-linkInfo=(['"])([\s\S]*?)\1/gi) || [];
-    const candidateTracks = [];
-    const seenTrackIds = new Set();
-
-    for (const matchStr of linkInfoMatches) {
-      try {
-        const jsonText = matchStr.replace(/^data-linkInfo=['"]/, '').replace(/['"]$/, '');
-        const info = JSON.parse(jsonText);
-        if (!info.trackName) continue;
-        // Ignorar pistas de galgos (Greyhound = GH)
-        if (info.breed && /gh|greyhound|harness/i.test(info.breed) && !/notgh|thoroughbred|tb|qh/i.test(info.breed)) {
-          continue;
-        }
-        const meta = matchOfficialTrack(info.trackName);
-        if (!meta || seenTrackIds.has(meta.id)) continue;
-        seenTrackIds.add(meta.id);
-        candidateTracks.push({ meta, info });
-      } catch (e) {}
-    }
-
-    // Ordenar por prioridad del día (Lun-Mié: Parx, Finger Lakes, Indiana Grand, Mahoning Valley primero)
-    candidateTracks.sort((a, b) => getPriorityRankForTrack(a.meta.id) - getPriorityRankForTrack(b.meta.id));
-    recordRtnDiag('LIST', 'CANDIDATES', candidateTracks.map(c => `${c.meta.id}(R:${c.info.race || c.info.Race || '-'},MTP:${c.info.mtp || c.info.MTP || '-'})`).join(', '));
 
     let newTokensRequested = 0;
 
     for (const { meta, info } of candidateTracks) {
+      // Límite humano estricto: jamás mantener más de 2 hipódromos de RTN activos al mismo tiempo
+      if (Object.keys(activeStreams).length >= MAX_SIMULTANEOUS_RTN_TRACKS) {
+        break;
+      }
+
       const trackId = meta.id;
+
+      // Si el hipódromo ya tiene señal pública HLS gratuita activa, NO tocar RTN para ese hipódromo
+      if (existingPublicStreams && existingPublicStreams[trackId] && existingPublicStreams[trackId].onAir) {
+        continue;
+      }
+
       const cachedState = rtnTrackStateCache.get(trackId);
 
       // Si ya verificamos hace poco en el CDN, reutilizar sin hacer peticiones nuevas
@@ -344,7 +373,7 @@ async function fetchRtnLiveStreams() {
       const trackCode = (info.tc3 || info.tc2 || trackId).toUpperCase();
 
       if (!liveUrl && !rawIframeUrl) {
-        // Respetar límite estricto de llaves nuevas por ciclo para evitar ráfagas
+        // Respetar límite estricto de llaves nuevas por ciclo para evitar ráfagas (máx 2)
         if (newTokensRequested >= MAX_NEW_FETCHES_PER_CYCLE) {
           if (cachedState && cachedState.onAir && cachedState.streamData && Date.now() < cachedState.tokenExpiresAt) {
             activeStreams[trackId] = cachedState.streamData;
@@ -352,8 +381,8 @@ async function fetchRtnLiveStreams() {
           continue;
         }
 
-        // Jitter humano (1.8s a 3.4s) antes de pedir el reproductor a RTN
-        await sleep(1800 + Math.floor(Math.random() * 1600));
+        // Jitter humano amplio (3.5s a 6.0s) antes de pedir el reproductor a RTN
+        await sleep(3500 + Math.floor(Math.random() * 2500));
         newTokensRequested++;
 
         const playerParams = new URLSearchParams();
