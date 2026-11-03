@@ -302,12 +302,12 @@ function bindSocketRandomPort(sock) {
   });
 }
 
-const MAX_CONCURRENT_MILLICAST_HUBS = 2;
+const MAX_CONCURRENT_MILLICAST_HUBS = 4;
 
 /**
  * Inicia el Hub compartido 1-a-N para un hipódromo en Millicast:
  * 1 sola conexión WebRTC desde Railway EE.UU. -> RTP local -> ffmpeg (-c:v copy) -> fMP4 en RAM -> N televisores.
- * Aplica límite humano estricto: jamás mantener más de 2 streams simultáneos contra Millicast/RTN.
+ * Punto de equilibrio humano (Quad-View 4 en 1): hasta 4 streams simultáneos contra Millicast/RTN desde 1 sola IP de EE.UU.
  */
 async function startMillicastHubUpstream(hub) {
   if (hub.connecting || hub.running) return;

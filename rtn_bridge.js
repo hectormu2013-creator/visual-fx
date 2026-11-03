@@ -15,14 +15,14 @@ let circuitPausedUntil = 0;
 let lastRtnError = null;
 let cloudRestored = false;
 
-// 1. Caché prolongado de sesión y llaves (6 horas) + Límite Humano de Simultaneidad (Máx 2 pistas RTN a la vez)
+// 1. Caché prolongado de sesión y llaves (6 horas) + Punto de Equilibrio (Quad-View: máx 4 pistas RTN simultáneas)
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 const ROBERTS_TOKEN_TTL_MS = 6 * 60 * 60 * 1000;
-const TRACK_LIST_TTL_MS = 45 * 60 * 1000;
+const TRACK_LIST_TTL_MS = 20 * 60 * 1000;
 const LIVE_STATUS_TTL_MS = 35 * 60 * 1000;
 const OFFAIR_STATUS_TTL_MS = 15 * 60 * 1000;
 const MAX_NEW_FETCHES_PER_CYCLE = 4;
-const MAX_SIMULTANEOUS_RTN_TRACKS = 2;
+const MAX_SIMULTANEOUS_RTN_TRACKS = 4;
 
 let cachedCookieHeader = null;
 let cachedCookieTimestamp = 0;
@@ -144,6 +144,23 @@ function getPriorityRankForTrack(trackId) {
   const list = (vetDay >= 1 && vetDay <= 3) ? monWedOrder : thuSunOrder;
   const idx = list.indexOf(trackId);
   return idx === -1 ? 99 : idx;
+}
+
+/**
+ * Calcula un puntaje de urgencia según el MTP (Minutes To Post) reportado por RTN.
+ * Si el hipódromo está a punto de largar carrera (0 a 12 min), recibe máxima prioridad
+ * para ocupar uno de los 4 cuadrantes activos.
+ */
+function getMtpScore(info) {
+  if (!info) return 0;
+  const rawMtp = info.mtp !== undefined ? info.mtp : info.MTP;
+  if (rawMtp === undefined || rawMtp === null || rawMtp === '') return 0;
+  const mtpNum = parseInt(String(rawMtp).replace(/[^0-9]/g, ''), 10);
+  if (Number.isNaN(mtpNum)) return 0;
+  if (mtpNum <= 5) return -15;   // En el aparato / partiendo ahora mismo
+  if (mtpNum <= 12) return -8;   // Próxima a largar
+  if (mtpNum >= 25) return 5;    // Faltan más de 25 min para la siguiente carrera
+  return 0;
 }
 
 function matchOfficialTrack(rawTrackName) {
@@ -367,8 +384,12 @@ async function fetchRtnLiveStreams(existingPublicStreams = {}) {
         } catch (e) {}
       }
 
-      // Ordenar por prioridad del día (Lun-Mié: Parx, Finger Lakes, Indiana Grand, Mahoning Valley primero)
-      candidateTracks.sort((a, b) => getPriorityRankForTrack(a.meta.id) - getPriorityRankForTrack(b.meta.id));
+      // Ordenar por prioridad del día/hora (UTC-4) + urgencia de partida (MTP)
+      candidateTracks.sort((a, b) => {
+        const scoreA = getPriorityRankForTrack(a.meta.id) + getMtpScore(a.info);
+        const scoreB = getPriorityRankForTrack(b.meta.id) + getMtpScore(b.info);
+        return scoreA - scoreB;
+      });
       cachedCandidateTracks = candidateTracks;
       cachedCandidateTracksAt = Date.now();
       cachedCandidateDateStr = isoDateStr;
@@ -378,7 +399,7 @@ async function fetchRtnLiveStreams(existingPublicStreams = {}) {
     let newTokensRequested = 0;
 
     for (const { meta, info } of candidateTracks) {
-      // Límite humano estricto: jamás mantener más de 2 hipódromos de RTN activos al mismo tiempo
+      // Punto de equilibrio Quad-View (4 en 1): hasta 4 hipódromos de RTN activos al mismo tiempo
       if (Object.keys(activeStreams).length >= MAX_SIMULTANEOUS_RTN_TRACKS) {
         break;
       }
