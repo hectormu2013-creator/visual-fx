@@ -140,42 +140,28 @@ function syncMulticanalChannels(channelsCatalog) {
     .sort((a, b) => LATAM_FAVORITES.indexOf(a.id) - LATAM_FAVORITES.indexOf(b.id));
 
   const presets = [];
-  const usedComboKeys = new Set();
+  const vetDay = new Date(Date.now() - 4 * 3600 * 1000).getUTCDay();
+  const isMonWed = (vetDay >= 1 && vetDay <= 3);
 
-  function addPresetIfUnique(id, name, flag, location, candidateTracks, badgeLabel) {
+  function addOfficialMultivisual(id, name, flag, location, preferredIds, fallbackPool, badgeLabel) {
     const validIds = [];
-    for (const t of candidateTracks) {
+    for (const t of preferredIds) {
       const tid = typeof t === 'string' ? t : t?.id;
       if (tid && catalogMap.has(tid) && !validIds.includes(tid)) {
         validIds.push(tid);
       }
       if (validIds.length === 4) break;
     }
-    // Rellenar hasta 4 si faltan pistas (primero con activas, luego con las 4 oficiales del día)
     if (validIds.length < 4) {
-      for (const fallback of venTodaySorted.concat(activeIndividual)) {
-        if (!validIds.includes(fallback.id)) validIds.push(fallback.id);
-        if (validIds.length === 4) break;
-      }
-    }
-    if (validIds.length < 4) {
-      const vetDay = new Date(Date.now() - 4 * 3600 * 1000).getUTCDay();
-      const dayDefaults = (vetDay >= 1 && vetDay <= 3)
-        ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley']
-        : ['gulfstream-park', 'laurel-park', 'belmont-park', 'santa-anita-park', 'parx-racing', 'tampa-bay-downs'];
-      for (const defId of dayDefaults) {
-        if (catalogMap.has(defId) && !validIds.includes(defId)) validIds.push(defId);
+      for (const fb of fallbackPool) {
+        const tid = typeof fb === 'string' ? fb : fb?.id;
+        if (tid && catalogMap.has(tid) && !validIds.includes(tid)) {
+          validIds.push(tid);
+        }
         if (validIds.length === 4) break;
       }
     }
     if (validIds.length === 0) return;
-
-    const comboKey = normalizeCombinationKey(validIds);
-    // Capital OTB siempre se agrega primero; los demás preconfigurados solo si aportan una combinación distinta
-    if (id !== 'capital-otb' && usedComboKeys.has(comboKey)) {
-      return;
-    }
-    usedComboKeys.add(comboKey);
 
     const summary = buildSummaryText(validIds, catalogMap);
     const streamUrl = `/capital-otb.html?tracks=${encodeURIComponent(validIds.join(','))}&title=${encodeURIComponent(name)}`;
@@ -194,65 +180,71 @@ function syncMulticanalChannels(channelsCatalog) {
       iframeUrl: streamUrl,
       onAir: true,
       activeToday: true,
-      officialSource: badgeLabel || 'Mosaico Multicanal 4 en 1',
+      officialSource: badgeLabel || `${name} Auto-Director`,
       statusText: `4 en 1: ${summary}`,
       nextRace: `Incluye: ${summary}`
     });
   }
 
-  // Preset 1: Capital OTB TV Network (Pistas del Día NY / Costa Este)
-  addPresetIfUnique(
+  // Programación oficial diferenciada para los 3 canales Multivisual (con Auto-Director Capital OTB)
+  const mv1Preferred = isMonWed
+    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley']
+    : [
+        ...venTodaySorted.slice(0, 4).map(c => c.id),
+        'gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'tampa-bay-downs', 'parx-racing'
+      ];
+
+  const mv2Preferred = isMonWed
+    ? ['horseshoe-indianapolis', 'mountaineer-park', 'thistledown', 'presque-isle', 'turf-paradise', 'zia-park']
+    : [
+        'santa-anita-park', 'woodbine', 'keeneland', 'churchill-downs', 'del-mar', 'oaklawn-park', 'fair-grounds', 'saratoga'
+      ];
+
+  const mv3Preferred = isMonWed
+    ? ['la-rinconada', 'gulfstream-park', 'laurel-park', 'santa-anita-park', 'tampa-bay-downs', 'woodbine']
+    : [
+        ...latamActive.map(c => c.id),
+        'la-rinconada', 'del-mar', 'tampa-bay-downs', 'parx-racing', 'finger-lakes', 'colonial-downs', 'delaware-park'
+      ];
+
+  const generalFallback = [
+    ...venTodaySorted.map(c => c.id),
+    ...activeIndividual.map(c => c.id),
+    'parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'gulfstream-park', 'laurel-park'
+  ];
+
+  // 1. Multivisual1 (Mantiene ID 'capital-otb' para compatibilidad automática con todas las TVs existentes)
+  addOfficialMultivisual(
     'capital-otb',
-    'Capital OTB TV Network',
-    '🇺🇸',
-    'Multicanal 4 en 1 • Jornada del Día',
-    cotbSorted.slice(0, 4),
-    'Capital OTB Multicanal'
-  );
-
-  // Preset 2: Multicanal Favoritos USA (Gulfstream, Laurel, Parx, Finger Lakes / NYRA)
-  addPresetIfUnique(
-    'multicanal-favoritos-1',
-    'Multicanal 1 • Favoritos USA',
+    'Multivisual1',
     '📺',
-    'Multicanal 4 en 1 • Favoritos Venezuela',
-    venUsSorted.slice(0, 4),
-    'Multicanal Favoritos USA'
+    'Multicanal 4 en 1 • Principal USA',
+    mv1Preferred,
+    generalFallback,
+    'Multivisual1 Auto-Director'
   );
 
-  // Preset 3: Multicanal Circuito Americano 2 (Si hay más de 4 pistas de EE.UU. activas hoy)
-  if (venTodaySorted.length >= 5) {
-    const altTracks = [
-      venTodaySorted[0],
-      venTodaySorted[1],
-      venTodaySorted[4],
-      venTodaySorted[5] || venTodaySorted[2]
-    ].filter(Boolean);
-    addPresetIfUnique(
-      'multicanal-favoritos-2',
-      'Multicanal 2 • Circuito USA',
-      '📺',
-      'Multicanal 4 en 1 • Alternativo USA',
-      altTracks,
-      'Multicanal Circuito USA'
-    );
-  }
+  // 2. Multivisual2
+  addOfficialMultivisual(
+    'multivisual-2',
+    'Multivisual2',
+    '📺',
+    'Multicanal 4 en 1 • Circuito 2 USA',
+    mv2Preferred,
+    generalFallback,
+    'Multivisual2 Auto-Director'
+  );
 
-  // Preset 4: Multicanal Mixto (USA + Suramérica/Caribe como Camarero, Palermo, Monterrico, La Rinconada)
-  if (latamActive.length > 0) {
-    const mixTracks = [
-      ...venTodaySorted.slice(0, 2),
-      ...latamActive.slice(0, 2)
-    ];
-    addPresetIfUnique(
-      'multicanal-mixto-latam',
-      'Multicanal 3 • USA + Suramérica',
-      '🌎',
-      'Multicanal 4 en 1 • Mixto Internacional',
-      mixTracks,
-      'Multicanal Mixto'
-    );
-  }
+  // 3. Multivisual3
+  addOfficialMultivisual(
+    'multivisual-3',
+    'Multivisual3',
+    '📺',
+    'Multicanal 4 en 1 • Circuito 3 / Mixto',
+    mv3Preferred,
+    generalFallback,
+    'Multivisual3 Auto-Director'
+  );
 
   // Agregar también los Multicanales personalizados creados por agencias (si sus pistas siguen activas)
   for (const [customId, customDef] of customMulticanalesMap.entries()) {
