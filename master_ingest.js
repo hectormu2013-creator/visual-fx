@@ -140,8 +140,8 @@ function initMasterIngest(channelsCatalog) {
   // Sincronización inicial inmediata (usa Public Streams si RTN está apagado)
   syncRtnStreams(channelsCatalog);
 
-  // Actualizar señales en vivo cada 10 minutos
-  setInterval(() => syncRtnStreams(channelsCatalog), 10 * 60 * 1000);
+  // Actualizar señales en vivo cada 4 minutos (respetando los cachés internos de 18m/35m)
+  setInterval(() => syncRtnStreams(channelsCatalog), 4 * 60 * 1000);
 }
 
 function getMasterState() {

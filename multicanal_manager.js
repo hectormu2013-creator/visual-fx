@@ -145,16 +145,30 @@ function syncMulticanalChannels(channelsCatalog) {
 
   function addOfficialMultivisual(id, name, flag, location, preferredIds, fallbackPool, badgeLabel) {
     const validIds = [];
+    // 1. Primero elegir de preferredIds los que están EN VIVO (onAir = true) ahora mismo
     for (const t of preferredIds) {
       const tid = typeof t === 'string' ? t : t?.id;
-      if (tid && catalogMap.has(tid) && !validIds.includes(tid)) {
+      const ch = tid ? catalogMap.get(tid) : null;
+      if (ch && ch.onAir && !validIds.includes(tid)) {
         validIds.push(tid);
       }
       if (validIds.length === 4) break;
     }
+    // 2. Si faltan para llegar a 4, completar con pistas EN VIVO (onAir = true) del fallbackPool
     if (validIds.length < 4) {
       for (const fb of fallbackPool) {
         const tid = typeof fb === 'string' ? fb : fb?.id;
+        const ch = tid ? catalogMap.get(tid) : null;
+        if (ch && ch.onAir && !validIds.includes(tid)) {
+          validIds.push(tid);
+        }
+        if (validIds.length === 4) break;
+      }
+    }
+    // 3. Si hay menos de 4 hipódromos en vivo en todo el sistema, completar con los preferidos programados del día
+    if (validIds.length < 4) {
+      for (const t of preferredIds) {
+        const tid = typeof t === 'string' ? t : t?.id;
         if (tid && catalogMap.has(tid) && !validIds.includes(tid)) {
           validIds.push(tid);
         }

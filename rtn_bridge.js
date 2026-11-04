@@ -96,29 +96,38 @@ function getPriorityRankForTrack(trackId) {
 
   // De Lunes a Miércoles después de las 4:00 PM (UTC-4), Parx y Mahoning suelen haber cerrado,
   // mientras Indiana Grand (Horseshoe), Finger Lakes y Mountaineer están en plena acción.
-  const monWedOrder = (vetHour >= 16)
+  const monWedOrder = (vetHour >= 17)
     ? [
         'horseshoe-indianapolis',
+        'mountaineer-park',
+        'delta-downs',
+        'penn-national',
+        'charles-town',
+        'turfway-park',
+        'turf-paradise',
+        'presque-isle',
         'finger-lakes',
         'parx-racing',
         'mahoning-valley',
-        'mountaineer-park',
-        'turf-paradise',
-        'presque-isle',
+        'churchill-downs',
         'thistledown',
-        'zia-park',
-        'delta-downs'
+        'zia-park'
       ]
     : [
         'parx-racing',
         'finger-lakes',
         'horseshoe-indianapolis',
         'mahoning-valley',
+        'churchill-downs',
+        'tampa-bay-downs',
         'thistledown',
-        'mountaineer-park',
+        'delaware-park',
+        'keeneland',
+        'gulfstream-park',
         'presque-isle',
         'turf-paradise',
         'zia-park',
+        'mountaineer-park',
         'delta-downs'
       ];
 
