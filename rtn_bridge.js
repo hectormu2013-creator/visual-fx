@@ -8,6 +8,7 @@
 
 const fetch = require('node-fetch');
 const { extractRcnVariantsFromLiveUrl, probeRcnStreamIsLive } = require('./first_tv_bridge');
+const { setMillicastUrlRefresher } = require('./millicast_bridge');
 const { saveToCloud, loadFromCloud } = require('./supabase_sync');
 
 let RTN_ENABLED = process.env.RTN_ENABLED === 'true';
@@ -15,14 +16,14 @@ let circuitPausedUntil = 0;
 let lastRtnError = null;
 let cloudRestored = false;
 
-// 1. Caché prolongado de sesión y llaves (6 horas) + Punto de Equilibrio (Quad-View: máx 4 pistas RTN simultáneas)
+// 1. Caché prolongado de sesión PHPSESSID (6h) + TTL real de 18 min para firma t= de Robertsstream
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
-const ROBERTS_TOKEN_TTL_MS = 6 * 60 * 60 * 1000;
-const TRACK_LIST_TTL_MS = 20 * 60 * 1000;
-const LIVE_STATUS_TTL_MS = 35 * 60 * 1000;
-const OFFAIR_STATUS_TTL_MS = 15 * 60 * 1000;
-const MAX_NEW_FETCHES_PER_CYCLE = 4;
-const MAX_SIMULTANEOUS_RTN_TRACKS = 4;
+const ROBERTS_TOKEN_TTL_MS = 18 * 60 * 1000;
+const TRACK_LIST_TTL_MS = 18 * 60 * 1000;
+const LIVE_STATUS_TTL_MS = 18 * 60 * 1000;
+const OFFAIR_STATUS_TTL_MS = 6 * 60 * 1000;
+const MAX_NEW_FETCHES_PER_CYCLE = 6;
+const MAX_SIMULTANEOUS_RTN_TRACKS = 6;
 
 let cachedCookieHeader = null;
 let cachedCookieTimestamp = 0;
@@ -165,8 +166,14 @@ function getMtpScore(info) {
 
 function matchOfficialTrack(rawTrackName) {
   const lower = (rawTrackName || '').toLowerCase().trim();
-  // Ignorar carreras de trote/arneses (Harness / Mohawk / Yonkers / Meadowlands) si no son purasangre
-  if (lower.includes('mohawk') || lower.includes('harness') || lower.includes('yonkers')) {
+  // Ignorar carreras de trote/arneses y subastas (Auction / Sale) que no son carreras purasangre
+  if (
+    lower.includes('mohawk') ||
+    lower.includes('harness') ||
+    lower.includes('yonkers') ||
+    lower.includes('auction') ||
+    lower.includes('sale')
+  ) {
     return null;
   }
   for (const [key, meta] of Object.entries(RTN_TRACK_MAP)) {
@@ -204,7 +211,12 @@ async function restoreRtnCacheFromCloud() {
     if (saved && saved.robertsUrls && typeof saved.robertsUrls === 'object') {
       const now = Date.now();
       for (const [trackId, entry] of Object.entries(saved.robertsUrls)) {
-        if (entry && entry.expiresAt && entry.expiresAt > now) {
+        if (
+          entry &&
+          entry.expiresAt &&
+          entry.expiresAt > now &&
+          (entry.expiresAt - now) <= ROBERTS_TOKEN_TTL_MS
+        ) {
           robertsUrlCache.set(trackId, entry);
         }
       }
@@ -426,23 +438,19 @@ async function fetchRtnLiveStreams(existingPublicStreams = {}) {
         }
       }
 
-      // Verificar si ya tenemos la URL firmada de Robertsstream en caché (dura 6h)
+      // Verificar si ya tenemos la URL firmada de Robertsstream en caché (dura ~18 min)
       let robertsEntry = robertsUrlCache.get(trackId);
-      let liveUrl = (robertsEntry && Date.now() < robertsEntry.expiresAt) ? robertsEntry.liveUrl : null;
-      let rawIframeUrl = (robertsEntry && Date.now() < robertsEntry.expiresAt) ? robertsEntry.rawIframeUrl : null;
+      const usedCachedRoberts = Boolean(robertsEntry && Date.now() < robertsEntry.expiresAt);
+      let liveUrl = usedCachedRoberts ? robertsEntry.liveUrl : null;
+      let rawIframeUrl = usedCachedRoberts ? robertsEntry.rawIframeUrl : null;
       const trackCode = (info.tc3 || info.tc2 || trackId).toUpperCase();
 
-      if (!liveUrl && !rawIframeUrl) {
-        // Respetar límite estricto de llaves nuevas por ciclo para evitar ráfagas (máx 2)
+      const requestFreshPlayerUrl = async () => {
         if (newTokensRequested >= MAX_NEW_FETCHES_PER_CYCLE) {
-          if (cachedState && cachedState.onAir && cachedState.streamData && Date.now() < cachedState.tokenExpiresAt) {
-            activeStreams[trackId] = cachedState.streamData;
-          }
-          continue;
+          return null;
         }
-
-        // Jitter humano amplio (3.5s a 6.0s) antes de pedir el reproductor a RTN
-        await sleep(3500 + Math.floor(Math.random() * 2500));
+        // Jitter humano (1.8s a 3.2s) antes de pedir el reproductor a RTN
+        await sleep(1800 + Math.floor(Math.random() * 1400));
         newTokensRequested++;
 
         const playerParams = new URLSearchParams();
@@ -473,42 +481,61 @@ async function fetchRtnLiveStreams(existingPublicStreams = {}) {
         const iframeMatch = playerHtml.match(/iframe\s+src=['"]([^'"]+)['"]/i);
         if (!iframeMatch || !iframeMatch[1]) {
           recordRtnDiag(trackCode, 'NO_IFRAME', `len=${playerHtml.length}`);
-          rtnTrackStateCache.set(trackId, {
-            onAir: false,
-            lastProbeAt: Date.now(),
-            tokenExpiresAt: Date.now() + OFFAIR_STATUS_TTL_MS,
-            streamData: null
-          });
-          continue;
+          return null;
         }
 
-        rawIframeUrl = iframeMatch[1].replace(/&amp;/g, '&').trim();
-        if (rawIframeUrl.startsWith('//')) rawIframeUrl = `https:${rawIframeUrl}`;
-        liveUrl = rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C');
+        let freshRaw = iframeMatch[1].replace(/&amp;/g, '&').trim();
+        if (freshRaw.startsWith('//')) freshRaw = `https:${freshRaw}`;
+        const freshLive = freshRaw.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C');
         robertsUrlCache.set(trackId, {
-          liveUrl,
-          rawIframeUrl,
+          liveUrl: freshLive,
+          rawIframeUrl: freshRaw,
+          trackCode,
           expiresAt: Date.now() + ROBERTS_TOKEN_TTL_MS
         });
         await persistRtnCacheToCloud();
-        recordRtnDiag(trackCode, 'IFRAME_RAW', rawIframeUrl.replace(/(usr|user)=[^&]+/gi, '$1=***'));
+        recordRtnDiag(trackCode, 'IFRAME_RAW', freshRaw.replace(/(usr|user)=[^&]+/gi, '$1=***'));
+        return { liveUrl: freshLive, rawIframeUrl: freshRaw };
+      };
+
+      if (!liveUrl && !rawIframeUrl) {
+        const fresh = await requestFreshPlayerUrl();
+        if (!fresh) {
+          if (cachedState && cachedState.onAir && cachedState.streamData && Date.now() < cachedState.tokenExpiresAt) {
+            activeStreams[trackId] = cachedState.streamData;
+          } else {
+            rtnTrackStateCache.set(trackId, {
+              onAir: false,
+              lastProbeAt: Date.now(),
+              tokenExpiresAt: Date.now() + OFFAIR_STATUS_TTL_MS,
+              streamData: null
+            });
+          }
+          continue;
+        }
+        liveUrl = fresh.liveUrl;
+        rawIframeUrl = fresh.rawIframeUrl;
       }
 
-      // 3. Extraer manifiesto H5Live (.m3u8 de ws.rcncdn.com) desde la IP de EE.UU. (NUNCA exponer liveUrl ni iframe a Venezuela)
-      const candidates = [
-        liveUrl || (rawIframeUrl && rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C'))
-      ];
+      // 3. Extraer manifiesto H5Live / Millicast desde la IP de EE.UU. (NUNCA exponer liveUrl ni iframe a Venezuela)
+      let candUrl = liveUrl || (rawIframeUrl && rawIframeUrl.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C'));
+      let extracted = candUrl
+        ? await extractRcnVariantsFromLiveUrl(trackCode, candUrl, 'https://online.rtn.tv/index.php')
+        : null;
 
-      let extracted = null;
-      for (const candUrl of candidates) {
-        if (!candUrl) continue;
-        extracted = await extractRcnVariantsFromLiveUrl(trackCode, candUrl, 'https://online.rtn.tv/index.php');
-        if (extracted && extracted.lightUrl) {
-          break;
+      // Si usamos un link en caché de Robertsstream y dio 401/expirado, purgar caché y pedir link fresco de inmediato
+      if ((!extracted || !extracted.lightUrl) && usedCachedRoberts) {
+        robertsUrlCache.delete(trackId);
+        const fresh = await requestFreshPlayerUrl();
+        if (fresh && fresh.liveUrl) {
+          liveUrl = fresh.liveUrl;
+          rawIframeUrl = fresh.rawIframeUrl;
+          extracted = await extractRcnVariantsFromLiveUrl(trackCode, liveUrl, 'https://online.rtn.tv/index.php');
         }
       }
 
       if (!extracted || !extracted.lightUrl) {
+        robertsUrlCache.delete(trackId);
         rtnTrackStateCache.set(trackId, {
           onAir: false,
           lastProbeAt: Date.now(),
@@ -579,6 +606,62 @@ function getRtnStatus() {
     rtnDiagnostics
   };
 }
+
+setMillicastUrlRefresher(async (trackCode) => {
+  try {
+    if (!RTN_ENABLED || Date.now() < circuitPausedUntil || !cachedCandidateTracks) return null;
+    const code = (trackCode || '').toUpperCase();
+    const matched = cachedCandidateTracks.find(({ meta, info }) => {
+      const c = (info.tc3 || info.tc2 || meta.id).toUpperCase();
+      return c === code;
+    });
+    if (!matched) return null;
+    const cookieHeader = await ensureRtnSession();
+    const vetNow = new Date(Date.now() - 4 * 3600 * 1000);
+    const isoDateStr = `${vetNow.getUTCFullYear()}-${String(vetNow.getUTCMonth() + 1).padStart(2, '0')}-${String(vetNow.getUTCDate()).padStart(2, '0')}`;
+    await sleep(1200 + Math.floor(Math.random() * 900));
+    const playerParams = new URLSearchParams();
+    playerParams.append('pageQueue', 'page_live');
+    for (const [k, v] of Object.entries(matched.info)) {
+      if (k !== 'pageQueue' && v !== undefined && v !== null) {
+        playerParams.append(k, String(v));
+      }
+    }
+    if (!playerParams.has('format')) playerParams.append('format', 'flash');
+    if (!playerParams.has('breed')) playerParams.append('breed', 'NotGH');
+    if (!playerParams.has('racedate')) playerParams.append('racedate', isoDateStr);
+
+    const playerRes = await fetch('https://online.rtn.tv/index.php', {
+      method: 'POST',
+      headers: {
+        'Cookie': cookieHeader,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': BROWSER_UA,
+        'Origin': 'https://online.rtn.tv',
+        'Referer': 'https://online.rtn.tv/index.php'
+      },
+      body: playerParams.toString(),
+      ...FETCH_LIMITS
+    });
+    const playerHtml = await playerRes.text();
+    const iframeMatch = playerHtml.match(/iframe\s+src=['"]([^'"]+)['"]/i);
+    if (!iframeMatch || !iframeMatch[1]) return null;
+    let freshRaw = iframeMatch[1].replace(/&amp;/g, '&').trim();
+    if (freshRaw.startsWith('//')) freshRaw = `https:${freshRaw}`;
+    const freshLive = freshRaw.replace('streamflash.php', 'streamlive.php').replace(/\|/g, '%7C');
+    robertsUrlCache.set(matched.meta.id, {
+      liveUrl: freshLive,
+      rawIframeUrl: freshRaw,
+      trackCode: code,
+      expiresAt: Date.now() + ROBERTS_TOKEN_TTL_MS
+    });
+    await persistRtnCacheToCloud();
+    recordRtnDiag(code, 'REFRESH_URL_OK', matched.meta.name);
+    return { liveUrl: freshLive, refererUrl: 'https://online.rtn.tv/index.php' };
+  } catch (e) {
+    return null;
+  }
+});
 
 module.exports = {
   fetchRtnLiveStreams,

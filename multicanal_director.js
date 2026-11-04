@@ -2,6 +2,7 @@
 // + Director Automático de Carrera (Pantalla Completa en MTP=0 + Carrera + 1 min Resultados Oficiales -> Regreso a 4 en 1)
 
 const fetch = require('node-fetch');
+const http = require('http');
 const { spawn } = require('child_process');
 const ffmpegPath = require('ffmpeg-static');
 const {
@@ -350,13 +351,27 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
       }
     }
 
-    const nextRace = races.find(r => !completedRaces.has(r.raceNumber)) || null;
+    const rtnLiveRaceNum = ch.race ? parseInt(String(ch.race), 10) : null;
+    const rtnLiveMtp = (ch.mtp !== undefined && ch.mtp !== '') ? parseInt(String(ch.mtp), 10) : null;
+
+    const nextRace = races.find(r => {
+      if (completedRaces.has(r.raceNumber)) return false;
+      if (rtnLiveRaceNum && !Number.isNaN(rtnLiveRaceNum) && r.raceNumber < rtnLiveRaceNum) return false;
+      if (r.postTimestampMs && (now - r.postTimestampMs) > (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC + 180) * 1000) {
+        return false;
+      }
+      return true;
+    }) || null;
+
     let mtpMinutes = null;
     let secFromPost = null;
 
     if (nextRace && nextRace.postTimestampMs) {
       secFromPost = Math.round((now - nextRace.postTimestampMs) / 1000);
       mtpMinutes = Math.max(0, Math.ceil((nextRace.postTimestampMs - now) / 60000));
+    }
+    if (nextRace && rtnLiveRaceNum === nextRace.raceNumber && rtnLiveMtp !== null && !Number.isNaN(rtnLiveMtp)) {
+      mtpMinutes = Math.max(0, rtnLiveMtp);
     }
 
     // Verificar ventana de Director Automático (Partida -> Carrera -> +60s de Resultados Oficiales)
@@ -569,126 +584,178 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
 
   if (!hub.running) {
     hub.running = true;
-    const ffArgs = ['-loglevel', 'warning'];
 
-    for (let i = 0; i < 4; i++) {
-      const tid = fixedFourIds[i];
-      const ch = catalogMap.get(tid);
-      const isDirectVideo = ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl;
-      if (isDirectVideo) {
-        const localStreamUrl = `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR`;
-        ffArgs.push(
-          '-reconnect', '1',
-          '-reconnect_streamed', '1',
-          '-reconnect_delay_max', '4',
-          '-rw_timeout', '8000000',
-          '-i', localStreamUrl
-        );
-      } else {
-        ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=15');
-      }
-    }
-
-    ffArgs.push(
-      '-filter_complex',
-      '[0:v]scale=426:240,fps=15,setsar=1[v0];' +
-      '[1:v]scale=426:240,fps=15,setsar=1[v1];' +
-      '[2:v]scale=426:240,fps=15,setsar=1[v2];' +
-      '[3:v]scale=426:240,fps=15,setsar=1[v3];' +
-      '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
-      '-map', '[v]',
-      '-an',
-      '-c:v', 'libx264',
-      '-preset', 'ultrafast',
-      '-tune', 'zerolatency',
-      '-profile:v', 'baseline',
-      '-level', '3.0',
-      '-pix_fmt', 'yuv420p',
-      '-b:v', '800k',
-      '-maxrate', '950k',
-      '-bufsize', '1600k',
-      '-g', '15',
-      '-keyint_min', '15',
-      '-sc_threshold', '0',
-      '-f', 'mp4',
-      '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
-      'pipe:1'
-    );
-
-    const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
-    hub.ffmpegProc = ffProc;
-
-    let pendingBuf = Buffer.alloc(0);
-    let ftypBox = null;
-    let moovBox = null;
-    let currentMoof = null;
-
-    const cleanup = () => {
-      hub.running = false;
-      if (hub.ffmpegProc) {
-        try { hub.ffmpegProc.kill('SIGKILL'); } catch (e) {}
-        hub.ffmpegProc = null;
-      }
-    };
-    hub.cleanup = cleanup;
-
-    ffProc.stdout.on('data', (chunk) => {
-      pendingBuf = Buffer.concat([pendingBuf, chunk]);
-      while (pendingBuf.length >= 8) {
-        const boxSize = pendingBuf.readUInt32BE(0);
-        const boxType = pendingBuf.slice(4, 8).toString('ascii');
-        if (boxSize < 8 || boxSize > 8 * 1024 * 1024) {
-          pendingBuf = Buffer.alloc(0);
-          break;
+    // Pre-calentar en paralelo los 4 flujos vivos antes de invocar FFmpeg para que WebRTC conecte al unísono (~2.5s total)
+    const prewarmInput = (localStreamUrl) => new Promise((resolve) => {
+      let settled = false;
+      const done = (ok, reqObj) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (reqObj) {
+          setTimeout(() => {
+            try { reqObj.destroy(); } catch (e) {}
+          }, 1500);
         }
-        if (pendingBuf.length < boxSize) break;
+        resolve(ok);
+      };
+      const timer = setTimeout(() => done(false, reqObj), 5200);
+      const reqObj = http.get(localStreamUrl, (upRes) => {
+        if (upRes.statusCode !== 200) {
+          upRes.resume();
+          return done(false, reqObj);
+        }
+        upRes.once('data', () => {
+          upRes.resume();
+          done(true, reqObj);
+        });
+        upRes.once('error', () => done(false, reqObj));
+      });
+      reqObj.on('error', () => done(false, null));
+    });
 
-        const box = Buffer.from(pendingBuf.slice(0, boxSize));
-        pendingBuf = pendingBuf.slice(boxSize);
+    (async () => {
+      const inputCandidates = [];
+      for (let i = 0; i < 4; i++) {
+        const tid = fixedFourIds[i];
+        const ch = catalogMap.get(tid);
+        const isDirectVideo = Boolean(ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl);
+        const localStreamUrl = isDirectVideo
+          ? `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR`
+          : null;
+        inputCandidates.push({ isDirectVideo, localStreamUrl });
+      }
 
-        if (boxType === 'ftyp') {
-          ftypBox = box;
-        } else if (boxType === 'moov') {
-          moovBox = box;
-          if (ftypBox) {
-            hub.initSegment = Buffer.concat([ftypBox, moovBox]);
+      const warmResults = await Promise.all(
+        inputCandidates.map(c => (c.isDirectVideo && c.localStreamUrl) ? prewarmInput(c.localStreamUrl) : Promise.resolve(false))
+      );
+
+      if (!hub.running || hub.clients.size === 0) {
+        hub.running = false;
+        return;
+      }
+
+      const ffArgs = ['-loglevel', 'warning'];
+      for (let i = 0; i < 4; i++) {
+        if (warmResults[i] && inputCandidates[i].localStreamUrl) {
+          ffArgs.push(
+            '-fflags', '+nobuffer+discardcorrupt+genpts',
+            '-flags', 'low_delay',
+            '-probesize', '65536',
+            '-analyzeduration', '500000',
+            '-thread_queue_size', '512',
+            '-reconnect', '1',
+            '-reconnect_streamed', '1',
+            '-reconnect_delay_max', '4',
+            '-rw_timeout', '8000000',
+            '-i', inputCandidates[i].localStreamUrl
+          );
+        } else {
+          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=15');
+        }
+      }
+
+      ffArgs.push(
+        '-filter_complex',
+        '[0:v]scale=426:240,fps=15,setsar=1[v0];' +
+        '[1:v]scale=426:240,fps=15,setsar=1[v1];' +
+        '[2:v]scale=426:240,fps=15,setsar=1[v2];' +
+        '[3:v]scale=426:240,fps=15,setsar=1[v3];' +
+        '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
+        '-map', '[v]',
+        '-an',
+        '-c:v', 'libx264',
+        '-preset', 'ultrafast',
+        '-tune', 'zerolatency',
+        '-profile:v', 'baseline',
+        '-level', '3.0',
+        '-pix_fmt', 'yuv420p',
+        '-b:v', '800k',
+        '-maxrate', '950k',
+        '-bufsize', '1600k',
+        '-g', '15',
+        '-keyint_min', '15',
+        '-sc_threshold', '0',
+        '-f', 'mp4',
+        '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+        'pipe:1'
+      );
+
+      const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+      hub.ffmpegProc = ffProc;
+
+      let pendingBuf = Buffer.alloc(0);
+      let ftypBox = null;
+      let moovBox = null;
+      let currentMoof = null;
+
+      const cleanup = () => {
+        hub.running = false;
+        if (hub.ffmpegProc) {
+          try { hub.ffmpegProc.kill('SIGKILL'); } catch (e) {}
+          hub.ffmpegProc = null;
+        }
+      };
+      hub.cleanup = cleanup;
+
+      ffProc.stdout.on('data', (chunk) => {
+        pendingBuf = Buffer.concat([pendingBuf, chunk]);
+        while (pendingBuf.length >= 8) {
+          const boxSize = pendingBuf.readUInt32BE(0);
+          const boxType = pendingBuf.slice(4, 8).toString('ascii');
+          if (boxSize < 8 || boxSize > 8 * 1024 * 1024) {
+            pendingBuf = Buffer.alloc(0);
+            break;
+          }
+          if (pendingBuf.length < boxSize) break;
+
+          const box = Buffer.from(pendingBuf.slice(0, boxSize));
+          pendingBuf = pendingBuf.slice(boxSize);
+
+          if (boxType === 'ftyp') {
+            ftypBox = box;
+          } else if (boxType === 'moov') {
+            moovBox = box;
+            if (ftypBox) {
+              hub.initSegment = Buffer.concat([ftypBox, moovBox]);
+              for (const c of hub.clients) {
+                if (!c.sentInit && !c.res.writableEnded) {
+                  try {
+                    c.res.write(hub.initSegment);
+                    c.sentInit = true;
+                    recordBytesSent(hub.initSegment.length, c.deviceId);
+                  } catch (e) {}
+                }
+              }
+            }
+          } else if (boxType === 'moof') {
+            currentMoof = box;
+          } else if (boxType === 'mdat' && currentMoof) {
+            const fragment = Buffer.concat([currentMoof, box]);
+            currentMoof = null;
+            hub.latestFragment = fragment;
             for (const c of hub.clients) {
-              if (!c.sentInit && !c.res.writableEnded) {
-                try {
+              if (c.res.writableEnded) continue;
+              try {
+                if (!c.sentInit && hub.initSegment) {
                   c.res.write(hub.initSegment);
                   c.sentInit = true;
                   recordBytesSent(hub.initSegment.length, c.deviceId);
-                } catch (e) {}
-              }
+                }
+                if (c.sentInit) {
+                  c.res.write(fragment);
+                  recordBytesSent(fragment.length, c.deviceId);
+                }
+              } catch (e) {}
             }
           }
-        } else if (boxType === 'moof') {
-          currentMoof = box;
-        } else if (boxType === 'mdat' && currentMoof) {
-          const fragment = Buffer.concat([currentMoof, box]);
-          currentMoof = null;
-          hub.latestFragment = fragment;
-          for (const c of hub.clients) {
-            if (c.res.writableEnded) continue;
-            try {
-              if (!c.sentInit && hub.initSegment) {
-                c.res.write(hub.initSegment);
-                c.sentInit = true;
-                recordBytesSent(hub.initSegment.length, c.deviceId);
-              }
-              if (c.sentInit) {
-                c.res.write(fragment);
-                recordBytesSent(fragment.length, c.deviceId);
-              }
-            } catch (e) {}
-          }
         }
-      }
-    });
+      });
 
-    ffProc.on('close', () => {
-      cleanup();
-    });
+      ffProc.on('close', () => {
+        cleanup();
+      });
+    })();
   }
 
   const removeClient = () => {

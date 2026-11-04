@@ -460,8 +460,11 @@
     }
 
     function switchSingleVideoStream(sourceKey, streamUrl, enableAudio) {
-      if (currentVideoSourceKey === sourceKey && !videoEl.paused && !videoEl.ended) {
+      if (currentVideoSourceKey === sourceKey && !videoEl.ended && !videoEl.error) {
         videoEl.muted = !(enableAudio && parentAllowsAudio);
+        if (videoEl.paused && videoEl.readyState >= 2) {
+          videoEl.play().catch(() => {});
+        }
         return;
       }
       currentVideoSourceKey = sourceKey;

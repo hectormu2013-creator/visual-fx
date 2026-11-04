@@ -61,32 +61,29 @@ function parseTrackCodeFromSyntheticUrl(url) {
   return m ? m[1].toUpperCase() : null;
 }
 
+let urlRefresherFn = null;
+const lastLiveUrlRefreshAt = new Map();
+
+function setMillicastUrlRefresher(fn) {
+  urlRefresherFn = fn;
+}
+
 /**
- * Si el subscriberToken de Millicast (10 min de vida) tiene más de 7 minutos,
- * lo refresca consultando únicamente streamlive.php en Robertsstream (0 peticiones a RTN/1st.tv).
+ * Si el subscriberToken de Millicast (10 min de vida) tiene más de 7 minutos o expiró (401),
+ * lo refresca consultando streamlive.php en Robertsstream; si la URL firmada t= también venció (401),
+ * pide una URL firmada fresca al puente RTN (máx 1 vez cada 90s por pista).
  */
-async function ensureFreshSubscriberToken(trackCode) {
+async function ensureFreshSubscriberToken(trackCode, forceRefresh = false) {
   const code = trackCode.toUpperCase();
-  const entry = millicastTrackRegistry.get(code);
+  let entry = millicastTrackRegistry.get(code);
   if (!entry) return null;
 
   const ageMs = Date.now() - (entry.tokenIssuedAt || 0);
-  if (entry.subscriberToken && ageMs < 7 * 60 * 1000) {
+  if (!forceRefresh && entry.subscriberToken && ageMs < 7 * 60 * 1000) {
     return entry;
   }
 
-  if (!entry.liveUrl) return entry;
-
-  try {
-    const res = await fetch(entry.liveUrl, {
-      headers: {
-        'User-Agent': BROWSER_UA,
-        'Referer': entry.referer || 'https://online.rtn.tv/index.php'
-      },
-      timeout: 10000
-    });
-    if (!res.ok) return entry;
-    const html = await res.text();
+  const parseAndStoreHtml = (html, liveUrlUsed) => {
     const streamNameMatch = html.match(/var\s+streamName\s*=\s*["']([^"']+)["']/);
     const accountIdMatch = html.match(/var\s+streamAccountId\s*=\s*["']([^"']+)["']/);
     const subTokenMatch = html.match(/var\s+subscriberToken\s*=\s*["']([^"']+)["']/);
@@ -95,7 +92,51 @@ async function ensureFreshSubscriberToken(trackCode) {
       entry.streamAccountId = accountIdMatch[1];
       entry.subscriberToken = subTokenMatch[1];
       entry.tokenIssuedAt = Date.now();
+      if (liveUrlUsed) entry.liveUrl = liveUrlUsed;
       millicastTrackRegistry.set(code, entry);
+      recordMillicastDiag(code, 'TOKEN_REFRESH_OK', `stream=${entry.streamName}`);
+      return true;
+    }
+    return false;
+  };
+
+  try {
+    if (entry.liveUrl) {
+      const res = await fetch(entry.liveUrl, {
+        headers: {
+          'User-Agent': BROWSER_UA,
+          'Referer': entry.referer || 'https://online.rtn.tv/index.php'
+        },
+        timeout: 10000
+      });
+      if (res.ok) {
+        const html = await res.text();
+        if (parseAndStoreHtml(html, entry.liveUrl)) {
+          return entry;
+        }
+      }
+    }
+
+    // Si streamlive.php devolvió 401 (firma t= vencida) o no tenía token, refrescar la URL firmada en RTN
+    const lastRef = lastLiveUrlRefreshAt.get(code) || 0;
+    if (urlRefresherFn && (Date.now() - lastRef) > 90 * 1000) {
+      lastLiveUrlRefreshAt.set(code, Date.now());
+      const freshLiveUrl = await urlRefresherFn(code);
+      if (freshLiveUrl) {
+        entry = millicastTrackRegistry.get(code) || entry;
+        entry.liveUrl = freshLiveUrl;
+        const res2 = await fetch(freshLiveUrl, {
+          headers: {
+            'User-Agent': BROWSER_UA,
+            'Referer': entry.referer || 'https://online.rtn.tv/index.php'
+          },
+          timeout: 10000
+        });
+        if (res2.ok) {
+          const html2 = await res2.text();
+          parseAndStoreHtml(html2, freshLiveUrl);
+        }
+      }
     }
   } catch (e) {
     recordMillicastDiag(code, 'TOKEN_REFRESH_ERR', e.message);
@@ -302,7 +343,7 @@ function bindSocketRandomPort(sock) {
   });
 }
 
-const MAX_CONCURRENT_MILLICAST_HUBS = 4;
+const MAX_CONCURRENT_MILLICAST_HUBS = 6;
 
 /**
  * Inicia el Hub compartido 1-a-N para un hipódromo en Millicast:
@@ -362,12 +403,23 @@ async function startMillicastHubUpstream(hub) {
   hub.cleanupUpstream = cleanupUpstream;
 
   try {
-    const entry = await ensureFreshSubscriberToken(code);
+    let entry = await ensureFreshSubscriberToken(code, false);
     if (!entry || !entry.subscriberToken) {
       throw new Error('NO_MILLICAST_ENTRY');
     }
 
-    const { wsUrl, jwt } = await subscribeMillicastDirector(entry);
+    let dirData;
+    try {
+      dirData = await subscribeMillicastDirector(entry);
+    } catch (dirErr) {
+      if (String(dirErr.message).includes('DIRECTOR_401')) {
+        entry = await ensureFreshSubscriberToken(code, true);
+        dirData = await subscribeMillicastDirector(entry);
+      } else {
+        throw dirErr;
+      }
+    }
+    const { wsUrl, jwt } = dirData;
     const udpSocket = dgram.createSocket('udp4');
     const vSocket = dgram.createSocket('udp4');
     const aSocket = dgram.createSocket('udp4');
@@ -731,6 +783,7 @@ function getMillicastDiagnostics() {
 
 module.exports = {
   registerMillicastTrack,
+  setMillicastUrlRefresher,
   getMillicastSyntheticUrl,
   parseTrackCodeFromSyntheticUrl,
   probeMillicastTrackIsLive,
