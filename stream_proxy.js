@@ -314,7 +314,7 @@ async function handleStreamProxy(req, res, targetUrl) {
     // Caso especial RTN / Robertsstream Dolby Millicast (1-a-N WebRTC -> fMP4 en servidor EE.UU.)
     const millicastCode = parseTrackCodeFromSyntheticUrl(targetUrl);
     if (millicastCode) {
-      if (!isBandwidthWithinLimits()) {
+      if (!isBandwidthWithinLimits().allowed) {
         res.writeHead(429, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
         return res.end('BANDWIDTH_LIMIT_REACHED');
       }

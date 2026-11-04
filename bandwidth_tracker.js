@@ -32,9 +32,9 @@ let state = {
   dayKey: initialKeys.dayKey,
   monthBytes: 21 * BYTES_PER_GB,
   todayBytes: 0,
-  dailyLimitGb: 12,     // Tope de seguridad diario por defecto: 12 GB/día ($1.80/día)
-  monthlyLimitGb: 150,  // Tope de seguridad mensual por defecto: 150 GB/mes (~$21.75/mes)
-  capEnabled: true,
+  dailyLimitGb: 200,    // Tope de seguridad diario en Railway: 200 GB/día
+  monthlyLimitGb: 5000, // Tope de seguridad mensual en Railway: 5000 GB/mes
+  capEnabled: false,
   perDeviceTodayBytes: {},
   perDeviceMonthBytes: {},
   dailyHistory: {},
@@ -125,10 +125,12 @@ async function initBandwidthTracker() {
 
 function recordBytesSent(bytes, deviceId = 'unknown') {
   if (!bytes || bytes <= 0) return;
+  const devKey = String(deviceId || 'unknown').slice(0, 40);
+  // Ignorar tráfico interno de loopback (127.0.0.1 -> Compositor FFmpeg) que no consume ancho de banda externo
+  if (devKey.startsWith('INTERNAL')) return;
   rotateCountersIfNeeded();
   state.todayBytes += bytes;
   state.monthBytes += bytes;
-  const devKey = String(deviceId || 'unknown').slice(0, 40);
   state.perDeviceTodayBytes[devKey] = (state.perDeviceTodayBytes[devKey] || 0) + bytes;
   state.perDeviceMonthBytes[devKey] = (state.perDeviceMonthBytes[devKey] || 0) + bytes;
   dirtySinceLastSync = true;

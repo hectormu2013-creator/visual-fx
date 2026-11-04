@@ -537,7 +537,7 @@ async function startMillicastHubUpstream(hub) {
             currentMoof = null;
             hub.latestFragment = fragment;
 
-            if (!isBandwidthWithinLimits()) {
+            if (!isBandwidthWithinLimits().allowed) {
               for (const client of hub.clients) {
                 try { client.res.end(); } catch (e) {}
               }
