@@ -427,8 +427,13 @@ async function fetchRtnLiveStreams(existingPublicStreams = {}) {
 
       const trackId = meta.id;
 
-      // Si el hipódromo ya tiene señal pública HLS gratuita activa, NO tocar RTN para ese hipódromo
-      if (existingPublicStreams && existingPublicStreams[trackId] && existingPublicStreams[trackId].onAir) {
+      // Si el hipódromo ya tiene señal pública HLS gratuita directa activa (no iframe), NO tocar RTN para ese hipódromo
+      if (
+        existingPublicStreams &&
+        existingPublicStreams[trackId] &&
+        existingPublicStreams[trackId].onAir &&
+        existingPublicStreams[trackId].type !== 'iframe'
+      ) {
         continue;
       }
 

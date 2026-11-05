@@ -639,11 +639,12 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
       for (let i = 0; i < 4; i++) {
         if (warmResults[i] && inputCandidates[i].localStreamUrl) {
           ffArgs.push(
+            '-threads', '1',
             '-fflags', '+nobuffer+discardcorrupt+genpts',
             '-flags', 'low_delay',
             '-probesize', '65536',
             '-analyzeduration', '500000',
-            '-thread_queue_size', '512',
+            '-thread_queue_size', '128',
             '-reconnect', '1',
             '-reconnect_streamed', '1',
             '-reconnect_delay_max', '4',
@@ -651,30 +652,31 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
             '-i', inputCandidates[i].localStreamUrl
           );
         } else {
-          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=15');
+          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=12');
         }
       }
 
       ffArgs.push(
         '-filter_complex',
-        '[0:v]scale=426:240,fps=15,setsar=1[v0];' +
-        '[1:v]scale=426:240,fps=15,setsar=1[v1];' +
-        '[2:v]scale=426:240,fps=15,setsar=1[v2];' +
-        '[3:v]scale=426:240,fps=15,setsar=1[v3];' +
+        '[0:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v0];' +
+        '[1:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v1];' +
+        '[2:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v2];' +
+        '[3:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v3];' +
         '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
         '-map', '[v]',
         '-an',
+        '-threads', '1',
         '-c:v', 'libx264',
         '-preset', 'ultrafast',
         '-tune', 'zerolatency',
         '-profile:v', 'baseline',
         '-level', '3.0',
         '-pix_fmt', 'yuv420p',
-        '-b:v', '800k',
-        '-maxrate', '950k',
-        '-bufsize', '1600k',
-        '-g', '15',
-        '-keyint_min', '15',
+        '-crf', '28',
+        '-maxrate', '450k',
+        '-bufsize', '900k',
+        '-g', '24',
+        '-keyint_min', '24',
         '-sc_threshold', '0',
         '-f', 'mp4',
         '-movflags', 'frag_keyframe+empty_moov+default_base_moof',

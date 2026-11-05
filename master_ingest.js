@@ -37,8 +37,8 @@ async function syncRtnStreams(channelsCatalog, forceManual = false) {
       ? await fetchRtnLiveStreams({ ...publicStreams, ...firstTvStreams })
       : {};
 
-    // Combinar señales activas verificadas
-    const combinedStreams = { ...bridgeStreams, ...firstTvStreams, ...publicStreams };
+    // Combinar señales activas verificadas (RTN y 1/ST TV tienen prioridad de flujo directo sobre iframes públicos)
+    const combinedStreams = { ...publicStreams, ...firstTvStreams, ...bridgeStreams };
 
     // 2. Resetear el estado onAir y URL previa de los canales sin actividad hoy salvo los fijados manualmente
     channelsCatalog.forEach(c => {
