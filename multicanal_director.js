@@ -595,11 +595,11 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         if (reqObj) {
           setTimeout(() => {
             try { reqObj.destroy(); } catch (e) {}
-          }, 1500);
+          }, 4000);
         }
         resolve(ok);
       };
-      const timer = setTimeout(() => done(false, reqObj), 5200);
+      const timer = setTimeout(() => done(false, reqObj), 6500);
       const reqObj = http.get(localStreamUrl, (upRes) => {
         if (upRes.statusCode !== 200) {
           upRes.resume();
@@ -642,9 +642,9 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
             '-threads', '1',
             '-fflags', '+nobuffer+discardcorrupt+genpts',
             '-flags', 'low_delay',
-            '-probesize', '65536',
-            '-analyzeduration', '500000',
-            '-thread_queue_size', '128',
+            '-probesize', '1500000',
+            '-analyzeduration', '2500000',
+            '-thread_queue_size', '256',
             '-reconnect', '1',
             '-reconnect_streamed', '1',
             '-reconnect_delay_max', '4',
@@ -652,32 +652,33 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
             '-i', inputCandidates[i].localStreamUrl
           );
         } else {
-          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=12');
+          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=15');
         }
       }
 
       ffArgs.push(
         '-filter_complex',
-        '[0:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v0];' +
-        '[1:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v1];' +
-        '[2:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v2];' +
-        '[3:v]scale=426:240:flags=fast_bilinear,fps=12,setsar=1[v3];' +
+        '[0:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v0];' +
+        '[1:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v1];' +
+        '[2:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v2];' +
+        '[3:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v3];' +
         '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
         '-map', '[v]',
         '-an',
-        '-threads', '1',
+        '-threads', '2',
         '-c:v', 'libx264',
         '-preset', 'ultrafast',
         '-tune', 'zerolatency',
         '-profile:v', 'baseline',
         '-level', '3.0',
         '-pix_fmt', 'yuv420p',
-        '-crf', '28',
-        '-maxrate', '450k',
-        '-bufsize', '900k',
-        '-g', '24',
-        '-keyint_min', '24',
+        '-crf', '27',
+        '-maxrate', '520k',
+        '-bufsize', '1040k',
+        '-g', '15',
+        '-keyint_min', '15',
         '-sc_threshold', '0',
+        '-flush_packets', '1',
         '-f', 'mp4',
         '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
         'pipe:1'
@@ -691,11 +692,20 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
       let moovBox = null;
       let currentMoof = null;
 
-      const cleanup = () => {
+      const cleanup = (closeClients = false) => {
         hub.running = false;
+        hub.initSegment = null;
+        hub.latestFragment = null;
         if (hub.ffmpegProc) {
-          try { hub.ffmpegProc.kill('SIGKILL'); } catch (e) {}
+          const proc = hub.ffmpegProc;
           hub.ffmpegProc = null;
+          try { proc.kill('SIGKILL'); } catch (e) {}
+        }
+        if (closeClients && hub.clients && hub.clients.size > 0) {
+          for (const c of Array.from(hub.clients)) {
+            try { c.res.end(); } catch (e) {}
+          }
+          hub.clients.clear();
         }
       };
       hub.cleanup = cleanup;
@@ -755,7 +765,8 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
       });
 
       ffProc.on('close', () => {
-        cleanup();
+        if (hub.ffmpegProc !== ffProc) return;
+        cleanup(true);
       });
     })();
   }

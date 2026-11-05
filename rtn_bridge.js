@@ -22,8 +22,8 @@ const ROBERTS_TOKEN_TTL_MS = 18 * 60 * 1000;
 const TRACK_LIST_TTL_MS = 18 * 60 * 1000;
 const LIVE_STATUS_TTL_MS = 18 * 60 * 1000;
 const OFFAIR_STATUS_TTL_MS = 6 * 60 * 1000;
-const MAX_NEW_FETCHES_PER_CYCLE = 6;
-const MAX_SIMULTANEOUS_RTN_TRACKS = 6;
+const MAX_NEW_FETCHES_PER_CYCLE = 8;
+const MAX_SIMULTANEOUS_RTN_TRACKS = 8;
 
 let cachedCookieHeader = null;
 let cachedCookieTimestamp = 0;

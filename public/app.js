@@ -254,8 +254,27 @@ const liveCatchupTimers = { 1: null, 2: null, 3: null, 4: null };
 
 function startLiveEdgeCatchup(cellNum, video, isUltraLowLatencyMp4 = false) {
   stopLiveEdgeCatchup(cellNum);
+  video._lastProgressTime = -1;
+  video._stallTicks = 0;
   liveCatchupTimers[cellNum] = setInterval(() => {
-    if (!video || video._destroyed || !video.isConnected || video.paused || !video.buffered || video.buffered.length === 0) return;
+    if (!video || video._destroyed || video._pausedByHidden || !video.isConnected) return;
+    if (isUltraLowLatencyMp4) {
+      const curT = video.currentTime || 0;
+      if (curT > 0 && Math.abs(curT - video._lastProgressTime) < 0.04) {
+        video._stallTicks = (video._stallTicks || 0) + 1;
+        if (video._stallTicks >= 2 && video._primaryUrl) {
+          video._stallTicks = 0;
+          console.warn(`[Watchdog fMP4] Señal congelada en celda ${cellNum}, reconectando automáticamente...`);
+          video.src = `${video._primaryUrl}&_t=${Date.now()}`;
+          video.play().catch(() => {});
+          return;
+        }
+      } else {
+        video._lastProgressTime = curT;
+        video._stallTicks = 0;
+      }
+    }
+    if (video.paused || !video.buffered || video.buffered.length === 0) return;
     try {
       const liveEdge = video.buffered.end(video.buffered.length - 1);
       const lag = liveEdge - video.currentTime;
@@ -2068,11 +2087,10 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
     video.src = primaryUrl;
     const hideLoader = () => { if (loader) loader.style.display = 'none'; };
     video.addEventListener('loadeddata', hideLoader, { once: true });
-    video.addEventListener('playing', hideLoader, { once: true });
+    video.addEventListener('playing', hideLoader);
     startLiveEdgeCatchup(cellNum, video, true);
-    video.onerror = () => {
+    const scheduleReconnect = (delayMs = 1800) => {
       if (video._destroyed || video._pausedByHidden || !video.isConnected || document.getElementById(`video-${cellNum}`) !== video) return;
-      console.warn(`[1/ST Direct MP4] Reconectando señal en celda ${cellNum}...`);
       if (video._reconnectTimer) clearTimeout(video._reconnectTimer);
       video._reconnectTimer = setTimeout(() => {
         if (video._destroyed || video._pausedByHidden || !video.isConnected || document.getElementById(`video-${cellNum}`) !== video) return;
@@ -2080,8 +2098,10 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
           video.src = `${primaryUrl}&_t=${Date.now()}`;
           video.play().catch(() => {});
         }
-      }, 3000);
+      }, delayMs);
     };
+    video.onerror = () => scheduleReconnect(2000);
+    video.onended = () => scheduleReconnect(1200);
     video.muted = (cellNum !== activeAudioCell);
     video.play().catch(e => console.log('Auto-play defer:', e));
     return;

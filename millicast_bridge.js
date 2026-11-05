@@ -101,7 +101,10 @@ async function ensureFreshSubscriberToken(trackCode, forceRefresh = false) {
   };
 
   try {
-    if (entry.liveUrl) {
+    if (entry.liveUrl && typeof entry.liveUrl === 'object' && entry.liveUrl.liveUrl) {
+      entry.liveUrl = entry.liveUrl.liveUrl;
+    }
+    if (typeof entry.liveUrl === 'string' && entry.liveUrl.startsWith('http')) {
       const res = await fetch(entry.liveUrl, {
         headers: {
           'User-Agent': BROWSER_UA,
@@ -119,12 +122,14 @@ async function ensureFreshSubscriberToken(trackCode, forceRefresh = false) {
 
     // Si streamlive.php devolvió 401 (firma t= vencida) o no tenía token, refrescar la URL firmada en RTN
     const lastRef = lastLiveUrlRefreshAt.get(code) || 0;
-    if (urlRefresherFn && (Date.now() - lastRef) > 90 * 1000) {
+    if (urlRefresherFn && (Date.now() - lastRef) > 45 * 1000) {
       lastLiveUrlRefreshAt.set(code, Date.now());
-      const freshLiveUrl = await urlRefresherFn(code);
-      if (freshLiveUrl) {
+      const refreshed = await urlRefresherFn(code);
+      const freshLiveUrl = (refreshed && typeof refreshed === 'object') ? refreshed.liveUrl : refreshed;
+      if (typeof freshLiveUrl === 'string' && freshLiveUrl.startsWith('http')) {
         entry = millicastTrackRegistry.get(code) || entry;
         entry.liveUrl = freshLiveUrl;
+        if (refreshed && refreshed.refererUrl) entry.referer = refreshed.refererUrl;
         const res2 = await fetch(freshLiveUrl, {
           headers: {
             'User-Agent': BROWSER_UA,
@@ -343,12 +348,11 @@ function bindSocketRandomPort(sock) {
   });
 }
 
-const MAX_CONCURRENT_MILLICAST_HUBS = 6;
+const MAX_CONCURRENT_MILLICAST_HUBS = 8;
 
 /**
  * Inicia el Hub compartido 1-a-N para un hipódromo en Millicast:
  * 1 sola conexión WebRTC desde Railway EE.UU. -> RTP local -> ffmpeg (-c:v copy) -> fMP4 en RAM -> N televisores.
- * Punto de equilibrio humano (Quad-View 4 en 1): hasta 4 streams simultáneos contra Millicast/RTN desde 1 sola IP de EE.UU.
  */
 async function startMillicastHubUpstream(hub) {
   if (hub.connecting || hub.running) return;
@@ -361,42 +365,62 @@ async function startMillicastHubUpstream(hub) {
     const victim = activeOthers[0];
     if (victim && victim.cleanupUpstream) {
       recordMillicastDiag(victim.trackCode, 'HUB_CAP_EVICT', `Liberando cupo para ${hub.trackCode} (máx ${MAX_CONCURRENT_MILLICAST_HUBS} simultáneos)`);
-      victim.cleanupUpstream();
-      victim.initSegment = null;
-      victim.latestFragment = null;
+      victim.cleanupUpstream(true);
     }
   }
 
   hub.connecting = true;
   hub.startedAt = Date.now();
+  hub.lastRtpAt = Date.now();
   const code = hub.trackCode;
 
-  const cleanupUpstream = () => {
+  const cleanupUpstream = (closeClients = false) => {
     hub.connecting = false;
     hub.running = false;
+    hub.initSegment = null;
+    hub.latestFragment = null;
     if (hub.pliInterval) {
       clearInterval(hub.pliInterval);
       hub.pliInterval = null;
     }
+    if (hub.fastPliInterval) {
+      clearInterval(hub.fastPliInterval);
+      hub.fastPliInterval = null;
+    }
+    if (hub.watchdogInterval) {
+      clearInterval(hub.watchdogInterval);
+      hub.watchdogInterval = null;
+    }
     if (hub.ffmpegProc) {
-      try { hub.ffmpegProc.kill('SIGKILL'); } catch (e) {}
+      const proc = hub.ffmpegProc;
       hub.ffmpegProc = null;
+      try { proc.kill('SIGKILL'); } catch (e) {}
     }
     if (hub.ws) {
-      try { hub.ws.close(); } catch (e) {}
+      const w = hub.ws;
       hub.ws = null;
+      try { w.close(); } catch (e) {}
     }
     if (hub.pc) {
-      try { hub.pc.close(); } catch (e) {}
+      const p = hub.pc;
       hub.pc = null;
+      try { p.close(); } catch (e) {}
     }
     if (hub.udpSocket) {
-      try { hub.udpSocket.close(); } catch (e) {}
+      const u = hub.udpSocket;
       hub.udpSocket = null;
+      try { u.close(); } catch (e) {}
     }
     if (hub.sdpPath) {
-      try { fs.unlinkSync(hub.sdpPath); } catch (e) {}
+      const sp = hub.sdpPath;
       hub.sdpPath = null;
+      try { fs.unlinkSync(sp); } catch (e) {}
+    }
+    if (closeClients && hub.clients && hub.clients.size > 0) {
+      for (const c of Array.from(hub.clients)) {
+        try { c.res.end(); } catch (e) {}
+      }
+      hub.clients.clear();
     }
   };
 
@@ -425,8 +449,6 @@ async function startMillicastHubUpstream(hub) {
     const aSocket = dgram.createSocket('udp4');
     const vPort = await bindSocketRandomPort(vSocket);
     const aPort = await bindSocketRandomPort(aSocket);
-    const vRtcpPort = vPort + 1;
-    const aRtcpPort = aPort + 1;
     // Liberar los puertos de prueba para que ffmpeg pueda hacer bind a vPort y aPort
     await new Promise(r => vSocket.close(r));
     await new Promise(r => aSocket.close(r));
@@ -440,6 +462,8 @@ async function startMillicastHubUpstream(hub) {
 
     let videoSsrc = null;
     let ffmpegStarted = false;
+    let hasSeenVideoKeyframe = false;
+    let firstVideoRtpAt = 0;
 
     const startFfmpegProcess = (spropParameterSets = '') => {
       if (ffmpegStarted || !hub.pc) return;
@@ -473,8 +497,8 @@ async function startMillicastHubUpstream(hub) {
         '-protocol_whitelist', 'file,udp,rtp,crypto,data',
         '-fflags', '+nobuffer+genpts+igndts+discardcorrupt',
         '-flags', 'low_delay',
-        '-analyzeduration', '1500000',
-        '-probesize', '262144',
+        '-analyzeduration', '5000000',
+        '-probesize', '4000000',
         '-i', sdpPath,
         '-map', '0:v:0',
         '-map', '0:a:0?',
@@ -484,6 +508,7 @@ async function startMillicastHubUpstream(hub) {
         '-b:a', '48k',
         '-ar', '44100',
         '-ac', '1',
+        '-flush_packets', '1',
         '-f', 'mp4',
         '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
         'pipe:1'
@@ -493,6 +518,17 @@ async function startMillicastHubUpstream(hub) {
       hub.ffmpegProc = ffProc;
       hub.running = true;
       hub.connecting = false;
+      hub.lastFragmentAt = Date.now();
+
+      hub.watchdogInterval = setInterval(() => {
+        const now = Date.now();
+        const rtpSilence = now - (hub.lastRtpAt || now);
+        const fragSilence = now - (hub.lastFragmentAt || now);
+        if (rtpSilence > 10000 || fragSilence > 12000) {
+          recordMillicastDiag(code, 'HUB_WATCHDOG_RESTART', `rtpSilence=${rtpSilence}ms,fragSilence=${fragSilence}ms`);
+          cleanupUpstream(true);
+        }
+      }, 4000);
 
       let pendingBuf = Buffer.alloc(0);
       let ftypBox = null;
@@ -501,6 +537,7 @@ async function startMillicastHubUpstream(hub) {
 
       ffProc.stdout.on('data', (chunk) => {
         hub.lastRtpAt = Date.now();
+        hub.lastFragmentAt = Date.now();
         pendingBuf = Buffer.concat([pendingBuf, chunk]);
 
         while (pendingBuf.length >= 8) {
@@ -540,11 +577,7 @@ async function startMillicastHubUpstream(hub) {
             hub.latestFragment = fragment;
 
             if (!isBandwidthWithinLimits().allowed) {
-              for (const client of hub.clients) {
-                try { client.res.end(); } catch (e) {}
-              }
-              hub.clients.clear();
-              cleanupUpstream();
+              cleanupUpstream(true);
               return;
             }
 
@@ -577,11 +610,9 @@ async function startMillicastHubUpstream(hub) {
       });
 
       ffProc.on('close', (exitCode) => {
+        if (hub.ffmpegProc !== ffProc) return;
         recordMillicastDiag(code, 'FFMPEG_EXIT', `code=${exitCode}`);
-        cleanupUpstream();
-        if (hub.clients.size > 0) {
-          setTimeout(() => startMillicastHubUpstream(hub), 2000);
-        }
+        cleanupUpstream(true);
       });
     };
 
@@ -594,6 +625,7 @@ async function startMillicastHubUpstream(hub) {
         videoSsrc = rtp.header.ssrc;
       }
       if (!ffmpegStarted) {
+        firstVideoRtpAt = Date.now();
         startFfmpegProcess(answerSprop);
         const requestKeyframe = () => {
           if (videoSsrc && vt && vt.receiver) {
@@ -601,10 +633,38 @@ async function startMillicastHubUpstream(hub) {
           }
         };
         requestKeyframe();
-        setTimeout(requestKeyframe, 250);
-        setTimeout(requestKeyframe, 600);
-        setTimeout(requestKeyframe, 1200);
+        hub.fastPliInterval = setInterval(() => {
+          if (hasSeenVideoKeyframe || !hub.pc) {
+            clearInterval(hub.fastPliInterval);
+            hub.fastPliInterval = null;
+            return;
+          }
+          requestKeyframe();
+        }, 180);
       }
+
+      if (!hasSeenVideoKeyframe) {
+        const b0 = rtp.payload[0];
+        const nalType = b0 & 0x1f;
+        const isKeyframeStart = (
+          nalType === 7 || // SPS
+          nalType === 8 || // PPS
+          nalType === 5 || // IDR
+          nalType === 24 || // STAP-A (SPS+PPS en WebRTC)
+          (nalType === 28 && rtp.payload.length > 1 && ((rtp.payload[1] & 0x1f) === 5 || (rtp.payload[1] & 0x1f) === 7))
+        );
+        if (isKeyframeStart || (Date.now() - firstVideoRtpAt) > 1400) {
+          hasSeenVideoKeyframe = true;
+          if (hub.fastPliInterval) {
+            clearInterval(hub.fastPliInterval);
+            hub.fastPliInterval = null;
+          }
+        } else {
+          // Descartar P-frames previos al primer SPS/IDR para que FFmpeg detecte dimensiones en <150ms sin error code=234
+          return;
+        }
+      }
+
       rtp.header.payloadType = 96;
       try {
         const buf = rtp.serialize();
@@ -613,7 +673,7 @@ async function startMillicastHubUpstream(hub) {
     };
 
     const forwardAudioRtp = (rtp) => {
-      if (!hub.pc || !rtp || !rtp.payload || rtp.payload.length === 0 || !ffmpegStarted) return;
+      if (!hub.pc || !rtp || !rtp.payload || rtp.payload.length === 0 || !ffmpegStarted || !hasSeenVideoKeyframe) return;
       rtp.header.payloadType = 111;
       try {
         const buf = rtp.serialize();
@@ -676,25 +736,23 @@ async function startMillicastHubUpstream(hub) {
             if (videoSsrc && vt && vt.receiver) {
               try { vt.receiver.sendRtcpPLI(videoSsrc); } catch (e) {}
             }
-          }, 2500);
+          }, 1800);
         }
       } catch (e) {}
     });
 
     ws.on('close', () => {
-      cleanupUpstream();
-      if (hub.clients.size > 0) {
-        setTimeout(() => startMillicastHubUpstream(hub), 2500);
-      }
+      if (hub.ws !== ws) return;
+      cleanupUpstream(true);
     });
 
     ws.on('error', (err) => {
       recordMillicastDiag(code, 'HUB_WS_ERR', err.message);
-      cleanupUpstream();
+      cleanupUpstream(true);
     });
   } catch (err) {
     recordMillicastDiag(code, 'HUB_START_ERR', err.message);
-    cleanupUpstream();
+    cleanupUpstream(true);
   }
 }
 
