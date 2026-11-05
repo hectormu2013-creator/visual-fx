@@ -462,12 +462,16 @@ async function startMillicastHubUpstream(hub) {
 
     let videoSsrc = null;
     let ffmpegStarted = false;
+    let ffmpegStartedAt = 0;
     let hasSeenVideoKeyframe = false;
     let firstVideoRtpAt = 0;
+    let lastSpsRtpBuf = null;
+    let lastPpsRtpBuf = null;
 
     const startFfmpegProcess = (spropParameterSets = '') => {
       if (ffmpegStarted || !hub.pc) return;
       ffmpegStarted = true;
+      ffmpegStartedAt = Date.now();
 
       const fmtpLine = spropParameterSets
         ? `a=fmtp:96 packetization-mode=1;profile-level-id=42e01f;sprop-parameter-sets=${spropParameterSets}\r\n`
@@ -481,6 +485,7 @@ async function startMillicastHubUpstream(hub) {
         't=0 0',
         `m=video ${vPort} RTP/AVP 96`,
         'a=rtpmap:96 H264/90000',
+        'a=framerate:30',
         fmtpLine.trim(),
         `m=audio ${aPort} RTP/AVP 111`,
         'a=rtpmap:111 opus/48000/2',
@@ -497,8 +502,9 @@ async function startMillicastHubUpstream(hub) {
         '-protocol_whitelist', 'file,udp,rtp,crypto,data',
         '-fflags', '+nobuffer+genpts+igndts+discardcorrupt',
         '-flags', 'low_delay',
-        '-analyzeduration', '5000000',
-        '-probesize', '4000000',
+        '-fpsprobesize', '0',
+        '-analyzeduration', '1800000',
+        '-probesize', '1500000',
         '-i', sdpPath,
         '-map', '0:v:0',
         '-map', '0:a:0?',
@@ -624,7 +630,7 @@ async function startMillicastHubUpstream(hub) {
       if (!videoSsrc && rtp.header && rtp.header.ssrc) {
         videoSsrc = rtp.header.ssrc;
       }
-      if (!ffmpegStarted) {
+      if (!firstVideoRtpAt) {
         firstVideoRtpAt = Date.now();
         startFfmpegProcess(answerSprop);
         const requestKeyframe = () => {
@@ -640,32 +646,47 @@ async function startMillicastHubUpstream(hub) {
             return;
           }
           requestKeyframe();
-        }, 180);
+        }, 160);
       }
 
+      rtp.header.payloadType = 96;
+      const b0 = rtp.payload[0];
+      const nalType = b0 & 0x1f;
+
+      if (nalType === 7 || nalType === 24) {
+        try { lastSpsRtpBuf = rtp.serialize(); } catch (e) {}
+      } else if (nalType === 8) {
+        try { lastPpsRtpBuf = rtp.serialize(); } catch (e) {}
+      }
+
+      // Esperar ~140ms tras spawn(ffmpeg) para que el puerto UDP esté enlazado y tengamos SPS (nalType 7 o STAP-A 24)
+      const ffmpegReady = ffmpegStarted && (Date.now() - ffmpegStartedAt) >= 140;
+
       if (!hasSeenVideoKeyframe) {
-        const b0 = rtp.payload[0];
-        const nalType = b0 & 0x1f;
-        const isKeyframeStart = (
-          nalType === 7 || // SPS
-          nalType === 8 || // PPS
-          nalType === 5 || // IDR
-          nalType === 24 || // STAP-A (SPS+PPS en WebRTC)
-          (nalType === 28 && rtp.payload.length > 1 && ((rtp.payload[1] & 0x1f) === 5 || (rtp.payload[1] & 0x1f) === 7))
+        const isSpsOrStapA = (nalType === 7 || nalType === 24);
+        const isIdrWithCachedSps = Boolean(
+          lastSpsRtpBuf && (
+            nalType === 5 ||
+            (nalType === 28 && rtp.payload.length > 1 && (rtp.payload[1] & 0x80) !== 0 && (rtp.payload[1] & 0x1f) === 5)
+          )
         );
-        if (isKeyframeStart || (Date.now() - firstVideoRtpAt) > 1400) {
+        if (ffmpegReady && (isSpsOrStapA || isIdrWithCachedSps || (Date.now() - firstVideoRtpAt) > 1600)) {
           hasSeenVideoKeyframe = true;
           if (hub.fastPliInterval) {
             clearInterval(hub.fastPliInterval);
             hub.fastPliInterval = null;
           }
+          if (!isSpsOrStapA && lastSpsRtpBuf) {
+            try { udpSocket.send(lastSpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
+            if (lastPpsRtpBuf) {
+              try { udpSocket.send(lastPpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
+            }
+          }
         } else {
-          // Descartar P-frames previos al primer SPS/IDR para que FFmpeg detecte dimensiones en <150ms sin error code=234
           return;
         }
       }
 
-      rtp.header.payloadType = 96;
       try {
         const buf = rtp.serialize();
         udpSocket.send(buf, vPort, '127.0.0.1');
@@ -732,6 +753,7 @@ async function startMillicastHubUpstream(hub) {
           const spropMatch = answerSdp.match(/sprop-parameter-sets=([^\r\n;]+)/i);
           answerSprop = spropMatch ? spropMatch[1] : '';
           await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+          startFfmpegProcess(answerSprop);
           hub.pliInterval = setInterval(() => {
             if (videoSsrc && vt && vt.receiver) {
               try { vt.receiver.sendRtcpPLI(videoSsrc); } catch (e) {}
@@ -814,12 +836,12 @@ function streamMillicastSharedMp4(trackCode, req, res) {
     if (hub.clients.size === 0 && !hub.idleTimer) {
       hub.idleTimer = setTimeout(() => {
         if (hub.clients.size === 0 && hub.cleanupUpstream) {
-          recordMillicastDiag(code, 'HUB_IDLE_STOP', '0 TVs connected, closing Millicast socket');
+          recordMillicastDiag(code, 'HUB_IDLE_STOP', '0 TVs connected for 3m, closing Millicast socket');
           hub.cleanupUpstream();
           hub.initSegment = null;
           hub.latestFragment = null;
         }
-      }, 20000);
+      }, 180000);
     }
   };
 

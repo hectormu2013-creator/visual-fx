@@ -784,7 +784,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
           hub.initSegment = null;
           hub.latestFragment = null;
         }
-      }, 20000);
+      }, 180000);
     }
   };
 
