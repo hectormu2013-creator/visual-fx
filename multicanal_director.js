@@ -630,8 +630,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         inputCandidates.map(c => (c.isDirectVideo && c.localStreamUrl) ? prewarmInput(c.localStreamUrl) : Promise.resolve(false))
       );
 
-      if (!hub.running || hub.clients.size === 0) {
-        hub.running = false;
+      if (!hub.running) {
         return;
       }
 
@@ -642,8 +641,9 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
             '-threads', '1',
             '-fflags', '+nobuffer+discardcorrupt+genpts',
             '-flags', 'low_delay',
-            '-probesize', '1500000',
-            '-analyzeduration', '2500000',
+            '-fpsprobesize', '0',
+            '-probesize', '32768',
+            '-analyzeduration', '100000',
             '-thread_queue_size', '256',
             '-reconnect', '1',
             '-reconnect_streamed', '1',

@@ -753,7 +753,6 @@ async function startMillicastHubUpstream(hub) {
           const spropMatch = answerSdp.match(/sprop-parameter-sets=([^\r\n;]+)/i);
           answerSprop = spropMatch ? spropMatch[1] : '';
           await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
-          startFfmpegProcess(answerSprop);
           hub.pliInterval = setInterval(() => {
             if (videoSsrc && vt && vt.receiver) {
               try { vt.receiver.sendRtcpPLI(videoSsrc); } catch (e) {}
