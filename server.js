@@ -41,6 +41,7 @@ const { syncMulticanalChannels, createOrReuseMulticanal } = require('./multicana
 const { evaluateMulticanalDirector, streamCompositeMulticanalMp4 } = require('./multicanal_director');
 const { initScheduleManager, updateRacingSchedule, getRacingScheduleStatus } = require('./schedule_manager');
 const { initBandwidthTracker, getBandwidthSummary, updateBandwidthLimits } = require('./bandwidth_tracker');
+const { initSelfHealer, runHealthCheckAndHeal } = require('./self_healer');
 const {
   TOP_10_GAMES,
   initLotteryEngine,
@@ -128,6 +129,7 @@ app.get(['/app', '/download/apk', '/visual-fx-tv.apk'], (req, res) => {
 if (!IS_RENDER_LEGACY_HOST) {
   Promise.all([initBandwidthTracker(), initScheduleManager()]).then(() => {
     initMasterIngest(CHANNELS);
+    initSelfHealer(CHANNELS);
   });
   initLotteryEngine();
 } else {
@@ -663,6 +665,26 @@ app.get('/api/admin/first-tv/status', (req, res) => {
     ...getFirstTvStatus(),
     rtn: getRtnStatus()
   });
+});
+
+// Diagnóstico y Auto-Curación Preventiva (Perro Guardián 24/7 + Auditoría Diaria de Agente)
+app.get(['/api/health-check', '/api/admin/health-check'], async (req, res) => {
+  try {
+    const forceHeal = req.query.heal === '1' || req.query.heal === 'true';
+    const report = await runHealthCheckAndHeal(CHANNELS, forceHeal);
+    return res.json({ success: true, ...report });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post(['/api/health-check', '/api/admin/health-check'], async (req, res) => {
+  try {
+    const report = await runHealthCheckAndHeal(CHANNELS, true);
+    return res.json({ success: true, ...report });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/admin/first-tv/cookie', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {

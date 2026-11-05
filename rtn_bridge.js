@@ -672,7 +672,31 @@ setMillicastUrlRefresher(async (trackCode) => {
   }
 });
 
+function purgeRtnTrackCache(forceAll = false) {
+  const now = Date.now();
+  if (forceAll) {
+    robertsUrlCache.clear();
+    rtnTrackStateCache.clear();
+    cachedCandidateTracks = null;
+    cachedCandidateTracksAt = 0;
+    recordRtnDiag('HEALER', 'PURGE_ALL', 'Caché de enlaces y estados reiniciado por Self-Healer');
+    return;
+  }
+  for (const [k, v] of robertsUrlCache.entries()) {
+    if (!v || !v.expiresAt || v.expiresAt <= now) {
+      robertsUrlCache.delete(k);
+    }
+  }
+  for (const [k, v] of rtnTrackStateCache.entries()) {
+    if (!v || !v.onAir) {
+      rtnTrackStateCache.delete(k);
+    }
+  }
+  recordRtnDiag('HEALER', 'PURGE_OFFAIR', 'Pistas fuera de aire limpiadas para re-sondeo inmediato');
+}
+
 module.exports = {
   fetchRtnLiveStreams,
-  getRtnStatus
+  getRtnStatus,
+  purgeRtnTrackCache
 };
