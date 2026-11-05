@@ -57,13 +57,14 @@ async function runHealthCheckAndHeal(channelsCatalog, manualTrigger = false) {
     c => c.onAir && !c.isMulticanal && c.id !== 'capital-otb' && c.id !== 'vsin' && c.id !== 'horse-tv'
   );
 
-  const isPeakRacingWindow = sched.isRacingAllowed && vetMinutesOfDay >= (12 * 60 + 15) && vetMinutesOfDay <= (18 * 60 + 45);
+  const isPeakRacingWindow = sched.isRacingAllowed && vetMinutesOfDay >= (12 * 60 + 30) && vetMinutesOfDay <= (18 * 60 + 45);
 
-  if ((isPeakRacingWindow || manualTrigger) && activeIndividualTracks.length < 2) {
-    // Evitar disparar curaciones seguidas con menos de 3 minutos de diferencia salvo trigger manual
-    if (manualTrigger || (now - lastHealActionAt) > 3 * 60 * 1000) {
+  // Solo intervenir contra RTN si hay CERO (0) hipódromos en vivo en pleno horario pico,
+  // y con un enfriamiento mínimo de 30 minutos para JAMÁS generar sobreuso en la cuenta de RTN.
+  if ((isPeakRacingWindow || manualTrigger) && activeIndividualTracks.length === 0) {
+    if (manualTrigger || (now - lastHealActionAt) > 30 * 60 * 1000) {
       lastHealActionAt = now;
-      purgeRtnTrackCache(activeIndividualTracks.length === 0);
+      purgeRtnTrackCache(false);
       await syncRtnStreams(channelsCatalog, true);
       syncMulticanalChannels(channelsCatalog);
 
@@ -74,11 +75,11 @@ async function runHealthCheckAndHeal(channelsCatalog, manualTrigger = false) {
       recordHealerEvent(
         'LIVE_TRACKS_GUARD',
         afterTracks.length > 0 ? 'HEALED' : 'WARN',
-        `Detectadas pocas señales en vivo (${activeIndividualTracks.length}). Tras auto-curación: ${afterTracks.length} activas (${afterTracks.map(t => t.id).join(', ') || 'ninguna'}).`
+        `Detectadas 0 señales en vivo. Tras auto-curación (máx 1 cada 30m): ${afterTracks.length} activas (${afterTracks.map(t => t.id).join(', ') || 'ninguna'}).`
       );
     }
   } else {
-    // Asegurar que los 3 Multicanales estén siempre sincronizados con las pistas activas
+    // Lectura 100% en memoria RAM local (0 peticiones externas, 0 MB, $0 costo)
     syncMulticanalChannels(channelsCatalog);
   }
 
@@ -107,12 +108,12 @@ async function runHealthCheckAndHeal(channelsCatalog, manualTrigger = false) {
 }
 
 function initSelfHealer(channelsCatalog) {
-  recordHealerEvent('INIT', 'OK', 'Perro Guardián Autónomo 24/7 iniciado (chequeo cada 5 min).');
+  recordHealerEvent('INIT', 'OK', 'Perro Guardián Autónomo iniciado (lectura en RAM cada 20 min, curación máx 1 vez cada 30 min).');
   setInterval(() => {
     runHealthCheckAndHeal(channelsCatalog, false).catch(err => {
       recordHealerEvent('CYCLE_ERR', 'ERROR', err.message);
     });
-  }, 5 * 60 * 1000).unref();
+  }, 20 * 60 * 1000).unref();
 }
 
 module.exports = {
