@@ -200,26 +200,29 @@ function syncMulticanalChannels(channelsCatalog) {
     });
   }
 
-  // Programación oficial diferenciada para los 3 canales Multivisual (con Auto-Director Capital OTB)
-  const mv1Preferred = isMonWed
-    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley']
+  // Programación oficial: SOLO 1 Multivisual automático según el día + el canal Capital OTB
+  const dayLabel = isMonWed ? 'Lun-Mié' : 'Jue-Dom';
+
+  // 1. Único Multicanal listo según el día (Lunes a Miércoles vs. Jueves a Domingo)
+  const multivisualPreferred = isMonWed
+    ? [
+        'parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley',
+        'thistledown', 'mountaineer-park', 'presque-isle', 'turf-paradise'
+      ]
     : [
         ...venTodaySorted.slice(0, 4).map(c => c.id),
-        'gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'tampa-bay-downs', 'parx-racing'
+        'gulfstream-park', 'belmont-park', 'aqueduct-racetrack', 'saratoga',
+        'laurel-park', 'tampa-bay-downs', 'santa-anita-park', 'churchill-downs',
+        'keeneland', 'woodbine', 'del-mar', 'oaklawn-park'
       ];
 
-  const mv2Preferred = isMonWed
-    ? ['horseshoe-indianapolis', 'mountaineer-park', 'thistledown', 'presque-isle', 'turf-paradise', 'zia-park']
-    : [
-        'santa-anita-park', 'woodbine', 'keeneland', 'churchill-downs', 'del-mar', 'oaklawn-park', 'fair-grounds', 'saratoga'
-      ];
-
-  const mv3Preferred = isMonWed
-    ? ['la-rinconada', 'gulfstream-park', 'laurel-park', 'santa-anita-park', 'tampa-bay-downs', 'woodbine']
-    : [
-        ...latamActive.map(c => c.id),
-        'la-rinconada', 'del-mar', 'tampa-bay-downs', 'parx-racing', 'finger-lakes', 'colonial-downs', 'delaware-park'
-      ];
+  // 2. Canal Oficial Capital OTB (Circuito NY / Costa Este / OTB)
+  const capitalOtbPreferred = [
+    ...cotbSorted.slice(0, 4).map(c => c.id),
+    'aqueduct-racetrack', 'belmont-park', 'saratoga', 'finger-lakes',
+    'parx-racing', 'laurel-park', 'gulfstream-park', 'tampa-bay-downs',
+    'horseshoe-indianapolis', 'mahoning-valley', 'woodbine'
+  ];
 
   const generalFallback = [
     ...venTodaySorted.map(c => c.id),
@@ -227,67 +230,29 @@ function syncMulticanalChannels(channelsCatalog) {
     'parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'gulfstream-park', 'laurel-park'
   ];
 
-  // 1. Multivisual1 (Mantiene ID 'capital-otb' para compatibilidad automática con todas las TVs existentes)
+  // Canal 1: Único Multivisual del Día (ID 'multivisual-1')
+  addOfficialMultivisual(
+    'multivisual-1',
+    `Multivisual (${dayLabel})`,
+    '📺',
+    `Multicanal 4 en 1 • Favoritos ${dayLabel}`,
+    multivisualPreferred,
+    generalFallback,
+    `Multivisual ${dayLabel} Auto-Director`
+  );
+
+  // Canal 2: Capital OTB (ID 'capital-otb')
   addOfficialMultivisual(
     'capital-otb',
-    'Multivisual1',
-    '📺',
-    'Multicanal 4 en 1 • Principal USA',
-    mv1Preferred,
+    'Capital OTB',
+    '🏇',
+    'Multicanal 4 en 1 • Circuito OTB NY',
+    capitalOtbPreferred,
     generalFallback,
-    'Multivisual1 Auto-Director'
+    'Capital OTB Auto-Director'
   );
 
-  // 2. Multivisual2
-  addOfficialMultivisual(
-    'multivisual-2',
-    'Multivisual2',
-    '📺',
-    'Multicanal 4 en 1 • Circuito 2 USA',
-    mv2Preferred,
-    generalFallback,
-    'Multivisual2 Auto-Director'
-  );
-
-  // 3. Multivisual3
-  addOfficialMultivisual(
-    'multivisual-3',
-    'Multivisual3',
-    '📺',
-    'Multicanal 4 en 1 • Circuito 3 / Mixto',
-    mv3Preferred,
-    generalFallback,
-    'Multivisual3 Auto-Director'
-  );
-
-  // Agregar también los Multicanales personalizados creados por agencias (si sus pistas siguen activas)
-  for (const [customId, customDef] of customMulticanalesMap.entries()) {
-    const validIds = customDef.tracks.filter(tid => catalogMap.has(tid));
-    if (validIds.length >= 2) {
-      const summary = buildSummaryText(validIds, catalogMap);
-      const streamUrl = `/capital-otb.html?tracks=${encodeURIComponent(validIds.join(','))}&title=${encodeURIComponent(customDef.name)}`;
-      presets.push({
-        id: customId,
-        name: customDef.name,
-        flag: '📺',
-        location: 'Multicanal 4 en 1 • Creado por Agencia',
-        type: 'iframe',
-        isMulticanal: true,
-        isPresetMulticanal: false,
-        multicanalTracks: validIds,
-        multicanalSummary: summary,
-        streamUrl,
-        iframeUrl: streamUrl,
-        onAir: true,
-        activeToday: true,
-        officialSource: 'Multicanal Personalizado Fénix',
-        statusText: `4 en 1: ${summary}`,
-        nextRace: `Incluye: ${summary}`
-      });
-    }
-  }
-
-  // Limpiar del catálogo cualquier multicanal dinámico viejo que ya no esté en presets
+  // Limpiar del catálogo cualquier multicanal viejo (multivisual-2, multivisual-3 o personalizados)
   const activePresetIds = new Set(presets.map(p => p.id));
   for (let i = channelsCatalog.length - 1; i >= 0; i--) {
     const ch = channelsCatalog[i];
@@ -296,7 +261,7 @@ function syncMulticanalChannels(channelsCatalog) {
     }
   }
 
-  // Insertar o actualizar cada Multicanal en channelsCatalog
+  // Insertar o actualizar los 2 únicos canales multicanal en channelsCatalog
   for (const preset of presets) {
     const existing = channelsCatalog.find(c => c.id === preset.id);
     if (existing) {
@@ -310,69 +275,16 @@ function syncMulticanalChannels(channelsCatalog) {
 }
 
 /**
- * Crea o reutiliza un Multicanal de 4 pistas solicitado por una agencia.
- * Si ya existe un Multicanal con esas mismas 4 pistas, lo reutiliza para no multiplicar combinaciones.
+ * Reutiliza siempre el Multivisual oficial del día (sin crear multicanales personalizados adicionales).
  */
-function createOrReuseMulticanal(channelsCatalog, requestedTracks = [], customTitle = '') {
-  const cleanTracks = [...new Set((requestedTracks || []).map(t => String(t || '').trim()).filter(Boolean))].slice(0, 4);
-  if (cleanTracks.length < 2) {
-    return { success: false, error: 'Seleccione al menos 2 hipódromos (idealmente 4) para armar el Multicanal.' };
-  }
-
-  // Sincronizar primero para tener los presets al día
+function createOrReuseMulticanal(channelsCatalog) {
   syncMulticanalChannels(channelsCatalog);
-
-  const requestedKey = normalizeCombinationKey(cleanTracks);
-  const existingMulti = channelsCatalog.find(
-    c => (c.isMulticanal || c.id === 'capital-otb') && c.onAir && Array.isArray(c.multicanalTracks) && normalizeCombinationKey(c.multicanalTracks) === requestedKey
-  );
-
-  // Si ya existe esa combinación de 4 hipódromos, reutilizarla ( actualizando el orden si la agencia lo pidió en orden específico )
-  if (existingMulti) {
-    const catalogMap = new Map(channelsCatalog.map(c => [c.id, c]));
-    const summary = buildSummaryText(cleanTracks, catalogMap);
-    existingMulti.multicanalTracks = cleanTracks;
-    existingMulti.multicanalSummary = summary;
-    existingMulti.statusText = `4 en 1: ${summary}`;
-    existingMulti.nextRace = `Incluye: ${summary}`;
-    existingMulti.streamUrl = `/capital-otb.html?tracks=${encodeURIComponent(cleanTracks.join(','))}&title=${encodeURIComponent(existingMulti.name)}`;
-    existingMulti.iframeUrl = existingMulti.streamUrl;
-
-    return {
-      success: true,
-      reused: true,
-      channel: existingMulti,
-      message: `Esta combinación ya estaba disponible en "${existingMulti.name}". Se seleccionó automáticamente.`
-    };
-  }
-
-  // Limitar a máximo 8 multicanales personalizados en memoria para mantener la lista limpia
-  if (customMulticanalesMap.size >= 8) {
-    const oldestKey = customMulticanalesMap.keys().next().value;
-    customMulticanalesMap.delete(oldestKey);
-  }
-
-  const num = customCounter++;
-  const id = `multicanal-agencia-${num}`;
-  const name = (customTitle && customTitle.trim())
-    ? `Multicanal • ${customTitle.trim().slice(0, 26)}`
-    : `Multicanal Personalizado #${num}`;
-
-  customMulticanalesMap.set(id, {
-    id,
-    name,
-    tracks: cleanTracks,
-    createdAt: new Date().toISOString()
-  });
-
-  syncMulticanalChannels(channelsCatalog);
-  const created = channelsCatalog.find(c => c.id === id);
-
+  const officialMulti = channelsCatalog.find(c => c.id === 'multivisual-1') || channelsCatalog.find(c => c.id === 'capital-otb');
   return {
     success: true,
-    reused: false,
-    channel: created,
-    message: `Canal "${name}" creado y disponible en la lista para todas las pantallas.`
+    reused: true,
+    channel: officialMulti,
+    message: `Multicanal oficial "${officialMulti ? officialMulti.name : 'Multivisual'}" seleccionado.`
   };
 }
 

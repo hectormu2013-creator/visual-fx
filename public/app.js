@@ -375,9 +375,9 @@ function stopAndDestroyPlayer(cellNum) {
   }
 }
 
-// Cell Assignations
+// Cell Assignations (Bloqueado a 1 sola pantalla principal; el Multicanal del día ya viene armado 4 en 1)
 const cellChannels = {
-  1: "gulfstream-park",
+  1: "multivisual-1",
   2: "santa-anita-park",
   3: "laurel-park",
   4: "aqueduct-racetrack"
@@ -732,11 +732,9 @@ function switchServiceFromSelect(serviceKey) {
 }
 window.switchServiceFromSelect = switchServiceFromSelect;
 
-// Selector Desplegable Vista Rejilla 1, 2, 3, 4 (Requisito 5)
-function switchLayoutGrid(count) {
-  const num = parseInt(count, 10) || 1;
-  console.log(`[Visual-FX] Cambio de vista de cuadrícula a: ${num}`);
-  updateGridView(num);
+// Selector Vista Rejilla: Bloqueado estrictamente a 1 sola pantalla por TV (el Multicanal ya viene armado 4 en 1)
+function switchLayoutGrid() {
+  updateGridView(1);
 }
 window.switchLayoutGrid = switchLayoutGrid;
 
@@ -1646,20 +1644,19 @@ async function loadChannelCatalog() {
     window._catalogHasLoadedOnce = true;
 
     if (isInitialCatalogLoad) {
-      // Auto-asignar hipódromos que estén realmente EN VIVO (onAir === true) si el asignado por defecto está fuera de aire
+      // Auto-asignar el Multicanal oficial del día (multivisual-1) o el primer hipódromo en vivo en la pantalla única
       if (activeChannels.length > 0) {
-        [1, 2, 3, 4].forEach((num, idx) => {
-          const currentId = cellChannels[num];
-          const currentObj = channelCatalog.find(c => c.id === currentId);
-          if (!currentId || !currentObj || !currentObj.onAir) {
-            cellChannels[num] = activeChannels[idx % activeChannels.length].id;
-          }
-        });
+        const currentId = cellChannels[1];
+        const currentObj = channelCatalog.find(c => c.id === currentId);
+        if (!currentId || !currentObj || !currentObj.onAir) {
+          const defaultMulti = activeChannels.find(c => c.id === 'multivisual-1') || activeChannels[0];
+          cellChannels[1] = defaultMulti.id;
+        }
       }
       filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.trim().toLowerCase() : '');
       populateSelectDropdowns();
       if (selectedService === 'hipica') {
-        updateGridView(activeGridMode);
+        updateGridView(1);
       }
     } else {
       // En refrescos periódicos subsecuentes (cada 10 min):
@@ -1779,24 +1776,20 @@ function renderSingleChannelCard(ch) {
     </div>
     ${multiTracksBanner || `<div class="channel-card-loc">📍 ${ch.location || 'Simulcast'} • ${ch.nextRace || (ch.onAir ? 'Transmisión RTN HD' : 'Sin carreras')}</div>`}
     <div class="channel-card-actions">
-      <button class="btn-assign-cell" data-cell="1" data-channel="${ch.id}" title="Transmitir en Pantalla 1">P1</button>
-      <button class="btn-assign-cell" data-cell="2" data-channel="${ch.id}" title="Transmitir en Pantalla 2">P2</button>
-      <button class="btn-assign-cell" data-cell="3" data-channel="${ch.id}" title="Transmitir en Pantalla 3">P3</button>
-      <button class="btn-assign-cell" data-cell="4" data-channel="${ch.id}" title="Transmitir en Pantalla 4">P4</button>
+      <button class="btn-assign-cell" data-cell="1" data-channel="${ch.id}" style="width: 100%; font-weight: 800;" title="Transmitir en Pantalla Principal">▶️ Ver en Pantalla</button>
     </div>
   `;
   
   card.querySelectorAll('.btn-assign-cell').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const targetCell = parseInt(btn.dataset.cell);
       const channelId = btn.dataset.channel;
-      assignChannelToCell(targetCell, channelId);
+      assignChannelToCell(1, channelId);
     });
   });
 
   card.addEventListener('click', () => {
-    assignChannelToCell(focusedCellIndex, ch.id);
+    assignChannelToCell(1, ch.id);
   });
 
   elements.channelListContainer.appendChild(card);
@@ -2190,43 +2183,40 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
   video.muted = (cellNum !== activeAudioCell);
 }
 
-// Grid Layout Matrix Switcher with Aggressive Memory Release
-function updateGridView(gridCount) {
-  activeGridMode = gridCount;
-  elements.gridViewport.setAttribute('data-grid', gridCount);
+// Grid Layout Matrix Switcher: Bloqueado estrictamente a 1 sola pantalla por TV para evitar múltiples flujos simultáneos
+function updateGridView() {
+  const gridCount = 1;
+  activeGridMode = 1;
+  if (elements.gridViewport) {
+    elements.gridViewport.setAttribute('data-grid', '1');
+  }
 
-  // Sincronizar selector desplegable de vistas 1, 2, 3, 4 (Requisito 5)
   const selLayout = document.getElementById('selLayoutGrid');
-  if (selLayout) selLayout.value = String(gridCount);
+  if (selLayout) selLayout.value = '1';
 
   document.querySelectorAll('.layout-btn').forEach(btn => {
-    btn.classList.toggle('active', parseInt(btn.dataset.grid) === gridCount);
+    btn.classList.toggle('active', parseInt(btn.dataset.grid) === 1);
   });
 
   [1, 2, 3, 4].forEach(cellNum => {
     const cell = document.getElementById(`cell-${cellNum}`);
     if (!cell) return;
 
-    if (cellNum <= gridCount) {
+    if (cellNum === 1) {
       cell.style.display = 'flex';
-      assignChannelToCell(cellNum, cellChannels[cellNum]);
+      assignChannelToCell(1, cellChannels[1]);
     } else {
       cell.style.display = 'none';
       stopAndDestroyPlayer(cellNum);
     }
   });
 
-  // Re-aplicar límites de resolución y buffers según la nueva cantidad de pantallas
-  [1, 2, 3, 4].forEach(num => {
-    if (hlsPlayers[num]) {
-      applyResolutionCap(num, hlsPlayers[num], gridCount, currentMaximizedCellNum === num);
-      tuneHlsBuffers(hlsPlayers[num], getEffectiveQualityTier(), gridCount);
-    }
-  });
-
-  if (focusedCellIndex > gridCount) {
-    setFocusedCell(1);
+  if (hlsPlayers[1]) {
+    applyResolutionCap(1, hlsPlayers[1], 1, currentMaximizedCellNum === 1);
+    tuneHlsBuffers(hlsPlayers[1], getEffectiveQualityTier(), 1);
   }
+
+  setFocusedCell(1);
 }
 
 // Handle Background / Visibility Change to Pause Inactive Video Consumption
@@ -9450,7 +9440,7 @@ function handleTvRemoteKey(keyName) {
 
     case '1':
       if (selectedService === 'hipica') {
-        updateGridView(1);
+        window.selectMulticanalForTv('multivisual-1');
       } else if (selectedService === 'loteria') {
         goToLotteryModuleByIndex(0);
       }
@@ -9459,7 +9449,7 @@ function handleTvRemoteKey(keyName) {
 
     case '2':
       if (selectedService === 'hipica') {
-        updateGridView(2);
+        window.selectMulticanalForTv('capital-otb');
       } else if (selectedService === 'loteria') {
         goToLotteryModuleByIndex(1);
       }
@@ -9467,18 +9457,14 @@ function handleTvRemoteKey(keyName) {
       break;
 
     case '3':
-      if (selectedService === 'hipica') {
-        updateGridView(3);
-      } else if (selectedService === 'loteria') {
+      if (selectedService === 'loteria') {
         goToLotteryModuleByIndex(2);
       }
       showHeaderTemporarily(2000);
       break;
 
     case '4':
-      if (selectedService === 'hipica') {
-        updateGridView(4);
-      } else if (selectedService === 'loteria') {
+      if (selectedService === 'loteria') {
         goToLotteryModuleByIndex(3);
       }
       showHeaderTemporarily(2000);
