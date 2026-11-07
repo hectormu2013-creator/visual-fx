@@ -8,8 +8,10 @@ const ffmpegPath = require('ffmpeg-static');
 const {
   recordBytesSent,
   onStreamConnectionOpen,
-  onStreamConnectionClose
+  onStreamConnectionClose,
+  registerExclusiveDeviceStream
 } = require('./bandwidth_tracker');
+const { getRacingScheduleStatus } = require('./schedule_manager');
 
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.19041.4780';
 
@@ -565,6 +567,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
   res.setHeader('Connection', 'keep-alive');
 
   const deviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv-cotb';
+  registerExclusiveDeviceStream(deviceId, res, 'multicanal:composite');
   const clientObj = { res, sentInit: false, deviceId, connCounted: true };
   onStreamConnectionOpen();
 
@@ -658,10 +661,10 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
 
       ffArgs.push(
         '-filter_complex',
-        '[0:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v0];' +
-        '[1:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v1];' +
-        '[2:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v2];' +
-        '[3:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v3];' +
+        '[0:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v0];' +
+        '[1:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v1];' +
+        '[2:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v2];' +
+        '[3:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v3];' +
         '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
         '-map', '[v]',
         '-an',
@@ -672,11 +675,11 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         '-profile:v', 'main',
         '-level', '3.1',
         '-pix_fmt', 'yuv420p',
-        '-crf', '23',
-        '-maxrate', '1150k',
-        '-bufsize', '2300k',
-        '-g', '24',
-        '-keyint_min', '24',
+        '-crf', '24',
+        '-maxrate', '800k',
+        '-bufsize', '1600k',
+        '-g', '20',
+        '-keyint_min', '20',
         '-sc_threshold', '0',
         '-flush_packets', '1',
         '-f', 'mp4',
@@ -743,6 +746,10 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
           } else if (boxType === 'moof') {
             currentMoof = box;
           } else if (boxType === 'mdat' && currentMoof) {
+            if (!getRacingScheduleStatus().isRacingAllowed) {
+              cleanup(true);
+              return;
+            }
             const fragment = Buffer.concat([currentMoof, box]);
             currentMoof = null;
             hub.latestFragment = fragment;

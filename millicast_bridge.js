@@ -18,8 +18,10 @@ const {
   recordBytesSent,
   onStreamConnectionOpen,
   onStreamConnectionClose,
+  registerExclusiveDeviceStream,
   isBandwidthWithinLimits
 } = require('./bandwidth_tracker');
+const { getRacingScheduleStatus } = require('./schedule_manager');
 
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
@@ -582,7 +584,7 @@ async function startMillicastHubUpstream(hub) {
             currentMoof = null;
             hub.latestFragment = fragment;
 
-            if (!isBandwidthWithinLimits().allowed) {
+            if (!isBandwidthWithinLimits().allowed || !getRacingScheduleStatus().isRacingAllowed) {
               cleanupUpstream(true);
               return;
             }
@@ -805,6 +807,7 @@ function streamMillicastSharedMp4(trackCode, req, res) {
   res.setHeader('Connection', 'keep-alive');
 
   const deviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv';
+  registerExclusiveDeviceStream(deviceId, res, `millicast:${code}`);
   const clientObj = { res, sentInit: false, deviceId, connCounted: true };
   onStreamConnectionOpen();
 

@@ -44,6 +44,36 @@ let state = {
 let activeStreamConnections = 0;
 let dirtySinceLastSync = false;
 
+// Candado en Servidor: Máximo 1 flujo de video activo por televisor (deviceId)
+// Si un televisor abre un 2do flujo (o tenía caché viejo de 4 pantallas), el servidor cierra de inmediato el anterior.
+const activeStreamsByDevice = new Map();
+
+function registerExclusiveDeviceStream(deviceId, res, label = 'stream') {
+  const devKey = String(deviceId || '').trim();
+  if (!devKey || devKey === 'tv' || devKey === 'unknown' || devKey.startsWith('INTERNAL')) {
+    return;
+  }
+  const existing = activeStreamsByDevice.get(devKey);
+  if (existing && existing.res && existing.res !== res) {
+    try {
+      if (!existing.res.writableEnded && !existing.res.destroyed) {
+        existing.res.end();
+      }
+    } catch (e) {}
+  }
+  const entry = { res, label, openedAt: Date.now() };
+  activeStreamsByDevice.set(devKey, entry);
+  const cleanup = () => {
+    const cur = activeStreamsByDevice.get(devKey);
+    if (cur === entry) {
+      activeStreamsByDevice.delete(devKey);
+    }
+  };
+  res.once('close', cleanup);
+  res.once('finish', cleanup);
+  res.once('error', cleanup);
+}
+
 function rotateCountersIfNeeded() {
   const { dayKey, monthKey } = getVetDateKeys();
   if (state.monthKey !== monthKey) {
@@ -231,6 +261,7 @@ module.exports = {
   recordBytesSent,
   onStreamConnectionOpen,
   onStreamConnectionClose,
+  registerExclusiveDeviceStream,
   isBandwidthWithinLimits,
   getBandwidthSummary,
   updateBandwidthLimits

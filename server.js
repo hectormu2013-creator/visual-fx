@@ -176,10 +176,16 @@ app.post('/api/auth/login', (req, res) => {
   return res.json(result);
 });
 
+// Versión Oficial del Frontend: Al incrementar este número en cada actualización,
+// todos los televisores conectados cierran su sesión actual en <=15s, salen a la pantalla de inicio (/landing.html)
+// y al volver a entrar descargan obligatoriamente la versión nueva.
+const APP_RELEASE_VERSION = '8.3';
+
 // 2. API Verificación de Dispositivo / TV (Heartbeat & Telemetría)
 app.get('/api/device/verify', (req, res) => {
   const deviceId = req.query.deviceId || req.headers['x-device-id'];
   const activeService = req.query.activeService || 'hipica';
+  const clientAppVer = String(req.query.appVer || '').trim();
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '190.202.10.12';
 
   let decodedUser = null;
@@ -191,8 +197,19 @@ app.get('/api/device/verify', (req, res) => {
   if (token) {
     decodedUser = verifyToken(token);
   }
+
+  // Si el televisor tiene una versión anterior en memoria (no envía appVer=8.3),
+  // expulsarlo a la pantalla de inicio (/landing.html) para que detenga reproductores viejos y cargue la actualización al entrar.
+  if (clientAppVer !== APP_RELEASE_VERSION) {
+    return res.json({
+      status: 'SESSION_KICKED',
+      appVer: APP_RELEASE_VERSION,
+      message: `Nueva actualización del sistema (v${APP_RELEASE_VERSION}) instalada. Inicie sesión nuevamente para cargar las mejoras.`
+    });
+  }
   
   const status = checkDeviceStatus(deviceId, activeService, clientIp, decodedUser);
+  status.appVer = APP_RELEASE_VERSION;
   status.scheduleStatus = getRacingScheduleStatus();
   return res.json(status);
 });

@@ -1124,11 +1124,12 @@ function initDeviceId() {
 
 let devicePollingTimer = null;
 let lastAppliedConfigJson = '';
+const CURRENT_APP_VERSION = '8.3';
 
 // Device Authorization Check with Telemetry Heartbeat & Concurrency Detection
 async function checkDeviceAuthorization() {
   try {
-    let url = `/api/device/verify?deviceId=${currentDeviceId}&activeService=${selectedService}`;
+    let url = `/api/device/verify?deviceId=${currentDeviceId}&activeService=${selectedService}&appVer=${CURRENT_APP_VERSION}`;
     if (currentToken) {
       url += `&token=${encodeURIComponent(currentToken)}`;
     }
@@ -1143,9 +1144,15 @@ async function checkDeviceAuthorization() {
     const lblHw = document.getElementById('lblHardwareDevId');
     if (lblHw) lblHw.textContent = currentDeviceId;
 
-    // Detección de Concurrencia (Sesión expulsada porque se inició en otro dispositivo)
-    if (data.status === 'SESSION_KICKED') {
-      handleConcurrentSessionKicked(data.message || 'Se inició sesión en otro dispositivo. Si no lo autorizó, contacte a su administrador.');
+    // Detección de Nueva Versión o Concurrencia: Salir a la pantalla de inicio (/landing.html) limpiando cachés
+    if (data.status === 'SESSION_KICKED' || (data.appVer && data.appVer !== CURRENT_APP_VERSION)) {
+      if ('caches' in window) {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        } catch (e) {}
+      }
+      handleConcurrentSessionKicked(data.message || 'Nueva actualización disponible. Inicie sesión nuevamente.');
       return;
     }
 

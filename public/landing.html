@@ -1039,8 +1039,14 @@
             sessionStorage.removeItem('visual_fx_session_override');
 
             submitBtn.textContent = '¡Acceso Concedido! Redirigiendo...';
+            if ('caches' in window) {
+              try {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(k => caches.delete(k)));
+              } catch (e) {}
+            }
             setTimeout(() => {
-              window.location.href = '/';
+              window.location.href = '/?_v=' + Date.now();
             }, 300);
           } else {
             errorMsg.textContent = data.message || data.error || 'Credenciales incorrectas. Verifique usuario y contraseña.';

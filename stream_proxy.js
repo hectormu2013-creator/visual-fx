@@ -10,6 +10,7 @@ const {
   recordBytesSent,
   onStreamConnectionOpen,
   onStreamConnectionClose,
+  registerExclusiveDeviceStream,
   isBandwidthWithinLimits
 } = require('./bandwidth_tracker');
 
@@ -38,6 +39,7 @@ function extractRcnHubKey(targetUrl, mp4Line) {
 
 function attachClientToSharedRcnHub(hubKey, mp4Line, req, res) {
   const deviceId = (req.query && req.query.deviceId) || req.headers['x-device-id'] || 'tv';
+  registerExclusiveDeviceStream(deviceId, res, `rcn:${hubKey}`);
   let hub = rcnSharedHubs.get(hubKey);
 
   if (!hub || hub.closed) {
