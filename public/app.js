@@ -160,7 +160,8 @@ function applyResolutionCap(cellNum, hls, gridMode, isMaximized) {
     } else if (gridMode === 2 && !isMaximized) {
       maxAllowedHeight = 480;
     } else {
-      maxAllowedHeight = 480;
+      // Con 1 sola pantalla activa en el Smart TV, permitir 720p HD nítido
+      maxAllowedHeight = 720;
     }
   } else if (effectiveTier === HARDWARE_TIERS.MEDIUM) {
     if (gridMode >= 3 && !isMaximized) {

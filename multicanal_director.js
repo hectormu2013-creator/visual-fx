@@ -652,31 +652,31 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
             '-i', inputCandidates[i].localStreamUrl
           );
         } else {
-          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=426x240:r=15');
+          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=640x360:r=24');
         }
       }
 
       ffArgs.push(
         '-filter_complex',
-        '[0:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v0];' +
-        '[1:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v1];' +
-        '[2:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v2];' +
-        '[3:v]scale=426:240:flags=fast_bilinear,fps=15,setsar=1[v3];' +
+        '[0:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v0];' +
+        '[1:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v1];' +
+        '[2:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v2];' +
+        '[3:v]scale=640:360:flags=bicubic,fps=24,setsar=1[v3];' +
         '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
         '-map', '[v]',
         '-an',
         '-threads', '2',
         '-c:v', 'libx264',
-        '-preset', 'ultrafast',
+        '-preset', 'veryfast',
         '-tune', 'zerolatency',
-        '-profile:v', 'baseline',
-        '-level', '3.0',
+        '-profile:v', 'main',
+        '-level', '3.1',
         '-pix_fmt', 'yuv420p',
-        '-crf', '28',
-        '-maxrate', '400k',
-        '-bufsize', '800k',
-        '-g', '15',
-        '-keyint_min', '15',
+        '-crf', '23',
+        '-maxrate', '1150k',
+        '-bufsize', '2300k',
+        '-g', '24',
+        '-keyint_min', '24',
         '-sc_threshold', '0',
         '-flush_packets', '1',
         '-f', 'mp4',
