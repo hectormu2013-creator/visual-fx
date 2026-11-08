@@ -10,14 +10,30 @@ const HEADERS = {
   'apikey': SUPABASE_KEY,
   'Authorization': `Bearer ${SUPABASE_KEY}`,
   'Content-Type': 'application/json',
-  'Prefer': 'resolution=merge-duplicates'
+  'Prefer': 'resolution=merge-duplicates,return=minimal'
 };
+
+// Caché de firmas en memoria y cortacircuitos para proteger el pool de conexiones de Supabase (Regla Global Anti-Ráfagas)
+const lastSyncedDrawsSignature = new Map();
+const lastSyncedGameSignature = new Map();
+let lotteryCircuitPausedUntil = 0;
+let syncQueuePromise = Promise.resolve();
+
+function isCircuitOpen() {
+  return Date.now() < lotteryCircuitPausedUntil;
+}
+
+function tripCircuit(statusOrMsg) {
+  lotteryCircuitPausedUntil = Date.now() + 3 * 60 * 1000; // Pausa de 3 min ante saturación 5xx/timeout
+  console.warn(`[SupabaseLottery] Cortacircuitos activado por 3 min (${statusOrMsg}).`);
+}
 
 /**
  * Guarda o actualiza un juego en public.lottery_games
  */
 async function syncGameToCloud(game) {
   if (!game || !game.id) return false;
+  if (isCircuitOpen()) return false;
   try {
     const payload = {
       id: game.id,
@@ -33,19 +49,28 @@ async function syncGameToCloud(game) {
       updated_at: new Date().toISOString()
     };
 
+    const sig = JSON.stringify({ ...payload, updated_at: undefined });
+    if (lastSyncedGameSignature.get(game.id) === sig) {
+      return true;
+    }
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/lottery_games`, {
       method: 'POST',
       headers: HEADERS,
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
     });
 
     if (!res.ok) {
+      if (res.status >= 500 || res.status === 429) tripCircuit(`HTTP ${res.status}`);
       const err = await res.text();
       console.warn(`[SupabaseLottery] Error al sincronizar juego "${game.id}":`, res.status, err);
       return false;
     }
+    lastSyncedGameSignature.set(game.id, sig);
     return true;
   } catch (e) {
+    tripCircuit(e.message || 'fetch failed');
     console.warn(`[SupabaseLottery] Excepción sincronizando juego "${game.id}":`, e.message);
     return false;
   }
@@ -53,6 +78,7 @@ async function syncGameToCloud(game) {
 
 /**
  * Guarda o actualiza un lote de sorteos en la tabla correspondiente (Animalitos o Triples)
+ * Con deduplicación en memoria y cola secuencial anti-ráfagas (0 ráfagas contra PostgREST)
  */
 async function syncDrawsToCloud(gameId, drawDate, draws, gameType = 'animalitos') {
   if (!gameId || !drawDate || !Array.isArray(draws) || draws.length === 0) return false;
@@ -87,26 +113,43 @@ async function syncDrawsToCloud(gameId, drawDate, draws, gameType = 'animalitos'
     }
   });
 
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}?on_conflict=game_id,draw_date,draw_time`, {
-      method: 'POST',
-      headers: {
-        ...HEADERS,
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify(rows)
-    });
+  const cacheKey = `${endpoint}|${gameId}|${drawDate}`;
+  const signature = JSON.stringify(rows);
+  if (lastSyncedDrawsSignature.get(cacheKey) === signature) {
+    return true; // Sin cambios reales: 0 peticiones a Supabase
+  }
 
-    if (!res.ok) {
-      const err = await res.text();
-      console.warn(`[SupabaseLottery] Error guardando sorteos en ${endpoint} (${rows.length} rows):`, res.status, err);
+  if (isCircuitOpen()) return false;
+
+  // Encolar secuencialmente con pausa de 1200ms entre juegos para jamás saturar las 10 conexiones de PostgREST
+  syncQueuePromise = syncQueuePromise.then(async () => {
+    if (lastSyncedDrawsSignature.get(cacheKey) === signature) return true;
+    if (isCircuitOpen()) return false;
+    try {
+      await new Promise(r => setTimeout(r, 1200));
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}?on_conflict=game_id,draw_date,draw_time`, {
+        method: 'POST',
+        headers: HEADERS,
+        body: JSON.stringify(rows),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
+      });
+
+      if (!res.ok) {
+        if (res.status >= 500 || res.status === 429) tripCircuit(`HTTP ${res.status}`);
+        const err = await res.text();
+        console.warn(`[SupabaseLottery] Error guardando sorteos en ${endpoint} (${rows.length} rows):`, res.status, err);
+        return false;
+      }
+      lastSyncedDrawsSignature.set(cacheKey, signature);
+      return true;
+    } catch (e) {
+      tripCircuit(e.message || 'fetch failed');
+      console.warn(`[SupabaseLottery] Excepción de red guardando sorteos en ${endpoint}:`, e.message);
       return false;
     }
-    return true;
-  } catch (e) {
-    console.warn(`[SupabaseLottery] Excepción de red guardando sorteos en ${endpoint}:`, e.message);
-    return false;
-  }
+  }).catch(() => false);
+
+  return syncQueuePromise;
 }
 
 /**

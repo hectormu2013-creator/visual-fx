@@ -1,6 +1,6 @@
 // supabase_sync.js - Módulo de Persistencia Permanente en la Nube con Supabase
 // Asegura que las organizaciones clientes, dispositivos y cuentas de TV perduren
-// independientemente de los reinicios o despliegues efímeros de Render.
+// independientemente de los reinicios o despliegues efímeros de Render / Railway.
 
 const fetch = globalThis.fetch || require('node-fetch');
 
@@ -13,6 +13,18 @@ const HEADERS = {
   'Content-Type': 'application/json'
 };
 
+let syncCircuitPausedUntil = 0;
+const lastSavedPayloadByKey = new Map();
+
+function isSyncCircuitOpen() {
+  return Date.now() < syncCircuitPausedUntil;
+}
+
+function tripSyncCircuit(reason) {
+  syncCircuitPausedUntil = Date.now() + 3 * 60 * 1000; // Pausa de 3 min ante saturación 5xx/timeout
+  console.warn(`[SupabaseSync] Cortacircuitos activado por 3 min (${reason}).`);
+}
+
 /**
  * Guarda o actualiza un registro en la tabla visual_fx_store de Supabase.
  * @param {string} key - Clave única (ej. 'clients', 'devices', 'device_accounts', 'system_users')
@@ -20,27 +32,41 @@ const HEADERS = {
  */
 async function saveToCloud(key, data) {
   if (!key || data === undefined) return false;
+  if (isSyncCircuitOpen()) return false;
   try {
-    const url = `${SUPABASE_URL}/rest/v1/visual_fx_store`;
+    const serializedData = JSON.stringify(data);
+    if (serializedData.length > 500000) {
+      console.warn(`[SupabaseSync] Omitiendo guardado de "${key}" por tamaño excesivo (${serializedData.length} bytes).`);
+      return false;
+    }
+    if (lastSavedPayloadByKey.get(key) === serializedData) {
+      return true;
+    }
+
+    const url = `${SUPABASE_URL}/rest/v1/visual_fx_store?on_conflict=key`;
     const res = await fetch(url, {
       method: 'POST',
       headers: {
         ...HEADERS,
-        'Prefer': 'resolution=merge-duplicates'
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
       },
       body: JSON.stringify({
         key,
         data,
         updated_at: new Date().toISOString()
-      })
+      }),
+      signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
     });
     if (!res.ok) {
+      if (res.status >= 500 || res.status === 429) tripSyncCircuit(`HTTP ${res.status}`);
       const errText = await res.text();
       console.warn(`[SupabaseSync] Error al guardar "${key}":`, res.status, errText);
       return false;
     }
+    lastSavedPayloadByKey.set(key, serializedData);
     return true;
   } catch (err) {
+    tripSyncCircuit(err.message || 'fetch failed');
     console.warn(`[SupabaseSync] Excepción de red al guardar "${key}":`, err.message);
     return false;
   }
@@ -52,16 +78,25 @@ async function saveToCloud(key, data) {
  */
 async function loadFromCloud(key) {
   if (!key) return null;
+  if (isSyncCircuitOpen()) return null;
   try {
     const url = `${SUPABASE_URL}/rest/v1/visual_fx_store?key=eq.${encodeURIComponent(key)}&select=data`;
-    const res = await fetch(url, { method: 'GET', headers: HEADERS });
-    if (!res.ok) return null;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: HEADERS,
+      signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
+    });
+    if (!res.ok) {
+      if (res.status >= 500 || res.status === 429) tripSyncCircuit(`HTTP ${res.status}`);
+      return null;
+    }
     const records = await res.json();
     if (Array.isArray(records) && records.length > 0) {
       return records[0].data;
     }
     return null;
   } catch (err) {
+    tripSyncCircuit(err.message || 'fetch failed');
     console.warn(`[SupabaseSync] Error consultando "${key}":`, err.message);
     return null;
   }
@@ -72,10 +107,16 @@ async function loadFromCloud(key) {
  * Devuelve un mapa { [key]: data }
  */
 async function loadAllFromCloud() {
+  if (isSyncCircuitOpen()) return null;
   try {
     const url = `${SUPABASE_URL}/rest/v1/visual_fx_store?select=key,data,updated_at`;
-    const res = await fetch(url, { method: 'GET', headers: HEADERS });
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: HEADERS,
+      signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined
+    });
     if (!res.ok) {
+      if (res.status >= 500 || res.status === 429) tripSyncCircuit(`HTTP ${res.status}`);
       console.warn(`[SupabaseSync] Lectura de la nube falló (HTTP ${res.status}).`);
       return null; // null = error (distinto de nube vacía)
     }
@@ -90,6 +131,7 @@ async function loadAllFromCloud() {
     }
     return map;
   } catch (err) {
+    tripSyncCircuit(err.message || 'fetch failed');
     console.warn('[SupabaseSync] Error cargando todos los registros de la nube:', err.message);
     return null; // null = error (distinto de nube vacía)
   }

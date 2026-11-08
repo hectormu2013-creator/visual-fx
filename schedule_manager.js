@@ -105,7 +105,7 @@ async function initScheduleManager() {
         saveLocalSchedule(currentSchedule);
       }
     } catch (e) {}
-  }, 60000).unref();
+  }, 300000).unref();
 }
 
 async function updateRacingSchedule(newConfig, updatedBy = 'Admin') {

@@ -150,7 +150,7 @@ async function initBandwidthTracker() {
         await syncTrackerToCloud();
       }
     } catch (e) {}
-  }, 45000).unref();
+  }, 300000).unref();
 }
 
 function recordBytesSent(bytes, deviceId = 'unknown') {
