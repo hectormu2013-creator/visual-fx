@@ -103,13 +103,15 @@ async function loadFromCloud(key) {
 }
 
 /**
- * Carga todos los registros almacenados en visual_fx_store.
+ * Carga los registros operativos principales almacenados en visual_fx_store
+ * excluyendo historiales pesados (suite_history_v2, backups) para no saturar PostgREST.
  * Devuelve un mapa { [key]: data }
  */
 async function loadAllFromCloud() {
   if (isSyncCircuitOpen()) return null;
   try {
-    const url = `${SUPABASE_URL}/rest/v1/visual_fx_store?select=key,data,updated_at`;
+    const allowedKeys = 'clients,devices,device_accounts,system_users,racing_schedule,bandwidth_telemetry,rtn_bridge_cache';
+    const url = `${SUPABASE_URL}/rest/v1/visual_fx_store?key=in.(${allowedKeys})&select=key,data,updated_at`;
     const res = await fetch(url, {
       method: 'GET',
       headers: HEADERS,
@@ -126,6 +128,9 @@ async function loadAllFromCloud() {
       records.forEach(r => {
         if (r && r.key) {
           map[r.key] = r.data;
+          try {
+            lastSavedPayloadByKey.set(r.key, JSON.stringify(r.data));
+          } catch (_) {}
         }
       });
     }
