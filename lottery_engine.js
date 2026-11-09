@@ -858,12 +858,26 @@ async function syncAllTop10() {
 }
 
 // Temporizador Inteligente Schedule-Driven (+2 minutos post-sorteo)
+// El programador evalúa cada 30s, pero la regla es por minuto: registramos el último
+// disparo por juego/hora/minuto para no consultar (ni guardar en Supabase) dos veces el mismo minuto.
+const firedScheduleKeys = new Set();
+let firedScheduleDay = '';
+
 function checkScheduledDraws() {
   const currentMinutes = getVenezuelaTimeMinutes();
   const catalog = getLotteryCatalog();
+  const today = getVenezuelaDateString();
+
+  if (firedScheduleDay !== today) {
+    firedScheduleKeys.clear();
+    firedScheduleDay = today;
+  }
 
   for (const game of catalog) {
     const hours = game.hours || [];
+    let shouldSyncGame = false;
+    let triggerLabel = '';
+
     for (const hourStr of hours) {
       const drawMinutes = parseTimeToMinutes(hourStr);
       if (drawMinutes === -1) continue;
@@ -871,7 +885,6 @@ function checkScheduledDraws() {
       // Regla: Primera consulta a los 2 minutos después del sorteo
       // Ventana activa: entre drawMinutes + 2 y drawMinutes + 15
       const targetMin = drawMinutes + 2;
-      const today = getVenezuelaDateString();
       const existingGame = resultsStore[today]?.[game.id];
       const targetDraw = existingGame?.draws?.find(d => parseTimeToMinutes(d.time) === drawMinutes);
 
@@ -879,10 +892,19 @@ function checkScheduledDraws() {
       if ((!targetDraw || targetDraw.isPending) && currentMinutes >= targetMin && currentMinutes <= (drawMinutes + 15)) {
         // Chequear en los minutos pares: T+2, T+4, T+6, T+8, T+10
         if ((currentMinutes - targetMin) % 2 === 0) {
-          console.log(`[LotteryEngine Schedule] Disparo T+${currentMinutes - drawMinutes}m para ${game.name} (${hourStr})`);
-          syncGame(game.id);
+          const fireKey = `${game.id}|${hourStr}|${currentMinutes}`;
+          if (firedScheduleKeys.has(fireKey)) continue; // Ya disparado en este minuto
+          firedScheduleKeys.add(fireKey);
+          shouldSyncGame = true;
+          triggerLabel = `T+${currentMinutes - drawMinutes}m (${hourStr})`;
         }
       }
+    }
+
+    // Un solo syncGame por juego y minuto, aunque haya varios sorteos pendientes
+    if (shouldSyncGame) {
+      console.log(`[LotteryEngine Schedule] Disparo ${triggerLabel} para ${game.name}`);
+      syncGame(game.id);
     }
   }
 }

@@ -18,6 +18,8 @@ const lastSyncedDrawsSignature = new Map();
 const lastSyncedGameSignature = new Map();
 let lotteryCircuitPausedUntil = 0;
 let syncQueuePromise = Promise.resolve();
+// Guardados en cola pendientes por juego/día (evita encolar el mismo juego varias veces)
+const pendingDrawsByKey = new Map();
 
 function isCircuitOpen() {
   return Date.now() < lotteryCircuitPausedUntil;
@@ -121,26 +123,37 @@ async function syncDrawsToCloud(gameId, drawDate, draws, gameType = 'animalitos'
 
   if (isCircuitOpen()) return false;
 
-  // Encolar secuencialmente con pausa de 1200ms entre juegos para jamás saturar las 10 conexiones de PostgREST
+  // Si ya hay un guardado en cola para este juego/día, solo actualizamos el contenido
+  // pendiente (se enviará la versión más reciente) en vez de encolar otra petición.
+  if (pendingDrawsByKey.has(cacheKey)) {
+    pendingDrawsByKey.set(cacheKey, { rows, signature });
+    return true;
+  }
+  pendingDrawsByKey.set(cacheKey, { rows, signature });
+
+  // Encolar secuencialmente con pausa de 1200ms entre juegos para jamás saturar las conexiones de PostgREST
   syncQueuePromise = syncQueuePromise.then(async () => {
-    if (lastSyncedDrawsSignature.get(cacheKey) === signature) return true;
+    const pending = pendingDrawsByKey.get(cacheKey);
+    pendingDrawsByKey.delete(cacheKey);
+    if (!pending) return true;
+    if (lastSyncedDrawsSignature.get(cacheKey) === pending.signature) return true;
     if (isCircuitOpen()) return false;
     try {
       await new Promise(r => setTimeout(r, 1200));
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}?on_conflict=game_id,draw_date,draw_time`, {
         method: 'POST',
         headers: HEADERS,
-        body: JSON.stringify(rows),
-        signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
+        body: JSON.stringify(pending.rows),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined
       });
 
       if (!res.ok) {
         if (res.status >= 500 || res.status === 429) tripCircuit(`HTTP ${res.status}`);
         const err = await res.text();
-        console.warn(`[SupabaseLottery] Error guardando sorteos en ${endpoint} (${rows.length} rows):`, res.status, err);
+        console.warn(`[SupabaseLottery] Error guardando sorteos en ${endpoint} (${pending.rows.length} rows):`, res.status, err);
         return false;
       }
-      lastSyncedDrawsSignature.set(cacheKey, signature);
+      lastSyncedDrawsSignature.set(cacheKey, pending.signature);
       return true;
     } catch (e) {
       tripCircuit(e.message || 'fetch failed');
