@@ -505,8 +505,8 @@ async function startMillicastHubUpstream(hub) {
         '-fflags', '+nobuffer+genpts+igndts+discardcorrupt',
         '-flags', 'low_delay',
         '-fpsprobesize', '0',
-        '-analyzeduration', '1800000',
-        '-probesize', '1500000',
+        '-analyzeduration', '600000',
+        '-probesize', '400000',
         '-i', sdpPath,
         '-map', '0:v:0',
         '-map', '0:a:0?',
@@ -642,13 +642,13 @@ async function startMillicastHubUpstream(hub) {
         };
         requestKeyframe();
         hub.fastPliInterval = setInterval(() => {
-          if (hasSeenVideoKeyframe || !hub.pc) {
+          if (hub.initSegment || !hub.pc) {
             clearInterval(hub.fastPliInterval);
             hub.fastPliInterval = null;
             return;
           }
           requestKeyframe();
-        }, 160);
+        }, 350);
       }
 
       rtp.header.payloadType = 96;
@@ -661,23 +661,17 @@ async function startMillicastHubUpstream(hub) {
         try { lastPpsRtpBuf = rtp.serialize(); } catch (e) {}
       }
 
-      // Esperar ~140ms tras spawn(ffmpeg) para que el puerto UDP esté enlazado y tengamos SPS (nalType 7 o STAP-A 24)
-      const ffmpegReady = ffmpegStarted && (Date.now() - ffmpegStartedAt) >= 140;
+      // Esperar ~250ms tras spawn(ffmpeg) para que el puerto UDP esté enlazado y tengamos SPS (nalType 7 o STAP-A 24)
+      const ffmpegReady = ffmpegStarted && (Date.now() - ffmpegStartedAt) >= 250;
+      const isSpsOrStapA = (nalType === 7 || nalType === 24);
+      const isIdrStart = (
+        nalType === 5 ||
+        (nalType === 28 && rtp.payload.length > 1 && (rtp.payload[1] & 0x80) !== 0 && (rtp.payload[1] & 0x1f) === 5)
+      );
 
       if (!hasSeenVideoKeyframe) {
-        const isSpsOrStapA = (nalType === 7 || nalType === 24);
-        const isIdrWithCachedSps = Boolean(
-          lastSpsRtpBuf && (
-            nalType === 5 ||
-            (nalType === 28 && rtp.payload.length > 1 && (rtp.payload[1] & 0x80) !== 0 && (rtp.payload[1] & 0x1f) === 5)
-          )
-        );
-        if (ffmpegReady && (isSpsOrStapA || isIdrWithCachedSps || (Date.now() - firstVideoRtpAt) > 1600)) {
+        if (ffmpegReady && (isSpsOrStapA || (isIdrStart && lastSpsRtpBuf))) {
           hasSeenVideoKeyframe = true;
-          if (hub.fastPliInterval) {
-            clearInterval(hub.fastPliInterval);
-            hub.fastPliInterval = null;
-          }
           if (!isSpsOrStapA && lastSpsRtpBuf) {
             try { udpSocket.send(lastSpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
             if (lastPpsRtpBuf) {
@@ -686,6 +680,12 @@ async function startMillicastHubUpstream(hub) {
           }
         } else {
           return;
+        }
+      } else if (!hub.initSegment && isIdrStart && lastSpsRtpBuf) {
+        // Re-inyectar SPS/PPS antes de cada IDR hasta que FFmpeg genere ftyp+moov (initSegment)
+        try { udpSocket.send(lastSpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
+        if (lastPpsRtpBuf) {
+          try { udpSocket.send(lastPpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
         }
       }
 

@@ -28,18 +28,18 @@ function resolveFourMulticanalTracks(catalogMap, requestedTrackIds = []) {
 
   const fixedFourIds = [];
 
-  // 1. Primero tomar de requestedTrackIds únicamente los que estén EN VIVO (onAir = true)
-  for (const tid of (requestedTrackIds || [])) {
-    const ch = tid ? catalogMap.get(tid) : null;
+  // 1. Priorizar siempre el orden canónico oficial del día para los hipódromos EN VIVO (garantiza 1 solo Hub FFmpeg compartido)
+  for (const tid of defaultOrder) {
+    const ch = catalogMap.get(tid);
     if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
     if (fixedFourIds.length === 4) return fixedFourIds;
   }
 
-  // 2. Completar con pistas EN VIVO del orden oficial del día
-  for (const tid of defaultOrder) {
-    const ch = catalogMap.get(tid);
+  // 2. Completar con pistas EN VIVO de requestedTrackIds si hubiera alguna adicional
+  for (const tid of (requestedTrackIds || [])) {
+    const ch = tid ? catalogMap.get(tid) : null;
     if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
@@ -54,8 +54,8 @@ function resolveFourMulticanalTracks(catalogMap, requestedTrackIds = []) {
     if (fixedFourIds.length === 4) return fixedFourIds;
   }
 
-  // 4. Solo si hay menos de 4 hipódromos en vivo en total, rellenar con los solicitados u oficiales del día
-  for (const tid of [...(requestedTrackIds || []), ...defaultOrder]) {
+  // 4. Solo si hay menos de 4 hipódromos en vivo en total, rellenar con los oficiales del día
+  for (const tid of [...defaultOrder, ...(requestedTrackIds || [])]) {
     if (tid && catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
@@ -414,11 +414,13 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
       };
     }
     // Caso B: La próxima carrera está dando la partida (45s antes del Post Time hasta que termina la carrera + 1 min)
+    // Se valida que el MTP en vivo de RTN sea <= 1 min para no tomar pantalla completa si la carrera tiene retraso en hipódromo.
     else if (
       nextRace &&
       secFromPost !== null &&
       secFromPost >= -PRE_POST_TAKEOVER_SEC &&
       secFromPost <= (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC) &&
+      (mtpMinutes === null || mtpMinutes <= 1) &&
       ch.onAir
     ) {
       if (secFromPost <= DEFAULT_RACE_RUN_DURATION_SEC) {
@@ -725,7 +727,15 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         const activeHubMap = new Map((diag.activeHubs || []).map(h => [h.trackCode, h]));
         for (let i = 0; i < 4; i++) {
           const cand = inputCandidates[i];
-          if (!cand || !cand.isDirectVideo) continue;
+          if (!cand) continue;
+          const liveCh = catalogMap.get(cand.tid);
+          const nowDirect = Boolean(liveCh && liveCh.onAir && liveCh.type !== 'iframe' && liveCh.streamUrl);
+          if (!cand.isDirectVideo && nowDirect) {
+            console.log(`🔄 [Compositor 4-en-1] Reconectando mosaico (${hubKey}) porque cuadrante ${i + 1} (${cand.tid}) acaba de entrar EN VIVO.`);
+            cleanup(true);
+            return;
+          }
+          if (!cand.isDirectVideo) continue;
           if (!warmResults[i]) {
             console.log(`🔄 [Compositor 4-en-1] Reconectando mosaico (${hubKey}) porque cuadrante ${i + 1} (${cand.tid}) no estuvo listo en frío.`);
             cleanup(true);
