@@ -12,6 +12,58 @@ const {
   registerExclusiveDeviceStream
 } = require('./bandwidth_tracker');
 const { getRacingScheduleStatus } = require('./schedule_manager');
+const { parseTrackCodeFromSyntheticUrl, getMillicastDiagnostics } = require('./millicast_bridge');
+
+const FILLER_24_7_IDS = new Set(['vsin', 'horse-tv', 'sky-racing-1', 'equidia-hd', 'tjk-tv', 'turf-movil']);
+
+/**
+ * Resuelve siempre 4 pistas priorizando estrictamente las que están EN VIVO (onAir = true) ahora mismo.
+ */
+function resolveFourMulticanalTracks(catalogMap, requestedTrackIds = []) {
+  const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
+  const vetDay = vetDate.getUTCDay();
+  const defaultOrder = (vetDay >= 1 && vetDay <= 3)
+    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'zia-park', 'mountaineer-park', 'thistledown', 'turf-paradise', 'presque-isle']
+    : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'santa-anita-park', 'tampa-bay-downs', 'churchill-downs', 'woodbine', 'del-mar', 'parx-racing'];
+
+  const fixedFourIds = [];
+
+  // 1. Primero tomar de requestedTrackIds únicamente los que estén EN VIVO (onAir = true)
+  for (const tid of (requestedTrackIds || [])) {
+    const ch = tid ? catalogMap.get(tid) : null;
+    if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) return fixedFourIds;
+  }
+
+  // 2. Completar con pistas EN VIVO del orden oficial del día
+  for (const tid of defaultOrder) {
+    const ch = catalogMap.get(tid);
+    if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) return fixedFourIds;
+  }
+
+  // 3. Completar con cualquier otra pista individual EN VIVO en el catálogo (ej. Zia Park, Mountaineer, etc.)
+  for (const [tid, ch] of catalogMap.entries()) {
+    if (ch && ch.onAir && !FILLER_24_7_IDS.has(tid) && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) return fixedFourIds;
+  }
+
+  // 4. Solo si hay menos de 4 hipódromos en vivo en total, rellenar con los solicitados u oficiales del día
+  for (const tid of [...(requestedTrackIds || []), ...defaultOrder]) {
+    if (tid && catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) break;
+  }
+
+  return fixedFourIds;
+}
 
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.19041.4780';
 
@@ -297,39 +349,7 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
     }
   }
 
-  // Asegurar las 4 pistas fijas del Multicanal (Lunes a Miércoles: Parx, Finger Lakes, Indiana Grand, Mahoning Valley)
-  const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
-  const vetDay = vetDate.getUTCDay();
-  const defaultOrder = (vetDay >= 1 && vetDay <= 3)
-    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'mountaineer-park', 'thistledown']
-    : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'santa-anita-park', 'tampa-bay-downs', 'parx-racing', 'woodbine'];
-
-  const fixedFourIds = [];
-  for (const tid of requestedTrackIds) {
-    if (tid && catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
-      fixedFourIds.push(tid);
-    }
-    if (fixedFourIds.length === 4) break;
-  }
-
-  // Preferir primero pistas onAir dentro del orden oficial, y completar hasta 4 con las pistas oficiales del día
-  if (fixedFourIds.length < 4) {
-    for (const tid of defaultOrder) {
-      const ch = catalogMap.get(tid);
-      if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
-        fixedFourIds.push(tid);
-      }
-      if (fixedFourIds.length === 4) break;
-    }
-  }
-  if (fixedFourIds.length < 4) {
-    for (const tid of defaultOrder) {
-      if (catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
-        fixedFourIds.push(tid);
-      }
-      if (fixedFourIds.length === 4) break;
-    }
-  }
+  const fixedFourIds = resolveFourMulticanalTracks(catalogMap, requestedTrackIds);
 
   const now = Date.now();
   const quads = [];
@@ -501,32 +521,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
     }
   }
 
-  const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
-  const vetDay = vetDate.getUTCDay();
-  const defaultOrder = (vetDay >= 1 && vetDay <= 3)
-    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'mountaineer-park', 'thistledown']
-    : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'santa-anita-park', 'tampa-bay-downs', 'parx-racing', 'woodbine'];
-
-  const fixedFourIds = [];
-  for (const tid of (requestedTrackIds || [])) {
-    if (tid && catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
-      fixedFourIds.push(tid);
-    }
-    if (fixedFourIds.length === 4) break;
-  }
-  if (fixedFourIds.length < 4) {
-    for (const tid of defaultOrder) {
-      const ch = catalogMap.get(tid);
-      if (ch && ch.onAir && !fixedFourIds.includes(tid)) fixedFourIds.push(tid);
-      if (fixedFourIds.length === 4) break;
-    }
-  }
-  if (fixedFourIds.length < 4) {
-    for (const tid of defaultOrder) {
-      if (catalogMap.has(tid) && !fixedFourIds.includes(tid)) fixedFourIds.push(tid);
-      if (fixedFourIds.length === 4) break;
-    }
-  }
+  const fixedFourIds = resolveFourMulticanalTracks(catalogMap, requestedTrackIds);
 
   const signature = fixedFourIds.map(tid => {
     const c = catalogMap.get(tid);
@@ -588,33 +583,30 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
   if (!hub.running) {
     hub.running = true;
 
-    // Pre-calentar en paralelo los 4 flujos vivos antes de invocar FFmpeg para que WebRTC conecte al unísono (~2.5s total)
+    // Pre-calentar en paralelo los 4 flujos vivos y mantener su conexión abierta hasta que FFmpeg abra los 4 inputs
+    const prewarmReqs = [];
     const prewarmInput = (localStreamUrl) => new Promise((resolve) => {
       let settled = false;
-      const done = (ok, reqObj) => {
+      const done = (ok) => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        if (reqObj) {
-          setTimeout(() => {
-            try { reqObj.destroy(); } catch (e) {}
-          }, 4000);
-        }
         resolve(ok);
       };
-      const timer = setTimeout(() => done(false, reqObj), 6500);
+      const timer = setTimeout(() => done(false), 12000);
       const reqObj = http.get(localStreamUrl, (upRes) => {
         if (upRes.statusCode !== 200) {
           upRes.resume();
-          return done(false, reqObj);
+          return done(false);
         }
         upRes.once('data', () => {
           upRes.resume();
-          done(true, reqObj);
+          done(true);
         });
-        upRes.once('error', () => done(false, reqObj));
+        upRes.once('error', () => done(false));
       });
-      reqObj.on('error', () => done(false, null));
+      reqObj.on('error', () => done(false));
+      prewarmReqs.push(reqObj);
     });
 
     (async () => {
@@ -623,15 +615,23 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         const tid = fixedFourIds[i];
         const ch = catalogMap.get(tid);
         const isDirectVideo = Boolean(ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl);
+        const millicastCode = isDirectVideo ? parseTrackCodeFromSyntheticUrl(ch.streamUrl) : null;
         const localStreamUrl = isDirectVideo
-          ? `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR`
+          ? `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR-${i + 1}`
           : null;
-        inputCandidates.push({ isDirectVideo, localStreamUrl });
+        inputCandidates.push({ tid, isDirectVideo, millicastCode, localStreamUrl });
       }
 
       const warmResults = await Promise.all(
         inputCandidates.map(c => (c.isDirectVideo && c.localStreamUrl) ? prewarmInput(c.localStreamUrl) : Promise.resolve(false))
       );
+
+      // Liberar las peticiones de precalentamiento 6 segundos después de lanzar FFmpeg
+      setTimeout(() => {
+        for (const r of prewarmReqs) {
+          try { r.destroy(); } catch (e) {}
+        }
+      }, 6000);
 
       if (!hub.running) {
         return;
@@ -645,17 +645,17 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
             '-fflags', '+nobuffer+discardcorrupt+genpts',
             '-flags', 'low_delay',
             '-fpsprobesize', '0',
-            '-probesize', '32768',
-            '-analyzeduration', '100000',
-            '-thread_queue_size', '256',
+            '-probesize', '500000',
+            '-analyzeduration', '1500000',
+            '-thread_queue_size', '512',
             '-reconnect', '1',
             '-reconnect_streamed', '1',
             '-reconnect_delay_max', '4',
-            '-rw_timeout', '8000000',
+            '-rw_timeout', '10000000',
             '-i', inputCandidates[i].localStreamUrl
           );
         } else {
-          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=640x360:r=24');
+          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=640x360:r=20');
         }
       }
 
@@ -699,6 +699,10 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         hub.running = false;
         hub.initSegment = null;
         hub.latestFragment = null;
+        if (hub.healInterval) {
+          clearInterval(hub.healInterval);
+          hub.healInterval = null;
+        }
         if (hub.ffmpegProc) {
           const proc = hub.ffmpegProc;
           hub.ffmpegProc = null;
@@ -712,6 +716,31 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         }
       };
       hub.cleanup = cleanup;
+
+      // Perro Guardián del Mosaico 4-en-1: Si alguna de las 4 pistas en vivo no entró en el arranque inicial
+      // o su hub Millicast se reinició (quedando con 0 clientes), reiniciar el compositor para reconectar las 4 señales.
+      hub.healInterval = setInterval(() => {
+        if (!hub.running) return;
+        const diag = getMillicastDiagnostics();
+        const activeHubMap = new Map((diag.activeHubs || []).map(h => [h.trackCode, h]));
+        for (let i = 0; i < 4; i++) {
+          const cand = inputCandidates[i];
+          if (!cand || !cand.isDirectVideo) continue;
+          if (!warmResults[i]) {
+            console.log(`🔄 [Compositor 4-en-1] Reconectando mosaico (${hubKey}) porque cuadrante ${i + 1} (${cand.tid}) no estuvo listo en frío.`);
+            cleanup(true);
+            return;
+          }
+          if (cand.millicastCode) {
+            const mh = activeHubMap.get(cand.millicastCode);
+            if (!mh || !mh.running || mh.clients === 0) {
+              console.log(`🔄 [Compositor 4-en-1] Reconectando mosaico (${hubKey}) porque cuadrante ${i + 1} (${cand.millicastCode}) perdió su flujo.`);
+              cleanup(true);
+              return;
+            }
+          }
+        }
+      }, 15000);
 
       ffProc.stdout.on('data', (chunk) => {
         pendingBuf = Buffer.concat([pendingBuf, chunk]);

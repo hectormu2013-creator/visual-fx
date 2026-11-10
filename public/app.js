@@ -1661,6 +1661,10 @@ async function loadChannelCatalog() {
           cellChannels[1] = defaultMulti.id;
         }
       }
+      const multiObj = channelCatalog.find(c => c.id === 'multivisual-1');
+      if (multiObj && Array.isArray(multiObj.multicanalTracks)) {
+        window._lastMultivisualTracksKey = multiObj.multicanalTracks.join(',');
+      }
       filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.trim().toLowerCase() : '');
       populateSelectDropdowns();
       if (selectedService === 'hipica') {
@@ -1668,10 +1672,18 @@ async function loadChannelCatalog() {
       }
     } else {
       // En refrescos periódicos subsecuentes (cada 10 min):
-      // NUNCA reiniciar reproductores de video ni sobrescribir canales en curso
+      // Si el TV está en multivisual-1 y entraron nuevos hipódromos en vivo a la cuarteta, actualizar el mosaico
       filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.trim().toLowerCase() : '');
       populateSelectDropdowns();
-      console.log('[Visual-FX] Catálogo de hipódromos actualizado en segundo plano sin interrumpir transmisiones activas.');
+      const multiObj = channelCatalog.find(c => c.id === 'multivisual-1');
+      const newMultiKey = (multiObj && Array.isArray(multiObj.multicanalTracks)) ? multiObj.multicanalTracks.join(',') : '';
+      if (selectedService === 'hipica' && cellChannels[1] === 'multivisual-1' && newMultiKey && newMultiKey !== window._lastMultivisualTracksKey) {
+        console.log(`[Visual-FX] Cuarteta de Multivisual actualizada (${window._lastMultivisualTracksKey} -> ${newMultiKey}), refrescando mosaico...`);
+        window._lastMultivisualTracksKey = newMultiKey;
+        assignChannelToCell(1, 'multivisual-1');
+      } else {
+        console.log('[Visual-FX] Catálogo de hipódromos actualizado en segundo plano sin interrumpir transmisiones activas.');
+      }
     }
   } catch (err) {
     console.error('Error cargando canales:', err);
