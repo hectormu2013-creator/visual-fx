@@ -467,8 +467,8 @@ async function startMillicastHubUpstream(hub) {
     let ffmpegStartedAt = 0;
     let hasSeenVideoKeyframe = false;
     let firstVideoRtpAt = 0;
-    let lastSpsRtpBuf = null;
-    let lastPpsRtpBuf = null;
+    let spsNalBuf = null;
+    let ppsNalBuf = null;
 
     const startFfmpegProcess = (spropParameterSets = '') => {
       if (ffmpegStarted || !hub.pc) return;
@@ -505,8 +505,8 @@ async function startMillicastHubUpstream(hub) {
         '-fflags', '+nobuffer+genpts+igndts+discardcorrupt',
         '-flags', 'low_delay',
         '-fpsprobesize', '0',
-        '-analyzeduration', '600000',
-        '-probesize', '400000',
+        '-analyzeduration', '1800000',
+        '-probesize', '1500000',
         '-i', sdpPath,
         '-map', '0:v:0',
         '-map', '0:a:0?',
@@ -634,7 +634,6 @@ async function startMillicastHubUpstream(hub) {
       }
       if (!firstVideoRtpAt) {
         firstVideoRtpAt = Date.now();
-        startFfmpegProcess(answerSprop);
         const requestKeyframe = () => {
           if (videoSsrc && vt && vt.receiver) {
             try { vt.receiver.sendRtcpPLI(videoSsrc); } catch (e) {}
@@ -648,21 +647,45 @@ async function startMillicastHubUpstream(hub) {
             return;
           }
           requestKeyframe();
-        }, 350);
+        }, 250);
       }
 
       rtp.header.payloadType = 96;
       const b0 = rtp.payload[0];
       const nalType = b0 & 0x1f;
 
-      if (nalType === 7 || nalType === 24) {
-        try { lastSpsRtpBuf = rtp.serialize(); } catch (e) {}
+      if (nalType === 7) {
+        spsNalBuf = Buffer.from(rtp.payload);
       } else if (nalType === 8) {
-        try { lastPpsRtpBuf = rtp.serialize(); } catch (e) {}
+        ppsNalBuf = Buffer.from(rtp.payload);
+      } else if (nalType === 24) {
+        let offset = 1;
+        while (offset + 2 <= rtp.payload.length) {
+          const naluSize = rtp.payload.readUInt16BE(offset);
+          offset += 2;
+          if (naluSize > 0 && offset + naluSize <= rtp.payload.length) {
+            const nalu = rtp.payload.slice(offset, offset + naluSize);
+            const innerType = nalu[0] & 0x1f;
+            if (innerType === 7) spsNalBuf = Buffer.from(nalu);
+            else if (innerType === 8) ppsNalBuf = Buffer.from(nalu);
+          }
+          offset += naluSize;
+        }
       }
 
-      // Esperar ~250ms tras spawn(ffmpeg) para que el puerto UDP esté enlazado y tengamos SPS (nalType 7 o STAP-A 24)
-      const ffmpegReady = ffmpegStarted && (Date.now() - ffmpegStartedAt) >= 250;
+      if (!ffmpegStarted) {
+        if ((spsNalBuf && ppsNalBuf) || (Date.now() - firstVideoRtpAt) > 1200) {
+          const computedSprop = (spsNalBuf && ppsNalBuf)
+            ? `${spsNalBuf.toString('base64')},${ppsNalBuf.toString('base64')}`
+            : answerSprop;
+          startFfmpegProcess(computedSprop);
+        } else {
+          return;
+        }
+      }
+
+      // Esperar ~220ms tras spawn(ffmpeg) para que el puerto UDP esté enlazado y arrancar en el primer keyframe/SPS en secuencia
+      const ffmpegReady = ffmpegStarted && (Date.now() - ffmpegStartedAt) >= 220;
       const isSpsOrStapA = (nalType === 7 || nalType === 24);
       const isIdrStart = (
         nalType === 5 ||
@@ -670,22 +693,10 @@ async function startMillicastHubUpstream(hub) {
       );
 
       if (!hasSeenVideoKeyframe) {
-        if (ffmpegReady && (isSpsOrStapA || (isIdrStart && lastSpsRtpBuf))) {
+        if (ffmpegReady && (isSpsOrStapA || isIdrStart || (Date.now() - ffmpegStartedAt) > 1400)) {
           hasSeenVideoKeyframe = true;
-          if (!isSpsOrStapA && lastSpsRtpBuf) {
-            try { udpSocket.send(lastSpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
-            if (lastPpsRtpBuf) {
-              try { udpSocket.send(lastPpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
-            }
-          }
         } else {
           return;
-        }
-      } else if (!hub.initSegment && isIdrStart && lastSpsRtpBuf) {
-        // Re-inyectar SPS/PPS antes de cada IDR hasta que FFmpeg genere ftyp+moov (initSegment)
-        try { udpSocket.send(lastSpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
-        if (lastPpsRtpBuf) {
-          try { udpSocket.send(lastPpsRtpBuf, vPort, '127.0.0.1'); } catch (e) {}
         }
       }
 
