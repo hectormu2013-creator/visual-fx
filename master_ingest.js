@@ -123,6 +123,11 @@ async function syncRtnStreams(channelsCatalog, forceManual = false) {
 function initMasterIngest(channelsCatalog) {
   console.log('📡 [Master Ingest] Motor de Señales en Vivo Iniciado para Agencias Fénix.');
 
+  // Garantizar desde el milisegundo 0 que multivisual-1 y capital-otb existan y estén onAir en el catálogo
+  try {
+    syncMulticanalChannels(channelsCatalog);
+  } catch (e) {}
+
   channelsCatalog.forEach(ch => {
     masterState.activeStreams.set(ch.id, {
       id: ch.id,

@@ -1124,7 +1124,7 @@ function initDeviceId() {
 
 let devicePollingTimer = null;
 let lastAppliedConfigJson = '';
-const CURRENT_APP_VERSION = '8.3';
+const CURRENT_APP_VERSION = '8.4';
 
 // Device Authorization Check with Telemetry Heartbeat & Concurrency Detection
 async function checkDeviceAuthorization() {

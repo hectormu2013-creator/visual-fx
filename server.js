@@ -179,7 +179,7 @@ app.post('/api/auth/login', (req, res) => {
 // Versión Oficial del Frontend: Al incrementar este número en cada actualización,
 // todos los televisores conectados cierran su sesión actual en <=15s, salen a la pantalla de inicio (/landing.html)
 // y al volver a entrar descargan obligatoriamente la versión nueva.
-const APP_RELEASE_VERSION = '8.3';
+const APP_RELEASE_VERSION = '8.4';
 
 // 2. API Verificación de Dispositivo / TV (Heartbeat & Telemetría)
 app.get('/api/device/verify', (req, res) => {
@@ -813,6 +813,9 @@ app.get('/api/multicanal/composite.mp4', (req, res) => {
 });
 
 app.get('/api/channels', (req, res) => {
+  try {
+    syncMulticanalChannels(CHANNELS);
+  } catch (e) {}
   const host = req.headers.host || `localhost:${PORT}`;
   const forwardedProto = req.headers['x-forwarded-proto'];
   const protocol = forwardedProto ? forwardedProto.split(',')[0].trim() : (req.protocol || 'http');
