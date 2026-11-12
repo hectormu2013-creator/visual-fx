@@ -264,7 +264,11 @@ function recordDrawsToHistory(gameId, dateStr, draws) {
   // Sincronización transparente con Supabase en segundo plano
   if (typeof syncDrawsToCloud === 'function') {
     try {
-      const isTriples = gameId.includes('triple') || completedDraws.some(d => d.tripleA || d.tripleB || d.signo);
+      const isTriples =
+        gameId.includes('triple') ||
+        gameId.includes('centena') ||
+        gameId.includes('terminal') ||
+        completedDraws.some(d => d.tripleB || d.tripleC || d.signo);
       const gameType = isTriples ? 'triples' : 'animalitos';
       syncDrawsToCloud(gameId, dateStr, completedDraws, gameType).catch(err => {
         console.warn(`[LotteryStats] Error asíncrono sincronizando con Supabase (${gameId}):`, err.message);

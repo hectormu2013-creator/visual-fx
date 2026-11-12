@@ -15,6 +15,7 @@ const HEADERS = {
 
 // Caché de firmas en memoria y cortacircuitos para proteger el pool de conexiones de Supabase (Regla Global Anti-Ráfagas)
 const lastSyncedDrawsSignature = new Map();
+const lastSyncedSlotSignature = new Map();
 const lastSyncedGameSignature = new Map();
 let lotteryCircuitPausedUntil = 0;
 let syncQueuePromise = Promise.resolve();
@@ -121,17 +122,29 @@ async function syncDrawsToCloud(gameId, drawDate, draws, gameType = 'animalitos'
     return true; // Sin cambios reales: 0 peticiones a Supabase
   }
 
+  // Filtrar únicamente los sorteos individuales que sean nuevos o hayan cambiado respecto a la última sincronización
+  const deltaRows = rows.filter(r => {
+    const slotKey = `${endpoint}|${r.game_id}|${r.draw_date}|${r.draw_time}`;
+    const slotSig = JSON.stringify(r);
+    return lastSyncedSlotSignature.get(slotKey) !== slotSig;
+  });
+
+  if (deltaRows.length === 0) {
+    lastSyncedDrawsSignature.set(cacheKey, signature);
+    return true;
+  }
+
   if (isCircuitOpen()) return false;
 
   // Si ya hay un guardado en cola para este juego/día, solo actualizamos el contenido
   // pendiente (se enviará la versión más reciente) en vez de encolar otra petición.
   if (pendingDrawsByKey.has(cacheKey)) {
-    pendingDrawsByKey.set(cacheKey, { rows, signature });
+    pendingDrawsByKey.set(cacheKey, { rows: deltaRows, fullRows: rows, signature });
     return true;
   }
-  pendingDrawsByKey.set(cacheKey, { rows, signature });
+  pendingDrawsByKey.set(cacheKey, { rows: deltaRows, fullRows: rows, signature });
 
-  // Encolar secuencialmente con pausa de 1200ms entre juegos para jamás saturar las conexiones de PostgREST
+  // Encolar secuencialmente con pausa de 2000ms entre juegos para jamás saturar las conexiones de PostgREST
   syncQueuePromise = syncQueuePromise.then(async () => {
     const pending = pendingDrawsByKey.get(cacheKey);
     pendingDrawsByKey.delete(cacheKey);
@@ -139,7 +152,7 @@ async function syncDrawsToCloud(gameId, drawDate, draws, gameType = 'animalitos'
     if (lastSyncedDrawsSignature.get(cacheKey) === pending.signature) return true;
     if (isCircuitOpen()) return false;
     try {
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 2000));
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}?on_conflict=game_id,draw_date,draw_time`, {
         method: 'POST',
         headers: HEADERS,
@@ -152,6 +165,10 @@ async function syncDrawsToCloud(gameId, drawDate, draws, gameType = 'animalitos'
         const err = await res.text();
         console.warn(`[SupabaseLottery] Error guardando sorteos en ${endpoint} (${pending.rows.length} rows):`, res.status, err);
         return false;
+      }
+      for (const r of (pending.fullRows || pending.rows)) {
+        const slotKey = `${endpoint}|${r.game_id}|${r.draw_date}|${r.draw_time}`;
+        lastSyncedSlotSignature.set(slotKey, JSON.stringify(r));
       }
       lastSyncedDrawsSignature.set(cacheKey, pending.signature);
       return true;
