@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -72,7 +72,7 @@ const PORT = process.env.PORT || 3500;
 app.use(cors());
 app.use(express.json());
 
-// RedirecciÃ³n Permanente (HTTP 301) desde el dominio antiguo de Render hacia el nuevo servidor oficial en Railway
+// Redirección Permanente (HTTP 301) desde el dominio antiguo de Render hacia el nuevo servidor oficial en Railway
 const OFFICIAL_RAILWAY_ORIGIN = process.env.OFFICIAL_PUBLIC_ORIGIN || 'https://visual-fx.up.railway.app';
 const IS_RENDER_LEGACY_HOST = Boolean(process.env.RENDER || process.env.RENDER_EXTERNAL_URL);
 
@@ -86,7 +86,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Anti-Cache Middleware para forzar la actualizaciÃ³n inmediata en Smart TVs y navegadores
+// Anti-Cache Middleware para forzar la actualización inmediata en Smart TVs y navegadores
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -95,9 +95,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Servir archivos estÃ¡ticos SOLO desde public/
-// âš ï¸ SEGURIDAD: NUNCA servir __dirname (raÃ­z del proyecto): expondrÃ­a data/*.json
-// (usuarios, cuentas de pantallas y contraseÃ±as) y el cÃ³digo con credenciales.
+// Servir archivos estáticos SOLO desde public/
+// ⚠️ SEGURIDAD: NUNCA servir __dirname (raíz del proyecto): expondría data/*.json
+// (usuarios, cuentas de pantallas y contraseñas) y el código con credenciales.
 const possiblePublicDirs = [
   path.join(__dirname, 'public'),
   path.join(process.cwd(), 'public')
@@ -124,8 +124,8 @@ app.get(['/app', '/download/apk', '/visual-fx-tv.apk'], (req, res) => {
   return res.redirect('https://github.com/hectormu2013-creator/visual-fx/releases/download/v1.0-tv/visual-fx-tv.apk');
 });
 
-// Inicializar Medidor de Consumo, Gestor de Horarios Oficiales, Ingestor MÃ¡ster y Motor de LoterÃ­as
-// (En Render legado no iniciamos motores de ingesta para que solo actÃºe como puente 301 de 0 MB)
+// Inicializar Medidor de Consumo, Gestor de Horarios Oficiales, Ingestor Máster y Motor de Loterías
+// (En Render legado no iniciamos motores de ingesta para que solo actúe como puente 301 de 0 MB)
 if (!IS_RENDER_LEGACY_HOST) {
   Promise.all([initBandwidthTracker(), initScheduleManager()]).then(() => {
     initMasterIngest(CHANNELS);
@@ -133,7 +133,7 @@ if (!IS_RENDER_LEGACY_HOST) {
   });
   initLotteryEngine();
 } else {
-  console.log(`ðŸ”€ [Render Redirector] Modo puente 301 activo -> ${OFFICIAL_RAILWAY_ORIGIN} (0 MB de consumo)`);
+  console.log(`🔀 [Render Redirector] Modo puente 301 activo -> ${OFFICIAL_RAILWAY_ORIGIN} (0 MB de consumo)`);
 }
 
 // Middleware para verificar Roles
@@ -146,7 +146,7 @@ function requireRoles(...allowedRoles) {
     const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
     if (!decoded) {
-      return res.status(401).json({ error: 'Token invÃ¡lido o expirado.' });
+      return res.status(401).json({ error: 'Token inválido o expirado.' });
     }
     if (!allowedRoles.includes(decoded.role)) {
       return res.status(403).json({ 
@@ -163,11 +163,11 @@ app.get(['/landing', '/login'], (req, res) => {
   return res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
 
-// 1. API AutenticaciÃ³n de Usuario (Super Admin & Clientes)
+// 1. API Autenticación de Usuario (Super Admin & Clientes)
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
-    return res.status(400).json({ error: 'Debe proveer usuario y contraseÃ±a.' });
+    return res.status(400).json({ error: 'Debe proveer usuario y contraseña.' });
   }
   const result = loginUser(username, password);
   if (!result.success) {
@@ -176,12 +176,12 @@ app.post('/api/auth/login', (req, res) => {
   return res.json(result);
 });
 
-// VersiÃ³n Oficial del Frontend: Al incrementar este nÃºmero en cada actualizaciÃ³n,
-// todos los televisores conectados cierran su sesiÃ³n actual en <=15s, salen a la pantalla de inicio (/landing.html)
-// y al volver a entrar descargan obligatoriamente la versiÃ³n nueva.
+// Versión Oficial del Frontend: Al incrementar este número en cada actualización,
+// todos los televisores conectados cierran su sesión actual en <=15s, salen a la pantalla de inicio (/landing.html)
+// y al volver a entrar descargan obligatoriamente la versión nueva.
 const APP_RELEASE_VERSION = '8.5';
 
-// 2. API VerificaciÃ³n de Dispositivo / TV (Heartbeat & TelemetrÃ­a)
+// 2. API Verificación de Dispositivo / TV (Heartbeat & Telemetría)
 app.get('/api/device/verify', (req, res) => {
   const deviceId = req.query.deviceId || req.headers['x-device-id'];
   const activeService = req.query.activeService || 'hipica';
@@ -198,13 +198,13 @@ app.get('/api/device/verify', (req, res) => {
     decodedUser = verifyToken(token);
   }
 
-  // Si el televisor tiene una versiÃ³n anterior en memoria (no envÃ­a appVer=8.3),
-  // expulsarlo a la pantalla de inicio (/landing.html) para que detenga reproductores viejos y cargue la actualizaciÃ³n al entrar.
+  // Si el televisor tiene una versión anterior en memoria (no envía appVer=8.3),
+  // expulsarlo a la pantalla de inicio (/landing.html) para que detenga reproductores viejos y cargue la actualización al entrar.
   if (clientAppVer !== APP_RELEASE_VERSION) {
     return res.json({
       status: 'SESSION_KICKED',
       appVer: APP_RELEASE_VERSION,
-      message: `Nueva actualizaciÃ³n del sistema (v${APP_RELEASE_VERSION}) instalada. Inicie sesiÃ³n nuevamente para cargar las mejoras.`
+      message: `Nueva actualización del sistema (v${APP_RELEASE_VERSION}) instalada. Inicie sesión nuevamente para cargar las mejoras.`
     });
   }
   
@@ -215,7 +215,7 @@ app.get('/api/device/verify', (req, res) => {
 });
 
 // ==========================================
-// RUTAS DE GESTIÃ“N DE CLIENTES (SUPER ADMIN)
+// RUTAS DE GESTIÓN DE CLIENTES (SUPER ADMIN)
 // ==========================================
 
 // Listar todos los clientes con conteo de dispositivos
@@ -230,7 +230,7 @@ app.post('/api/admin/clients', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
   return res.json(result);
 });
 
-// Actualizar ficha de Cliente (cupos, plan, contraseÃ±a)
+// Actualizar ficha de Cliente (cupos, plan, contraseña)
 app.put('/api/admin/clients/:id', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
   const result = updateClient(req.params.id, req.body);
   if (!result.success) return res.status(400).json(result);
@@ -262,10 +262,10 @@ app.post('/api/admin/clients/:id/quota', requireRoles(ROLES.SUPER_ADMIN), (req, 
 });
 
 // ==========================================
-// RUTAS DE ACTIVACIÃ“N Y DISPOSITIVOS (CLIENTE / ENCARGADO)
+// RUTAS DE ACTIVACIÓN Y DISPOSITIVOS (CLIENTE / ENCARGADO)
 // ==========================================
 
-// Activar Pantalla con CÃ³digo de 6 DÃ­gitos y Nombre Ãšnico
+// Activar Pantalla con Código de 6 Dígitos y Nombre Único
 app.post('/api/client/activate-device', (req, res) => {
   const authHeader = req.headers.authorization;
   let clientId = req.body.clientId;
@@ -281,7 +281,7 @@ app.post('/api/client/activate-device', (req, res) => {
     }
   }
 
-  // Si no hay token o no se especificÃ³ cliente, por defecto asignar a 'fenix'
+  // Si no hay token o no se especificó cliente, por defecto asignar a 'fenix'
   if (!clientId) clientId = 'fenix';
 
   const { tvName, username, password, defaultService, cloneFromDeviceId } = req.body;
@@ -313,7 +313,7 @@ app.get('/api/admin/devices', (req, res) => {
   return res.json({ devices: getApprovedDevicesList(userRole, clientId, filterClientId) });
 });
 
-// Obtener ConfiguraciÃ³n de una Pantalla
+// Obtener Configuración de una Pantalla
 app.get('/api/device/:id/config', (req, res) => {
   const authHeader = req.headers.authorization;
   let userRole = ROLES.SUPER_ADMIN;
@@ -332,7 +332,7 @@ app.get('/api/device/:id/config', (req, res) => {
   return res.json(result);
 });
 
-// Guardar ConfiguraciÃ³n de una Pantalla Individual
+// Guardar Configuración de una Pantalla Individual
 app.post('/api/device/:id/config', (req, res) => {
   const authHeader = req.headers.authorization;
   let userRole = ROLES.SUPER_ADMIN;
@@ -351,7 +351,7 @@ app.post('/api/device/:id/config', (req, res) => {
   return res.json(result);
 });
 
-// Guardar ConfiguraciÃ³n en Lote (Uno, Varios o Todos los Dispositivos)
+// Guardar Configuración en Lote (Uno, Varios o Todos los Dispositivos)
 app.post('/api/client/devices/batch-config', (req, res) => {
   const authHeader = req.headers.authorization;
   let userRole = ROLES.SUPER_ADMIN;
@@ -369,10 +369,10 @@ app.post('/api/client/devices/batch-config', (req, res) => {
   const updates = configUpdates || config || {};
   const result = batchUpdateDeviceConfig(deviceIds, updates, clientId, userRole, Boolean(applyToAll));
   if (!result.success) return res.status(400).json(result);
-  return res.json({ success: true, message: `ConfiguraciÃ³n aplicada exitosamente a ${result.updatedCount || 0} pantalla(s).`, ...result });
+  return res.json({ success: true, message: `Configuración aplicada exitosamente a ${result.updatedCount || 0} pantalla(s).`, ...result });
 });
 
-// Clonar / Exportar ConfiguraciÃ³n de Pantalla
+// Clonar / Exportar Configuración de Pantalla
 app.post('/api/client/devices/clone-config', (req, res) => {
   const authHeader = req.headers.authorization;
   let userRole = ROLES.SUPER_ADMIN;
@@ -393,10 +393,10 @@ app.post('/api/client/devices/clone-config', (req, res) => {
 
   const result = cloneDeviceConfig(sourceDeviceId, targetDeviceIds, clientId, userRole);
   if (!result.success) return res.status(400).json(result);
-  return res.json({ success: true, message: `ConfiguraciÃ³n clonada exitosamente a ${result.updatedCount || 0} pantalla(s).`, ...result });
+  return res.json({ success: true, message: `Configuración clonada exitosamente a ${result.updatedCount || 0} pantalla(s).`, ...result });
 });
 
-// Renombrar Dispositivo (asegura nombre Ãºnico)
+// Renombrar Dispositivo (asegura nombre único)
 app.post('/api/client/devices/rename', (req, res) => {
   const authHeader = req.headers.authorization;
   let clientId = null;
@@ -436,7 +436,7 @@ app.delete('/api/client/devices/:id', (req, res) => {
 });
 
 // ==========================================
-// RUTAS DE GESTIÃ“N DE CUENTAS DE PANTALLAS (PeticiÃ³n 4)
+// RUTAS DE GESTIÓN DE CUENTAS DE PANTALLAS (Petición 4)
 // ==========================================
 
 // Listar Cuentas de Pantallas
@@ -474,7 +474,7 @@ app.post(['/api/client/device-accounts', '/api/client/devices'], (req, res) => {
   const { username, password, tvName, targetClientId, defaultService, cloneFromDeviceId } = req.body;
   const effectiveClientId = (userRole === ROLES.SUPER_ADMIN && targetClientId) ? targetClientId : clientId;
   if (!effectiveClientId) {
-    return res.status(400).json({ error: 'Debe especificar el cliente al que pertenecerÃ¡ la pantalla.' });
+    return res.status(400).json({ error: 'Debe especificar el cliente al que pertenecerá la pantalla.' });
   }
 
   const result = createDeviceAccount(username, password, effectiveClientId, tvName, defaultService, cloneFromDeviceId);
@@ -482,7 +482,7 @@ app.post(['/api/client/device-accounts', '/api/client/devices'], (req, res) => {
   return res.json(result);
 });
 
-// Cambiar ContraseÃ±a de Pantalla
+// Cambiar Contraseña de Pantalla
 app.put(['/api/client/device-accounts/:username/password', '/api/client/devices/:username/password'], (req, res) => {
   const authHeader = req.headers.authorization;
   let userRole = ROLES.SUPER_ADMIN;
@@ -501,7 +501,7 @@ app.put(['/api/client/device-accounts/:username/password', '/api/client/devices/
   return res.json(result);
 });
 
-// Desconectar / Expulsar SesiÃ³n de Pantalla Remotamente (Control de Concurrencia)
+// Desconectar / Expulsar Sesión de Pantalla Remotamente (Control de Concurrencia)
 app.post(['/api/client/device-accounts/:username/kick', '/api/client/devices/:username/kick'], (req, res) => {
   const authHeader = req.headers.authorization;
   let userRole = ROLES.SUPER_ADMIN;
@@ -550,7 +550,7 @@ app.post('/api/device/set-default-service', (req, res) => {
   return res.json(result);
 });
 
-// AnalÃ­ticas y Monitoreo de Pantallas en Vivo (con filtro por Cliente para Super Admin)
+// Analíticas y Monitoreo de Pantallas en Vivo (con filtro por Cliente para Super Admin)
 app.get('/api/admin/analytics', (req, res) => {
   const authHeader = req.headers.authorization;
   let userRole = ROLES.SUPER_ADMIN;
@@ -570,7 +570,7 @@ app.get('/api/admin/analytics', (req, res) => {
 });
 
 // ==========================================
-// GESTIÃ“N DE USUARIOS Y ROLES (SUPER ADMIN)
+// GESTIÓN DE USUARIOS Y ROLES (SUPER ADMIN)
 // ==========================================
 
 // Listar todos los usuarios del sistema
@@ -578,7 +578,7 @@ app.get('/api/admin/users', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (
   return res.json({ users: getAllUsers() });
 });
 
-// Crear nuevo usuario con rol especÃ­fico
+// Crear nuevo usuario con rol específico
 app.post('/api/admin/users', requireRoles(ROLES.SUPER_ADMIN), (req, res) => {
   const result = createSystemUser(req.body);
   if (!result.success) return res.status(400).json(result);
@@ -593,19 +593,19 @@ app.delete('/api/admin/users/:username', requireRoles(ROLES.SUPER_ADMIN), (req, 
 });
 
 // ==========================================
-// MASTER CONTROL DE HIPÃ“DROMOS (SUPER ADMIN & TÃ‰CNICO)
+// MASTER CONTROL DE HIPÓDROMOS (SUPER ADMIN & TÉCNICO)
 // ==========================================
 
-// Estado del Ingestor MÃ¡ster Relay
+// Estado del Ingestor Máster Relay
 app.get('/api/admin/master-status', (req, res) => {
   return res.json(getMasterState());
 });
 
-// Agregar nuevo HipÃ³dromo al CatÃ¡logo MÃ¡ster
+// Agregar nuevo Hipódromo al Catálogo Máster
 app.post('/api/admin/channels/add', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   const { name, flag, location, streamUrl, type } = req.body;
   if (!name || !streamUrl) {
-    return res.status(400).json({ error: 'Nombre del hipÃ³dromo y URL de transmisiÃ³n son obligatorios.' });
+    return res.status(400).json({ error: 'Nombre del hipódromo y URL de transmisión son obligatorios.' });
   }
 
   const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -617,7 +617,7 @@ app.post('/api/admin/channels/add', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_C
   const newChannel = {
     id,
     name,
-    flag: flag || 'ðŸ‡',
+    flag: flag || '🏇',
     location: location || 'Internacional',
     type: type || 'hls',
     onAir: true,
@@ -627,33 +627,33 @@ app.post('/api/admin/channels/add', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_C
   };
 
   CHANNELS.push(newChannel);
-  console.log(`ðŸ“¡ [Master Ingest] Nuevo hipÃ³dromo agregado: ${name} (${id})`);
+  console.log(`📡 [Master Ingest] Nuevo hipódromo agregado: ${name} (${id})`);
   return res.json({ success: true, channel: newChannel, total: CHANNELS.length });
 });
 
-// Eliminar HipÃ³dromo del CatÃ¡logo
+// Eliminar Hipódromo del Catálogo
 app.delete('/api/admin/channels/:id', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   const index = CHANNELS.findIndex(c => c.id === req.params.id);
   if (index === -1) {
-    return res.status(404).json({ error: 'HipÃ³dromo no encontrado.' });
+    return res.status(404).json({ error: 'Hipódromo no encontrado.' });
   }
 
   const removed = CHANNELS.splice(index, 1)[0];
-  console.log(`ðŸ—‘ï¸ [Master Ingest] HipÃ³dromo eliminado: ${removed.name}`);
-  return res.json({ success: true, message: `HipÃ³dromo "${removed.name}" eliminado del catÃ¡logo.` });
+  console.log(`🗑️ [Master Ingest] Hipódromo eliminado: ${removed.name}`);
+  return res.json({ success: true, message: `Hipódromo "${removed.name}" eliminado del catálogo.` });
 });
 
-// Pausar o Reactivar SeÃ±al de HipÃ³dromo (Toggle On/Off Air)
+// Pausar o Reactivar Señal de Hipódromo (Toggle On/Off Air)
 app.post('/api/admin/channels/toggle', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   const { channelId } = req.body;
   const ch = CHANNELS.find(c => c.id === channelId);
-  if (!ch) return res.status(404).json({ error: 'HipÃ³dromo no encontrado.' });
+  if (!ch) return res.status(404).json({ error: 'Hipódromo no encontrado.' });
 
   ch.onAir = !ch.onAir;
   return res.json({ success: true, channelId, onAir: ch.onAir });
 });
 
-// Actualizar URL de TransmisiÃ³n (SuperAdmin y Jefe TÃ©cnico)
+// Actualizar URL de Transmisión (SuperAdmin y Jefe Técnico)
 app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   const { channelId, streamUrl, type } = req.body;
   if (!channelId || !streamUrl) {
@@ -662,7 +662,7 @@ app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
 
   const ch = CHANNELS.find(c => c.id === channelId);
   if (!ch) {
-    return res.status(404).json({ error: 'HipÃ³dromo no encontrado.' });
+    return res.status(404).json({ error: 'Hipódromo no encontrado.' });
   }
 
   ch.streamUrl = streamUrl;
@@ -670,12 +670,12 @@ app.post('/api/admin/channels/update', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
   if (type) ch.type = type;
 
   updateChannelSource(channelId, streamUrl, type || ch.type);
-  console.log(`ðŸ‘¤ Usuario [${req.user.name} - ${req.user.role}] actualizÃ³ el canal '${ch.name}' a: ${streamUrl}`);
+  console.log(`👤 Usuario [${req.user.name} - ${req.user.role}] actualizó el canal '${ch.name}' a: ${streamUrl}`);
 
   return res.json({ success: true, message: `Canal ${ch.name} actualizado por ${req.user.name}.`, channel: ch });
 });
 
-// Lista de Canales / HipÃ³dromos
+// Lista de Canales / Hipódromos
 app.get('/api/admin/first-tv/status', (req, res) => {
   const { getRtnStatus } = require('./rtn_bridge');
   return res.json({
@@ -684,7 +684,7 @@ app.get('/api/admin/first-tv/status', (req, res) => {
   });
 });
 
-// DiagnÃ³stico y Auto-CuraciÃ³n Preventiva (Perro GuardiÃ¡n 24/7 + AuditorÃ­a Diaria de Agente)
+// Diagnóstico y Auto-Curación Preventiva (Perro Guardián 24/7 + Auditoría Diaria de Agente)
 app.get(['/api/health-check', '/api/admin/health-check'], async (req, res) => {
   try {
     const forceHeal = req.query.heal === '1' || req.query.heal === 'true';
@@ -711,10 +711,10 @@ app.post('/api/admin/first-tv/cookie', requireRoles(ROLES.SUPER_ADMIN, ROLES.TEC
   }
   updateFirstTvCookie(cookie, auth0Cookie);
   syncRtnStreams(CHANNELS);
-  return res.json({ success: true, message: 'SesiÃ³n 1/ST TV actualizada e ingesta disparada.', status: getFirstTvStatus() });
+  return res.json({ success: true, message: 'Sesión 1/ST TV actualizada e ingesta disparada.', status: getFirstTvStatus() });
 });
 
-// Control de Horario Oficial de TransmisiÃ³n de Carreras (Lun-Jue 11:30am-7pm | Vie-Dom 11am-8pm)
+// Control de Horario Oficial de Transmisión de Carreras (Lun-Jue 11:30am-7pm | Vie-Dom 11am-8pm)
 app.get(['/api/schedule', '/api/admin/schedule'], (req, res) => {
   return res.json({
     success: true,
@@ -736,7 +736,7 @@ app.post(['/api/schedule', '/api/admin/schedule'], async (req, res) => {
     }
     return res.json({
       success: true,
-      message: 'Horario de transmisiÃ³n hÃ­pica actualizado y sincronizado en la nube.',
+      message: 'Horario de transmisión hípica actualizado y sincronizado en la nube.',
       ...status
     });
   } catch (err) {
@@ -765,7 +765,7 @@ app.post(['/api/bandwidth', '/api/admin/bandwidth'], async (req, res) => {
   }
 });
 
-// Lista y Creador de Multicanales (4 en 1) con DeduplicaciÃ³n de Combinaciones
+// Lista y Creador de Multicanales (4 en 1) con Deduplicación de Combinaciones
 app.get('/api/multicanales', (req, res) => {
   syncMulticanalChannels(CHANNELS);
   const multicanales = CHANNELS.filter(c => c.onAir && (c.isMulticanal || c.id === 'capital-otb'));
@@ -786,7 +786,7 @@ app.post('/api/multicanales', (req, res) => {
   return res.json(result);
 });
 
-// Estado en Vivo del Director AutomÃ¡tico Capital OTB (Mosaico 4 en 1 vs. Pantalla Completa en Partida + Carrera + 1 min Resultados)
+// Estado en Vivo del Director Automático Capital OTB (Mosaico 4 en 1 vs. Pantalla Completa en Partida + Carrera + 1 min Resultados)
 app.get('/api/multicanal/director-state', async (req, res) => {
   try {
     const requestedTracks = (req.query.tracks || '')
@@ -803,7 +803,7 @@ app.get('/api/multicanal/director-state', async (req, res) => {
   }
 });
 
-// Flujo Ãšnico 4 en 1 mezclado en Servidor (1 solo reproductor <video> ligero para Smart TVs)
+// Flujo Único 4 en 1 mezclado en Servidor (1 solo reproductor <video> ligero para Smart TVs)
 app.get('/api/multicanal/composite.mp4', (req, res) => {
   const requestedTracks = (req.query.tracks || '')
     .split(',')
@@ -850,7 +850,7 @@ app.get('/api/stream/proxy', (req, res) => {
     decodedUser = verifyToken(token);
   }
 
-  // Si viene token autenticado, verificar Ãºnicamente que la cuenta o cliente no estÃ© SUSPENDIDO.
+  // Si viene token autenticado, verificar únicamente que la cuenta o cliente no esté SUSPENDIDO.
   if (decodedUser && deviceId) {
     const devStatus = checkDeviceStatus(deviceId, 'hipica', null, decodedUser);
     if (devStatus.status === 'SUSPENDED') {
@@ -865,9 +865,9 @@ app.get('/api/stream/proxy', (req, res) => {
 app.get('/api/tts', handleTtsRequest);
 
 // ==========================================
-// RUTAS DE LOTERÃAS Y ANIMALITOS (TOP 10 OFICIAL)
+// RUTAS DE LOTERÍAS Y ANIMALITOS (TOP 10 OFICIAL)
 // ==========================================
-// 1. Obtener Pizarra del DÃ­a (Resultados Top 10 y CatÃ¡logo)
+// 1. Obtener Pizarra del Día (Resultados Top 10 y Catálogo)
 app.get('/api/lottery/top10', (req, res) => {
   return res.json({
     success: true,
@@ -876,7 +876,7 @@ app.get('/api/lottery/top10', (req, res) => {
   });
 });
 
-// 1.1 CatÃ¡logo Maestro de LoterÃ­as (Editable)
+// 1.1 Catálogo Maestro de Loterías (Editable)
 app.get('/api/lottery/catalog', (req, res) => {
   return res.json({
     success: true,
@@ -904,10 +904,10 @@ app.delete('/api/lottery/catalog/:id', requireRoles(ROLES.SUPER_ADMIN, ROLES.CLI
 
 app.post('/api/lottery/sync-all', (req, res) => {
   syncAllTop10();
-  return res.json({ success: true, message: 'SincronizaciÃ³n completa de loterÃ­as en proceso.' });
+  return res.json({ success: true, message: 'Sincronización completa de loterías en proceso.' });
 });
 
-// 2. Registro Manual de Emergencia (SuperAdmin y Jefe TÃ©cnico)
+// 2. Registro Manual de Emergencia (SuperAdmin y Jefe Técnico)
 app.post('/api/admin/lottery/manual', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), (req, res) => {
   const gameId = req.body.gameId;
   const time = req.body.time || req.body.hour;
@@ -926,17 +926,17 @@ app.post('/api/admin/lottery/manual', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH
   return res.json(result);
 });
 
-// 3. Forzar sincronizaciÃ³n inmediata (SuperAdmin y Jefe TÃ©cnico)
+// 3. Forzar sincronización inmediata (SuperAdmin y Jefe Técnico)
 app.post('/api/admin/lottery/sync-now', requireRoles(ROLES.SUPER_ADMIN, ROLES.TECH_CHIEF), async (req, res) => {
   try {
     await syncAllTop10();
-    return res.json({ success: true, message: 'SincronizaciÃ³n forzada completada con Ã©xito.', games: getTop10Results() });
+    return res.json({ success: true, message: 'Sincronización forzada completada con éxito.', games: getTop10Results() });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
 });
 
-// 4. EstadÃ­sticas y PronÃ³sticos 30 DÃ­as & Ticker Feed (CatÃ¡logo Completo)
+// 4. Estadísticas y Pronósticos 30 Días & Ticker Feed (Catálogo Completo)
 app.get('/api/lottery/stats', (req, res) => {
   try {
     const catalog = getLotteryCatalog();
@@ -960,7 +960,7 @@ app.get('/api/lottery/stats', (req, res) => {
   }
 });
 
-// 4.1 AnÃ¡lisis EstadÃ­stico Profundo de una LoterÃ­a
+// 4.1 Análisis Estadístico Profundo de una Lotería
 app.get('/api/lottery/stats/:gameId', (req, res) => {
   try {
     const { gameId } = req.params;
@@ -971,7 +971,7 @@ app.get('/api/lottery/stats/:gameId', (req, res) => {
   }
 });
 
-// 4.2 Resumen Global de la Base de Datos HistÃ³rica (30 DÃ­as Persistidos)
+// 4.2 Resumen Global de la Base de Datos Histórica (30 Días Persistidos)
 app.get('/api/lottery/history', (req, res) => {
   try {
     const overview = getHistoryOverview();
@@ -981,7 +981,7 @@ app.get('/api/lottery/history', (req, res) => {
   }
 });
 
-// 4.3 Consultas Avanzadas al HistÃ³rico (Por NÃºmero, Fechas, Sorteos)
+// 4.3 Consultas Avanzadas al Histórico (Por Número, Fechas, Sorteos)
 app.get('/api/lottery/history/query', (req, res) => {
   try {
     const { gameId, number, dateFrom, dateTo, limit } = req.query;
@@ -998,7 +998,7 @@ app.get('/api/lottery/history/query', (req, res) => {
   }
 });
 
-// 4.4 Historial CronolÃ³gico Detallado de una LoterÃ­a
+// 4.4 Historial Cronológico Detallado de una Lotería
 app.get('/api/lottery/history/:gameId', (req, res) => {
   try {
     const { gameId } = req.params;
@@ -1010,7 +1010,7 @@ app.get('/api/lottery/history/:gameId', (req, res) => {
   }
 });
 
-// 4.5 Estado y AuditorÃ­a de SincronizaciÃ³n con Supabase (Nube)
+// 4.5 Estado y Auditoría de Sincronización con Supabase (Nube)
 app.get('/api/lottery/cloud-status', async (req, res) => {
   try {
     const { getCloudCounts } = require('./supabase_lottery');
@@ -1037,11 +1037,11 @@ app.get(['/app', '/download/app', '/visual-fx-tv.apk'], (req, res) => {
   if (fs.existsSync(localApk)) {
     return res.download(localApk, 'visual-fx-tv.apk');
   }
-  // RedirecciÃ³n HTTP 302 directa al Release del APK compilado en GitHub
+  // Redirección HTTP 302 directa al Release del APK compilado en GitHub
   return res.redirect(GITHUB_APK_RELEASE_URL);
 });
 
-// 2. PÃ¡gina web de descarga e instrucciones guiadas
+// 2. Página web de descarga e instrucciones guiadas
 app.get('/download', (req, res) => {
   const downloadPage = path.join(__dirname, 'public', 'download.html');
   if (fs.existsSync(downloadPage)) {
@@ -1069,9 +1069,9 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, async () => {
   console.log(`====================================================`);
-  console.log(`ðŸš€ Servidor Visual-FX activo en el puerto ${PORT}`);
-  console.log(`ðŸ‘‘ Estructura JerÃ¡rquica: Super Admin -> Clientes -> Dispositivos`);
-  console.log(`â˜ï¸ Persistencia Cloud: Supabase sincronizado automÃ¡ticamente`);
+  console.log(`🚀 Servidor Visual-FX activo en el puerto ${PORT}`);
+  console.log(`👑 Estructura Jerárquica: Super Admin -> Clientes -> Dispositivos`);
+  console.log(`☁️ Persistencia Cloud: Supabase sincronizado automáticamente`);
   console.log(`====================================================`);
   try {
     await syncDatabaseWithCloud();

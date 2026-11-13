@@ -1,4 +1,4 @@
-﻿// App State
+// App State
 let currentUser = null;
 let currentToken = null;
 let currentDeviceId = null;
@@ -30,10 +30,10 @@ function profileDeviceHardware() {
     summary = isSmartTv ? 'Smart TV / TV Box' : (cores <= 2 ? `${cores} Cores CPU` : `${memory}GB RAM`);
   } else if (cores <= 4 || memory <= 4) {
     detectedTier = HARDWARE_TIERS.MEDIUM;
-    summary = `${cores} Cores Â· ${memory}GB RAM`;
+    summary = `${cores} Cores · ${memory}GB RAM`;
   } else {
     detectedTier = HARDWARE_TIERS.FULL;
-    summary = `${cores} Cores Â· Alta Potencia`;
+    summary = `${cores} Cores · Alta Potencia`;
   }
 
   return {
@@ -83,7 +83,7 @@ function getEffectiveQualityTier() {
     if (hardwareProfile.detectedTier === HARDWARE_TIERS.LIGHT) {
       return HARDWARE_TIERS.LIGHT;
     }
-    // En modo AUTO usar como tope MEDIUM (720p / buffers moderados) para no saturar enlaces Wi-Fi de 1â€“3 Mbps ni congelar YouTube.
+    // En modo AUTO usar como tope MEDIUM (720p / buffers moderados) para no saturar enlaces Wi-Fi de 1–3 Mbps ni congelar YouTube.
     return HARDWARE_TIERS.MEDIUM;
   }
   return selectedQualityMode;
@@ -101,18 +101,18 @@ function updateQualityBadgeUi() {
     if (effectiveTier === HARDWARE_TIERS.LIGHT) {
       badge.classList.add('tier-light');
       badge.textContent = selectedQualityMode === 'AUTO' 
-        ? `âš¡ Auto: ðŸƒ Liviano (${hardwareProfile.summary})` 
-        : `ðŸƒ Modo Liviano`;
+        ? `⚡ Auto: 🍃 Liviano (${hardwareProfile.summary})` 
+        : `🍃 Modo Liviano`;
     } else if (effectiveTier === HARDWARE_TIERS.MEDIUM) {
       badge.classList.add('tier-medium');
       badge.textContent = selectedQualityMode === 'AUTO' 
-        ? `âš¡ Auto: âš–ï¸ Equilibrado (${hardwareProfile.summary})` 
-        : `âš–ï¸ Equilibrado (720p)`;
+        ? `⚡ Auto: ⚖️ Equilibrado (${hardwareProfile.summary})` 
+        : `⚖️ Equilibrado (720p)`;
     } else {
       badge.classList.add('tier-full');
       badge.textContent = selectedQualityMode === 'AUTO' 
-        ? `âš¡ Auto: ðŸ’Ž Full HD (${hardwareProfile.summary})` 
-        : `ðŸ’Ž Full HD (1080p)`;
+        ? `⚡ Auto: 💎 Full HD (${hardwareProfile.summary})` 
+        : `💎 Full HD (1080p)`;
     }
   }
 
@@ -155,12 +155,12 @@ function applyResolutionCap(cellNum, hls, gridMode, isMaximized) {
     if (gridMode >= 3 && !isMaximized) {
       hls.autoLevelCappedAt = 0;
       hls.currentLevel = 0;
-      console.log(`[Stream Optimizer Celda ${cellNum}] LIGHT + Multicanal ${gridMode}: Nivel mÃ­nimo forzado (${levels[0].height || 360}p)`);
+      console.log(`[Stream Optimizer Celda ${cellNum}] LIGHT + Multicanal ${gridMode}: Nivel mínimo forzado (${levels[0].height || 360}p)`);
       return;
     } else if (gridMode === 2 && !isMaximized) {
       maxAllowedHeight = 480;
     } else {
-      // Con 1 sola pantalla activa en el Smart TV, permitir 720p HD nÃ­tido
+      // Con 1 sola pantalla activa en el Smart TV, permitir 720p HD nítido
       maxAllowedHeight = 720;
     }
   } else if (effectiveTier === HARDWARE_TIERS.MEDIUM) {
@@ -187,14 +187,14 @@ function applyResolutionCap(cellNum, hls, gridMode, isMaximized) {
   if (safeLevels.length > 0) {
     const highestSafe = safeLevels[safeLevels.length - 1];
     hls.autoLevelCappedAt = highestSafe.index;
-    console.log(`[Stream Optimizer Celda ${cellNum}] Tier ${effectiveTier} -> Nivel mÃ¡ximo permitido: ${highestSafe.height}p (Ãndice ${highestSafe.index})`);
+    console.log(`[Stream Optimizer Celda ${cellNum}] Tier ${effectiveTier} -> Nivel máximo permitido: ${highestSafe.height}p (Índice ${highestSafe.index})`);
   } else {
     hls.autoLevelCappedAt = 0;
     console.log(`[Stream Optimizer Celda ${cellNum}] Tier ${effectiveTier} -> Nivel 0 forzado (${levels[0].height}p)`);
   }
 }
 
-// Watchdog DinÃ¡mico de CaÃ­da de Fotogramas (Frame Drop Watchdog)
+// Watchdog Dinámico de Caída de Fotogramas (Frame Drop Watchdog)
 const watchdogTimers = { 1: null, 2: null, 3: null, 4: null };
 const lastPlaybackQuality = { 1: null, 2: null, 3: null, 4: null };
 
@@ -235,7 +235,7 @@ function startFrameDropWatchdog(cellNum, video, hls) {
           const newCap = currentCap - 1;
           hls.autoLevelCappedAt = newCap;
           hls.currentLevel = newCap;
-          console.warn(`[Hardware Watchdog Celda ${cellNum}] âš ï¸ PÃ©rdida de frames detectada (${(dropRatio * 100).toFixed(1)}%). Bajando resoluciÃ³n a nivel ${newCap} (${hls.levels[newCap].height}p) para evitar tirones.`);
+          console.warn(`[Hardware Watchdog Celda ${cellNum}] ⚠️ Pérdida de frames detectada (${(dropRatio * 100).toFixed(1)}%). Bajando resolución a nivel ${newCap} (${hls.levels[newCap].height}p) para evitar tirones.`);
         }
       }
     }
@@ -250,7 +250,7 @@ function stopFrameDropWatchdog(cellNum) {
   lastPlaybackQuality[cellNum] = null;
 }
 
-// Sincronizador de Borde en Vivo (Live-Edge Catchup para mÃ­nima latencia en agencias)
+// Sincronizador de Borde en Vivo (Live-Edge Catchup para mínima latencia en agencias)
 const liveCatchupTimers = { 1: null, 2: null, 3: null, 4: null };
 
 function startLiveEdgeCatchup(cellNum, video, isUltraLowLatencyMp4 = false) {
@@ -265,7 +265,7 @@ function startLiveEdgeCatchup(cellNum, video, isUltraLowLatencyMp4 = false) {
         video._stallTicks = (video._stallTicks || 0) + 1;
         if (video._stallTicks >= 2 && video._primaryUrl) {
           video._stallTicks = 0;
-          console.warn(`[Watchdog fMP4] SeÃ±al congelada en celda ${cellNum}, reconectando automÃ¡ticamente...`);
+          console.warn(`[Watchdog fMP4] Señal congelada en celda ${cellNum}, reconectando automáticamente...`);
           video.src = `${video._primaryUrl}&_t=${Date.now()}`;
           video.play().catch(() => {});
           return;
@@ -283,14 +283,14 @@ function startLiveEdgeCatchup(cellNum, video, isUltraLowLatencyMp4 = false) {
 
       if (isUltraLowLatencyMp4) {
         // En streams progresivos HTTP fMP4 (ws.rcncdn.com), NUNCA vaciar el buffer por debajo de 3.5s
-        // ni forzar video.currentTime (porque en HTTP progresivo sin Range reinicia la conexiÃ³n y congela el video).
+        // ni forzar video.currentTime (porque en HTTP progresivo sin Range reinicia la conexión y congela el video).
         if (lag > 7.0) {
           if (video.playbackRate !== 1.04) video.playbackRate = 1.04;
         } else if (lag <= 3.5 && video.playbackRate !== 1.0) {
           video.playbackRate = 1.0;
         }
       } else {
-        // Streams HLS estÃ¡ndar
+        // Streams HLS estándar
         if (lag > 14) {
           video.currentTime = Math.max(0, liveEdge - 3.0);
           video.playbackRate = 1.0;
@@ -319,7 +319,7 @@ function setStreamQualityMode(mode) {
   
   updateQualityBadgeUi();
 
-  // Re-aplicar lÃ­mites de resoluciÃ³n y memoria a todos los reproductores activos en tiempo real
+  // Re-aplicar límites de resolución y memoria a todos los reproductores activos en tiempo real
   [1, 2, 3, 4].forEach(cellNum => {
     const hls = hlsPlayers[cellNum];
     if (hls) {
@@ -376,7 +376,7 @@ function stopAndDestroyPlayer(cellNum) {
   }
 }
 
-// Cell Assignations (Bloqueado a 1 sola pantalla principal; el Multicanal del dÃ­a ya viene armado 4 en 1)
+// Cell Assignations (Bloqueado a 1 sola pantalla principal; el Multicanal del día ya viene armado 4 en 1)
 const cellChannels = {
   1: "multivisual-1",
   2: "santa-anita-park",
@@ -427,16 +427,16 @@ let selectedService = (queryService && ['hipica', 'loteria', 'deportes', 'tv_dep
 
 const SERVICES_MAP = {
   'hipica': { name: 'Carreras', panelId: null },
-  'loteria': { name: 'LoterÃ­as', panelId: 'panelLottery' },
+  'loteria': { name: 'Loterías', panelId: 'panelLottery' },
   'deportes': { name: 'Marcadores Deportivos', panelId: 'panelSports' },
   'tv_deportes': { name: 'Juegos y Eventos TV', panelId: 'panelLiveTv' },
   'publicidad': { name: 'Publicidad del Negocio', panelId: 'panelAds' }
 };
 
 // =========================================================
-// CONTROLADOR DE HORARIOS OFICIALES DE TRANSMISIÃ“N HÃPICA
+// CONTROLADOR DE HORARIOS OFICIALES DE TRANSMISIÓN HÍPICA
 // Lun-Jue: 11:30 AM - 7:00 PM | Vie-Dom: 11:00 AM - 8:00 PM (UTC-4)
-// Fuera de horario: Cambio automÃ¡tico de todos los TVs a Modo LoterÃ­as
+// Fuera de horario: Cambio automático de todos los TVs a Modo Loterías
 // =========================================================
 let latestScheduleStatus = null;
 
@@ -457,13 +457,13 @@ function getLocalVenezuelaScheduleCheck() {
     friSunEnd: '20:00'
   };
   if (!sched.enabled || sched.mode === 'FORCE_OPEN') {
-    return { isRacingAllowed: true, statusReason: 'TransmisiÃ³n HÃ­pica Habilitada' };
+    return { isRacingAllowed: true, statusReason: 'Transmisión Hípica Habilitada' };
   }
   if (sched.mode === 'FORCE_LOTTERY') {
-    return { isRacingAllowed: false, statusReason: 'Modo LoterÃ­as Forzado por AdministraciÃ³n' };
+    return { isRacingAllowed: false, statusReason: 'Modo Loterías Forzado por Administración' };
   }
   const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
-  const vetDay = vetDate.getUTCDay(); // 0=Dom, 5=Vie, 6=SÃ¡b
+  const vetDay = vetDate.getUTCDay(); // 0=Dom, 5=Vie, 6=Sáb
   const curMin = vetDate.getUTCHours() * 60 + vetDate.getUTCMinutes();
   const isWeekend = (vetDay === 0 || vetDay === 5 || vetDay === 6);
   const startMin = parseHHMMToMin(isWeekend ? sched.friSunStart : sched.monThuStart, isWeekend ? 660 : 690);
@@ -472,8 +472,8 @@ function getLocalVenezuelaScheduleCheck() {
   return {
     isRacingAllowed: allowed,
     statusReason: allowed
-      ? 'En horario de transmisiÃ³n hÃ­pica'
-      : `Fuera de horario hÃ­pico (${isWeekend ? 'Vie-Dom 11:00 AM - 8:00 PM' : 'Lun-Jue 11:30 AM - 7:00 PM'}) â€¢ Modo LoterÃ­as Activo`
+      ? 'En horario de transmisión hípica'
+      : `Fuera de horario hípico (${isWeekend ? 'Vie-Dom 11:00 AM - 8:00 PM' : 'Lun-Jue 11:30 AM - 7:00 PM'}) • Modo Loterías Activo`
   };
 }
 
@@ -485,7 +485,7 @@ function showScheduleBannerToast(text) {
     banner.style.cssText = 'position:fixed; bottom:18px; left:50%; transform:translateX(-50%); z-index:99999; background:rgba(9,14,28,0.95); border:1px solid #10b981; color:#e0f2fe; padding:10px 18px; border-radius:10px; font-weight:700; font-size:0.86rem; box-shadow:0 8px 24px rgba(0,0,0,0.6); pointer-events:none; transition:opacity 0.3s ease;';
     document.body.appendChild(banner);
   }
-  banner.textContent = `â° ${text}`;
+  banner.textContent = `⏰ ${text}`;
   banner.style.opacity = '1';
   banner.style.display = 'block';
   if (banner._hideTimer) clearTimeout(banner._hideTimer);
@@ -509,7 +509,7 @@ function enforceRacingSchedule(serverSchedStatus = null) {
       showScheduleBannerToast(check.statusReason);
     }
   } else {
-    // Si ya entrÃ³ en horario de carreras y la pantalla habÃ­a sido pasada automÃ¡ticamente a LoterÃ­as, restaurar HÃ­pica
+    // Si ya entró en horario de carreras y la pantalla había sido pasada automáticamente a Loterías, restaurar Hípica
     if (sessionStorage.getItem('vfx_auto_switched_to_loteria') === '1' && selectedService === 'loteria') {
       sessionStorage.removeItem('vfx_auto_switched_to_loteria');
       applyActiveServiceView('hipica');
@@ -529,12 +529,12 @@ function updateAdminScheduleUI(statusObj) {
       badge.style.background = 'rgba(16, 185, 129, 0.2)';
       badge.style.borderColor = '#10b981';
       badge.style.color = '#34d399';
-      badge.textContent = `ðŸŸ¢ HÃPICA ACTIVA (${statusObj.vetDayName || ''} ${statusObj.vetTime12 || ''})`;
+      badge.textContent = `🟢 HÍPICA ACTIVA (${statusObj.vetDayName || ''} ${statusObj.vetTime12 || ''})`;
     } else {
       badge.style.background = 'rgba(245, 158, 11, 0.2)';
       badge.style.borderColor = '#f59e0b';
       badge.style.color = '#fbbf24';
-      badge.textContent = `ðŸŽ² MODO LOTERÃAS ACTIVO (${statusObj.vetDayName || ''} ${statusObj.vetTime12 || ''})`;
+      badge.textContent = `🎲 MODO LOTERÍAS ACTIVO (${statusObj.vetDayName || ''} ${statusObj.vetTime12 || ''})`;
     }
   }
   const sched = statusObj.schedule;
@@ -562,7 +562,7 @@ function updateAdminBandwidthUI(bw) {
   const elMonth = document.getElementById('lblBwMonthGb');
   const inpDaily = document.getElementById('inpBwDailyLimit');
   const inpMonthly = document.getElementById('inpBwMonthlyLimit');
-  if (elActive) elActive.textContent = `ðŸ“º Streams activos: ${bw.activeStreamConnections || 0}`;
+  if (elActive) elActive.textContent = `📺 Streams activos: ${bw.activeStreamConnections || 0}`;
   if (elToday) elToday.textContent = `${Number(bw.todayGb || 0).toFixed(2)} GB ($${Number(bw.todayCostUsd || 0).toFixed(2)} USD)`;
   if (elMonth) elMonth.textContent = `${Number(bw.monthGb || 0).toFixed(2)} GB ($${Number(bw.estimatedBandwidthCostUsd || 0).toFixed(2)} USD)`;
   if (inpDaily && document.activeElement !== inpDaily && bw.dailyLimitGb) inpDaily.value = bw.dailyLimitGb;
@@ -587,7 +587,7 @@ window.saveBandwidthLimitsFromAdmin = async function() {
       updateAdminBandwidthUI(data);
       if (feedback) {
         feedback.style.color = '#34d399';
-        feedback.textContent = `âœ… Topes de seguridad guardados: MÃ¡x ${dailyLimitGb} GB/dÃ­a y ${monthlyLimitGb} GB/mes.`;
+        feedback.textContent = `✅ Topes de seguridad guardados: Máx ${dailyLimitGb} GB/día y ${monthlyLimitGb} GB/mes.`;
       }
     }
   } catch (e) {}
@@ -633,7 +633,7 @@ window.saveRacingScheduleFromAdmin = async function() {
       enforceRacingSchedule(data);
       if (feedback) {
         feedback.style.color = '#34d399';
-        feedback.textContent = `âœ… Horario guardado (${data.statusReason})`;
+        feedback.textContent = `✅ Horario guardado (${data.statusReason})`;
       }
     } else if (feedback) {
       feedback.style.color = '#f87171';
@@ -642,7 +642,7 @@ window.saveRacingScheduleFromAdmin = async function() {
   } catch (err) {
     if (feedback) {
       feedback.style.color = '#f87171';
-      feedback.textContent = 'Error de conexiÃ³n al guardar horario.';
+      feedback.textContent = 'Error de conexión al guardar horario.';
     }
   }
 };
@@ -664,26 +664,26 @@ function applyActiveServiceView(serviceId) {
     selService.value = selectedService;
   }
 
-  // Requisito 4: El botÃ³n "HipÃ³dromos" sÃ³lo debe aparecer en el mÃ³dulo de carreras (hÃ­pica)
+  // Requisito 4: El botón "Hipódromos" sólo debe aparecer en el módulo de carreras (hípica)
   const btnSidebar = document.getElementById('btnToggleSidebar');
   if (btnSidebar) {
     btnSidebar.style.display = (selectedService === 'hipica' ? 'inline-flex' : 'none');
   }
 
-  // Requisito 4: Quitar completamente "Fenix - HÃ­pica en Directo" bajo el logo
+  // Requisito 4: Quitar completamente "Fenix - Hípica en Directo" bajo el logo
   const subEl = document.getElementById('lblBrandSubtitle');
   if (subEl) {
     subEl.textContent = '';
     subEl.style.display = 'none';
   }
 
-  // Alternar controles de cintillo segÃºn el servicio activo
+  // Alternar controles de cintillo según el servicio activo
   const hipControls = document.getElementById('hipicaHeaderControls');
   const lotControls = document.getElementById('lotteryHeaderControls');
   if (hipControls) hipControls.style.display = (selectedService === 'hipica' ? 'flex' : 'none');
   if (lotControls) lotControls.style.display = (selectedService === 'loteria' ? 'flex' : 'none');
 
-  // Alternar controles de carrusel de loterÃ­as en cintillo flotante
+  // Alternar controles de carrusel de loterías en cintillo flotante
   const cintilloLotControls = document.getElementById('cintilloLotteryControls');
   if (cintilloLotControls) {
     cintilloLotControls.style.display = (selectedService === 'loteria' ? 'inline-flex' : 'none');
@@ -707,7 +707,7 @@ function applyActiveServiceView(serviceId) {
   } else {
     if (elements.sidebarChannels) elements.sidebarChannels.classList.add('collapsed');
     if (elements.gridViewport) elements.gridViewport.style.display = 'none';
-    // Detener inmediatamente los reproductores de carreras cuando no se estÃ¡ en HÃ­pica para liberar ancho de banda
+    // Detener inmediatamente los reproductores de carreras cuando no se está en Hípica para liberar ancho de banda
     [1, 2, 3, 4].forEach(n => stopAndDestroyPlayer(n));
 
     const targetPanelId = SERVICES_MAP[selectedService]?.panelId;
@@ -717,7 +717,7 @@ function applyActiveServiceView(serviceId) {
     }
   }
 
-  // Control de ciclo de vida del mÃ³dulo de LoterÃ­as
+  // Control de ciclo de vida del módulo de Loterías
   if (selectedService === 'loteria') {
     startLotteryEngineView();
   } else {
@@ -728,7 +728,7 @@ function applyActiveServiceView(serviceId) {
 // Selector Desplegable "Otros" (Requisito 1)
 function switchServiceFromSelect(serviceKey) {
   if (!serviceKey) return;
-  console.log(`[Visual-FX] Cambio de mÃ³dulo desde lista desplegable Otros: ${serviceKey}`);
+  console.log(`[Visual-FX] Cambio de módulo desde lista desplegable Otros: ${serviceKey}`);
   switchDirectService(serviceKey);
 }
 window.switchServiceFromSelect = switchServiceFromSelect;
@@ -825,7 +825,7 @@ function initFloatingHeader() {
     }
   }
 
-  // Activar en hover sobre la zona superior (1s de retardo para LoterÃ­as, 2s para HÃ­pica)
+  // Activar en hover sobre la zona superior (1s de retardo para Loterías, 2s para Hípica)
   if (hoverZone) {
     hoverZone.addEventListener('mouseenter', () => {
       cancelHoverTriggerTimer();
@@ -868,9 +868,9 @@ function initFloatingHeader() {
   }
 
   // Actividad del usuario:
-  // - En loterÃ­as: 1.0s de retardo al aproximar el cursor al borde superior.
-  // - En hÃ­pica: 2.0s de retardo para no tapar los selectores de hipÃ³dromos.
-  // - Si el cursor se aleja hacia el centro/abajo de la pantalla, se oculta automÃ¡ticamente.
+  // - En loterías: 1.0s de retardo al aproximar el cursor al borde superior.
+  // - En hípica: 2.0s de retardo para no tapar los selectores de hipódromos.
+  // - Si el cursor se aleja hacia el centro/abajo de la pantalla, se oculta automáticamente.
   const onPointerActivity = (e) => {
     if (isHeaderPinned) return;
     if (e.clientY !== undefined) {
@@ -919,7 +919,7 @@ function initFloatingHeader() {
     }
   }, { passive: true });
 
-  // Mostrar 2.5s al arrancar y luego ocultar suavemente si no estÃ¡ fijada
+  // Mostrar 2.5s al arrancar y luego ocultar suavemente si no está fijada
   if (!isHeaderPinned && header) {
     showHeaderTemporarily(2500);
   }
@@ -963,7 +963,7 @@ function toggleHeaderPin() {
 window.toggleHeaderPin = toggleHeaderPin;
 
 // ==========================================
-// Pantalla Completa Universal Nativa (F11 / Tecla F / Botones) (PeticiÃ³n 2)
+// Pantalla Completa Universal Nativa (F11 / Tecla F / Botones) (Petición 2)
 // ==========================================
 function isCurrentlyFullscreen() {
   return Boolean(
@@ -1012,7 +1012,7 @@ async function toggleAppFullscreen(e) {
         console.warn('[Fullscreen Native Request Fallback to CSS]', err);
       }
     }
-    // Si no estÃ¡ fijada la cabecera, ocultarla a los 1.5s de entrar a pantalla completa
+    // Si no está fijada la cabecera, ocultarla a los 1.5s de entrar a pantalla completa
     if (!isHeaderPinned) {
       const header = document.getElementById('appHeader');
       if (header) {
@@ -1038,13 +1038,13 @@ function updateFullscreenButtons(isFs) {
     if (fsText) {
       fsText.textContent = isFs ? 'Salir Pantalla Completa' : 'Pantalla Completa';
     } else {
-      b.innerHTML = isFs ? 'âœ• Salir Pantalla Completa' : '<span class="icon">â›¶</span> Pantalla Completa';
+      b.innerHTML = isFs ? '✕ Salir Pantalla Completa' : '<span class="icon">⛶</span> Pantalla Completa';
     }
     b.classList.toggle('active-fullscreen', isFs);
   });
 }
 
-// Sincronizador global de cambio de pantalla completa nativa (F11, botÃ³n o tecla F)
+// Sincronizador global de cambio de pantalla completa nativa (F11, botón o tecla F)
 document.addEventListener('fullscreenchange', () => {
   const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
   if (isFs) {
@@ -1144,7 +1144,7 @@ async function checkDeviceAuthorization() {
     const lblHw = document.getElementById('lblHardwareDevId');
     if (lblHw) lblHw.textContent = currentDeviceId;
 
-    // DetecciÃ³n de Nueva VersiÃ³n o Concurrencia: Salir a la pantalla de inicio (/landing.html) limpiando cachÃ©s
+    // Detección de Nueva Versión o Concurrencia: Salir a la pantalla de inicio (/landing.html) limpiando cachés
     if (data.status === 'SESSION_KICKED' || (data.appVer && data.appVer !== CURRENT_APP_VERSION)) {
       if ('caches' in window) {
         try {
@@ -1152,7 +1152,7 @@ async function checkDeviceAuthorization() {
           await Promise.all(keys.map(k => caches.delete(k)));
         } catch (e) {}
       }
-      handleConcurrentSessionKicked(data.message || 'Nueva actualizaciÃ³n disponible. Inicie sesiÃ³n nuevamente.');
+      handleConcurrentSessionKicked(data.message || 'Nueva actualización disponible. Inicie sesión nuevamente.');
       return;
     }
 
@@ -1165,12 +1165,12 @@ async function checkDeviceAuthorization() {
       }
       elements.deviceBadgeText.textContent = data.device ? `${data.device.tvName} [AUTORIZADO]` : `Consola Administrador [AUTORIZADO]`;
       
-      // Mantener heartbeat periÃ³dico cada 15s sin saturar hilo principal ni red
+      // Mantener heartbeat periódico cada 15s sin saturar hilo principal ni red
       if (!devicePollingTimer) {
         devicePollingTimer = setInterval(checkDeviceAuthorization, 15000);
       }
 
-      // 1. Marca DinÃ¡mica por Cliente: Reemplazar por el nombre real del cliente
+      // 1. Marca Dinámica por Cliente: Reemplazar por el nombre real del cliente
       const clientTitle = data.clientName || (data.device && data.device.clientName) || (currentUser && (currentUser.clientName || currentUser.clientId)) || 'Fenix';
       const subEl = document.getElementById('lblBrandSubtitle');
       if (subEl) {
@@ -1179,10 +1179,10 @@ async function checkDeviceAuthorization() {
       }
       const adminSub = document.getElementById('lblAdminModalSubtitle');
       if (adminSub) {
-        adminSub.textContent = `GestiÃ³n Centralizada ${clientTitle} â€¢ Dispositivos, Canales y Usuarios`;
+        adminSub.textContent = `Gestión Centralizada ${clientTitle} • Dispositivos, Canales y Usuarios`;
       }
 
-      // 2. JerarquÃ­a de Seguridad: Los operadores humanos (Super Admin y Clientes) NUNCA son TV displays
+      // 2. Jerarquía de Seguridad: Los operadores humanos (Super Admin y Clientes) NUNCA son TV displays
       const isOperator = currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'CLIENT_MANAGER' || currentUser.role === 'TECH_CHIEF');
       const isTvDisplay = !isOperator && (IS_SMART_TV || (currentUser && currentUser.role === 'DEVICE') || (data.device && data.device.tvName));
 
@@ -1198,7 +1198,7 @@ async function checkDeviceAuthorization() {
         if (profileArea) profileArea.style.display = 'flex';
       }
 
-      // Aplicar configuraciÃ³n remota del servidor solo cuando realmente cambia
+      // Aplicar configuración remota del servidor solo cuando realmente cambia
       const serverConfig = data.config || (data.device && data.device.config);
       if (serverConfig) {
         const cfgJson = JSON.stringify(serverConfig);
@@ -1245,7 +1245,7 @@ async function checkDeviceAuthorization() {
       }
     } else {
       if (elements.unauthorizedBanner) elements.unauthorizedBanner.style.display = 'flex';
-      elements.deviceBadgeText.textContent = `Sin SesiÃ³n Activa`;
+      elements.deviceBadgeText.textContent = `Sin Sesión Activa`;
       if (devicePollingTimer) {
         clearInterval(devicePollingTimer);
         devicePollingTimer = null;
@@ -1259,7 +1259,7 @@ async function checkDeviceAuthorization() {
   }
 }
 
-// ExpulsiÃ³n de SesiÃ³n Concurrente (Single Active Session Enforcement)
+// Expulsión de Sesión Concurrente (Single Active Session Enforcement)
 function handleConcurrentSessionKicked(msg) {
   console.warn('[Auth] Concurrencia detectada:', msg);
   if (devicePollingTimer) {
@@ -1301,10 +1301,10 @@ function checkUserSession() {
       currentUser = JSON.parse(savedUser);
       document.body.classList.add('has-session');
       
-      let roleBadge = 'ðŸ¢ CLIENTE';
-      if (currentUser.role === 'SUPER_ADMIN') roleBadge = 'ðŸ‘‘ SUPER ADMIN';
-      else if (currentUser.role === 'TECH_CHIEF') roleBadge = 'ðŸ› ï¸ JEFE TÃ‰CNICO';
-      else if (currentUser.role === 'DEVICE') roleBadge = 'ðŸ“º PANTALLA TV';
+      let roleBadge = '🏢 CLIENTE';
+      if (currentUser.role === 'SUPER_ADMIN') roleBadge = '👑 SUPER ADMIN';
+      else if (currentUser.role === 'TECH_CHIEF') roleBadge = '🛠️ JEFE TÉCNICO';
+      else if (currentUser.role === 'DEVICE') roleBadge = '📺 PANTALLA TV';
 
       if (elements.lblUserName) {
         elements.lblUserName.textContent = `${currentUser.name || currentUser.username} (${roleBadge})`;
@@ -1342,7 +1342,7 @@ function checkUserSession() {
   }
 }
 
-// Abrir Panel de Control Administrativo Ejecutivo segÃºn Rol
+// Abrir Panel de Control Administrativo Ejecutivo según Rol
 function openExecutiveAdminModal() {
   if (IS_SMART_TV) {
     console.warn('[Security] Panel Administrativo restringido en pantallas Smart TV.');
@@ -1356,7 +1356,7 @@ function openExecutiveAdminModal() {
   elements.deviceModal.style.display = 'flex';
   updateMobileFabVisibility();
   
-  // Limpiar campos de creaciÃ³n de TV para que no tengan nada preestablecido ni autocompletado
+  // Limpiar campos de creación de TV para que no tengan nada preestablecido ni autocompletado
   const clearDeviceInputs = () => {
     if (document.getElementById('txtNewDeviceTvName')) document.getElementById('txtNewDeviceTvName').value = '';
     if (document.getElementById('txtNewDeviceUser')) document.getElementById('txtNewDeviceUser').value = '';
@@ -1370,7 +1370,7 @@ function openExecutiveAdminModal() {
   const isTech = isSuperAdmin || (currentUser.role === 'TECH_CHIEF');
   const isClient = (currentUser.role === 'CLIENT_MANAGER');
 
-  // Control de visibilidad de las pestaÃ±as segÃºn Rol
+  // Control de visibilidad de las pestañas según Rol
   const tabBtnClients = document.getElementById('tabBtnClients');
   const tabBtnDevices = document.getElementById('tabBtnDevices');
   const tabBtnChannels = document.getElementById('tabBtnChannels');
@@ -1387,7 +1387,7 @@ function openExecutiveAdminModal() {
   if (tabBtnAnalytics) tabBtnAnalytics.style.display = (isSuperAdmin || isTech) ? 'inline-block' : 'none';
   if (tabBtnLottery) tabBtnLottery.style.display = isTech ? 'inline-block' : 'none';
 
-  // ConfiguraciÃ³n de la pestaÃ±a Dispositivos
+  // Configuración de la pestaña Dispositivos
   const boxActivateDevice = document.getElementById('boxActivateDevice');
   const boxSuperAdminFilter = document.getElementById('boxSuperAdminDeviceFilter');
   const lblDevicesTableTitle = document.getElementById('lblDevicesTableTitle');
@@ -1404,18 +1404,18 @@ function openExecutiveAdminModal() {
 
   if (lblDevicesTableTitle) {
     lblDevicesTableTitle.textContent = isSuperAdmin
-      ? 'ðŸŒ³ Ãrbol Global de Pantallas Autorizadas (Todas las Organizaciones)'
-      : `ðŸ“º Mis Pantallas Autorizadas (${currentUser.clientName || currentUser.clientId || 'Fenix'})`;
+      ? '🌳 Árbol Global de Pantallas Autorizadas (Todas las Organizaciones)'
+      : `📺 Mis Pantallas Autorizadas (${currentUser.clientName || currentUser.clientId || 'Fenix'})`;
   }
 
-  // Activar la pestaÃ±a adecuada por defecto
+  // Activar la pestaña adecuada por defecto
   if (isSuperAdmin) {
     switchAdminTab('tab-clients');
   } else if (isTech) {
     switchAdminTab('tab-channels');
   } else {
     switchAdminTab('tab-devices');
-    // Si el televisor estÃ¡ en pantalla de activaciÃ³n, sugerir el PIN
+    // Si el televisor está en pantalla de activación, sugerir el PIN
     if (elements.unauthorizedBanner && elements.unauthorizedBanner.style.display !== 'none') {
       const currentPin = elements.lblDevicePin ? elements.lblDevicePin.textContent.trim() : '';
       if (elements.txtActivationPin && currentPin && !elements.txtActivationPin.value) {
@@ -1427,7 +1427,7 @@ function openExecutiveAdminModal() {
     }
   }
 
-  // Cargar datos segÃºn rol
+  // Cargar datos según rol
   if (isSuperAdmin) {
     loadClientsList();
     loadApprovedDevicesList();
@@ -1558,18 +1558,18 @@ elements.loginForm.addEventListener('submit', async (e) => {
       }
       updateMobileFabVisibility();
     } else {
-      elements.loginError.textContent = data.error || 'Credenciales invÃ¡lidas.';
+      elements.loginError.textContent = data.error || 'Credenciales inválidas.';
       elements.loginError.style.display = 'block';
     }
   } catch (err) {
-    elements.loginError.textContent = 'Error de conexiÃ³n con el servidor.';
+    elements.loginError.textContent = 'Error de conexión con el servidor.';
     elements.loginError.style.display = 'block';
   }
 });
 
-// Logout handler (Cierre de SesiÃ³n Total, Congelamiento de Video y RedirecciÃ³n a Landing - Requisito 3)
+// Logout handler (Cierre de Sesión Total, Congelamiento de Video y Redirección a Landing - Requisito 3)
 function handleLogout() {
-  console.log('[Auth] Cerrando sesiÃ³n, deteniendo transmisiones y redirigiendo...');
+  console.log('[Auth] Cerrando sesión, deteniendo transmisiones y redirigiendo...');
   localStorage.removeItem('visual_fx_token');
   localStorage.removeItem('visual_fx_user');
   sessionStorage.removeItem('visual_fx_session_override');
@@ -1596,7 +1596,7 @@ function handleLogout() {
     } catch(e) {}
   });
 
-  // 3. Ocultar cuadrÃ­cula de carreras y panel de loterÃ­as
+  // 3. Ocultar cuadrícula de carreras y panel de loterías
   if (elements.gridViewport) elements.gridViewport.style.display = 'none';
   const panelLot = document.getElementById('panelLottery');
   if (panelLot) panelLot.style.display = 'none';
@@ -1629,7 +1629,7 @@ async function loadChannelCatalog() {
     }
     channelCatalog = data.channels || [];
 
-    // Ordenar: Primero los hipÃ³dromos EN VIVO (onAir), luego alfabÃ©ticamente por nombre
+    // Ordenar: Primero los hipódromos EN VIVO (onAir), luego alfabéticamente por nombre
     channelCatalog.sort((a, b) => {
       if (a.onAir && !b.onAir) return -1;
       if (!a.onAir && b.onAir) return 1;
@@ -1639,7 +1639,7 @@ async function loadChannelCatalog() {
     const activeChannels = channelCatalog.filter(c => c.onAir);
     const activeCount = activeChannels.length;
     
-    // Requisito 1: Simplificar tÃ­tulo y conteo (Ej. "39 En Vivo")
+    // Requisito 1: Simplificar título y conteo (Ej. "39 En Vivo")
     if (elements.lblChannelCount) {
       elements.lblChannelCount.textContent = `${activeCount} En Vivo`;
     }
@@ -1652,7 +1652,7 @@ async function loadChannelCatalog() {
     window._catalogHasLoadedOnce = true;
 
     if (isInitialCatalogLoad) {
-      // Auto-asignar el Multicanal oficial del dÃ­a (multivisual-1) o el primer hipÃ³dromo en vivo en la pantalla Ãºnica
+      // Auto-asignar el Multicanal oficial del día (multivisual-1) o el primer hipódromo en vivo en la pantalla única
       if (activeChannels.length > 0) {
         const currentId = cellChannels[1];
         const currentObj = channelCatalog.find(c => c.id === currentId);
@@ -1671,8 +1671,8 @@ async function loadChannelCatalog() {
         updateGridView(1);
       }
     } else {
-      // En refrescos periÃ³dicos subsecuentes (cada 10 min):
-      // Si el TV estÃ¡ en multivisual-1 y entraron nuevos hipÃ³dromos en vivo a la cuarteta, actualizar el mosaico
+      // En refrescos periódicos subsecuentes (cada 10 min):
+      // Si el TV está en multivisual-1 y entraron nuevos hipódromos en vivo a la cuarteta, actualizar el mosaico
       filterAndRenderChannels(elements.txtSearchChannel ? elements.txtSearchChannel.value.trim().toLowerCase() : '');
       populateSelectDropdowns();
       const multiObj = channelCatalog.find(c => c.id === 'multivisual-1');
@@ -1682,7 +1682,7 @@ async function loadChannelCatalog() {
         window._lastMultivisualTracksKey = newMultiKey;
         assignChannelToCell(1, 'multivisual-1');
       } else {
-        console.log('[Visual-FX] CatÃ¡logo de hipÃ³dromos actualizado en segundo plano sin interrumpir transmisiones activas.');
+        console.log('[Visual-FX] Catálogo de hipódromos actualizado en segundo plano sin interrumpir transmisiones activas.');
       }
     }
   } catch (err) {
@@ -1690,9 +1690,9 @@ async function loadChannelCatalog() {
   }
 }
 
-// Tasa de refrescamiento de hipÃ³dromos en vivo cada 10 minutos (Requisito 2)
+// Tasa de refrescamiento de hipódromos en vivo cada 10 minutos (Requisito 2)
 setInterval(() => {
-  console.log('[Visual-FX] Refrescando catÃ¡logo de hipÃ³dromos en vivo (cada 10 min)...');
+  console.log('[Visual-FX] Refrescando catálogo de hipódromos en vivo (cada 10 min)...');
   loadChannelCatalog();
 }, 10 * 60 * 1000);
 
@@ -1726,14 +1726,14 @@ function filterAndRenderChannels(searchTerm = '') {
   renderChannelList(list);
 }
 
-// Render Channel Sidebar List con Resaltado, CategorÃ­as y Sombreado (PeticiÃ³n 1)
+// Render Channel Sidebar List con Resaltado, Categorías y Sombreado (Petición 1)
 function renderChannelList(channels) {
   elements.channelListContainer.innerHTML = '';
   
   if (channels.length === 0) {
     elements.channelListContainer.innerHTML = `
       <div style="padding: 24px 16px; text-align: center; color: #94a3b8; font-size: 0.9rem;">
-        ${sidebarFilterMode === 'active' ? 'ðŸ‡ No hay hipÃ³dromos con carreras en vivo en este momento.' : 'No se encontraron hipÃ³dromos.'}
+        ${sidebarFilterMode === 'active' ? '🏇 No hay hipódromos con carreras en vivo en este momento.' : 'No se encontraron hipódromos.'}
       </div>
     `;
     return;
@@ -1746,7 +1746,7 @@ function renderChannelList(channels) {
   if (activeMulti.length > 0) {
     const hMulti = document.createElement('div');
     hMulti.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #38bdf8; background: rgba(56, 189, 248, 0.14); border-left: 3px solid #0284c7; border-radius: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;';
-    hMulti.textContent = `ðŸ“º Multicanales 4 en 1 (${activeMulti.length} Disponibles)`;
+    hMulti.textContent = `📺 Multicanales 4 en 1 (${activeMulti.length} Disponibles)`;
     elements.channelListContainer.appendChild(hMulti);
 
     activeMulti.forEach(ch => renderSingleChannelCard(ch));
@@ -1755,7 +1755,7 @@ function renderChannelList(channels) {
   if (activeIndiv.length > 0) {
     const hActive = document.createElement('div');
     hActive.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #34d399; background: rgba(16, 185, 129, 0.12); border-left: 3px solid #10b981; border-radius: 4px; margin: 10px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;';
-    hActive.textContent = `ðŸŸ¢ HipÃ³dromos Individuales en Vivo (${activeIndiv.length})`;
+    hActive.textContent = `🟢 Hipódromos Individuales en Vivo (${activeIndiv.length})`;
     elements.channelListContainer.appendChild(hActive);
 
     activeIndiv.forEach(ch => renderSingleChannelCard(ch));
@@ -1764,7 +1764,7 @@ function renderChannelList(channels) {
   if (sidebarFilterMode === 'all' && inactiveList.length > 0) {
     const hInactive = document.createElement('div');
     hInactive.style.cssText = 'padding: 8px 14px; font-size: 0.78rem; font-weight: 800; color: #94a3b8; background: rgba(255, 255, 255, 0.05); border-left: 3px solid #64748b; border-radius: 4px; margin: 18px 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;';
-    hInactive.textContent = `âšª Fuera de Aire (${inactiveList.length} HipÃ³dromos Sin Actividad Hoy)`;
+    hInactive.textContent = `⚪ Fuera de Aire (${inactiveList.length} Hipódromos Sin Actividad Hoy)`;
     elements.channelListContainer.appendChild(hInactive);
 
     inactiveList.forEach(ch => renderSingleChannelCard(ch));
@@ -1786,17 +1786,17 @@ function renderSingleChannelCard(ch) {
     : `<span class="badge-live off"><span class="live-dot gray"></span> FUERA DE AIRE</span>`;
 
   const multiTracksBanner = (isMulti && ch.multicanalSummary)
-    ? `<div style="margin: 5px 0 6px 0; padding: 5px 8px; background: rgba(2, 6, 23, 0.65); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 6px; font-size: 0.75rem; color: #7dd3fc; font-weight: 700; line-height: 1.35;">ðŸ“º Trae: ${ch.multicanalSummary}</div>`
+    ? `<div style="margin: 5px 0 6px 0; padding: 5px 8px; background: rgba(2, 6, 23, 0.65); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 6px; font-size: 0.75rem; color: #7dd3fc; font-weight: 700; line-height: 1.35;">📺 Trae: ${ch.multicanalSummary}</div>`
     : '';
 
   card.innerHTML = `
     <div class="channel-card-top">
-      <span class="channel-card-name">${ch.flag || 'ðŸ‡'} ${ch.name}</span>
+      <span class="channel-card-name">${ch.flag || '🏇'} ${ch.name}</span>
       ${liveBadgeHtml}
     </div>
-    ${multiTracksBanner || `<div class="channel-card-loc">ðŸ“ ${ch.location || 'Simulcast'} â€¢ ${ch.nextRace || (ch.onAir ? 'TransmisiÃ³n RTN HD' : 'Sin carreras')}</div>`}
+    ${multiTracksBanner || `<div class="channel-card-loc">📍 ${ch.location || 'Simulcast'} • ${ch.nextRace || (ch.onAir ? 'Transmisión RTN HD' : 'Sin carreras')}</div>`}
     <div class="channel-card-actions">
-      <button class="btn-assign-cell" data-cell="1" data-channel="${ch.id}" style="width: 100%; font-weight: 800;" title="Transmitir en Pantalla Principal">â–¶ï¸ Ver en Pantalla</button>
+      <button class="btn-assign-cell" data-cell="1" data-channel="${ch.id}" style="width: 100%; font-weight: 800;" title="Transmitir en Pantalla Principal">▶️ Ver en Pantalla</button>
     </div>
   `;
   
@@ -1815,7 +1815,7 @@ function renderSingleChannelCard(ch) {
   elements.channelListContainer.appendChild(card);
 }
 
-// Populate Select Dropdowns inside each Video Cell (Ãšnicamente HipÃ³dromos EN VIVO - Requisito 2)
+// Populate Select Dropdowns inside each Video Cell (Únicamente Hipódromos EN VIVO - Requisito 2)
 function populateSelectDropdowns() {
   const activeChannels = channelCatalog.filter(c => c.onAir);
   const multiChannels = activeChannels.filter(c => c.isMulticanal || c.id === 'capital-otb');
@@ -1831,7 +1831,7 @@ function populateSelectDropdowns() {
     if (sortedActive.length === 0) {
       const option = document.createElement('option');
       option.value = '';
-      option.textContent = 'âš ï¸ Sin carreras en vivo en este momento';
+      option.textContent = '⚠️ Sin carreras en vivo en este momento';
       select.appendChild(option);
       return;
     }
@@ -1841,9 +1841,9 @@ function populateSelectDropdowns() {
       option.value = ch.id;
       const isMulti = Boolean(ch.isMulticanal || ch.id === 'capital-otb');
       if (isMulti && ch.multicanalSummary) {
-        option.textContent = `ðŸ“º [4 en 1] ${ch.name} (${ch.multicanalSummary})`;
+        option.textContent = `📺 [4 en 1] ${ch.name} (${ch.multicanalSummary})`;
       } else {
-        option.textContent = `ðŸŸ¢ ${ch.flag || 'ðŸ‡'} ${ch.name}${ch.nextRace ? ' â€¢ ' + ch.nextRace : ''}`;
+        option.textContent = `🟢 ${ch.flag || '🏇'} ${ch.name}${ch.nextRace ? ' • ' + ch.nextRace : ''}`;
       }
       if (ch.id === cellChannels[cellNum]) {
         option.selected = true;
@@ -1921,7 +1921,7 @@ function renderMulticanalModalContent() {
     presetsGrid.innerHTML = multicanales.map(mc => {
       const trackPills = (mc.multicanalSummary || mc.nextRace || '')
         .replace(/^Incluye:\s*/i, '')
-        .split('â€¢')
+        .split('•')
         .map(s => s.trim())
         .filter(Boolean)
         .map((tName, idx) => `<span style="background:rgba(15,23,42,0.9); border:1px solid rgba(56,189,248,0.3); color:#e0f2fe; border-radius:5px; padding:3px 7px; font-size:0.74rem; font-weight:700;">${idx + 1}. ${tName}</span>`)
@@ -1931,23 +1931,23 @@ function renderMulticanalModalContent() {
         <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(12, 74, 110, 0.32)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px;">
-              <strong style="color: #fff; font-size: 0.92rem;">${mc.flag || 'ðŸ“º'} ${mc.name}</strong>
+              <strong style="color: #fff; font-size: 0.92rem;">${mc.flag || '📺'} ${mc.name}</strong>
               <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.66rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">4 EN 1</span>
             </div>
-            <div style="font-size: 0.73rem; color: #94a3b8; margin-bottom: 8px;">Canales incluidos en esta seÃ±al:</div>
+            <div style="font-size: 0.73rem; color: #94a3b8; margin-bottom: 8px;">Canales incluidos en esta señal:</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
               ${trackPills}
             </div>
           </div>
           <button type="button" onclick="window.selectMulticanalForTv('${mc.id}')" style="width: 100%; background: linear-gradient(135deg, #0284c7, #10b981); border: none; color: #fff; font-weight: 800; font-size: 0.8rem; padding: 8px 10px; border-radius: 6px; cursor: pointer;">
-            â–¶ï¸ Ver este Multicanal en mi TV (1 Canal)
+            ▶️ Ver este Multicanal en mi TV (1 Canal)
           </button>
         </div>
       `;
     }).join('');
   }
 
-  // Poblar los 4 selectores del creador personalizado con los hipÃ³dromos activos hoy
+  // Poblar los 4 selectores del creador personalizado con los hipódromos activos hoy
   [1, 2, 3, 4].forEach((q, idx) => {
     const sel = document.getElementById(`selCustomMulti${q}`);
     if (!sel) return;
@@ -1955,7 +1955,7 @@ function renderMulticanalModalContent() {
     indivTracks.forEach((ch, chIdx) => {
       const opt = document.createElement('option');
       opt.value = ch.id;
-      opt.textContent = `${ch.flag || 'ðŸ‡'} ${ch.name}${ch.activeToday !== false ? ' (Carreras Hoy)' : ''}`;
+      opt.textContent = `${ch.flag || '🏇'} ${ch.name}${ch.activeToday !== false ? ' (Carreras Hoy)' : ''}`;
       if (chIdx === (idx % Math.max(1, indivTracks.length))) {
         opt.selected = true;
       }
@@ -1965,7 +1965,7 @@ function renderMulticanalModalContent() {
 }
 
 window.selectMulticanalForTv = function(channelId) {
-  // Cambiar automÃ¡ticamente a Vista de 1 sola pantalla para que al Smart TV le llegue 1 solo canal fluido ya dividido en 4
+  // Cambiar automáticamente a Vista de 1 sola pantalla para que al Smart TV le llegue 1 solo canal fluido ya dividido en 4
   if (activeGridMode !== 1) {
     updateGridView(1);
   }
@@ -1997,7 +1997,7 @@ window.handleCreateCustomMulticanal = async function() {
       return;
     }
 
-    // Recargar catÃ¡logo para que el nuevo (o reutilizado) Multicanal aparezca en la lista y selectores
+    // Recargar catálogo para que el nuevo (o reutilizado) Multicanal aparezca en la lista y selectores
     const chRes = await fetch('/api/channels');
     const chData = await chRes.json();
     if (chData && Array.isArray(chData.channels)) {
@@ -2009,7 +2009,7 @@ window.handleCreateCustomMulticanal = async function() {
     if (feedback) {
       feedback.style.display = 'block';
       feedback.style.color = '#34d399';
-      feedback.textContent = `âœ… ${data.message}`;
+      feedback.textContent = `✅ ${data.message}`;
     }
 
     if (titleInput) titleInput.value = '';
@@ -2020,7 +2020,7 @@ window.handleCreateCustomMulticanal = async function() {
     if (feedback) {
       feedback.style.display = 'block';
       feedback.style.color = '#f87171';
-      feedback.textContent = 'Error de conexiÃ³n al crear el Multicanal.';
+      feedback.textContent = 'Error de conexión al crear el Multicanal.';
     }
   }
 };
@@ -2050,7 +2050,7 @@ function assignChannelToCell(cellNum, channelId) {
   }
 }
 
-// Play iFrame Embed (Requisito 3: Carga directa de seÃ±al con pantalla completa y autoplay)
+// Play iFrame Embed (Requisito 3: Carga directa de señal con pantalla completa y autoplay)
 function playIframeInCell(cellNum, iframeUrl) {
   stopAndDestroyPlayer(cellNum);
 
@@ -2080,7 +2080,7 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
 
   wrapper.innerHTML = `
     <video id="video-${cellNum}" autoplay muted playsinline style="width:100%; height:100%; object-fit:contain; transform: translateZ(0); -webkit-transform: translateZ(0);"></video>
-    <div class="video-loader" id="loader-${cellNum}"><div class="spinner"></div><span>Conectando SeÃ±al HD...</span></div>
+    <div class="video-loader" id="loader-${cellNum}"><div class="spinner"></div><span>Conectando Señal HD...</span></div>
   `;
 
   const video = document.getElementById(`video-${cellNum}`);
@@ -2162,7 +2162,7 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               if (!isFallback && targetUrl !== primaryUrl) {
-                console.warn('[HLS Direct] CORS/Red en canal pÃºblico, usando puente servidor...');
+                console.warn('[HLS Direct] CORS/Red en canal público, usando puente servidor...');
                 stopAndDestroyPlayer(cellNum);
                 startHls(primaryUrl, true);
               } else {
@@ -2197,13 +2197,13 @@ function playStreamInCell(cellNum, proxyUrl, rawStreamUrl) {
     }
   }
 
-  // Canales pÃºblicos gratuitos (fuera de 1/ST TV) se reproducen directo primero para ahorrar 100% de ancho de banda del servidor
+  // Canales públicos gratuitos (fuera de 1/ST TV) se reproducen directo primero para ahorrar 100% de ancho de banda del servidor
   const directFirstUrl = (rawStreamUrl && rawStreamUrl.startsWith('https://')) ? rawStreamUrl : primaryUrl;
   startHls(directFirstUrl);
   video.muted = (cellNum !== activeAudioCell);
 }
 
-// Grid Layout Matrix Switcher: Bloqueado estrictamente a 1 sola pantalla por TV para evitar mÃºltiples flujos simultÃ¡neos
+// Grid Layout Matrix Switcher: Bloqueado estrictamente a 1 sola pantalla por TV para evitar múltiples flujos simultáneos
 function updateGridView() {
   const gridCount = 1;
   activeGridMode = 1;
@@ -2252,8 +2252,8 @@ document.addEventListener('visibilitychange', () => {
       }
       return;
     }
-    // Para streams fMP4 progresivos (ws.rcncdn.com): si la pestaÃ±a pasa a segundo plano (ej. viendo YouTube)
-    // y la celda estÃ¡ silenciada, pausar la descarga HTTP para liberar el 100% del ancho de banda.
+    // Para streams fMP4 progresivos (ws.rcncdn.com): si la pestaña pasa a segundo plano (ej. viendo YouTube)
+    // y la celda está silenciada, pausar la descarga HTTP para liberar el 100% del ancho de banda.
     const video = document.getElementById(`video-${cellNum}`);
     if (video && video._primaryUrl && cellNum <= activeGridMode && selectedService === 'hipica') {
       if (isHidden && cellNum !== activeAudioCell) {
@@ -2277,7 +2277,7 @@ function setAudioFocus(targetCellNum) {
     // Si ya tiene sonido, al hacer clic de nuevo se SILENCIA por completo
     activeAudioCell = null;
   } else {
-    // Activar sonido en la celda seleccionada y silenciar las demÃ¡s
+    // Activar sonido en la celda seleccionada y silenciar las demás
     activeAudioCell = targetCellNum;
   }
   
@@ -2299,10 +2299,10 @@ function setAudioFocus(targetCellNum) {
     if (btnAudio) {
       if (isThisCellAudio) {
         btnAudio.classList.add('active');
-        btnAudio.innerHTML = `<span class="icon">ðŸ”Š</span> <span class="audio-text">AUDIO ACTIVO</span>`;
+        btnAudio.innerHTML = `<span class="icon">🔊</span> <span class="audio-text">AUDIO ACTIVO</span>`;
       } else {
         btnAudio.classList.remove('active');
-        btnAudio.innerHTML = `<span class="icon">ðŸ”‡</span> <span class="audio-text">SILENCIADO</span>`;
+        btnAudio.innerHTML = `<span class="icon">🔇</span> <span class="audio-text">SILENCIADO</span>`;
       }
     }
   });
@@ -2329,19 +2329,19 @@ function maximizeCellCss(cellNum) {
   cell.classList.add('cell-maximized');
   currentMaximizedCellNum = cellNum;
 
-  // OptimizaciÃ³n dinÃ¡mica de resoluciÃ³n: al maximizar, desbloquear resoluciÃ³n de pantalla completa en esta celda
+  // Optimización dinámica de resolución: al maximizar, desbloquear resolución de pantalla completa en esta celda
   if (hlsPlayers[cellNum]) {
     applyResolutionCap(cellNum, hlsPlayers[cellNum], 1, true);
     tuneHlsBuffers(hlsPlayers[cellNum], getEffectiveQualityTier(), 1);
   }
 
-  // Enfocar audio automÃ¡ticamente en la celda maximizada
+  // Enfocar audio automáticamente en la celda maximizada
   setAudioFocus(cellNum);
 
   const btnReturn = document.getElementById('btnReturnMulticanal');
   if (btnReturn) {
     const gridLabel = savedMulticanalGridMode ? ` (${savedMulticanalGridMode} Pantallas)` : '';
-    btnReturn.innerHTML = `<span class="btn-icon">â†©</span> Volver a Multicanal${gridLabel}`;
+    btnReturn.innerHTML = `<span class="btn-icon">↩</span> Volver a Multicanal${gridLabel}`;
     btnReturn.style.display = 'inline-flex';
   }
   console.log(`[Visual-FX] Celda ${cellNum} maximizada en pantalla completa universal.`);
@@ -2361,7 +2361,7 @@ function exitCellMaximized() {
 
   currentMaximizedCellNum = null;
 
-  // Restaurar lÃ­mites de resoluciÃ³n y buffers para la vista multicanal activa
+  // Restaurar límites de resolución y buffers para la vista multicanal activa
   [1, 2, 3, 4].forEach(n => {
     if (hlsPlayers[n]) {
       applyResolutionCap(n, hlsPlayers[n], activeGridMode, false);
@@ -2383,14 +2383,14 @@ function exitCellMaximized() {
 }
 window.exitCellMaximized = exitCellMaximized;
 
-// Auto-MaximizaciÃ³n al darse la Partida en Multicanal
+// Auto-Maximización al darse la Partida en Multicanal
 function triggerRaceStartAutoZoom(cellNum, trackName) {
   if (activeGridMode <= 1 || currentMaximizedCellNum !== null) return;
-  console.log(`[Visual-FX] ðŸ‡ Â¡Partida detectada en ${trackName}! Maximizando celda ${cellNum} automÃ¡ticamente...`);
+  console.log(`[Visual-FX] 🏇 ¡Partida detectada en ${trackName}! Maximizando celda ${cellNum} automáticamente...`);
   maximizeCellCss(cellNum);
 
   if (raceAutoRestoreTimer) clearTimeout(raceAutoRestoreTimer);
-  // Regresar automÃ¡ticamente a multicanal tras 2.5 minutos (tiempo promedio de carrera)
+  // Regresar automáticamente a multicanal tras 2.5 minutos (tiempo promedio de carrera)
   raceAutoRestoreTimer = setTimeout(() => {
     console.log(`[Visual-FX] Carrera finalizada en ${trackName}. Restaurando vista multicanal.`);
     exitCellMaximized();
@@ -2519,7 +2519,7 @@ function setupAdminTabs() {
 
 // Setup Event Listeners
 function setupEventListeners() {
-  // Selector de cuadrÃ­cula
+  // Selector de cuadrícula
   document.querySelectorAll('.layout-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       updateGridView(parseInt(btn.dataset.grid));
@@ -2560,7 +2560,7 @@ function setupEventListeners() {
     }
   });
 
-  // Temporizador de 30 segundos para auto-ocultar la barra de hipÃ³dromos (Requisito 6)
+  // Temporizador de 30 segundos para auto-ocultar la barra de hipódromos (Requisito 6)
   let sidebarAutoCloseTimer = null;
 
   function resetSidebarAutoCloseTimer() {
@@ -2571,7 +2571,7 @@ function setupEventListeners() {
     sidebarAutoCloseTimer = setTimeout(() => {
       if (sidebar && !sidebar.classList.contains('collapsed')) {
         sidebar.classList.add('collapsed');
-        console.log('[Sidebar] Ocultada automÃ¡ticamente tras 30 segundos sin interacciÃ³n.');
+        console.log('[Sidebar] Ocultada automáticamente tras 30 segundos sin interacción.');
       }
     }, 30000);
   }
@@ -2663,7 +2663,7 @@ function setupEventListeners() {
           applyActiveServiceView(tempSelectedService);
           if (defaultServiceToast) {
             defaultServiceToast.style.display = 'block';
-            defaultServiceToast.textContent = `ðŸ“Œ Â¡Fijado! Al encender este TV se abrirÃ¡ automÃ¡ticamente en: "${SERVICES_MAP[tempSelectedService]?.name}"`;
+            defaultServiceToast.textContent = `📌 ¡Fijado! Al encender este TV se abrirá automáticamente en: "${SERVICES_MAP[tempSelectedService]?.name}"`;
             setTimeout(() => {
               defaultServiceToast.style.display = 'none';
               if (serviceSelectorModal) serviceSelectorModal.style.display = 'none';
@@ -2676,7 +2676,7 @@ function setupEventListeners() {
     });
   }
 
-  // Botones de NavegaciÃ³n del Carrusel de LoterÃ­as y Pantalla Completa en la Cabecera
+  // Botones de Navegación del Carrusel de Loterías y Pantalla Completa en la Cabecera
   const btnHFirst = document.getElementById('btnHeaderFirst');
   if (btnHFirst) {
     btnHFirst.addEventListener('click', (e) => {
@@ -2731,7 +2731,7 @@ function setupEventListeners() {
     });
   }
 
-  // Open Admin Portal Button (Solo para consolas de administraciÃ³n, bloqueado en TVs)
+  // Open Admin Portal Button (Solo para consolas de administración, bloqueado en TVs)
   elements.btnAdminModal.addEventListener('click', () => {
     if (IS_SMART_TV) {
       return;
@@ -2750,7 +2750,7 @@ function setupEventListeners() {
     });
   }
 
-  // Acceso TÃ©cnico Oculto en Smart TVs: 5 clics rÃ¡pidos sobre el logotipo Visual-FX
+  // Acceso Técnico Oculto en Smart TVs: 5 clics rápidos sobre el logotipo Visual-FX
   let logoClicks = 0;
   let logoTimer = null;
   const logoTrigger = document.getElementById('brandLogoTrigger');
@@ -2787,7 +2787,7 @@ function setupEventListeners() {
     });
   }
 
-  // Crear Nuevo Cliente (Ficha de OrganizaciÃ³n - Exclusivo Super Admin)
+  // Crear Nuevo Cliente (Ficha de Organización - Exclusivo Super Admin)
   const btnCreateClient = document.getElementById('btnCreateClient');
   if (btnCreateClient) {
     btnCreateClient.addEventListener('click', async () => {
@@ -2800,7 +2800,7 @@ function setupEventListeners() {
 
       if (!name || !managerUsername || !pass) {
         msg.style.color = '#fca5a5';
-        msg.textContent = 'Por favor complete todos los campos (Nombre, Usuario y ContraseÃ±a son obligatorios).';
+        msg.textContent = 'Por favor complete todos los campos (Nombre, Usuario y Contraseña son obligatorios).';
         return;
       }
 
@@ -2817,7 +2817,7 @@ function setupEventListeners() {
         const data = await res.json();
         if (res.ok && data.success) {
           msg.style.color = '#34d399';
-          msg.textContent = `Â¡Cliente "${name}" creado exitosamente con cupo de ${data.client.maxDevices} pantallas!`;
+          msg.textContent = `¡Cliente "${name}" creado exitosamente con cupo de ${data.client.maxDevices} pantallas!`;
           document.getElementById('newClientName').value = '';
           document.getElementById('newClientUsername').value = '';
           document.getElementById('newClientPassword').value = '';
@@ -2827,17 +2827,17 @@ function setupEventListeners() {
           msg.textContent = data.error || 'Error creando cliente.';
         }
       } catch (e) {
-        msg.textContent = 'Error de conexiÃ³n.';
+        msg.textContent = 'Error de conexión.';
       }
     });
   }
 
-  // Master Control: Agregar Nuevo HipÃ³dromo al CatÃ¡logo
+  // Master Control: Agregar Nuevo Hipódromo al Catálogo
   const btnAddNewChannel = document.getElementById('btnAddNewChannel');
   if (btnAddNewChannel) {
     btnAddNewChannel.addEventListener('click', async () => {
       const name = document.getElementById('newChannelName')?.value.trim();
-      const flag = document.getElementById('newChannelFlag')?.value.trim() || 'ðŸ‡';
+      const flag = document.getElementById('newChannelFlag')?.value.trim() || '🏇';
       const location = document.getElementById('newChannelLoc')?.value.trim() || 'Internacional';
       const streamUrl = document.getElementById('newChannelUrl')?.value.trim();
       const type = document.getElementById('newChannelType')?.value || 'hls';
@@ -2846,7 +2846,7 @@ function setupEventListeners() {
       if (!name || !streamUrl) {
         if (msg) {
           msg.style.color = '#fca5a5';
-          msg.textContent = 'Nombre del hipÃ³dromo y URL de transmisiÃ³n son obligatorios.';
+          msg.textContent = 'Nombre del hipódromo y URL de transmisión son obligatorios.';
         }
         return;
       }
@@ -2864,7 +2864,7 @@ function setupEventListeners() {
         if (res.ok && data.success) {
           if (msg) {
             msg.style.color = '#34d399';
-            msg.textContent = `Â¡HipÃ³dromo "${name}" agregado exitosamente al CatÃ¡logo MÃ¡ster!`;
+            msg.textContent = `¡Hipódromo "${name}" agregado exitosamente al Catálogo Máster!`;
           }
           document.getElementById('newChannelName').value = '';
           document.getElementById('newChannelUrl').value = '';
@@ -2873,19 +2873,19 @@ function setupEventListeners() {
         } else {
           if (msg) {
             msg.style.color = '#fca5a5';
-            msg.textContent = data.error || 'Error al agregar hipÃ³dromo.';
+            msg.textContent = data.error || 'Error al agregar hipódromo.';
           }
         }
       } catch (err) {
         if (msg) {
           msg.style.color = '#fca5a5';
-          msg.textContent = 'Error de conexiÃ³n con el servidor.';
+          msg.textContent = 'Error de conexión con el servidor.';
         }
       }
     });
   }
 
-  // Master Control: Previsualizar SeÃ±al en Monitor en Vivo
+  // Master Control: Previsualizar Señal en Monitor en Vivo
   const btnTestChannelPreview = document.getElementById('btnTestChannelPreview');
   if (btnTestChannelPreview) {
     btnTestChannelPreview.addEventListener('click', () => {
@@ -2895,11 +2895,11 @@ function setupEventListeners() {
       const channel = channelCatalog.find(c => c.id === channelId);
 
       const urlToTest = customUrl || (channel ? (channel.streamUrl || channel.iframeUrl) : '');
-      const nameToTest = channel ? channel.name : 'SeÃ±al Personalizada';
+      const nameToTest = channel ? channel.name : 'Señal Personalizada';
       const typeToTest = channel ? (channel.type || 'hls') : 'hls';
 
       if (!urlToTest) {
-        alert('Seleccione un canal o ingrese una URL para probar la transmisiÃ³n.');
+        alert('Seleccione un canal o ingrese una URL para probar la transmisión.');
         return;
       }
 
@@ -2935,15 +2935,15 @@ function setupEventListeners() {
         const data = await res.json();
         if (res.ok && data.success) {
           msg.style.color = '#34d399';
-          msg.textContent = `Â¡SeÃ±al de ${data.channel.name} actualizada!`;
+          msg.textContent = `¡Señal de ${data.channel.name} actualizada!`;
           await loadChannelCatalog();
           populateAdminChannelsTable();
         } else {
           msg.style.color = '#fca5a5';
-          msg.textContent = data.error || 'Error actualizando seÃ±al.';
+          msg.textContent = data.error || 'Error actualizando señal.';
         }
       } catch (e) {
-        msg.textContent = 'Error de comunicaciÃ³n.';
+        msg.textContent = 'Error de comunicación.';
       }
     });
   }
@@ -2962,7 +2962,7 @@ function setupEventListeners() {
       if (!name || !username || !pass) {
         if (msg) {
           msg.style.color = '#fca5a5';
-          msg.textContent = 'Nombre, usuario y contraseÃ±a son obligatorios.';
+          msg.textContent = 'Nombre, usuario y contraseña son obligatorios.';
         }
         return;
       }
@@ -2980,7 +2980,7 @@ function setupEventListeners() {
         if (res.ok && data.success) {
           if (msg) {
             msg.style.color = '#34d399';
-            msg.textContent = `Â¡Usuario @${username} registrado con Ã©xito!`;
+            msg.textContent = `¡Usuario @${username} registrado con éxito!`;
           }
           document.getElementById('newSystemUserName').value = '';
           document.getElementById('newSystemUserLogin').value = '';
@@ -2995,7 +2995,7 @@ function setupEventListeners() {
       } catch (e) {
         if (msg) {
           msg.style.color = '#fca5a5';
-          msg.textContent = 'Error de conexiÃ³n con el servidor.';
+          msg.textContent = 'Error de conexión con el servidor.';
         }
       }
     });
@@ -3009,7 +3009,7 @@ function setupEventListeners() {
     });
   }
 
-  // Filtro de AnalÃ­ticas por Cliente (Super Admin)
+  // Filtro de Analíticas por Cliente (Super Admin)
   const selFilterAnalyticsClient = document.getElementById('selFilterAnalyticsClient');
   if (selFilterAnalyticsClient) {
     selFilterAnalyticsClient.addEventListener('change', (e) => {
@@ -3017,25 +3017,25 @@ function setupEventListeners() {
     });
   }
 
-  // Control de RotaciÃ³n de LoterÃ­as
+  // Control de Rotación de Loterías
   const btnToggleLottery = document.getElementById('btnToggleLotteryCarousel');
   if (btnToggleLottery) {
     btnToggleLottery.addEventListener('click', toggleLotteryCarousel);
   }
 
-  // Cambio de juego en Formulario Manual de LoterÃ­as
+  // Cambio de juego en Formulario Manual de Loterías
   const selManualGame = document.getElementById('selManualGame');
   if (selManualGame) {
     selManualGame.addEventListener('change', updateManualHoursDropdown);
   }
 
-  // Forzar SincronizaciÃ³n Inmediata de LoterÃ­as (Super Admin / Tech)
+  // Forzar Sincronización Inmediata de Loterías (Super Admin / Tech)
   const btnForceSync = document.getElementById('btnForceSyncLottery');
   const toastSync = document.getElementById('lotterySyncToast');
   if (btnForceSync) {
     btnForceSync.addEventListener('click', async () => {
       btnForceSync.disabled = true;
-      btnForceSync.textContent = 'â³ Sincronizando fuentes...';
+      btnForceSync.textContent = '⏳ Sincronizando fuentes...';
       try {
         const res = await fetch('/api/admin/lottery/sync-now', {
           method: 'POST',
@@ -3045,18 +3045,18 @@ function setupEventListeners() {
         if (data.success) {
           if (toastSync) {
             toastSync.style.display = 'block';
-            toastSync.textContent = `âœ… ${data.message} (${data.resultsCount} sorteos cargados)`;
+            toastSync.textContent = `✅ ${data.message} (${data.resultsCount} sorteos cargados)`;
             setTimeout(() => { toastSync.style.display = 'none'; }, 4000);
           }
           await loadLotteryTop10Data();
         } else {
-          alert(data.error || 'Error forzando sincronizaciÃ³n.');
+          alert(data.error || 'Error forzando sincronización.');
         }
       } catch (err) {
-        alert('Error de conexiÃ³n.');
+        alert('Error de conexión.');
       } finally {
         btnForceSync.disabled = false;
-        btnForceSync.textContent = 'ðŸ”„ Forzar SincronizaciÃ³n Inmediata';
+        btnForceSync.textContent = '🔄 Forzar Sincronización Inmediata';
       }
     });
   }
@@ -3080,7 +3080,7 @@ function setupEventListeners() {
         const number = document.getElementById('txtManualNumber')?.value.trim();
         const name = document.getElementById('txtManualName')?.value.trim();
         if (!number) {
-          alert('Por favor ingrese al menos el nÃºmero del animalito.');
+          alert('Por favor ingrese al menos el número del animalito.');
           return;
         }
         resultPayload = { number, name };
@@ -3110,7 +3110,7 @@ function setupEventListeners() {
           if (msgManual) {
             msgManual.style.display = 'block';
             msgManual.style.color = '#34d399';
-            msgManual.textContent = `Â¡Resultado publicado con Ã©xito para ${game.name} (${hour})!`;
+            msgManual.textContent = `¡Resultado publicado con éxito para ${game.name} (${hour})!`;
             setTimeout(() => { msgManual.style.display = 'none'; }, 4000);
           }
           await loadLotteryTop10Data();
@@ -3118,7 +3118,7 @@ function setupEventListeners() {
           alert(data.error || 'Error registrando resultado manual.');
         }
       } catch (err) {
-        alert('Error de conexiÃ³n con el servidor.');
+        alert('Error de conexión con el servidor.');
       }
     });
   }
@@ -3131,7 +3131,7 @@ function setupEventListeners() {
 }
 
 
-// Monitor de PrevisualizaciÃ³n en Vivo de Canales
+// Monitor de Previsualización en Vivo de Canales
 let testHlsPlayer = null;
 
 function stopTestMonitorPlayer() {
@@ -3159,7 +3159,7 @@ function previewChannelInMonitor(streamUrl, channelName, type = 'hls') {
   stopTestMonitorPlayer();
 
   container.style.display = 'block';
-  if (title) title.textContent = `ðŸ“º Monitor de VerificaciÃ³n en Vivo: ${channelName}`;
+  if (title) title.textContent = `📺 Monitor de Verificación en Vivo: ${channelName}`;
 
   if (type === 'iframe') {
     wrapper.innerHTML = `<iframe src="${streamUrl}" width="100%" height="100%" frameborder="0" allowfullscreen style="border:none; width:100%; height:100%;"></iframe>`;
@@ -3203,7 +3203,7 @@ function previewChannelInMonitor(streamUrl, channelName, type = 'hls') {
   }
 }
 
-// Master Control: Pausar / Reanudar HipÃ³dromo
+// Master Control: Pausar / Reanudar Hipódromo
 async function toggleChannelOnAirApi(channelId) {
   try {
     const res = await fetch('/api/admin/channels/toggle', {
@@ -3219,16 +3219,16 @@ async function toggleChannelOnAirApi(channelId) {
       await loadChannelCatalog();
       populateAdminChannelsTable();
     } else {
-      alert(data.error || 'Error alternando seÃ±al de hipÃ³dromo.');
+      alert(data.error || 'Error alternando señal de hipódromo.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
-// Master Control: Eliminar HipÃ³dromo
+// Master Control: Eliminar Hipódromo
 async function deleteChannelApi(channelId, channelName) {
-  if (!confirm(`Â¿EstÃ¡ seguro de eliminar el hipÃ³dromo "${channelName}" del catÃ¡logo mÃ¡ster?`)) return;
+  if (!confirm(`¿Está seguro de eliminar el hipódromo "${channelName}" del catálogo máster?`)) return;
   try {
     const res = await fetch(`/api/admin/channels/${channelId}`, {
       method: 'DELETE',
@@ -3239,10 +3239,10 @@ async function deleteChannelApi(channelId, channelName) {
       await loadChannelCatalog();
       populateAdminChannelsTable();
     } else {
-      alert(data.error || 'Error al eliminar hipÃ³dromo.');
+      alert(data.error || 'Error al eliminar hipódromo.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
@@ -3269,19 +3269,19 @@ function populateAdminChannelsTable() {
       <td><strong>${c.flag} ${c.name}</strong></td>
       <td>${c.location}</td>
       <td><span class="badge-role tech">${(c.type || 'HLS').toUpperCase()}</span></td>
-      <td>${c.onAir ? '<span style="color:#34d399; font-weight:bold;">ðŸŸ¢ EN VIVO</span>' : '<span style="color:#ef4444; font-weight:bold;">â¸ï¸ FUERA DE AIRE</span>'}</td>
+      <td>${c.onAir ? '<span style="color:#34d399; font-weight:bold;">🟢 EN VIVO</span>' : '<span style="color:#ef4444; font-weight:bold;">⏸️ FUERA DE AIRE</span>'}</td>
       <td style="font-family:var(--font-code); font-size:0.75rem; color:var(--text-muted); max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
         ${c.streamUrl || c.iframeUrl}
       </td>
       <td style="display:flex; gap:6px; flex-wrap:wrap;">
         <button class="btn-action-sm renew" onclick="previewChannelInMonitor('${c.streamUrl || c.iframeUrl}', '${c.name}', '${c.type || 'hls'}')" title="Ver en vivo en Monitor">
-          â–¶ï¸ Probar
+          ▶️ Probar
         </button>
         <button class="btn-action-sm ${c.onAir ? 'suspend' : 'reactivate'}" onclick="toggleChannelOnAirApi('${c.id}')" title="Pausar o Reanudar">
-          ${c.onAir ? 'â¸ï¸ Pausar' : 'â–¶ï¸ Reanudar'}
+          ${c.onAir ? '⏸️ Pausar' : '▶️ Reanudar'}
         </button>
-        <button class="btn-danger-sm" onclick="deleteChannelApi('${c.id}', '${c.name}')" title="Eliminar HipÃ³dromo">
-          ðŸ—‘ï¸
+        <button class="btn-danger-sm" onclick="deleteChannelApi('${c.id}', '${c.name}')" title="Eliminar Hipódromo">
+          🗑️
         </button>
       </td>
     `;
@@ -3322,7 +3322,7 @@ async function loadSystemAnalytics(filterClientId) {
 
     if (kpiTotal) kpiTotal.textContent = data.totalDevices || 0;
     if (kpiOnline) kpiOnline.textContent = `${data.onlineCount || 0} de ${data.totalDevices || 0}`;
-    if (kpiAvg) kpiAvg.textContent = `${data.avgDailyHours || 0} hrs/dÃ­a`;
+    if (kpiAvg) kpiAvg.textContent = `${data.avgDailyHours || 0} hrs/día`;
 
     if (kpiTop && data.serviceCounts) {
       let topSvcKey = 'hipica';
@@ -3333,7 +3333,7 @@ async function loadSystemAnalytics(filterClientId) {
           topSvcKey = key;
         }
       }
-      kpiTop.textContent = `${SERVICES_MAP[topSvcKey]?.name || 'HÃ­pica'} (${maxCount} TVs)`;
+      kpiTop.textContent = `${SERVICES_MAP[topSvcKey]?.name || 'Hípica'} (${maxCount} TVs)`;
     }
 
     const tableBody = document.getElementById('telemetryTableBody');
@@ -3343,10 +3343,10 @@ async function loadSystemAnalytics(filterClientId) {
     (data.devices || []).forEach(d => {
       const isOnline = d.isOnline;
       const statusHtml = isOnline
-        ? '<span style="color:#34d399; font-weight:bold;">ðŸŸ¢ EN LÃNEA</span>'
-        : '<span style="color:var(--text-muted);">âšª DESCONECTADO</span>';
+        ? '<span style="color:#34d399; font-weight:bold;">🟢 EN LÍNEA</span>'
+        : '<span style="color:var(--text-muted);">⚪ DESCONECTADO</span>';
 
-      const svcName = SERVICES_MAP[d.activeService || 'hipica']?.name || 'HÃ­pica en Vivo';
+      const svcName = SERVICES_MAP[d.activeService || 'hipica']?.name || 'Hípica en Vivo';
       
       let lastSeenText = 'Nunca';
       if (d.lastSeen) {
@@ -3361,7 +3361,7 @@ async function loadSystemAnalytics(filterClientId) {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><strong>ðŸ“º ${d.tvName}</strong></td>
+        <td><strong>📺 ${d.tvName}</strong></td>
         <td><code>${d.deviceId}</code></td>
         <td><span class="badge-role tech">${d.clientName || d.clientId || 'Fenix'}</span></td>
         <td>${statusHtml}</td>
@@ -3373,7 +3373,7 @@ async function loadSystemAnalytics(filterClientId) {
       tableBody.appendChild(tr);
     });
   } catch (e) {
-    console.error('Error cargando analÃ­ticas:', e);
+    console.error('Error cargando analíticas:', e);
   }
 }
 
@@ -3391,10 +3391,10 @@ async function extendSubscriptionApi(deviceId, daysToAdd) {
     if (data.success) {
       await loadApprovedDevicesList();
     } else {
-      alert(data.error || 'Error al extender suscripciÃ³n.');
+      alert(data.error || 'Error al extender suscripción.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
@@ -3411,9 +3411,9 @@ async function loadSystemUsersList() {
     
     tableBody.innerHTML = '';
     (data.users || []).forEach(u => {
-      let roleHtml = '<span class="badge-role agency">ðŸ¢ Cliente / Encargado</span>';
-      if (u.role === 'SUPER_ADMIN') roleHtml = '<span class="badge-role super">ðŸ‘‘ Super Admin</span>';
-      else if (u.role === 'TECH_CHIEF') roleHtml = '<span class="badge-role tech">ðŸ› ï¸ Jefe TÃ©cnico</span>';
+      let roleHtml = '<span class="badge-role agency">🏢 Cliente / Encargado</span>';
+      if (u.role === 'SUPER_ADMIN') roleHtml = '<span class="badge-role super">👑 Super Admin</span>';
+      else if (u.role === 'TECH_CHIEF') roleHtml = '<span class="badge-role tech">🛠️ Jefe Técnico</span>';
 
       const isProtected = ['hector_owner', 'superadmin', 'hector'].includes(u.username);
 
@@ -3424,7 +3424,7 @@ async function loadSystemUsersList() {
         <td>${roleHtml}</td>
         <td>${u.location || 'Sede Principal'}</td>
         <td>
-          ${!isProtected ? `<button class="btn-danger-sm" onclick="deleteSystemUser('${u.username}')">ðŸ—‘ï¸ ELIMINAR</button>` : '<span style="color:var(--text-muted); font-size:0.75rem;">ðŸ›¡ï¸ Protegido</span>'}
+          ${!isProtected ? `<button class="btn-danger-sm" onclick="deleteSystemUser('${u.username}')">🗑️ ELIMINAR</button>` : '<span style="color:var(--text-muted); font-size:0.75rem;">🛡️ Protegido</span>'}
         </td>
       `;
       tableBody.appendChild(tr);
@@ -3435,7 +3435,7 @@ async function loadSystemUsersList() {
 }
 
 async function deleteSystemUser(username) {
-  if (!confirm(`Â¿EstÃ¡ seguro de eliminar al usuario @${username}?`)) return;
+  if (!confirm(`¿Está seguro de eliminar al usuario @${username}?`)) return;
   try {
     const res = await fetch(`/api/admin/users/${encodeURIComponent(username)}`, {
       method: 'DELETE',
@@ -3448,7 +3448,7 @@ async function deleteSystemUser(username) {
       alert(data.error || 'Error al eliminar usuario.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
@@ -3471,11 +3471,11 @@ async function loadClientsList() {
     const selFilterAnalytics = document.getElementById('selFilterAnalyticsClient');
     if (selFilterDev) {
       const currentVal = selFilterDev.value || 'ALL';
-      selFilterDev.innerHTML = '<option value="ALL">ðŸŒ Todos los Clientes (Global)</option>';
+      selFilterDev.innerHTML = '<option value="ALL">🌐 Todos los Clientes (Global)</option>';
       clients.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.clientId;
-        opt.textContent = `ðŸ¢ ${c.name} (@${c.managerUsername})`;
+        opt.textContent = `🏢 ${c.name} (@${c.managerUsername})`;
         selFilterDev.appendChild(opt);
       });
       selFilterDev.value = currentVal;
@@ -3483,18 +3483,18 @@ async function loadClientsList() {
 
     if (selFilterAnalytics) {
       const currentVal = selFilterAnalytics.value || 'ALL';
-      selFilterAnalytics.innerHTML = '<option value="ALL">ðŸŒ Todas las Organizaciones</option>';
+      selFilterAnalytics.innerHTML = '<option value="ALL">🌐 Todas las Organizaciones</option>';
       clients.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c.clientId;
-        opt.textContent = `ðŸ¢ ${c.name}`;
+        opt.textContent = `🏢 ${c.name}`;
         selFilterAnalytics.appendChild(opt);
       });
       selFilterAnalytics.value = currentVal;
     }
 
     if (clients.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No hay clientes registrados aÃºn. Cree uno arriba.</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No hay clientes registrados aún. Cree uno arriba.</td></tr>`;
       return;
     }
 
@@ -3508,8 +3508,8 @@ async function loadClientsList() {
       tr.innerHTML = `
         <td>
           <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="font-size:0.95rem; color:#fff;">ðŸ¢ ${c.name}</strong>
-            <span class="badge-role super" style="color:#10b981; border-color:#10b981; font-size:0.7rem;">ðŸŸ¢ AUTORIZADO</span>
+            <strong style="font-size:0.95rem; color:#fff;">🏢 ${c.name}</strong>
+            <span class="badge-role super" style="color:#10b981; border-color:#10b981; font-size:0.7rem;">🟢 AUTORIZADO</span>
           </div>
           <small style="color:var(--text-muted); font-size:0.75rem;">ID: <code>${c.clientId}</code></small>
         </td>
@@ -3519,7 +3519,7 @@ async function loadClientsList() {
         <td>
           <div style="display:flex; flex-direction:column; gap:4px;">
             <strong style="color:${activeCount >= c.maxDevices ? '#fca5a5' : '#34d399'};">
-              ðŸ“Š ${activeCount} / ${c.maxDevices} Pantallas
+              📊 ${activeCount} / ${c.maxDevices} Pantallas
             </strong>
             <div style="background:rgba(255,255,255,0.1); height:6px; border-radius:3px; overflow:hidden; width:120px;">
               <div style="background:${activeCount >= c.maxDevices ? '#ef4444' : '#10b981'}; width:${Math.min(100, quotaPct)}%; height:100%;"></div>
@@ -3534,22 +3534,22 @@ async function loadClientsList() {
         </td>
         <td>
           ${isSuspended 
-            ? '<span style="color:#f87171; font-weight:bold;">â¸ï¸ SUSPENDIDO</span>' 
-            : '<span style="color:#34d399; font-weight:bold;">ðŸŸ¢ ACTIVO</span>'}
+            ? '<span style="color:#f87171; font-weight:bold;">⏸️ SUSPENDIDO</span>' 
+            : '<span style="color:#34d399; font-weight:bold;">🟢 ACTIVO</span>'}
         </td>
         <td>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn-action-sm renew" onclick="adjustClientQuotaPrompt('${c.clientId}', ${c.maxDevices})" title="Modificar Cupo">
-              âœï¸ Cupo (${c.maxDevices})
+              ✏️ Cupo (${c.maxDevices})
             </button>
             <button class="btn-action-sm ${isSuspended ? 'reactivate' : 'suspend'}" onclick="toggleClientStatusApi('${c.clientId}')" title="Pausar o Activar Cliente">
-              ${isSuspended ? 'â–¶ï¸ Activar' : 'â¸ï¸ Suspender'}
+              ${isSuspended ? '▶️ Activar' : '⏸️ Suspender'}
             </button>
             ${!isProtected ? `
               <button class="btn-danger-sm" onclick="deleteClientApi('${c.clientId}', '${c.name}')" title="Eliminar Cliente">
-                ðŸ—‘ï¸
+                🗑️
               </button>
-            ` : '<span style="color:var(--text-muted); font-size:0.72rem;">ðŸ›¡ï¸ Base</span>'}
+            ` : '<span style="color:var(--text-muted); font-size:0.72rem;">🛡️ Base</span>'}
           </div>
         </td>
       `;
@@ -3561,7 +3561,7 @@ async function loadClientsList() {
   }
 }
 
-// 2. Cargar y renderizar Lista y Ãrbol JerÃ¡rquico de Pantallas Autorizadas (Tab 2)
+// 2. Cargar y renderizar Lista y Árbol Jerárquico de Pantallas Autorizadas (Tab 2)
 async function loadApprovedDevicesList(filterClientId = 'ALL') {
   const tableBody = elements.approvedDeviceTableBody;
   const treeContainer = document.getElementById('clientDeviceTreeContainer');
@@ -3590,22 +3590,22 @@ async function loadApprovedDevicesList(filterClientId = 'ALL') {
       const myDevs = devices.filter(d => d.clientId === myClientId);
       const quotaBadge = document.getElementById('clientQuotaBadge');
       if (quotaBadge && myClient) {
-        quotaBadge.textContent = `ðŸ“Š Cupo de Pantallas: ${myDevs.length} / ${myClient.maxDevices} Activas`;
+        quotaBadge.textContent = `📊 Cupo de Pantallas: ${myDevs.length} / ${myClient.maxDevices} Activas`;
       }
     }
 
-    // Poblar selector de clonaciÃ³n al activar nueva pantalla (selCloneConfigDevice)
+    // Poblar selector de clonación al activar nueva pantalla (selCloneConfigDevice)
     const cloneSel = document.getElementById('selCloneConfigDevice');
     if (cloneSel) {
       const myDevs = (currentUser && currentUser.role === 'CLIENT_MANAGER')
         ? devices.filter(d => d.clientId === (currentUser.clientId || 'fenix'))
         : devices;
       const currentVal = cloneSel.value;
-      cloneSel.innerHTML = '<option value="">âš™ï¸ Nueva configuraciÃ³n por defecto (Recomendado)</option>' +
-        myDevs.map(d => `<option value="${d.id}" ${d.id === currentVal ? 'selected' : ''}>ðŸ“‹ Copiar configuraciÃ³n de: ${d.tvName || d.id}</option>`).join('');
+      cloneSel.innerHTML = '<option value="">⚙️ Nueva configuración por defecto (Recomendado)</option>' +
+        myDevs.map(d => `<option value="${d.id}" ${d.id === currentVal ? 'selected' : ''}>📋 Copiar configuración de: ${d.tvName || d.id}</option>`).join('');
     }
 
-    // A) Renderizar el Ãrbol JerÃ¡rquico de Clientes y Pantallas
+    // A) Renderizar el Árbol Jerárquico de Clientes y Pantallas
     if (treeContainer) {
       treeContainer.innerHTML = '';
 
@@ -3633,13 +3633,13 @@ async function loadApprovedDevicesList(filterClientId = 'ALL') {
             devicesHtml = `
               <div class="empty-devices-notice">
                 <div>
-                  <strong style="color:#38bdf8;">â„¹ï¸ 0 pantallas vinculadas todavÃ­a.</strong>
+                  <strong style="color:#38bdf8;">ℹ️ 0 pantallas vinculadas todavía.</strong>
                   <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:0.8rem;">
-                    El encargado de ${c.name} puede activar cualquier televisor ingresando el cÃ³digo PIN de 6 dÃ­gitos que muestra la pantalla.
+                    El encargado de ${c.name} puede activar cualquier televisor ingresando el código PIN de 6 dígitos que muestra la pantalla.
                   </p>
                 </div>
                 <button class="btn-action-sm renew" onclick="quickActivateForClient('${c.clientId}', '${c.name}')" style="padding:6px 12px;">
-                  âš¡ Vincular Pantalla a ${c.name}
+                  ⚡ Vincular Pantalla a ${c.name}
                 </button>
               </div>
             `;
@@ -3649,20 +3649,20 @@ async function loadApprovedDevicesList(filterClientId = 'ALL') {
                 ${clientDevs.map(d => `
                   <div class="device-tree-item">
                     <div class="device-tree-item-top">
-                      <span class="device-tree-name">ðŸ“º ${d.tvName}</span>
-                      <span class="badge-role super" style="color:#34d399; border-color:#34d399; font-size:0.68rem;">ðŸŸ¢ ACTIVA</span>
+                      <span class="device-tree-name">📺 ${d.tvName}</span>
+                      <span class="badge-role super" style="color:#34d399; border-color:#34d399; font-size:0.68rem;">🟢 ACTIVA</span>
                     </div>
                     <div class="device-tree-meta">
                       <span>ID: <code>${d.deviceId}</code></span>
-                      <span>Inicio: <strong>${SERVICES_MAP[d.defaultService || 'hipica']?.name || 'HÃ­pica'}</strong></span>
+                      <span>Inicio: <strong>${SERVICES_MAP[d.defaultService || 'hipica']?.name || 'Hípica'}</strong></span>
                     </div>
                     <div class="device-tree-meta">
-                      <span>Vence: ${d.expiresAt || '30 dÃ­as'}</span>
+                      <span>Vence: ${d.expiresAt || '30 días'}</span>
                       <span>Plan: ${d.planType || 'MENSUAL'}</span>
                     </div>
                     <div class="device-tree-actions">
-                      <button class="btn-action-sm renew" onclick="renameDevicePrompt('${d.deviceId}', '${d.tvName}')">âœï¸ Renombrar</button>
-                      <button class="btn-danger-sm" onclick="unlinkDeviceApi('${d.deviceId}', '${d.tvName}')">ðŸ—‘ï¸ Desvincular</button>
+                      <button class="btn-action-sm renew" onclick="renameDevicePrompt('${d.deviceId}', '${d.tvName}')">✏️ Renombrar</button>
+                      <button class="btn-danger-sm" onclick="unlinkDeviceApi('${d.deviceId}', '${d.tvName}')">🗑️ Desvincular</button>
                     </div>
                   </div>
                 `).join('')}
@@ -3673,12 +3673,12 @@ async function loadApprovedDevicesList(filterClientId = 'ALL') {
           card.innerHTML = `
             <div class="client-tree-header">
               <div class="client-tree-title">
-                <h5>ðŸ¢ Cliente Autorizado: ${c.name}</h5>
-                <span class="badge-role super" style="color:#10b981; border-color:#10b981;">ðŸŸ¢ AUTORIZADO</span>
+                <h5>🏢 Cliente Autorizado: ${c.name}</h5>
+                <span class="badge-role super" style="color:#10b981; border-color:#10b981;">🟢 AUTORIZADO</span>
                 <span style="font-size:0.8rem; color:var(--text-muted); font-weight:bold;">(@${c.managerUsername})</span>
               </div>
               <div class="client-tree-badges">
-                <span class="badge-role tech">ðŸ“Š Cupo: ${clientDevs.length} / ${c.maxDevices} Pantallas</span>
+                <span class="badge-role tech">📊 Cupo: ${clientDevs.length} / ${c.maxDevices} Pantallas</span>
                 <span class="badge-role agency">Plan ${c.planType || 'MENSUAL'}</span>
               </div>
             </div>
@@ -3706,31 +3706,31 @@ async function loadApprovedDevicesList(filterClientId = 'ALL') {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><strong>ðŸ“º ${d.tvName || devUsername}</strong></td>
+          <td><strong>📺 ${d.tvName || devUsername}</strong></td>
           <td><code>@${devUsername}</code></td>
           <td>
-            <span class="badge-role tech">ðŸ¢ ${clientDisplayName}</span>
+            <span class="badge-role tech">🏢 ${clientDisplayName}</span>
           </td>
           <td>
             <select onchange="updateDeviceDefaultServiceApi('${devUsername}', this.value)" style="background:#0f172a; color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; padding:4px 8px; font-size:0.82rem; font-weight:bold;">
-              <option value="loteria" ${(!d.defaultService || d.defaultService === 'loteria') ? 'selected' : ''}>ðŸŽ² LoterÃ­as</option>
-              <option value="hipica" ${d.defaultService === 'hipica' ? 'selected' : ''}>ðŸ‡ HÃ­pica en Vivo</option>
+              <option value="loteria" ${(!d.defaultService || d.defaultService === 'loteria') ? 'selected' : ''}>🎲 Loterías</option>
+              <option value="hipica" ${d.defaultService === 'hipica' ? 'selected' : ''}>🏇 Hípica en Vivo</option>
             </select>
           </td>
           <td>
             ${isOnline 
-              ? `<span class="badge-role super" style="color:#10b981; border-color:#10b981; font-weight:800;">ðŸŸ¢ CONECTADA</span>` 
-              : `<span class="badge-role agency" style="color:#94a3b8; border-color:#64748b;">âšª DESCONECTADA</span>`
+              ? `<span class="badge-role super" style="color:#10b981; border-color:#10b981; font-weight:800;">🟢 CONECTADA</span>` 
+              : `<span class="badge-role agency" style="color:#94a3b8; border-color:#64748b;">⚪ DESCONECTADA</span>`
             }
           </td>
           <td>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button class="btn-action-sm renew" onclick="promptDeviceChangePassword('${devUsername}')" title="Cambiar clave de acceso">ðŸ”‘ Clave</button>
+              <button class="btn-action-sm renew" onclick="promptDeviceChangePassword('${devUsername}')" title="Cambiar clave de acceso">🔑 Clave</button>
               ${isOnline 
-                ? `<button class="btn-action-sm" style="background:rgba(239, 68, 68, 0.15); border:1px solid #ef4444; color:#ef4444; font-weight:700;" onclick="kickDeviceSessionApi('${devUsername}')" title="Cerrar sesiÃ³n remota en la TV actual">ðŸ”Œ Desconectar</button>` 
+                ? `<button class="btn-action-sm" style="background:rgba(239, 68, 68, 0.15); border:1px solid #ef4444; color:#ef4444; font-weight:700;" onclick="kickDeviceSessionApi('${devUsername}')" title="Cerrar sesión remota en la TV actual">🔌 Desconectar</button>` 
                 : ''
               }
-              <button class="btn-danger-sm" onclick="unlinkDeviceApi('${devUsername}', '${d.tvName || devUsername}')" title="Eliminar pantalla">ðŸ—‘ï¸</button>
+              <button class="btn-danger-sm" onclick="unlinkDeviceApi('${devUsername}', '${d.tvName || devUsername}')" title="Eliminar pantalla">🗑️</button>
             </div>
           </td>
         `;
@@ -3745,7 +3745,7 @@ async function loadApprovedDevicesList(filterClientId = 'ALL') {
 
 // 2.1 Cuentas de Acceso para Pantallas / Smart TVs
 async function promptDeviceChangePassword(username) {
-  const newPass = prompt(`Ingrese la nueva contraseÃ±a para la pantalla @${username}:`);
+  const newPass = prompt(`Ingrese la nueva contraseña para la pantalla @${username}:`);
   if (!newPass || !newPass.trim()) return;
 
   try {
@@ -3759,19 +3759,19 @@ async function promptDeviceChangePassword(username) {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      alert(`âœ… ${data.message || 'ContraseÃ±a actualizada.'}`);
+      alert(`✅ ${data.message || 'Contraseña actualizada.'}`);
       await loadApprovedDevicesList();
     } else {
-      alert(data.error || 'Error al actualizar contraseÃ±a.');
+      alert(data.error || 'Error al actualizar contraseña.');
     }
   } catch (err) {
-    alert('Error de conexiÃ³n con el servidor.');
+    alert('Error de conexión con el servidor.');
   }
 }
 window.promptDeviceChangePassword = promptDeviceChangePassword;
 
 async function kickDeviceSessionApi(username) {
-  if (!confirm(`Â¿Cerrar remotamente la sesiÃ³n activa de la pantalla @${username}? La pantalla conectada actualmente serÃ¡ desconectada de inmediato.`)) return;
+  if (!confirm(`¿Cerrar remotamente la sesión activa de la pantalla @${username}? La pantalla conectada actualmente será desconectada de inmediato.`)) return;
 
   try {
     const res = await fetch(`/api/client/device-accounts/${encodeURIComponent(username)}/kick`, {
@@ -3782,13 +3782,13 @@ async function kickDeviceSessionApi(username) {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      alert(`âœ… ${data.message || 'SesiÃ³n remota cerrada.'}`);
+      alert(`✅ ${data.message || 'Sesión remota cerrada.'}`);
       await loadApprovedDevicesList();
     } else {
       alert(data.error || 'Error al desconectar pantalla.');
     }
   } catch (err) {
-    alert('Error de conexiÃ³n con el servidor.');
+    alert('Error de conexión con el servidor.');
   }
 }
 window.kickDeviceSessionApi = kickDeviceSessionApi;
@@ -3817,7 +3817,7 @@ function setupDeviceAccountCreation() {
     if (!username || !password) {
       if (msg) {
         msg.style.color = '#fca5a5';
-        msg.textContent = 'Debe indicar usuario y contraseÃ±a para la pantalla.';
+        msg.textContent = 'Debe indicar usuario y contraseña para la pantalla.';
       }
       return;
     }
@@ -3841,7 +3841,7 @@ function setupDeviceAccountCreation() {
       if (res.ok && data.success) {
         if (msg) {
           msg.style.color = '#34d399';
-          msg.textContent = `Â¡Pantalla "@${username}" registrada exitosamente! Ahora puede iniciar sesiÃ³n con ella en cualquier Smart TV o pantalla.`;
+          msg.textContent = `¡Pantalla "@${username}" registrada exitosamente! Ahora puede iniciar sesión con ella en cualquier Smart TV o pantalla.`;
         }
         if (document.getElementById('txtNewDeviceTvName')) document.getElementById('txtNewDeviceTvName').value = '';
         if (document.getElementById('txtNewDeviceUser')) document.getElementById('txtNewDeviceUser').value = '';
@@ -3856,20 +3856,20 @@ function setupDeviceAccountCreation() {
     } catch (err) {
       if (msg) {
         msg.style.color = '#fca5a5';
-        msg.textContent = 'Error de conexiÃ³n con el servidor.';
+        msg.textContent = 'Error de conexión con el servidor.';
       }
     }
   });
 }
 setTimeout(setupDeviceAccountCreation, 300);
 
-// Acciones de GestiÃ³n de Clientes
+// Acciones de Gestión de Clientes
 async function adjustClientQuotaPrompt(clientId, currentQuota) {
   const newQuotaStr = prompt(`Modificar cupo de pantallas para el cliente (${clientId}):`, currentQuota);
   if (!newQuotaStr) return;
   const newQuota = parseInt(newQuotaStr);
   if (isNaN(newQuota) || newQuota < 1) {
-    alert('Ingrese un nÃºmero vÃ¡lido de pantallas (mÃ­nimo 1).');
+    alert('Ingrese un número válido de pantallas (mínimo 1).');
     return;
   }
 
@@ -3890,7 +3890,7 @@ async function adjustClientQuotaPrompt(clientId, currentQuota) {
       alert(data.error || 'Error al actualizar cupo.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
@@ -3912,12 +3912,12 @@ async function toggleClientStatusApi(clientId) {
       alert(data.error || 'Error alternando estado del cliente.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
 async function deleteClientApi(clientId, clientName) {
-  if (!confirm(`Â¿EstÃ¡ seguro de eliminar a la organizaciÃ³n cliente "${clientName}" y todas sus pantallas autorizadas?`)) return;
+  if (!confirm(`¿Está seguro de eliminar a la organización cliente "${clientName}" y todas sus pantallas autorizadas?`)) return;
 
   try {
     const res = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
@@ -3932,11 +3932,11 @@ async function deleteClientApi(clientId, clientName) {
       alert(data.error || 'Error al eliminar cliente.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
-// Acciones de GestiÃ³n de Dispositivos / Pantallas
+// Acciones de Gestión de Dispositivos / Pantallas
 async function renameDevicePrompt(deviceId, currentName) {
   const newName = prompt('Ingrese el nuevo nombre para este dispositivo:', currentName);
   if (!newName || newName.trim() === currentName) return;
@@ -3957,12 +3957,12 @@ async function renameDevicePrompt(deviceId, currentName) {
       alert(data.error || 'Error renombrando dispositivo.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
 async function unlinkDeviceApi(deviceId, tvName) {
-  if (!confirm(`Â¿EstÃ¡ seguro de desvincular la pantalla "${tvName}"? Se liberarÃ¡ 1 cupo para la organizaciÃ³n.`)) return;
+  if (!confirm(`¿Está seguro de desvincular la pantalla "${tvName}"? Se liberará 1 cupo para la organización.`)) return;
 
   try {
     const res = await fetch(`/api/client/devices/${encodeURIComponent(deviceId)}`, {
@@ -3977,7 +3977,7 @@ async function unlinkDeviceApi(deviceId, tvName) {
       alert(data.error || 'Error desvinculando dispositivo.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
@@ -3998,14 +3998,14 @@ async function updateDeviceDefaultServiceApi(deviceId, defaultService) {
       alert(data.error || 'Error al fijar servicio.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
 async function quickActivateForClient(clientId, clientName) {
-  const pin = prompt(`Ingrese el cÃ³digo PIN de 6 dÃ­gitos mostrado en el televisor para ${clientName}:`);
+  const pin = prompt(`Ingrese el código PIN de 6 dígitos mostrado en el televisor para ${clientName}:`);
   if (!pin) return;
-  const tvName = prompt(`Asigne un nombre Ãºnico para este dispositivo (ej. TV Barra 1):`, `Pantalla ${clientName}`);
+  const tvName = prompt(`Asigne un nombre único para este dispositivo (ej. TV Barra 1):`, `Pantalla ${clientName}`);
   if (!tvName) return;
 
   try {
@@ -4019,7 +4019,7 @@ async function quickActivateForClient(clientId, clientName) {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      alert(`Â¡Pantalla activada con Ã©xito para ${clientName}!`);
+      alert(`¡Pantalla activada con éxito para ${clientName}!`);
       await loadApprovedDevicesList();
       await loadClientsList();
       await checkDeviceAuthorization();
@@ -4027,11 +4027,11 @@ async function quickActivateForClient(clientId, clientName) {
       alert(data.error || 'Error activando pantalla.');
     }
   } catch (e) {
-    alert('Error de conexiÃ³n.');
+    alert('Error de conexión.');
   }
 }
 
-// NavegaciÃ³n Directa e InstantÃ¡nea a Carreras en Vivo
+// Navegación Directa e Instantánea a Carreras en Vivo
 function goToLiveStreams() {
   const modal = document.getElementById('deviceModal');
   if (modal) modal.style.setProperty('display', 'none', 'important');
@@ -4058,139 +4058,139 @@ function goToLiveStreams() {
 }
 
 // ==========================================
-// CatÃ¡logo Oficial de Formas de Pago, Horarios y Multiplicadores de LoterÃ­as
+// Catálogo Oficial de Formas de Pago, Horarios y Multiplicadores de Loterías
 // ==========================================
 const LOTTERY_RULES_CATALOG = {
   animalitos: [
     {
       id: 'guacharo-activo',
-      name: 'GuÃ¡charo Activo',
-      badge: 'ðŸ¦œ 77 Animales',
+      name: 'Guácharo Activo',
+      badge: '🦜 77 Animales',
       animalsCount: 77,
       animalsRange: '0 al 76',
       draws: '12 Sorteos Diarios (08:00 AM - 07:00 PM)',
-      multiplier: '60Ã— / 120Ã—',
-      multiplierNote: 'Â¡Paga 120Ã— si sale el comodÃ­n GuÃ¡charo!',
+      multiplier: '60× / 120×',
+      multiplierNote: '¡Paga 120× si sale el comodín Guácharo!',
       multiplierTag: 'comodin',
-      example: 'Apuesta 10 Bs âž” Cobras 600 Bs (1.200 Bs con GuÃ¡charo)',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs (1.200 Bs con Guácharo)',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/guacharoactivo/logo.png',
       color: '#10b981'
     },
     {
       id: 'guacharito-millonario',
       name: 'Guacharito Millonario',
-      badge: 'ðŸ¥ 77 Animales',
+      badge: '🐥 77 Animales',
       animalsCount: 77,
       animalsRange: '0 al 76',
       draws: '12 Sorteos Diarios (08:30 AM - 07:30 PM)',
-      multiplier: '60Ã— / 120Ã—',
-      multiplierNote: 'Â¡Paga 120Ã— si sale el comodÃ­n Guacharito!',
+      multiplier: '60× / 120×',
+      multiplierNote: '¡Paga 120× si sale el comodín Guacharito!',
       multiplierTag: 'comodin',
-      example: 'Apuesta 10 Bs âž” Cobras 600 Bs (1.200 Bs con Guacharito)',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs (1.200 Bs con Guacharito)',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/guacharitomillonario/logo.png',
       color: '#f59e0b'
     },
     {
       id: 'la-granjita',
       name: 'La Granjita',
-      badge: 'ðŸ¸ 38 Animales',
+      badge: '🐸 38 Animales',
       animalsCount: 38,
       animalsRange: '0, 00 al 36',
       draws: '11 Sorteos Diarios (08:00 AM - 07:00 PM)',
-      multiplier: '30Ã—',
+      multiplier: '30×',
       multiplierNote: '30 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 300 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/granjita/logo.png',
       color: '#84cc16'
     },
     {
       id: 'lotto-activo',
       name: 'Lotto Activo',
-      badge: 'ðŸ¾ 38 Animales',
+      badge: '🐾 38 Animales',
       animalsCount: 38,
       animalsRange: '0, 00 al 36',
       draws: '11 Sorteos Diarios (09:00 AM - 07:00 PM)',
-      multiplier: '30Ã—',
+      multiplier: '30×',
       multiplierNote: '30 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 300 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/lottoactivo/logo.png',
       color: '#06b6d4'
     },
     {
       id: 'chance-animal',
       name: 'Chance Animal',
-      badge: 'ðŸŽ² 38 Animales',
+      badge: '🎲 38 Animales',
       animalsCount: 38,
       animalsRange: '0, 00 al 36',
       draws: '11 Sorteos Diarios (09:00 AM - 07:00 PM)',
-      multiplier: '30Ã—',
+      multiplier: '30×',
       multiplierNote: '30 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 300 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/chanceanimal/logo.png',
       color: '#8b5cf6'
     },
     {
       id: 'la-ricachona',
       name: 'La Ricachona',
-      badge: 'ðŸ’° 38 Animales',
+      badge: '💰 38 Animales',
       animalsCount: 38,
       animalsRange: '0, 00 al 36',
       draws: '12 Sorteos Diarios (08:10 AM - 07:10 PM)',
-      multiplier: '30Ã—',
+      multiplier: '30×',
       multiplierNote: '30 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 300 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/laricachona/logo.png',
       color: '#ec4899'
     },
     {
       id: 'centena-animalitos',
       name: 'Centena Animalitos',
-      badge: 'ðŸ’¯ 100 Animales',
+      badge: '💯 100 Animales',
       animalsCount: 100,
       animalsRange: '00 al 99',
       draws: '12 Sorteos Diarios (08:00 AM - 07:00 PM)',
-      multiplier: '60Ã—',
+      multiplier: '60×',
       multiplierNote: '60 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 600 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/centenaanimalitos/logo.png',
       color: '#3b82f6'
     },
     {
       id: 'centena-plus',
       name: 'Centena Plus',
-      badge: 'ðŸ’¯ 100 Animales',
+      badge: '💯 100 Animales',
       animalsCount: 100,
       animalsRange: '00 al 99',
       draws: '12 Sorteos Diarios (08:30 AM - 07:30 PM)',
-      multiplier: '60Ã—',
+      multiplier: '60×',
       multiplierNote: '60 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 600 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 600 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/centenaplus/logo.png',
       color: '#10b981'
     },
     {
       id: 'selva-plus',
       name: 'Selva Plus',
-      badge: 'ðŸŒ¿ 38 Animales',
+      badge: '🌿 38 Animales',
       animalsCount: 38,
       animalsRange: '0, 00 al 36',
       draws: '11 Sorteos Diarios (09:30 AM - 07:30 PM)',
-      multiplier: '30Ã—',
+      multiplier: '30×',
       multiplierNote: '30 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 300 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/selvaplus/logo.png',
       color: '#14b8a6'
     },
     {
       id: 'granjita-plus',
       name: 'La Granjita Plus',
-      badge: 'ðŸŒŸ 38 Animales',
+      badge: '🌟 38 Animales',
       animalsCount: 38,
       animalsRange: '0, 00 al 36',
       draws: '12 Sorteos Diarios (08:10 AM - 07:10 PM)',
-      multiplier: '30Ã—',
+      multiplier: '30×',
       multiplierNote: '30 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 300 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/animals/granjitaplus/logo.png',
       color: '#84cc16'
     }
@@ -4199,72 +4199,72 @@ const LOTTERY_RULES_CATALOG = {
     {
       id: 'triple-zulia',
       name: 'Triple Zulia',
-      badge: 'ðŸŽ° 3 Sorteos',
-      draws: '12:45 PM â€¢ 04:45 PM â€¢ 07:05 PM',
-      multiplierTriple: '600Ã—',
-      multiplierTerminal: '70Ã—',
-      multiplierSigno: '1.200Ã—',
-      example: 'Triple: 10 Bs âž” 6.000 Bs | Terminal: 10 Bs âž” 700 Bs | Signo: 10 Bs âž” 12.000 Bs',
+      badge: '🎰 3 Sorteos',
+      draws: '12:45 PM • 04:45 PM • 07:05 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplezulia/logo.png',
       color: '#3b82f6'
     },
     {
       id: 'triple-tachira',
-      name: 'Triple TÃ¡chira',
-      badge: 'ðŸŽ¯ 3 Sorteos',
-      draws: '01:15 PM â€¢ 04:45 PM â€¢ 10:10 PM',
-      multiplierTriple: '600Ã—',
-      multiplierTerminal: '70Ã—',
-      multiplierSigno: '1.200Ã—',
-      example: 'Triple: 10 Bs âž” 6.000 Bs | Terminal: 10 Bs âž” 700 Bs | Signo: 10 Bs âž” 12.000 Bs',
+      name: 'Triple Táchira',
+      badge: '🎯 3 Sorteos',
+      draws: '01:15 PM • 04:45 PM • 10:10 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/lottery/tripletachira/logo.png',
       color: '#eab308'
     },
     {
       id: 'triple-chance',
       name: 'Triple Chance',
-      badge: 'ðŸŽ² 11 Sorteos',
+      badge: '🎲 11 Sorteos',
       draws: '09:00 AM a 07:00 PM (Cada Hora)',
-      multiplierTriple: '600Ã—',
-      multiplierTerminal: '70Ã—',
-      multiplierSigno: '1.200Ã—',
-      example: 'Triple: 10 Bs âž” 6.000 Bs | Terminal: 10 Bs âž” 700 Bs | Signo: 10 Bs âž” 12.000 Bs',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplechance/logo.png',
       color: '#8b5cf6'
     },
     {
       id: 'triple-caracas',
       name: 'Triple Caracas',
-      badge: 'ðŸ›ï¸ 3 Sorteos',
-      draws: '01:00 PM â€¢ 04:30 PM â€¢ 07:00 PM',
-      multiplierTriple: '600Ã—',
-      multiplierTerminal: '70Ã—',
-      multiplierSigno: '1.200Ã—',
-      example: 'Triple: 10 Bs âž” 6.000 Bs | Terminal: 10 Bs âž” 700 Bs | Signo: 10 Bs âž” 12.000 Bs',
+      badge: '🏛️ 3 Sorteos',
+      draws: '01:00 PM • 04:30 PM • 07:00 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplecaracas/logo.png',
       color: '#ef4444'
     },
     {
       id: 'triple-zamorano',
       name: 'Triple Zamorano',
-      badge: 'ðŸŽ 3 Sorteos',
-      draws: '12:00 PM â€¢ 04:00 PM â€¢ 07:00 PM',
-      multiplierTriple: '600Ã—',
-      multiplierTerminal: '70Ã—',
-      multiplierSigno: 'Astro 1.000Ã—',
-      example: 'Triple: 10 Bs âž” 6.000 Bs | Terminal: 10 Bs âž” 700 Bs | Astro: 10 Bs âž” 10.000 Bs',
+      badge: '🐎 3 Sorteos',
+      draws: '12:00 PM • 04:00 PM • 07:00 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: 'Astro 1.000×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Astro: 10 Bs ➔ 10.000 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplezamorano/logo.png',
       color: '#f97316'
     },
     {
       id: 'triple-caliente',
       name: 'Triple Caliente',
-      badge: 'ðŸ”¥ 3 Sorteos',
-      draws: '01:00 PM â€¢ 04:30 PM â€¢ 07:15 PM',
-      multiplierTriple: '600Ã—',
-      multiplierTerminal: '70Ã—',
-      multiplierSigno: '1.200Ã—',
-      example: 'Triple: 10 Bs âž” 6.000 Bs | Terminal: 10 Bs âž” 700 Bs | Signo: 10 Bs âž” 12.000 Bs',
+      badge: '🔥 3 Sorteos',
+      draws: '01:00 PM • 04:30 PM • 07:15 PM',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
+      example: 'Triple: 10 Bs ➔ 6.000 Bs | Terminal: 10 Bs ➔ 700 Bs | Signo: 10 Bs ➔ 12.000 Bs',
       logoUrl: 'https://api.1000resultados.com/public/images/lottery/triplecaliente/logo.png',
       color: '#f43f5e'
     }
@@ -4273,7 +4273,7 @@ const LOTTERY_RULES_CATALOG = {
 window.LOTTERY_RULES_CATALOG = LOTTERY_RULES_CATALOG;
 
 // ==========================================
-// ConfiguraciÃ³n Global y PersonalizaciÃ³n de Pantallas Digitales
+// Configuración Global y Personalización de Pantallas Digitales
 // ==========================================
 const DEFAULT_SCREEN_CONFIG = {
   themeMode: 'dark',
@@ -4298,7 +4298,7 @@ const DEFAULT_SCREEN_CONFIG = {
           id: 'slide_res_1',
           serial: 'Pizarra1',
           order: 1,
-          name: 'Pizarra 1: Animalitos LÃ­deres',
+          name: 'Pizarra 1: Animalitos Líderes',
           enabled: true,
           duration: 20,
           lotteryCount: 5,
@@ -4353,7 +4353,7 @@ const DEFAULT_SCREEN_CONFIG = {
           id: 'slide_stats_hot',
           serial: 'Estadistica1',
           order: 6,
-          name: 'ðŸ”¥ Top 5 Animalitos MÃ¡s Premiados (30D)',
+          name: '🔥 Top 5 Animalitos Más Premiados (30D)',
           type: 'stats_hot',
           enabled: true,
           duration: 22,
@@ -4364,7 +4364,7 @@ const DEFAULT_SCREEN_CONFIG = {
           id: 'slide_stats_cold',
           serial: 'Estadistica2',
           order: 7,
-          name: 'â„ï¸ Top 5 Animalitos Por Reventar (30D)',
+          name: '❄️ Top 5 Animalitos Por Reventar (30D)',
           type: 'stats_cold',
           enabled: true,
           duration: 22,
@@ -4375,7 +4375,7 @@ const DEFAULT_SCREEN_CONFIG = {
           id: 'slide_stats_pyramid',
           serial: 'Estadistica3',
           order: 8,
-          name: 'ðŸ”º PirÃ¡mide de la Suerte & Triples Millonarios',
+          name: '🔺 Pirámide de la Suerte & Triples Millonarios',
           type: 'stats_pyramid',
           enabled: true,
           duration: 25,
@@ -4392,7 +4392,7 @@ const DEFAULT_SCREEN_CONFIG = {
           serial: 'Publicidad1',
           order: 9,
           type: 'pub_rules_animalitos',
-          name: 'ðŸ¾ Reglas, Horarios y Formas de Pago: Animalitos',
+          name: '🐾 Reglas, Horarios y Formas de Pago: Animalitos',
           enabled: true,
           duration: 18,
           lotteries: ['guacharo-activo', 'la-granjita', 'lotto-activo', 'guacharito-millonario', 'chance-animal', 'la-ricachona', 'centena-animalitos', 'centena-plus', 'selva-plus', 'granjita-plus']
@@ -4402,7 +4402,7 @@ const DEFAULT_SCREEN_CONFIG = {
           serial: 'Publicidad2',
           order: 10,
           type: 'pub_rules_triples',
-          name: 'ðŸŽ° Formas de Pago y Horarios: Triples y Terminales',
+          name: '🎰 Formas de Pago y Horarios: Triples y Terminales',
           enabled: true,
           duration: 18,
           lotteries: ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano', 'triple-caliente']
@@ -4412,21 +4412,21 @@ const DEFAULT_SCREEN_CONFIG = {
           serial: 'Publicidad3',
           order: 11,
           type: 'pub_agency_identity',
-          name: 'ðŸ¢ Identidad, Horarios y Normas de la Agencia',
+          name: '🏢 Identidad, Horarios y Normas de la Agencia',
           enabled: true,
           duration: 16,
           agencyName: 'AGENCIA OFICIAL LA FORTUNA',
           agencyContact: '',
           logoUrl: '',
-          agencySlogan: 'Tu Agencia de Confianza â€¢ Pagos Seguros al Instante',
+          agencySlogan: 'Tu Agencia de Confianza • Pagos Seguros al Instante',
           agencyHours: 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)',
-          ticketValidity: 'Los tickets premiados tienen una validez estricta de 3 dÃ­as continuos a partir de la fecha de emisiÃ³n.',
+          ticketValidity: 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.',
           agencyRules: [
-            'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepciÃ³n.',
+            'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
             'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
-            'Los premios se pagan al instante en bolÃ­vares por Pago MÃ³vil, Efectivo o Transferencia bancaria.',
-            'Prohibida terminantemente la venta de apuestas a menores de 18 aÃ±os.',
-            'En caso de suspensiÃ³n oficial de un sorteo por el ente emisor, se aplicarÃ¡ el reglamento oficial de la loterÃ­a correspondiente.'
+            'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+            'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+            'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
           ]
         },
         {
@@ -4434,11 +4434,11 @@ const DEFAULT_SCREEN_CONFIG = {
           serial: 'Publicidad4',
           order: 12,
           type: 'pub_agency_benefits',
-          name: 'ðŸ’Ž Beneficios Exclusivos de Nuestra Agencia',
+          name: '💎 Beneficios Exclusivos de Nuestra Agencia',
           enabled: true,
           duration: 16,
-          title: 'Â¿POR QUÃ‰ APOSTAR CON NOSOTROS?',
-          subtitle: 'MÃ¡xima solidez, transparencia absoluta y la mejor atenciÃ³n en taquilla'
+          title: '¿POR QUÉ APOSTAR CON NOSOTROS?',
+          subtitle: 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla'
         }
       ]
     }
@@ -4462,17 +4462,17 @@ let lastAnnouncedDrawId = {};
 let lotteryPollingTimer = null;
 let lastRenderedTickerContent = '';
 
-// NormalizaciÃ³n matemÃ¡tica de la velocidad del cintillo para Smart TVs y pantallas de agencia
+// Normalización matemática de la velocidad del cintillo para Smart TVs y pantallas de agencia
 function applyTickerSpeedToTrack(track) {
   const el = track || document.getElementById('tickerContentTrack');
   if (!el) return;
   const userSpeed = Math.min(800, Math.max(150, parseInt(currentScreenConfig.tickerSpeed) || 350));
-  // CalibraciÃ³n visual a velocidad constante en px/segundo:
+  // Calibración visual a velocidad constante en px/segundo:
   // 600s -> ~11.6 px/s (ultra pausado)
   // 500s -> ~14.0 px/s (pausado y muy relajado, ideal para leer a distancia en agencia)
   // 350s -> ~20.0 px/s (recomendado oficial)
-  // 250s -> ~28.0 px/s (Ã¡gil)
-  // 150s -> ~46.6 px/s (rÃ¡pido)
+  // 250s -> ~28.0 px/s (ágil)
+  // 150s -> ~46.6 px/s (rápido)
   const pxPerSec = Math.max(6, 7000 / userSpeed);
   const halfWidth = (el.scrollWidth > 0) ? (el.scrollWidth / 2) : 40000;
   const calculatedDuration = Math.max(40, Math.round(halfWidth / pxPerSec));
@@ -4562,10 +4562,10 @@ function applyScreenConfig(cfg) {
     updateUiClientLogo(cfg.logoUrl);
   }
 
-  // 5. MÃºsica de Fondo
+  // 5. Música de Fondo
   CircusMusicEngine.applyConfig(currentScreenConfig);
 
-  // 6. Refresco en caliente del carrusel si el contenedor de loterÃ­a estÃ¡ activo
+  // 6. Refresco en caliente del carrusel si el contenedor de lotería está activo
   const stage = document.getElementById('lotteryCarouselStage');
   if (stage) {
     const slides = getActiveCarouselSlides();
@@ -4600,18 +4600,18 @@ window.updateUiClientLogo = updateUiClientLogo;
 // Mapa Oficial de Signos Zodiacales
 // ==========================================
 const ZODIAC_MAP = {
-  'aries': { name: 'Aries', symbol: 'â™ˆ', file: 'aries.svg', element: 'Fuego' },
-  'tauro': { name: 'Tauro', symbol: 'â™‰', file: 'tauro.svg', element: 'Tierra' },
-  'geminis': { name: 'GÃ©minis', symbol: 'â™Š', file: 'geminis.svg', element: 'Aire' },
-  'cancer': { name: 'CÃ¡ncer', symbol: 'â™‹', file: 'cancer.svg', element: 'Agua' },
-  'leo': { name: 'Leo', symbol: 'â™Œ', file: 'leo.svg', element: 'Fuego' },
-  'virgo': { name: 'Virgo', symbol: 'â™', file: 'virgo.svg', element: 'Tierra' },
-  'libra': { name: 'Libra', symbol: 'â™Ž', file: 'libra.svg', element: 'Aire' },
-  'escorpio': { name: 'Escorpio', symbol: 'â™', file: 'escorpio.svg', element: 'Agua' },
-  'sagitario': { name: 'Sagitario', symbol: 'â™', file: 'sagitario.svg', element: 'Fuego' },
-  'capricornio': { name: 'Capricornio', symbol: 'â™‘', file: 'capricornio.svg', element: 'Tierra' },
-  'acuario': { name: 'Acuario', symbol: 'â™’', file: 'acuario.svg', element: 'Aire' },
-  'piscis': { name: 'Piscis', symbol: 'â™“', file: 'piscis.svg', element: 'Agua' }
+  'aries': { name: 'Aries', symbol: '♈', file: 'aries.svg', element: 'Fuego' },
+  'tauro': { name: 'Tauro', symbol: '♉', file: 'tauro.svg', element: 'Tierra' },
+  'geminis': { name: 'Géminis', symbol: '♊', file: 'geminis.svg', element: 'Aire' },
+  'cancer': { name: 'Cáncer', symbol: '♋', file: 'cancer.svg', element: 'Agua' },
+  'leo': { name: 'Leo', symbol: '♌', file: 'leo.svg', element: 'Fuego' },
+  'virgo': { name: 'Virgo', symbol: '♍', file: 'virgo.svg', element: 'Tierra' },
+  'libra': { name: 'Libra', symbol: '♎', file: 'libra.svg', element: 'Aire' },
+  'escorpio': { name: 'Escorpio', symbol: '♏', file: 'escorpio.svg', element: 'Agua' },
+  'sagitario': { name: 'Sagitario', symbol: '♐', file: 'sagitario.svg', element: 'Fuego' },
+  'capricornio': { name: 'Capricornio', symbol: '♑', file: 'capricornio.svg', element: 'Tierra' },
+  'acuario': { name: 'Acuario', symbol: '♒', file: 'acuario.svg', element: 'Aire' },
+  'piscis': { name: 'Piscis', symbol: '♓', file: 'piscis.svg', element: 'Agua' }
 };
 
 function getZodiacData(rawSign) {
@@ -4628,7 +4628,7 @@ function getZodiacData(rawSign) {
 }
 
 // ==========================================
-// Reloj y Fecha Oficial de Venezuela en Vivo (PeticiÃ³n 8)
+// Reloj y Fecha Oficial de Venezuela en Vivo (Petición 8)
 // Formato estricto de fecha: "Domingo, 06/09/26"
 // ==========================================
 let lotteryClockTimer = null;
@@ -4640,16 +4640,16 @@ function updateLotteryLiveClockAndDate() {
 
   if (clockEl) {
     const timeStr = now.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-    clockEl.innerHTML = `ðŸ•’ <strong>${timeStr}</strong>`;
+    clockEl.innerHTML = `🕒 <strong>${timeStr}</strong>`;
   }
 
   if (dateEl) {
-    const days = ['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'];
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const dName = days[now.getDay()];
     const dd = String(now.getDate()).padStart(2, '0');
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const yy = String(now.getFullYear()).slice(-2);
-    dateEl.textContent = `ðŸ“… ${dName}, ${dd}/${mm}/${yy}`;
+    dateEl.textContent = `📅 ${dName}, ${dd}/${mm}/${yy}`;
   }
 }
 
@@ -4662,7 +4662,7 @@ function startLotteryClock() {
 
 
 // ==========================================
-// Motor de Efectos Sonoros CÃ³micos de Animales (PeticiÃ³n 6)
+// Motor de Efectos Sonoros Cómicos de Animales (Petición 6)
 // ==========================================
 const AnimalSFXEngine = {
   ctx: null,
@@ -4711,8 +4711,8 @@ const AnimalSFXEngine = {
     } else if (name.includes('rana') || name.includes('sapo')) {
       this.synthesizeFrog(ctx, now);
     } else {
-      // Animales que no emiten sonidos caracterÃ­sticos (delfÃ­n, ballena, iguana, culebra, ardilla, mariposa, pescado, caimÃ¡n, venado, oso, camello, alacrÃ¡n, ciempiÃ©s, etc.):
-      // Sonido de selva tropical exÃ³tica
+      // Animales que no emiten sonidos característicos (delfín, ballena, iguana, culebra, ardilla, mariposa, pescado, caimán, venado, oso, camello, alacrán, ciempiés, etc.):
+      // Sonido de selva tropical exótica
       this.synthesizeJungleAmbient(ctx, now);
     }
   },
@@ -4954,7 +4954,7 @@ const AnimalSFXEngine = {
       whiteNoise.stop(now + 1.5);
     } catch(e) {}
 
-    // 2. Grillos / Cigarras rÃ­tmicas de selva tropical
+    // 2. Grillos / Cigarras rítmicas de selva tropical
     try {
       const cricketOsc = ctx.createOscillator();
       const cricketGain = ctx.createGain();
@@ -4979,7 +4979,7 @@ const AnimalSFXEngine = {
       cricketOsc.stop(now + 1.3);
     } catch(e) {}
 
-    // 3. Trinos de aves tropicales exÃ³ticas
+    // 3. Trinos de aves tropicales exóticas
     [0.08, 0.42, 0.76].forEach((delay, idx) => {
       const t = now + delay;
       const bird = ctx.createOscillator();
@@ -5005,7 +5005,7 @@ const AnimalSFXEngine = {
 };
 
 // ==========================================
-// Motor de MÃºsica de Fondo de Circo y Carrusel (PeticiÃ³n 7)
+// Motor de Música de Fondo de Circo y Carrusel (Petición 7)
 // ==========================================
 const CircusMusicEngine = {
   ctx: null,
@@ -5161,7 +5161,7 @@ const CircusMusicEngine = {
 };
 
 // ==========================================
-// Sistema de LocuciÃ³n de Resultados
+// Sistema de Locución de Resultados
 // ==========================================
 let audioCtx = null;
 let lotteryVoiceEnabled = true;
@@ -5199,7 +5199,7 @@ function playChimeAlert() {
 }
 
 // ==========================================
-// Motor Universal de SÃ­ntesis de Voz (Web Speech API + Fallback Servidor MP3)
+// Motor Universal de Síntesis de Voz (Web Speech API + Fallback Servidor MP3)
 // ==========================================
 let cachedVoices = [];
 function initVoices() {
@@ -5323,12 +5323,12 @@ function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
     return;
   }
 
-  // NormalizaciÃ³n fonÃ©tica para pronunciaciÃ³n fluida y natural
+  // Normalización fonética para pronunciación fluida y natural
   let cleanGameName = (gameName || '').replace(/\s*\([^)]*\)/g, '').trim();
   let cleanResult = (resultText || '').trim();
 
-  cleanGameName = cleanGameName.replace(/\b[A-ZÃÃ‰ÃÃ“ÃšÃ‘]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-  cleanResult = cleanResult.replace(/\b[A-ZÃÃ‰ÃÃ“ÃšÃ‘]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  cleanGameName = cleanGameName.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  cleanResult = cleanResult.replace(/\b[A-ZÁÉÍÓÚÑ]{2,}\b/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 
   if (/\btriple\s+chance\b/i.test(cleanGameName) || cleanGameName.toLowerCase() === 'chance') {
     cleanGameName = 'Chanse';
@@ -5337,40 +5337,40 @@ function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
   }
   cleanResult = cleanResult.replace(/\bchance\b/gi, 'Chanse');
 
-  cleanGameName = cleanGameName.replace(/\bgu[aÃ¡]charo\b/gi, 'GuÃ¡charo');
-  cleanResult = cleanResult.replace(/\bgu[aÃ¡]charo\b/gi, 'GuÃ¡charo');
+  cleanGameName = cleanGameName.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
+  cleanResult = cleanResult.replace(/\bgu[aá]charo\b/gi, 'Guácharo');
 
   cleanGameName = cleanGameName
-    .replace(/la\s+r[iÃ­]ca\s*chona/gi, 'La RÃ­cachona')
-    .replace(/\br[iÃ­]ca\s+chona\b/gi, 'RÃ­cachona')
-    .replace(/\br[iÃ­]cachona\b/gi, 'RÃ­cachona');
+    .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
+    .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
+    .replace(/\br[ií]cachona\b/gi, 'Rícachona');
   cleanResult = cleanResult
-    .replace(/la\s+r[iÃ­]ca\s*chona/gi, 'La RÃ­cachona')
-    .replace(/\br[iÃ­]ca\s+chona\b/gi, 'RÃ­cachona')
-    .replace(/\br[iÃ­]cachona\b/gi, 'RÃ­cachona');
+    .replace(/la\s+r[ií]ca\s*chona/gi, 'La Rícachona')
+    .replace(/\br[ií]ca\s+chona\b/gi, 'Rícachona')
+    .replace(/\br[ií]cachona\b/gi, 'Rícachona');
 
-  cleanGameName = cleanGameName.replace(/\bt[aÃ¡]chira\b/gi, 'TÃ¡chira');
-  cleanResult = cleanResult.replace(/\bt[aÃ¡]chira\b/gi, 'TÃ¡chira');
+  cleanGameName = cleanGameName.replace(/\bt[aá]chira\b/gi, 'Táchira');
+  cleanResult = cleanResult.replace(/\bt[aá]chira\b/gi, 'Táchira');
 
-  const fullPhrase = `AtenciÃ³n. Resultado oficial de ${cleanGameName}, sorteo de las ${drawTime}: ${cleanResult}.`;
+  const fullPhrase = `Atención. Resultado oficial de ${cleanGameName}, sorteo de las ${drawTime}: ${cleanResult}.`;
   const voiceVol = currentScreenConfig.voiceVolume || 0.90;
   const engine = currentScreenConfig.voiceEngine || 'auto';
 
-  // 1. Si el motor configurado es explÃ­citamente "server" o si el dispositivo no soporta SpeechSynthesis:
+  // 1. Si el motor configurado es explícitamente "server" o si el dispositivo no soporta SpeechSynthesis:
   if (engine === 'server' || !('speechSynthesis' in window)) {
     playAudioTts(fullPhrase, voiceVol, onEndCallback);
     return;
   }
 
-  // 2. Si es "auto" o "native", verificar si hay alguna voz en espaÃ±ol disponible:
+  // 2. Si es "auto" o "native", verificar si hay alguna voz en español disponible:
   const bestVoice = getBestSpanishVoice();
   if (!bestVoice && engine !== 'native') {
-    // Si no hay voces en espaÃ±ol en este televisor/navegador, saltar de inmediato al audio HD del servidor
+    // Si no hay voces en español en este televisor/navegador, saltar de inmediato al audio HD del servidor
     playAudioTts(fullPhrase, voiceVol, onEndCallback);
     return;
   }
 
-  // 3. Intentar sÃ­ntesis nativa con watchdog de respaldo
+  // 3. Intentar síntesis nativa con watchdog de respaldo
   try {
     if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
@@ -5384,7 +5384,7 @@ function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
     utterance.volume = voiceVol;
     if (bestVoice) utterance.voice = bestVoice;
 
-    // ProtecciÃ³n crucial contra Garbage Collection en Android TV / Chromium
+    // Protección crucial contra Garbage Collection en Android TV / Chromium
     window._activeSpeechUtterance = utterance;
 
     let callbackFired = false;
@@ -5404,7 +5404,7 @@ function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
 
     utterance.onend = fireCallbackOnce;
 
-    // Si la sÃ­ntesis nativa arroja error o falla en el TV, recurrir de inmediato al audio del servidor
+    // Si la síntesis nativa arroja error o falla en el TV, recurrir de inmediato al audio del servidor
     utterance.onerror = (err) => {
       console.warn('[SpeechSynthesis Error -> Fallback to Audio TTS]', err);
       window._activeSpeechUtterance = null;
@@ -5414,7 +5414,7 @@ function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
       }
     };
 
-    // Watchdog de 1.2 segundos: si el televisor congelÃ³ el utterance y nunca disparÃ³ onstart, conmutar a audio MP3
+    // Watchdog de 1.2 segundos: si el televisor congeló el utterance y nunca disparó onstart, conmutar a audio MP3
     setTimeout(() => {
       if (!hasSpeechStarted && !callbackFired && engine !== 'native') {
         console.warn('[SpeechSynthesis Watchdog Timeout -> Fallback to Audio TTS]');
@@ -5425,7 +5425,7 @@ function speakLotteryDraw(gameName, drawTime, resultText, onEndCallback) {
       }
     }, 1200);
 
-    // Timeout de seguridad mÃ¡ximo para finalizar el anuncio si onend no se disparÃ³
+    // Timeout de seguridad máximo para finalizar el anuncio si onend no se disparó
     setTimeout(fireCallbackOnce, 9500);
 
     window.speechSynthesis.speak(utterance);
@@ -5456,7 +5456,7 @@ function showNewResultPopup(game, draw) {
   const timerFill = document.getElementById('popupTimerBarFill');
 
   if (timeEl) timeEl.textContent = draw.time || draw.hour || '';
-  if (titleEl) titleEl.textContent = game.name || 'LOTERÃA';
+  if (titleEl) titleEl.textContent = game.name || 'LOTERÍA';
 
   if (logoEl) {
     if (game.logoUrl) {
@@ -5559,12 +5559,12 @@ function processNextAnnouncement() {
   const { game, draw } = announcementQueue.shift();
   const isAnimal = game.type === 'animalitos';
 
-  console.log(`[Visual-FX] ðŸ“¢ Anunciando nuevo resultado: ${game.name} - ${draw.time || draw.hour}`);
+  console.log(`[Visual-FX] 📢 Anunciando nuevo resultado: ${game.name} - ${draw.time || draw.hour}`);
 
-  // 1. Mostrar Pop-Up de 5 segundos con imagen y nÃºmero (Requisito 6)
+  // 1. Mostrar Pop-Up de 5 segundos con imagen y número (Requisito 6)
   showNewResultPopup(game, draw);
 
-  // 2. Reproducir Efecto de Sonido: Animal especÃ­fico o Selva Tropical (Requisito 5)
+  // 2. Reproducir Efecto de Sonido: Animal específico o Selva Tropical (Requisito 5)
   if (isAnimal) {
     if (currentScreenConfig.animalSfxEnabled) {
       AnimalSFXEngine.playAnimalSound(draw.name);
@@ -5573,11 +5573,11 @@ function processNextAnnouncement() {
     playChimeAlert();
   }
 
-  // 3. SÃ­ntesis de Voz Humana tras concluir el sonido (~1.2s)
+  // 3. Síntesis de Voz Humana tras concluir el sonido (~1.2s)
   setTimeout(() => {
     let resultDesc = '';
     if (isAnimal) {
-      resultDesc = `NÃºmero ${draw.number || ''}, ${draw.name || ''}`;
+      resultDesc = `Número ${draw.number || ''}, ${draw.name || ''}`;
     } else {
       resultDesc = `Triple A ${draw.tripleA || '--'}, Triple B ${draw.tripleB || '--'}, Triple C ${draw.tripleC || '--'}${draw.signo ? ', Signo ' + draw.signo : ''}`;
     }
@@ -5623,16 +5623,16 @@ function checkForNewDrawAnnouncements(games) {
   }
 
   if (newDrawsDetected.length > 0) {
-    console.log(`[Visual-FX] Â¡Detectados ${newDrawsDetected.length} nuevos resultados para anunciar y mostrar pop-up!`);
+    console.log(`[Visual-FX] ¡Detectados ${newDrawsDetected.length} nuevos resultados para anunciar y mostrar pop-up!`);
     enqueueDrawAnnouncements(newDrawsDetected);
   }
 }
 
 // ==========================================
-// RENDERIZADORES DE LOS 7 MÃ“DULOS DEL CARRUSEL
+// RENDERIZADORES DE LOS 7 MÓDULOS DEL CARRUSEL
 // ==========================================
 
-// MÃ³dulo 1 (3.1): Top 5 Animalitos MÃ¡s Vendidos
+// Módulo 1 (3.1): Top 5 Animalitos Más Vendidos
 function renderModuleTop5Animalitos(modCfg, stage) {
   const allowedGames = modCfg.games || ['guacharo-activo', 'granjita', 'lotto-activo', 'la-ricachona', 'lotto-rey'];
   let games = lotteryTop10.filter(g => allowedGames.includes(g.id || g.gameId));
@@ -5656,7 +5656,7 @@ function renderModuleTop5Animalitos(modCfg, stage) {
             <span class="draw-name-label">${name}</span>
           </div>
           <div class="draw-avatar-cell">
-            ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">ðŸª™</span>' : '<span class="draw-pending-icon">â³</span>')}
+            ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">🪙</span>' : '<span class="draw-pending-icon">⏳</span>')}
           </div>
         </div>
       `;
@@ -5680,7 +5680,7 @@ function renderModuleTop5Animalitos(modCfg, stage) {
   stage.innerHTML = `<div class="board-columns-grid">${colsHtml}</div>`;
 }
 
-// MÃ³dulo 2 (3.2): Top 5 Triples y Terminales MÃ¡s Vendidos
+// Módulo 2 (3.2): Top 5 Triples y Terminales Más Vendidos
 function renderModuleTop5Triples(modCfg, stage) {
   let allowedGames = modCfg.games || ['triple-zulia', 'triple-tachira', 'triple-chance', 'triple-caracas', 'triple-zamorano'];
   if (allowedGames.includes('triple-chance')) {
@@ -5716,13 +5716,13 @@ function renderModuleTop5Triples(modCfg, stage) {
           </span>`
         : (extraName
           ? `<span class="result-triple-name">${extraName}</span>`
-          : (isDone ? '' : '<span class="result-triple-sign pending-sign">â³ Por Jugar</span>'));
+          : (isDone ? '' : '<span class="result-triple-sign pending-sign">⏳ Por Jugar</span>'));
 
       return `
         <div class="board-draw-row triple-3lines ${isDone ? 'done' : 'pending'}">
           <div class="triple-row-time">
             <span class="triple-time-text">${timeStr}</span>
-            ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">â³ Por Jugar</span>'}
+            ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">⏳ Por Jugar</span>'}
           </div>
           <div class="triple-row-ab">
             <span class="result-triple-pill triple-a" title="Triple A">
@@ -5759,7 +5759,7 @@ function renderModuleTop5Triples(modCfg, stage) {
   stage.innerHTML = `<div class="board-columns-grid">${colsHtml}</div>`;
 }
 
-// MÃ³dulo 3 (3.3): Animalitos Grupo 2 (del 6to en adelante)
+// Módulo 3 (3.3): Animalitos Grupo 2 (del 6to en adelante)
 function renderModuleAnimalitosGroup2(modCfg, stage) {
   const allowedGames = modCfg.games || ['selva-plus', 'ruleta-activa', 'granjita-plus'];
   let games = lotteryTop10.filter(g => allowedGames.includes(g.id || g.gameId));
@@ -5784,7 +5784,7 @@ function renderModuleAnimalitosGroup2(modCfg, stage) {
             <span class="draw-name-label">${name}</span>
           </div>
           <div class="draw-avatar-cell">
-            ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">ðŸª™</span>' : '<span class="draw-pending-icon">â³</span>')}
+            ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">🪙</span>' : '<span class="draw-pending-icon">⏳</span>')}
           </div>
         </div>
       `;
@@ -5809,7 +5809,7 @@ function renderModuleAnimalitosGroup2(modCfg, stage) {
   stage.innerHTML = `<div class="board-columns-grid" ${gridStyle}>${colsHtml}</div>`;
 }
 
-// MÃ³dulo 4 (3.4): Pizarra General de LoterÃ­as
+// Módulo 4 (3.4): Pizarra General de Loterías
 function renderModulePizarra1000(modCfg, stage) {
   const games = lotteryTop10.slice(0, 4);
 
@@ -5834,12 +5834,12 @@ function renderModulePizarra1000(modCfg, stage) {
               <span class="draw-name-label">${name}</span>
             </div>
             <div class="draw-avatar-cell">
-              ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">ðŸª™</span>' : '<span class="draw-pending-icon">â³</span>')}
+              ${img ? `<img src="${img}" class="draw-coin-thumb" alt="${name}" onerror="this.style.display='none'">` : (isDone ? '<span class="draw-coin-thumb" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;">🪙</span>' : '<span class="draw-pending-icon">⏳</span>')}
             </div>
           </div>
         `;
       } else {
-        // Triples en Pizarra 1000: PresentaciÃ³n oficial en 3 lÃ­neas
+        // Triples en Pizarra 1000: Presentación oficial en 3 líneas
         const tripleA = isDone ? (draw.tripleA || draw.number || '--') : '--';
         const tripleB = isDone ? (draw.tripleB || '--') : '--';
         const tripleC = isDone ? (draw.tripleC || '--') : '--';
@@ -5854,13 +5854,13 @@ function renderModulePizarra1000(modCfg, stage) {
             </span>`
           : (extraName
             ? `<span class="result-triple-name">${extraName}</span>`
-            : (isDone ? '' : '<span class="result-triple-sign pending-sign">â³ Por Jugar</span>'));
+            : (isDone ? '' : '<span class="result-triple-sign pending-sign">⏳ Por Jugar</span>'));
 
         return `
           <div class="board-draw-row triple-3lines ${isDone ? 'done' : 'pending'}">
             <div class="triple-row-time">
               <span class="triple-time-text">${timeStr}</span>
-              ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">â³ Por Jugar</span>'}
+              ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">⏳ Por Jugar</span>'}
             </div>
             <div class="triple-row-ab">
               <span class="result-triple-pill triple-a" title="Triple A">
@@ -5900,7 +5900,7 @@ function renderModulePizarra1000(modCfg, stage) {
     <div class="pizarra-1000-layout">
       <div class="pizarra-1000-results-pane">
         <div class="pizarra-1000-banner-header">
-          <span>ðŸ“Š RESULTADOS DE ANIMALITOS Y TRIPLES DE HOY</span>
+          <span>📊 RESULTADOS DE ANIMALITOS Y TRIPLES DE HOY</span>
           <span class="pizarra-status-pill"><span class="pizarra-status-dot"></span> ESTADO ACTIVO</span>
         </div>
         <div class="pizarra-1000-four-grid">${colsHtml}</div>
@@ -5910,7 +5910,7 @@ function renderModulePizarra1000(modCfg, stage) {
 }
 
 // ==========================================
-// MÃ“DULO DE ESTADÃSTICAS Y PRONÃ“STICOS (3 DIAPOSITIVAS CONFIGURABLES)
+// MÓDULO DE ESTADÍSTICAS Y PRONÓSTICOS (3 DIAPOSITIVAS CONFIGURABLES)
 // ==========================================
 
 function getAnimalImageUrl(gameId, number) {
@@ -5938,14 +5938,14 @@ function getAnimalImageUrl(gameId, number) {
 
 function calculateDatePyramid() {
   const now = new Date();
-  const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'];
+  const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const dayName = daysOfWeek[now.getDay()];
   const dd = String(now.getDate()).padStart(2, '0');
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const yy = String(now.getFullYear()).slice(-2);
   const fullYear = now.getFullYear();
 
-  // DÃ­gitos base de la fecha: D D M M A A (6 dÃ­gitos para pirÃ¡mide simÃ©trica de 6 niveles)
+  // Dígitos base de la fecha: D D M M A A (6 dígitos para pirámide simétrica de 6 niveles)
   const baseDigits = (dd + mm + yy).split('').map(Number);
   const rows = [baseDigits];
   let curr = baseDigits;
@@ -5958,12 +5958,12 @@ function calculateDatePyramid() {
     curr = next;
   }
 
-  // rows[0] = 6 nÃºmeros (Base)
-  // rows[1] = 5 nÃºmeros
-  // rows[2] = 4 nÃºmeros
-  // rows[3] = 3 nÃºmeros (Triple Rey)
-  // rows[4] = 2 nÃºmeros (Terminal de Oro)
-  // rows[5] = 1 nÃºmero  (Clavo / VÃ©rtice)
+  // rows[0] = 6 números (Base)
+  // rows[1] = 5 números
+  // rows[2] = 4 números
+  // rows[3] = 3 números (Triple Rey)
+  // rows[4] = 2 números (Terminal de Oro)
+  // rows[5] = 1 número  (Clavo / Vértice)
   const tripleRey = `${rows[3][0]}${rows[3][1]}${rows[3][2]}`;
   const terminalOro = `${rows[4][0]}${rows[4][1]}`;
   const clavo = `${rows[5][0]}`;
@@ -5981,13 +5981,13 @@ function calculateDatePyramid() {
   ];
 
   const daySignMap = {
-    'Domingo': [{ name: 'Leo', file: 'leo.svg', symbol: 'â™Œ' }, { name: 'Aries', file: 'aries.svg', symbol: 'â™ˆ' }],
-    'Lunes': [{ name: 'CÃ¡ncer', file: 'cancer.svg', symbol: 'â™‹' }, { name: 'Piscis', file: 'piscis.svg', symbol: 'â™“' }],
-    'Martes': [{ name: 'Aries', file: 'aries.svg', symbol: 'â™ˆ' }, { name: 'Escorpio', file: 'escorpio.svg', symbol: 'â™' }],
-    'MiÃ©rcoles': [{ name: 'GÃ©minis', file: 'geminis.svg', symbol: 'â™Š' }, { name: 'Virgo', file: 'virgo.svg', symbol: 'â™' }],
-    'Jueves': [{ name: 'Sagitario', file: 'sagitario.svg', symbol: 'â™' }, { name: 'Piscis', file: 'piscis.svg', symbol: 'â™“' }],
-    'Viernes': [{ name: 'Tauro', file: 'tauro.svg', symbol: 'â™‰' }, { name: 'Libra', file: 'libra.svg', symbol: 'â™Ž' }],
-    'SÃ¡bado': [{ name: 'Capricornio', file: 'capricornio.svg', symbol: 'â™‘' }, { name: 'Acuario', file: 'acuario.svg', symbol: 'â™’' }]
+    'Domingo': [{ name: 'Leo', file: 'leo.svg', symbol: '♌' }, { name: 'Aries', file: 'aries.svg', symbol: '♈' }],
+    'Lunes': [{ name: 'Cáncer', file: 'cancer.svg', symbol: '♋' }, { name: 'Piscis', file: 'piscis.svg', symbol: '♓' }],
+    'Martes': [{ name: 'Aries', file: 'aries.svg', symbol: '♈' }, { name: 'Escorpio', file: 'escorpio.svg', symbol: '♏' }],
+    'Miércoles': [{ name: 'Géminis', file: 'geminis.svg', symbol: '♊' }, { name: 'Virgo', file: 'virgo.svg', symbol: '♍' }],
+    'Jueves': [{ name: 'Sagitario', file: 'sagitario.svg', symbol: '♐' }, { name: 'Piscis', file: 'piscis.svg', symbol: '♓' }],
+    'Viernes': [{ name: 'Tauro', file: 'tauro.svg', symbol: '♉' }, { name: 'Libra', file: 'libra.svg', symbol: '♎' }],
+    'Sábado': [{ name: 'Capricornio', file: 'capricornio.svg', symbol: '♑' }, { name: 'Acuario', file: 'acuario.svg', symbol: '♒' }]
   };
   const signs = daySignMap[dayName] || daySignMap['Martes'];
 
@@ -6011,16 +6011,16 @@ function getFallbackStatsForGame(gameId) {
   hash = Math.abs(hash);
 
   const animalCatalog = [
-    { n: '01', name: 'CARNERO' }, { n: '02', name: 'TORO' }, { n: '03', name: 'CIEMPIÃ‰S' },
-    { n: '04', name: 'ALACRÃN' }, { n: '05', name: 'LEÃ“N' }, { n: '06', name: 'RANA' },
-    { n: '07', name: 'PERICO' }, { n: '08', name: 'RATÃ“N' }, { n: '09', name: 'ÃGUILA' },
+    { n: '01', name: 'CARNERO' }, { n: '02', name: 'TORO' }, { n: '03', name: 'CIEMPIÉS' },
+    { n: '04', name: 'ALACRÁN' }, { n: '05', name: 'LEÓN' }, { n: '06', name: 'RANA' },
+    { n: '07', name: 'PERICO' }, { n: '08', name: 'RATÓN' }, { n: '09', name: 'ÁGUILA' },
     { n: '10', name: 'TIGRE' }, { n: '11', name: 'GATO' }, { n: '12', name: 'CABALLO' },
     { n: '13', name: 'MONO' }, { n: '14', name: 'PALOMA' }, { n: '15', name: 'ZORRO' },
     { n: '16', name: 'OSO' }, { n: '17', name: 'PAVO' }, { n: '18', name: 'BURRO' },
     { n: '19', name: 'CHIVO' }, { n: '20', name: 'COCHINO' }, { n: '21', name: 'GALLO' },
     { n: '22', name: 'CAMELLO' }, { n: '23', name: 'CEBRA' }, { n: '24', name: 'IGUANA' },
     { n: '25', name: 'GALLINA' }, { n: '26', name: 'VACA' }, { n: '27', name: 'PERRO' },
-    { n: '28', name: 'ZAMURO' }, { n: '29', name: 'ELEFANTE' }, { n: '30', name: 'CAIMÃN' },
+    { n: '28', name: 'ZAMURO' }, { n: '29', name: 'ELEFANTE' }, { n: '30', name: 'CAIMÁN' },
     { n: '31', name: 'LAPA' }, { n: '32', name: 'ARDILLA' }, { n: '33', name: 'PESCADO' },
     { n: '34', name: 'VENADO' }, { n: '35', name: 'JIRAFA' }, { n: '36', name: 'CULEBRA' }
   ];
@@ -6037,7 +6037,7 @@ function getFallbackStatsForGame(gameId) {
   return { hot, cold };
 }
 
-// Diapositiva 1: Top 5 Animalitos MÃ¡s Premiados con GrÃ¡ficos de Barras Verticales
+// Diapositiva 1: Top 5 Animalitos Más Premiados con Gráficos de Barras Verticales
 function renderStatsHotAnimalsSlide(slideCfg, stage) {
   let chosenIds = Array.isArray(slideCfg.lotteries) ? slideCfg.lotteries.slice() : [];
   const colCount = Math.min(4, Math.max(1, parseInt(slideCfg.lotteryCount) || 3));
@@ -6076,14 +6076,14 @@ function renderStatsHotAnimalsSlide(slideCfg, stage) {
 
       return `
         <div class="stats-bar-col">
-          <span class="stats-bar-topval hot-${idx + 1}">ðŸ”¥ ${occur}x</span>
+          <span class="stats-bar-topval hot-${idx + 1}">🔥 ${occur}x</span>
           <div class="stats-bar-track">
             <div class="stats-bar-fill bar-color-hot-${idx + 1}" style="height: ${pct}%;"></div>
           </div>
           <div class="stats-bar-bottom-info">
             <div class="stats-animal-coin">
               <img src="${imgUrl}" class="stats-animal-img" alt="${animalName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-              <span class="stats-animal-fallback-emoji" style="display:none;">ðŸ¾</span>
+              <span class="stats-animal-fallback-emoji" style="display:none;">🐾</span>
             </div>
             <span class="stats-num-tag">#${numStr}</span>
             <span class="stats-animal-lbl" title="${animalName}">${animalName}</span>
@@ -6096,10 +6096,10 @@ function renderStatsHotAnimalsSlide(slideCfg, stage) {
       <div class="stats-lottery-card">
         <div class="stats-lottery-card-header">
           <div class="stats-lottery-brand">
-            ${game.logoUrl ? `<img src="${game.logoUrl}" class="stats-lottery-logo" alt="${game.name}" onerror="this.style.display='none'">` : '<span style="font-size:1.3rem;">ðŸ¾</span>'}
+            ${game.logoUrl ? `<img src="${game.logoUrl}" class="stats-lottery-logo" alt="${game.name}" onerror="this.style.display='none'">` : '<span style="font-size:1.3rem;">🐾</span>'}
             <span class="stats-lottery-name">${game.name}</span>
           </div>
-          <span class="stats-lottery-pill hot">ðŸ”¥ TOP 5 MÃS PREMIADOS</span>
+          <span class="stats-lottery-pill hot">🔥 TOP 5 MÁS PREMIADOS</span>
         </div>
         <div class="stats-barchart-stage">
           ${barsHtml}
@@ -6112,10 +6112,10 @@ function renderStatsHotAnimalsSlide(slideCfg, stage) {
     <div class="stats-showcase-slide">
       <div class="stats-header-banner">
         <div class="stats-header-left">
-          <span class="stats-header-badge">ðŸ”¥</span>
+          <span class="stats-header-badge">🔥</span>
           <div>
-            <div class="stats-header-title">TOP 5 ANIMALITOS MÃS PREMIADOS (ÃšLTIMOS 30 DÃAS)</div>
-            <div class="stats-header-subtitle">Frecuencias estadÃ­sticas oficiales consolidadas â€¢ Los animales en racha ganadora</div>
+            <div class="stats-header-title">TOP 5 ANIMALITOS MÁS PREMIADOS (ÚLTIMOS 30 DÍAS)</div>
+            <div class="stats-header-subtitle">Frecuencias estadísticas oficiales consolidadas • Los animales en racha ganadora</div>
           </div>
         </div>
         <div class="stats-header-right">
@@ -6126,8 +6126,8 @@ function renderStatsHotAnimalsSlide(slideCfg, stage) {
         ${columnsHtml}
       </div>
       <div class="stats-footer-cta">
-        <span class="stats-cta-text">ðŸ”¥ Â¡ANIMALES EN RACHA GANADORA! â€¢ Juega tus favoritos hoy en taquilla â€¢ Cobro garantizado al instante</span>
-        <span class="stats-cta-pill">ðŸŽ° Â¡SELLA TU TICKET EN TAQUILLA!</span>
+        <span class="stats-cta-text">🔥 ¡ANIMALES EN RACHA GANADORA! • Juega tus favoritos hoy en taquilla • Cobro garantizado al instante</span>
+        <span class="stats-cta-pill">🎰 ¡SELLA TU TICKET EN TAQUILLA!</span>
       </div>
     </div>
   `;
@@ -6173,14 +6173,14 @@ function renderStatsColdAnimalsSlide(slideCfg, stage) {
 
       return `
         <div class="stats-bar-col">
-          <span class="stats-bar-topval cold-${idx + 1}">âš¡ ${days}d</span>
+          <span class="stats-bar-topval cold-${idx + 1}">⚡ ${days}d</span>
           <div class="stats-bar-track">
             <div class="stats-bar-fill bar-color-cold-${idx + 1}" style="height: ${pct}%;"></div>
           </div>
           <div class="stats-bar-bottom-info">
             <div class="stats-animal-coin cold-border">
               <img src="${imgUrl}" class="stats-animal-img" alt="${animalName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-              <span class="stats-animal-fallback-emoji" style="display:none;">ðŸ¾</span>
+              <span class="stats-animal-fallback-emoji" style="display:none;">🐾</span>
             </div>
             <span class="stats-num-tag">#${numStr}</span>
             <span class="stats-animal-lbl" title="${animalName}">${animalName}</span>
@@ -6193,10 +6193,10 @@ function renderStatsColdAnimalsSlide(slideCfg, stage) {
       <div class="stats-lottery-card">
         <div class="stats-lottery-card-header">
           <div class="stats-lottery-brand">
-            ${game.logoUrl ? `<img src="${game.logoUrl}" class="stats-lottery-logo" alt="${game.name}" onerror="this.style.display='none'">` : '<span style="font-size:1.3rem;">â„ï¸</span>'}
+            ${game.logoUrl ? `<img src="${game.logoUrl}" class="stats-lottery-logo" alt="${game.name}" onerror="this.style.display='none'">` : '<span style="font-size:1.3rem;">❄️</span>'}
             <span class="stats-lottery-name">${game.name}</span>
           </div>
-          <span class="stats-lottery-pill cold">â„ï¸ POR REVENTAR</span>
+          <span class="stats-lottery-pill cold">❄️ POR REVENTAR</span>
         </div>
         <div class="stats-barchart-stage">
           ${barsHtml}
@@ -6209,10 +6209,10 @@ function renderStatsColdAnimalsSlide(slideCfg, stage) {
     <div class="stats-showcase-slide cold-theme">
       <div class="stats-header-banner">
         <div class="stats-header-left">
-          <span class="stats-header-badge">â„ï¸</span>
+          <span class="stats-header-badge">❄️</span>
           <div>
-            <div class="stats-header-title">TOP 5 ANIMALITOS POR REVENTAR (MENOS SALIDOS 30 DÃAS)</div>
-            <div class="stats-header-subtitle">Ciclos de probabilidad vencidos â€¢ Los nÃºmeros mÃ¡s esperados por los apostadores</div>
+            <div class="stats-header-title">TOP 5 ANIMALITOS POR REVENTAR (MENOS SALIDOS 30 DÍAS)</div>
+            <div class="stats-header-subtitle">Ciclos de probabilidad vencidos • Los números más esperados por los apostadores</div>
           </div>
         </div>
         <div class="stats-header-right">
@@ -6223,15 +6223,15 @@ function renderStatsColdAnimalsSlide(slideCfg, stage) {
         ${columnsHtml}
       </div>
       <div class="stats-footer-cta cold-footer">
-        <span class="stats-cta-text">âš¡ Â¡CICLOS VENCIDOS A PUNTO DE EXPLOTAR! â€¢ Los datos mÃ¡s calientes para apostar hoy en taquilla</span>
-        <span class="stats-cta-pill cyan">ðŸ’£ Â¡JUEGA EL DATO ANTES QUE REVIENTE!</span>
+        <span class="stats-cta-text">⚡ ¡CICLOS VENCIDOS A PUNTO DE EXPLOTAR! • Los datos más calientes para apostar hoy en taquilla</span>
+        <span class="stats-cta-pill cyan">💣 ¡JUEGA EL DATO ANTES QUE REVIENTE!</span>
       </div>
     </div>
   `;
 }
 window.renderStatsColdAnimalsSlide = renderStatsColdAnimalsSlide;
 
-// Diapositiva 3: La PirÃ¡mide de la Suerte y Triples Millonarios
+// Diapositiva 3: La Pirámide de la Suerte y Triples Millonarios
 function renderStatsTriplesPyramidSlide(slideCfg, stage) {
   const p = calculateDatePyramid();
 
@@ -6267,40 +6267,40 @@ function renderStatsTriplesPyramidSlide(slideCfg, stage) {
     <div class="stats-showcase-slide">
       <div class="stats-header-banner">
         <div class="stats-header-left">
-          <span class="stats-header-badge">ðŸ”º</span>
+          <span class="stats-header-badge">🔺</span>
           <div>
-            <div class="stats-header-title">LA PIRÃMIDE DE LA SUERTE & TRIPLES MILLONARIOS</div>
-            <div class="stats-header-subtitle">Algoritmo Sagrado de la Fecha (${p.dayName}, ${p.dateStr}) â€¢ ReducciÃ³n numerolÃ³gica y cÃ¡bala de hoy</div>
+            <div class="stats-header-title">LA PIRÁMIDE DE LA SUERTE & TRIPLES MILLONARIOS</div>
+            <div class="stats-header-subtitle">Algoritmo Sagrado de la Fecha (${p.dayName}, ${p.dateStr}) • Reducción numerológica y cábala de hoy</div>
           </div>
         </div>
         <div class="stats-header-right">
-          <div class="stats-live-badge"><span class="stats-live-dot"></span> CÃBALA ACTIVA</div>
+          <div class="stats-live-badge"><span class="stats-live-dot"></span> CÁBALA ACTIVA</div>
         </div>
       </div>
 
       <div class="pyramid-showcase-grid">
-        <!-- Panel Izquierdo: PirÃ¡mide GeomÃ©trica -->
+        <!-- Panel Izquierdo: Pirámide Geométrica -->
         <div class="pyramid-card-left">
           <div class="pyramid-card-header">
-            <div class="pyramid-main-title">ðŸ”º PIRÃMIDE DE LA FECHA OFICIAL</div>
-            <div class="pyramid-date-tag">CÃ¡lculo numerolÃ³gico exacto de hoy ${p.dateStr}</div>
+            <div class="pyramid-main-title">🔺 PIRÁMIDE DE LA FECHA OFICIAL</div>
+            <div class="pyramid-date-tag">Cálculo numerológico exacto de hoy ${p.dateStr}</div>
           </div>
           <div class="pyramid-tree-container">
             ${rowsHtml}
           </div>
           <div class="pyramid-base-legend">
-            ðŸ‘‘ Fila 3: Triple Rey (${p.tripleRey}) â€¢ ðŸŽ¯ Fila 2: Terminal de Oro (${p.terminalOro}) â€¢ ðŸ’Ž VÃ©rtice: Clavo (${p.clavo})
+            👑 Fila 3: Triple Rey (${p.tripleRey}) • 🎯 Fila 2: Terminal de Oro (${p.terminalOro}) • 💎 Vértice: Clavo (${p.clavo})
           </div>
         </div>
 
-        <!-- Panel Derecho: PronÃ³sticos de Triples -->
+        <!-- Panel Derecho: Pronósticos de Triples -->
         <div class="pyramid-card-right">
           <!-- Hero Card: Triple Rey -->
           <div class="pyramid-hero-triple">
             <div class="pyramid-hero-left">
-              <span class="pyramid-hero-tag">ðŸ‘‘ TRIPLE REY DE LA PIRÃMIDE</span>
+              <span class="pyramid-hero-tag">👑 TRIPLE REY DE LA PIRÁMIDE</span>
               <div class="pyramid-giant-triple">${p.tripleRey}</div>
-              <div class="pyramid-permutas">Permutas recomendadas: <strong>${p.permutas.join(' â€¢ ')}</strong></div>
+              <div class="pyramid-permutas">Permutas recomendadas: <strong>${p.permutas.join(' • ')}</strong></div>
             </div>
             <div class="pyramid-hero-right">
               <span style="font-size:0.75rem; color:#94a3b8; font-weight:800;">SIGNOS ASTRALES AFINES:</span>
@@ -6311,32 +6311,32 @@ function renderStatsTriplesPyramidSlide(slideCfg, stage) {
           <!-- Sub-grid: Bombazo y Terminales -->
           <div class="pyramid-sub-grid">
             <div class="pyramid-sub-card">
-              <span class="pyramid-sub-title">ðŸ’£ EL BOMBAZO DE LA FECHA</span>
+              <span class="pyramid-sub-title">💣 EL BOMBAZO DE LA FECHA</span>
               <span class="pyramid-bombazo-val">${p.bombazo}</span>
-              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">Recomendado: Zulia â€¢ TÃ¡chira â€¢ Chance</span>
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700;">Recomendado: Zulia • Táchira • Chance</span>
             </div>
             <div class="pyramid-sub-card">
-              <span class="pyramid-sub-title">ðŸŽ¯ TERMINALES EXPLOSIVOS</span>
+              <span class="pyramid-sub-title">🎯 TERMINALES EXPLOSIVOS</span>
               <div class="pyramid-terminals-row">${terminalsHtml}</div>
-              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700; margin-top:4px;">Los 3 terminales mÃ¡s calientes de la pirÃ¡mide</span>
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700; margin-top:4px;">Los 3 terminales más calientes de la pirámide</span>
             </div>
           </div>
 
-          <!-- CÃ¡bala AstrolÃ³gica -->
+          <!-- Cábala Astrológica -->
           <div class="pyramid-cabala-card">
             <div class="pyramid-cabala-title">
-              <span>ðŸ”® CÃBALA Y RECOMENDACIÃ“N DE HOY</span>
+              <span>🔮 CÁBALA Y RECOMENDACIÓN DE HOY</span>
             </div>
             <p class="pyramid-cabala-desc">
-              La reducciÃ³n piramidal de este <strong>${p.dayName}</strong> arroja vibraciÃ³n mÃ¡xima en la serie <strong>${p.tripleRey}</strong> con terminal <strong>${p.terminalOro}</strong>. Los apostadores expertos combinan estos nÃºmeros con sus signos de suerte en taquilla para asegurar dividendos millonarios.
+              La reducción piramidal de este <strong>${p.dayName}</strong> arroja vibración máxima en la serie <strong>${p.tripleRey}</strong> con terminal <strong>${p.terminalOro}</strong>. Los apostadores expertos combinan estos números con sus signos de suerte en taquilla para asegurar dividendos millonarios.
             </p>
           </div>
         </div>
       </div>
 
       <div class="stats-footer-cta">
-        <span class="stats-cta-text">ðŸŽ° Â¡JUEGA TU TRIPLE CON SIGNO Y GANA HASTA 600 VECES! â€¢ Paga al instante en taquilla</span>
-        <span class="stats-cta-pill">ðŸ‘‘ Â¡SELLA TU TRIPLE REY HOY!</span>
+        <span class="stats-cta-text">🎰 ¡JUEGA TU TRIPLE CON SIGNO Y GANA HASTA 600 VECES! • Paga al instante en taquilla</span>
+        <span class="stats-cta-pill">👑 ¡SELLA TU TRIPLE REY HOY!</span>
       </div>
     </div>
   `;
@@ -6345,10 +6345,10 @@ window.renderStatsTriplesPyramidSlide = renderStatsTriplesPyramidSlide;
 
 let statsAnimalRotationIdx = 0;
 
-// MÃ³dulo 5 (3.5): RadiografÃ­a EstadÃ­stica 30D y PronÃ³sticos (Exclusivo Animalitos - Requisito 8)
+// Módulo 5 (3.5): Radiografía Estadística 30D y Pronósticos (Exclusivo Animalitos - Requisito 8)
 function renderModuleEstadisticas(modCfg, stage) {
   const gamesDict = lotteryStatsData?.summary || {};
-  // Filtrar estrictamente solo animalitos (excluyendo triples como Zulia, TÃ¡chira, etc.)
+  // Filtrar estrictamente solo animalitos (excluyendo triples como Zulia, Táchira, etc.)
   const animalKeys = Object.keys(gamesDict).filter(k => {
     const item = gamesDict[k];
     return item && (!item.type || item.type === 'animalitos') && !k.includes('triple');
@@ -6368,16 +6368,16 @@ function renderModuleEstadisticas(modCfg, stage) {
   ];
 
   const cold = gStats?.cold || [
-    { number: '03', name: 'CIEMPIÃ‰S', occurrences: 2, daysOverdue: 14 },
+    { number: '03', name: 'CIEMPIÉS', occurrences: 2, daysOverdue: 14 },
     { number: '15', name: 'ZORRO', occurrences: 3, daysOverdue: 12 },
     { number: '29', name: 'ELEFANTE', occurrences: 3, daysOverdue: 11 },
-    { number: '00', name: 'DELFÃN', occurrences: 4, daysOverdue: 9 },
+    { number: '00', name: 'DELFÍN', occurrences: 4, daysOverdue: 9 },
     { number: '36', name: 'CULEBRA', occurrences: 4, daysOverdue: 8 }
   ];
 
   const predictions = gStats?.predictions || {
     calientes: [{ number: '18', name: 'BURRO' }, { number: '07', name: 'PERICO' }, { number: '25', name: 'GALLINA' }],
-    atrasados: [{ number: '03', name: 'CIEMPIÃ‰S' }, { number: '15', name: 'ZORRO' }],
+    atrasados: [{ number: '03', name: 'CIEMPIÉS' }, { number: '15', name: 'ZORRO' }],
     datosFenix: ['11', '34']
   };
 
@@ -6388,7 +6388,7 @@ function renderModuleEstadisticas(modCfg, stage) {
         <span class="stats-item-num">${item.number || item.num}</span>
         <span class="stats-item-name">${item.name ? `(${item.name})` : ''}</span>
       </div>
-      <span class="stats-item-badge hot">ðŸ”¥ ${item.occurrences || item.count || 0} veces</span>
+      <span class="stats-item-badge hot">🔥 ${item.occurrences || item.count || 0} veces</span>
     </div>
   `).join('');
 
@@ -6399,58 +6399,58 @@ function renderModuleEstadisticas(modCfg, stage) {
         <span class="stats-item-num">${item.number || item.num}</span>
         <span class="stats-item-name">${item.name ? `(${item.name})` : ''}</span>
       </div>
-      <span class="stats-item-badge cold">â„ï¸ ${item.occurrences !== undefined ? `${item.occurrences} veces (${item.daysOverdue}d sin salir)` : `${item.daysOverdue || 0} dÃ­as`}</span>
+      <span class="stats-item-badge cold">❄️ ${item.occurrences !== undefined ? `${item.occurrences} veces (${item.daysOverdue}d sin salir)` : `${item.daysOverdue || 0} días`}</span>
     </div>
   `).join('');
 
-  const hotPills = (predictions.calientes || []).map(p => `<span class="prediction-chip hot">ðŸ”¥ ${p.number || p} ${p.name || ''}</span>`).join('');
-  const coldPills = (predictions.atrasados || predictions.reventar || []).map(p => `<span class="prediction-chip cold">âš¡ ${p.number || p} ${p.name || ''}</span>`).join('');
-  const fijosPills = (predictions.datosFenix || predictions.fijos || []).map(p => `<span class="prediction-chip star">ðŸŽ¯ ${p.number || p} ${p.name || ''}</span>`).join('');
+  const hotPills = (predictions.calientes || []).map(p => `<span class="prediction-chip hot">🔥 ${p.number || p} ${p.name || ''}</span>`).join('');
+  const coldPills = (predictions.atrasados || predictions.reventar || []).map(p => `<span class="prediction-chip cold">⚡ ${p.number || p} ${p.name || ''}</span>`).join('');
+  const fijosPills = (predictions.datosFenix || predictions.fijos || []).map(p => `<span class="prediction-chip star">🎯 ${p.number || p} ${p.name || ''}</span>`).join('');
 
   stage.innerHTML = `
     <div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 14px; background:rgba(15,23,42,0.8); border:1px solid rgba(56,189,248,0.3); border-radius:12px; margin-bottom:8px;">
         <div style="display:flex; align-items:center; gap:10px;">
-          ${gStats?.logoUrl ? `<img src="${gStats.logoUrl}" style="height:28px; width:auto; border-radius:6px;" alt="${gameDisplayName}">` : '<span style="font-size:1.5rem;">ðŸ¾</span>'}
-          <strong style="color:#38bdf8; font-size:1.15rem; letter-spacing:0.5px;">ðŸ¾ LOTERÃA DE ANIMALITOS: ${gameDisplayName.toUpperCase()}</strong>
+          ${gStats?.logoUrl ? `<img src="${gStats.logoUrl}" style="height:28px; width:auto; border-radius:6px;" alt="${gameDisplayName}">` : '<span style="font-size:1.5rem;">🐾</span>'}
+          <strong style="color:#38bdf8; font-size:1.15rem; letter-spacing:0.5px;">🐾 LOTERÍA DE ANIMALITOS: ${gameDisplayName.toUpperCase()}</strong>
         </div>
-        <span style="color:#94a3b8; font-size:0.85rem; font-weight:700;">ðŸ“… Frecuencia Global Acumulada 30 DÃ­as (Todas las horas)</span>
+        <span style="color:#94a3b8; font-size:0.85rem; font-weight:700;">📅 Frecuencia Global Acumulada 30 Días (Todas las horas)</span>
       </div>
       <div class="stats-dashboard-grid">
         <div class="stats-pillar-card gold-theme">
-          <div class="stats-pillar-header gold">ðŸ¥‡ TOP 5 MÃS PREMIADOS (30 DÃAS)</div>
+          <div class="stats-pillar-header gold">🥇 TOP 5 MÁS PREMIADOS (30 DÍAS)</div>
           <div class="stats-pillar-body">${hotHtml}</div>
         </div>
         <div class="stats-pillar-card cold-theme">
-          <div class="stats-pillar-header blue">â„ï¸ TOP 5 MENOS SALIDOS (30 DÃAS)</div>
+          <div class="stats-pillar-header blue">❄️ TOP 5 MENOS SALIDOS (30 DÍAS)</div>
           <div class="stats-pillar-body">${coldHtml}</div>
         </div>
         <div class="stats-pillar-card pred-theme">
-          <div class="stats-pillar-header green">ðŸ”® PRONÃ“STICOS Y DATOS RECOMENDADOS</div>
+          <div class="stats-pillar-header green">🔮 PRONÓSTICOS Y DATOS RECOMENDADOS</div>
           <div class="stats-pillar-body">
             <div class="prediction-block">
-              <span class="prediction-block-title" style="color:#fbbf24;">ðŸ”¥ Calientes Probables</span>
+              <span class="prediction-block-title" style="color:#fbbf24;">🔥 Calientes Probables</span>
               <div class="prediction-chips-box">${hotPills}</div>
             </div>
             <div class="prediction-block">
-              <span class="prediction-block-title" style="color:#38bdf8;">âš¡ Por Reventar (Ciclo Vencido)</span>
+              <span class="prediction-block-title" style="color:#38bdf8;">⚡ Por Reventar (Ciclo Vencido)</span>
               <div class="prediction-chips-box">${coldPills}</div>
             </div>
             <div class="prediction-block">
-              <span class="prediction-block-title" style="color:#34d399;">ðŸŽ¯ Datos Fenix / Fijos del DÃ­a</span>
+              <span class="prediction-block-title" style="color:#34d399;">🎯 Datos Fenix / Fijos del Día</span>
               <div class="prediction-chips-box">${fijosPills}</div>
             </div>
           </div>
         </div>
       </div>
       <div class="stats-bottom-cta-banner">
-        <span>ðŸŽ° Â¡JUEGA TUS NÃšMEROS FAVORITOS EN TAQUILLA! â€¢ Cobro garantizado al instante â€¢ La suerte estÃ¡ de tu lado</span>
+        <span>🎰 ¡JUEGA TUS NÚMEROS FAVORITOS EN TAQUILLA! • Cobro garantizado al instante • La suerte está de tu lado</span>
       </div>
     </div>
   `;
 }
 
-// MÃ³dulo 6 (3.6): Publicidad Oficial de LoterÃ­as (3 Diapositivas con Logos Oficiales)
+// Módulo 6 (3.6): Publicidad Oficial de Loterías (3 Diapositivas con Logos Oficiales)
 let adSlideIndex = 0;
 function renderModulePublicidad(modCfg, stage) {
   const slide = adSlideIndex;
@@ -6464,49 +6464,49 @@ function renderModulePublicidad(modCfg, stage) {
   if (slide === 0) {
     const logosHtml = animalGames.map(g => `
       <div class="ad-lottery-logo-item">
-        ${g.logoUrl ? `<img src="${g.logoUrl}" alt="${g.name}" onerror="this.style.display='none'">` : '<div style="font-size:2.2rem;">ðŸ¾</div>'}
+        ${g.logoUrl ? `<img src="${g.logoUrl}" alt="${g.name}" onerror="this.style.display='none'">` : '<div style="font-size:2.2rem;">🐾</div>'}
         <span>${g.name}</span>
       </div>
     `).join('');
 
     slideHtml = `
       <div class="ad-slide-showcase">
-        <div class="ad-slide-tag">ðŸ¾ RULETAS LÃDERES EN VENEZUELA</div>
+        <div class="ad-slide-tag">🐾 RULETAS LÍDERES EN VENEZUELA</div>
         <h2 class="ad-slide-title">LAS MEJORES RULETAS DE ANIMALITOS</h2>
-        <p class="ad-slide-subtitle">Sorteos oficiales cada hora desde las 8:00 AM hasta las 7:00 PM. Â¡Gana 30 veces tu jugada!</p>
+        <p class="ad-slide-subtitle">Sorteos oficiales cada hora desde las 8:00 AM hasta las 7:00 PM. ¡Gana 30 veces tu jugada!</p>
         <div class="ad-logos-row">${logosHtml}</div>
-        <div class="ad-slide-cta">Â¡AcÃ©rcate a la taquilla y sella tu animalito de la suerte!</div>
+        <div class="ad-slide-cta">¡Acércate a la taquilla y sella tu animalito de la suerte!</div>
       </div>
     `;
   } else if (slide === 1) {
     const logosHtml = tripleGames.map(g => `
       <div class="ad-lottery-logo-item">
-        ${g.logoUrl ? `<img src="${g.logoUrl}" alt="${g.name}" onerror="this.style.display='none'">` : '<div style="font-size:2.2rem;">ðŸŽ°</div>'}
+        ${g.logoUrl ? `<img src="${g.logoUrl}" alt="${g.name}" onerror="this.style.display='none'">` : '<div style="font-size:2.2rem;">🎰</div>'}
         <span>${g.name}</span>
       </div>
     `).join('');
 
     slideHtml = `
       <div class="ad-slide-showcase">
-        <div class="ad-slide-tag">ðŸŽ° TRIPLES MILLONARIOS</div>
+        <div class="ad-slide-tag">🎰 TRIPLES MILLONARIOS</div>
         <h2 class="ad-slide-title">TRIPLES Y TERMINALES EN VIVO</h2>
         <p class="ad-slide-subtitle">Triples A, B y Signo Astral con los mejores dividendos y premios garantizados en taquilla.</p>
         <div class="ad-logos-row">${logosHtml}</div>
-        <div class="ad-slide-cta">Â¡Premios millonarios al instante con tu ticket oficial!</div>
+        <div class="ad-slide-cta">¡Premios millonarios al instante con tu ticket oficial!</div>
       </div>
     `;
   } else {
     slideHtml = `
       <div class="ad-slide-showcase">
-        <div class="ad-slide-tag">ðŸ›¡ï¸ SEGURIDAD Y CONFIANZA</div>
+        <div class="ad-slide-tag">🛡️ SEGURIDAD Y CONFIANZA</div>
         <h2 class="ad-slide-title">JUEGUE LEGAL, SEGURO Y COBRE AL INSTANTE</h2>
-        <p class="ad-slide-subtitle">En esta agencia fÃ­sica tus jugadas estÃ¡n 100% garantizadas y respaldadas por las operadoras oficiales.</p>
+        <p class="ad-slide-subtitle">En esta agencia física tus jugadas están 100% garantizadas y respaldadas por las operadoras oficiales.</p>
         <div class="ad-security-badges">
-          <div class="ad-sec-badge">ðŸ”’ Apuestas Oficiales Verificadas</div>
-          <div class="ad-sec-badge">âš¡ Pago de Premios Inmediato</div>
-          <div class="ad-sec-badge">ðŸ“º Resultados en Pantallas Digitales en Vivo</div>
+          <div class="ad-sec-badge">🔒 Apuestas Oficiales Verificadas</div>
+          <div class="ad-sec-badge">⚡ Pago de Premios Inmediato</div>
+          <div class="ad-sec-badge">📺 Resultados en Pantallas Digitales en Vivo</div>
         </div>
-        <div class="ad-slide-cta">Â¡Gracias por su preferencia! Solicite sus pronÃ³sticos en taquilla.</div>
+        <div class="ad-slide-cta">¡Gracias por su preferencia! Solicite sus pronósticos en taquilla.</div>
       </div>
     `;
   }
@@ -6514,7 +6514,7 @@ function renderModulePublicidad(modCfg, stage) {
   stage.innerHTML = `<div class="ads-showcase-container">${slideHtml}</div>`;
 }
 
-// MÃ³dulo 7 (3.7): Ãšltimos 5 Sorteos Incorporados (Formato Tarjeta Destacada - Imagen 2)
+// Módulo 7 (3.7): Últimos 5 Sorteos Incorporados (Formato Tarjeta Destacada - Imagen 2)
 function renderModuleUltimos5Sorteos(modCfg, stage) {
   const completedList = [];
   lotteryTop10.forEach(game => {
@@ -6535,7 +6535,7 @@ function renderModuleUltimos5Sorteos(modCfg, stage) {
   if (latestFive.length === 0) {
     stage.innerHTML = `
       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#94a3b8; font-size:1.5rem;">
-        <span style="font-size:4rem; margin-bottom:12px;">â³</span>
+        <span style="font-size:4rem; margin-bottom:12px;">⏳</span>
         <strong>Esperando los primeros sorteos emitidos de la jornada</strong>
       </div>
     `;
@@ -6547,7 +6547,7 @@ function renderModuleUltimos5Sorteos(modCfg, stage) {
     const isAnimal = game.type === 'animalitos';
     const hasTriplesBC = !!(draw.tripleB || draw.tripleC);
     const num = isAnimal ? (draw.number || '--') : (hasTriplesBC ? `A: ${draw.tripleA || '--'}` : (draw.tripleA || draw.number || '--'));
-    const name = isAnimal ? (draw.name || '') : (hasTriplesBC ? `B: ${draw.tripleB || '--'}${draw.tripleC ? ` â€¢ C: ${draw.tripleC}` : ''}` : (draw.signo || draw.name || ''));
+    const name = isAnimal ? (draw.name || '') : (hasTriplesBC ? `B: ${draw.tripleB || '--'}${draw.tripleC ? ` • C: ${draw.tripleC}` : ''}` : (draw.signo || draw.name || ''));
     const signo = (!isAnimal && draw.signo) ? draw.signo : '';
     const zData = signo ? getZodiacData(signo) : null;
     const img = draw.image || '';
@@ -6560,7 +6560,7 @@ function renderModuleUltimos5Sorteos(modCfg, stage) {
           </div>
         </div>
         <div class="hero-lottery-brand">
-          ${game.logoUrl ? `<img src="${game.logoUrl}" class="hero-lottery-logo-circle" alt="${game.name}" onerror="this.style.display='none'">` : '<div style="font-size:2rem;">ðŸŽ°</div>'}
+          ${game.logoUrl ? `<img src="${game.logoUrl}" class="hero-lottery-logo-circle" alt="${game.name}" onerror="this.style.display='none'">` : '<div style="font-size:2rem;">🎰</div>'}
           <h3 class="hero-lottery-name">${game.name}</h3>
         </div>
         <div class="hero-giant-number">${num}</div>
@@ -6568,13 +6568,13 @@ function renderModuleUltimos5Sorteos(modCfg, stage) {
         <div class="hero-gold-medallion">
           ${img ? `<img src="${img}" class="hero-medal-img" alt="${name}" onerror="this.style.display='none'">` : (zData ? `<img src="/images/zodiac/${zData.file}" class="hero-medal-img" alt="${zData.name}">` : `
             <span class="medal-arc-text">${name}</span>
-            <span class="medal-center-num">${isAnimal ? num : (zData ? zData.symbol : 'â­')}</span>
+            <span class="medal-center-num">${isAnimal ? num : (zData ? zData.symbol : '⭐')}</span>
             <span class="medal-arc-text">${name}</span>
           `)}
         </div>
         <div class="hero-card-footer-bar">
-          <span>ðŸ•’ Sorteo de las <strong>${draw.time || draw.hour}</strong></span>
-          <span class="hero-card-status">ðŸŸ¢ Oficial en Vivo</span>
+          <span>🕒 Sorteo de las <strong>${draw.time || draw.hour}</strong></span>
+          <span class="hero-card-status">🟢 Oficial en Vivo</span>
         </div>
       </div>
     `;
@@ -6609,7 +6609,7 @@ function renderCustomResultSlide(slideCfg, stage) {
     if (!game) {
       game = lotteryMasterCatalog.find(g => g.id === gameId);
     }
-    // Fallback dinÃ¡mico para mitades de Triple Chance
+    // Fallback dinámico para mitades de Triple Chance
     if (!game && (gameId === 'triple-chance-1' || gameId === 'triple-chance-2')) {
       const isPart1 = (gameId === 'triple-chance-1');
       const parent = lotteryTop10.find(g => (g.id === 'triple-chance' || g.gameId === 'triple-chance')) || {};
@@ -6621,7 +6621,7 @@ function renderCustomResultSlide(slideCfg, stage) {
         type: 'triples',
         color: '#8b5cf6',
         logoUrl: parent.logoUrl || 'https://api.1000resultados.com/public/images/lottery/triplechance/logo.png',
-        icon: 'ðŸŽ²',
+        icon: '🎲',
         hours: isPart1 
           ? ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM']
           : ['03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM']
@@ -6635,7 +6635,7 @@ function renderCustomResultSlide(slideCfg, stage) {
     const headerColor = game.color || (isAnimal ? '#0d734d' : '#2563eb');
     let draws = game.draws || game.results || [];
 
-    // Derivar sorteos si es una mitad de Triple Chance y aÃºn no tiene draws propios
+    // Derivar sorteos si es una mitad de Triple Chance y aún no tiene draws propios
     if ((!draws || draws.length === 0) && (gameId === 'triple-chance-1' || gameId === 'triple-chance-2')) {
       const parent = lotteryTop10.find(g => (g.id === 'triple-chance' || g.gameId === 'triple-chance')) || {};
       const parentDraws = parent.draws || parent.results || [];
@@ -6719,7 +6719,7 @@ function renderCustomResultSlide(slideCfg, stage) {
           <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
             <span class="result-time">${timeStr}</span>
             <div class="result-avatar-box">
-              ${img ? `<img src="${img}" class="result-avatar-img" alt="${name}" onerror="this.style.display='none'">` : (zData ? `<img src="/images/zodiac/${zData.file}" class="result-avatar-img" alt="${draw.signo}">` : '<span class="result-avatar-coin">ðŸ¾</span>')}
+              ${img ? `<img src="${img}" class="result-avatar-img" alt="${name}" onerror="this.style.display='none'">` : (zData ? `<img src="/images/zodiac/${zData.file}" class="result-avatar-img" alt="${draw.signo}">` : '<span class="result-avatar-coin">🐾</span>')}
             </div>
             <span class="result-num-blue">${num}</span>
             <span class="result-pipe-red">|</span>
@@ -6735,13 +6735,13 @@ function renderCustomResultSlide(slideCfg, stage) {
         const zData = signo ? getZodiacData(signo) : null;
         const isMultiTripleGame = (gameId.includes('chance') || gameId.includes('zulia') || gameId.includes('tachira') || gameId.includes('zamorano') || gameId.includes('caliente') || gameId.includes('caracas') || gameHasB || gameHasC);
 
-        // Solo juegos de terminales puros de 1 nÃºmero usan una sola lÃ­nea
+        // Solo juegos de terminales puros de 1 número usan una sola línea
         if (!isMultiTripleGame && !gameHasB && !gameHasC && !signo) {
           const avatarImgHtml = draw.image 
             ? `<img src="${draw.image}" class="result-avatar-img" alt="${extraName || ''}" onerror="this.style.display='none'">` 
             : (game.logoUrl 
               ? `<img src="${game.logoUrl}" class="result-avatar-img" alt="${game.name}" onerror="this.style.display='none'">` 
-              : '<span class="result-avatar-coin">ðŸŽ°</span>');
+              : '<span class="result-avatar-coin">🎰</span>');
 
           return `
             <div class="result-draw-row ${isDone ? 'done' : 'pending'}">
@@ -6755,10 +6755,10 @@ function renderCustomResultSlide(slideCfg, stage) {
           `;
         }
 
-        // PresentaciÃ³n Oficial en 3 LÃ­neas para Triples:
-        // LÃ­nea 1: Hora del sorteo
-        // LÃ­nea 2: Triples A y B
-        // LÃ­nea 3: Triple C con el signo
+        // Presentación Oficial en 3 Líneas para Triples:
+        // Línea 1: Hora del sorteo
+        // Línea 2: Triples A y B
+        // Línea 3: Triple C con el signo
         const signoHtml = signo
           ? `<span class="result-triple-sign" title="Signo ${signo}">
               ${zData ? `<img src="/images/zodiac/${zData.file}" class="draw-zodiac-thumb" alt="${zData.name}">` : ''}
@@ -6766,13 +6766,13 @@ function renderCustomResultSlide(slideCfg, stage) {
             </span>`
           : (extraName
             ? `<span class="result-triple-name">${extraName}</span>`
-            : (isDone ? '' : '<span class="result-triple-sign pending-sign">â³ Por Jugar</span>'));
+            : (isDone ? '' : '<span class="result-triple-sign pending-sign">⏳ Por Jugar</span>'));
 
         return `
           <div class="result-draw-row triple-3lines ${isDone ? 'done' : 'pending'}">
             <div class="triple-row-time">
               <span class="triple-time-text">${timeStr}</span>
-              ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">â³ Por Jugar</span>'}
+              ${isDone ? '<span class="triple-badge-official">Oficial</span>' : '<span class="triple-badge-pending">⏳ Por Jugar</span>'}
             </div>
             <div class="triple-row-ab">
               <span class="result-triple-pill triple-a" title="Triple A">
@@ -6797,7 +6797,7 @@ function renderCustomResultSlide(slideCfg, stage) {
       <div class="result-column-card ${isFewDraws ? 'few-draws' : ''}">
         <div class="result-column-header" style="background-color: ${headerColor};">
           <div class="result-col-logo-badge">
-            ${game.logoUrl ? `<img src="${game.logoUrl}" class="result-col-logo-img" alt="${game.name}" onerror="this.style.display='none'">` : `<span style="font-size:1.1rem;">${isAnimal ? 'ðŸ¾' : 'ðŸŽ°'}</span>`}
+            ${game.logoUrl ? `<img src="${game.logoUrl}" class="result-col-logo-img" alt="${game.name}" onerror="this.style.display='none'">` : `<span style="font-size:1.1rem;">${isAnimal ? '🐾' : '🎰'}</span>`}
           </div>
           <span class="result-col-title">${game.name}</span>
         </div>
@@ -6819,7 +6819,7 @@ function renderCustomResultSlide(slideCfg, stage) {
 window.renderCustomResultSlide = renderCustomResultSlide;
 
 // ==========================================
-// RENDERERS DE DIAPOSITIVAS DE INFORMACIÃ“N Y PUBLICIDAD
+// RENDERERS DE DIAPOSITIVAS DE INFORMACIÓN Y PUBLICIDAD
 // ==========================================
 
 // 1. Diapositiva: Reglas, Horarios y Formas de Pago de Animalitos (Requisito 2)
@@ -6832,13 +6832,13 @@ function renderSlidePubRulesAnimalitos(slide, stage) {
     return LOTTERY_RULES_CATALOG.animalitos.find(g => g.id === id) || {
       id,
       name: id.toUpperCase().replace(/-/g, ' '),
-      badge: 'ðŸ¾ 38 Animales',
+      badge: '🐾 38 Animales',
       animalsCount: 38,
       animalsRange: '0 al 36',
       draws: '11 Sorteos Diarios',
-      multiplier: '30Ã—',
+      multiplier: '30×',
       multiplierNote: '30 veces lo apostado',
-      example: 'Apuesta 10 Bs âž” Cobras 300 Bs',
+      example: 'Apuesta 10 Bs ➔ Cobras 300 Bs',
       logoUrl: '',
       color: '#10b981'
     };
@@ -6851,13 +6851,13 @@ function renderSlidePubRulesAnimalitos(slide, stage) {
         <div class="pub-card-left">
           <div class="pub-logo-box">
             ${g.logoUrl ? `<img src="${g.logoUrl}" class="pub-lottery-logo" alt="${g.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
-            <span style="${g.logoUrl ? 'display:none;' : ''} font-size:1.6rem;">${g.badge.includes('ðŸ¦œ') ? 'ðŸ¦œ' : (g.badge.includes('ðŸ¥') ? 'ðŸ¥' : (g.badge.includes('ðŸ¸') ? 'ðŸ¸' : 'ðŸ¾'))}</span>
+            <span style="${g.logoUrl ? 'display:none;' : ''} font-size:1.6rem;">${g.badge.includes('🦜') ? '🦜' : (g.badge.includes('🐥') ? '🐥' : (g.badge.includes('🐸') ? '🐸' : '🐾'))}</span>
           </div>
           <div class="pub-card-details">
             <span class="pub-lottery-name">${g.name}</span>
             <div class="pub-meta-badges">
               <span class="pub-badge-info">${g.badge}</span>
-              <span class="pub-badge-schedule">ðŸ•’ ${g.draws}</span>
+              <span class="pub-badge-schedule">🕒 ${g.draws}</span>
             </div>
           </div>
         </div>
@@ -6873,10 +6873,10 @@ function renderSlidePubRulesAnimalitos(slide, stage) {
     <div class="pub-showcase-slide">
       <div class="pub-header-banner">
         <div class="pub-header-left">
-          <span class="pub-header-badge">ðŸ¾</span>
+          <span class="pub-header-badge">🐾</span>
           <div>
-            <div class="pub-header-title">${slide.name || 'ðŸ¾ REGLAS, HORARIOS Y MULTIPLICADORES: ANIMALITOS'}</div>
-            <div class="pub-header-subtitle">GuÃ­a oficial de formas de pago en taquilla â€¢ Multiplica tus jugadas hoy</div>
+            <div class="pub-header-title">${slide.name || '🐾 REGLAS, HORARIOS Y MULTIPLICADORES: ANIMALITOS'}</div>
+            <div class="pub-header-subtitle">Guía oficial de formas de pago en taquilla • Multiplica tus jugadas hoy</div>
           </div>
         </div>
         <div class="pub-header-right">
@@ -6887,8 +6887,8 @@ function renderSlidePubRulesAnimalitos(slide, stage) {
         ${cardsHtml}
       </div>
       <div class="stats-footer-cta">
-        <span class="stats-cta-text">ðŸ¾ Â¡MULTIPLICA TU DINERO CON TUS ANIMALES FAVORITOS! â€¢ Cobro inmediato garantizado en taquilla</span>
-        <span class="stats-cta-pill">ðŸŽŸï¸ Â¡SELLA TUS JUGADAS AHORA!</span>
+        <span class="stats-cta-text">🐾 ¡MULTIPLICA TU DINERO CON TUS ANIMALES FAVORITOS! • Cobro inmediato garantizado en taquilla</span>
+        <span class="stats-cta-pill">🎟️ ¡SELLA TUS JUGADAS AHORA!</span>
       </div>
     </div>
   `;
@@ -6905,11 +6905,11 @@ function renderSlidePubRulesTriples(slide, stage) {
     return LOTTERY_RULES_CATALOG.triples.find(g => g.id === id) || {
       id,
       name: id.toUpperCase().replace(/-/g, ' '),
-      badge: 'ðŸŽ° 3 Sorteos',
+      badge: '🎰 3 Sorteos',
       draws: 'Horarios Oficiales',
-      multiplierTriple: '600Ã—',
-      multiplierTerminal: '70Ã—',
-      multiplierSigno: '1.200Ã—',
+      multiplierTriple: '600×',
+      multiplierTerminal: '70×',
+      multiplierSigno: '1.200×',
       logoUrl: '',
       color: '#3b82f6'
     };
@@ -6920,13 +6920,13 @@ function renderSlidePubRulesTriples(slide, stage) {
       <div class="pub-card-left">
         <div class="pub-logo-box">
           ${g.logoUrl ? `<img src="${g.logoUrl}" class="pub-lottery-logo" alt="${g.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">` : ''}
-          <span style="${g.logoUrl ? 'display:none;' : ''} font-size:1.6rem;">ðŸŽ°</span>
+          <span style="${g.logoUrl ? 'display:none;' : ''} font-size:1.6rem;">🎰</span>
         </div>
         <div class="pub-card-details">
           <span class="pub-lottery-name">${g.name}</span>
           <div class="pub-meta-badges">
             <span class="pub-badge-info">${g.badge}</span>
-            <span class="pub-badge-schedule">ðŸ•’ ${g.draws}</span>
+            <span class="pub-badge-schedule">🕒 ${g.draws}</span>
           </div>
         </div>
       </div>
@@ -6953,10 +6953,10 @@ function renderSlidePubRulesTriples(slide, stage) {
     <div class="pub-showcase-slide">
       <div class="pub-header-banner">
         <div class="pub-header-left">
-          <span class="pub-header-badge">ðŸŽ°</span>
+          <span class="pub-header-badge">🎰</span>
           <div>
-            <div class="pub-header-title">${slide.name || 'ðŸŽ° FORMAS DE PAGO Y HORARIOS: TRIPLES Y TERMINALES'}</div>
-            <div class="pub-header-subtitle">Paga 600 veces en triples directos â€¢ 70 veces en terminales â€¢ 1.200 veces en signo zodiacal</div>
+            <div class="pub-header-title">${slide.name || '🎰 FORMAS DE PAGO Y HORARIOS: TRIPLES Y TERMINALES'}</div>
+            <div class="pub-header-subtitle">Paga 600 veces en triples directos • 70 veces en terminales • 1.200 veces en signo zodiacal</div>
           </div>
         </div>
         <div class="pub-header-right">
@@ -6967,8 +6967,8 @@ function renderSlidePubRulesTriples(slide, stage) {
         ${cardsHtml}
       </div>
       <div class="stats-footer-cta cold-footer">
-        <span class="stats-cta-text">ðŸŽ° Â¡LOS PREMIOS MÃS GRANDES DE VENEZUELA! â€¢ Triple directo 600x â€¢ Terminal 70x â€¢ Signo 1.200x</span>
-        <span class="stats-cta-pill cyan">ðŸ’° Â¡COBRO SEGURO E INSTANTÃNEO!</span>
+        <span class="stats-cta-text">🎰 ¡LOS PREMIOS MÁS GRANDES DE VENEZUELA! • Triple directo 600x • Terminal 70x • Signo 1.200x</span>
+        <span class="stats-cta-pill cyan">💰 ¡COBRO SEGURO E INSTANTÁNEO!</span>
       </div>
     </div>
   `;
@@ -6979,22 +6979,22 @@ window.renderSlidePubRulesTriples = renderSlidePubRulesTriples;
 function renderSlidePubAgencyIdentity(slide, stage) {
   const agencyName = slide.agencyName || 'AGENCIA OFICIAL LA FORTUNA';
   const agencyContact = slide.agencyContact || '';
-  const agencySlogan = slide.agencySlogan || 'Tu Agencia de Confianza â€¢ Pagos Seguros al Instante';
+  const agencySlogan = slide.agencySlogan || 'Tu Agencia de Confianza • Pagos Seguros al Instante';
   const agencyHours = slide.agencyHours || 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
-  const ticketValidity = slide.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 dÃ­as continuos a partir de la fecha de emisiÃ³n.';
+  const ticketValidity = slide.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
   const logoUrl = slide.logoUrl || currentScreenConfig.logoUrl || (currentUser && currentUser.logoUrl) || '';
   
   const rules = Array.isArray(slide.agencyRules) && slide.agencyRules.length > 0 ? slide.agencyRules : [
-    'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepciÃ³n.',
+    'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
     'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
-    'Los premios se pagan al instante en bolÃ­vares por Pago MÃ³vil, Efectivo o Transferencia bancaria.',
-    'Prohibida terminantemente la venta de apuestas a menores de 18 aÃ±os.',
-    'En caso de suspensiÃ³n oficial de un sorteo por el ente emisor, se aplicarÃ¡ el reglamento oficial de la loterÃ­a correspondiente.'
+    'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+    'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+    'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
   ];
 
   const rulesListHtml = rules.map((r, i) => `
     <li class="pub-rule-entry">
-      <span class="pub-rule-icon">âœ”</span>
+      <span class="pub-rule-icon">✔</span>
       <div><strong>Norma #${i + 1}:</strong> ${r}</div>
     </li>
   `).join('');
@@ -7003,9 +7003,9 @@ function renderSlidePubAgencyIdentity(slide, stage) {
     <div class="pub-showcase-slide">
       <div class="pub-header-banner">
         <div class="pub-header-left">
-          <span class="pub-header-badge">ðŸ¢</span>
+          <span class="pub-header-badge">🏢</span>
           <div>
-            <div class="pub-header-title">${slide.name || 'ðŸ¢ IDENTIDAD, HORARIOS Y NORMAS DE LA AGENCIA'}</div>
+            <div class="pub-header-title">${slide.name || '🏢 IDENTIDAD, HORARIOS Y NORMAS DE LA AGENCIA'}</div>
             <div class="pub-header-subtitle">${agencySlogan}</div>
           </div>
         </div>
@@ -7022,12 +7022,12 @@ function renderSlidePubAgencyIdentity(slide, stage) {
                 <img src="${logoUrl}" alt="Logotipo Agencia" style="max-height:85px; max-width:180px; object-fit:contain; border-radius:8px; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.6));">
               </div>
             ` : `
-              <div class="pub-agency-emblem">ðŸ›ï¸</div>
+              <div class="pub-agency-emblem">🏛️</div>
             `}
             <h2 class="pub-agency-name-title">${agencyName}</h2>
             ${agencyContact ? `
               <div class="pub-agency-claims-badge" style="display:inline-flex; align-items:center; gap:8px; background:rgba(16, 185, 129, 0.18); border:1px solid rgba(16, 185, 129, 0.45); padding:6px 16px; border-radius:30px; font-weight:700; color:#34d399; margin:6px 0 10px 0; font-size:0.95rem;">
-                <span style="font-size:1.1rem;">ðŸ“±</span>
+                <span style="font-size:1.1rem;">📱</span>
                 <span>Reclamos y Sugerencias:</span>
                 <strong style="color:#ffffff; letter-spacing:0.5px;">${agencyContact}</strong>
               </div>
@@ -7036,11 +7036,11 @@ function renderSlidePubAgencyIdentity(slide, stage) {
           </div>
           <div class="pub-agency-info-boxes">
             <div class="pub-info-box-item gold">
-              <div class="pub-info-box-header">ðŸ•’ HORARIO DE ATENCIÃ“N</div>
+              <div class="pub-info-box-header">🕒 HORARIO DE ATENCIÓN</div>
               <div class="pub-info-box-body">${agencyHours}</div>
             </div>
             <div class="pub-info-box-item">
-              <div class="pub-info-box-header">ðŸŽŸï¸ CADUCIDAD / VALIDEZ DE TICKETS</div>
+              <div class="pub-info-box-header">🎟️ CADUCIDAD / VALIDEZ DE TICKETS</div>
               <div class="pub-info-box-body">${ticketValidity}</div>
             </div>
           </div>
@@ -7048,7 +7048,7 @@ function renderSlidePubAgencyIdentity(slide, stage) {
 
         <div class="pub-agency-card-right">
           <div class="pub-rules-header">
-            <span style="font-size:1.5rem;">ðŸ“œ</span>
+            <span style="font-size:1.5rem;">📜</span>
             <h3>Condiciones Generales y Normas de Taquilla</h3>
           </div>
           <ul class="pub-rules-list">
@@ -7058,8 +7058,8 @@ function renderSlidePubAgencyIdentity(slide, stage) {
       </div>
 
       <div class="stats-footer-cta">
-        <span class="stats-cta-text">ðŸ¢ JUEGA CON RESPONSABILIDAD â€¢ Conserve su ticket en buen estado â€¢ Pagos garantizados al instante</span>
-        <span class="stats-cta-pill">ðŸ›¡ï¸ RESPALDO Y CONFIANZA TOTAL</span>
+        <span class="stats-cta-text">🏢 JUEGA CON RESPONSABILIDAD • Conserve su ticket en buen estado • Pagos garantizados al instante</span>
+        <span class="stats-cta-pill">🛡️ RESPALDO Y CONFIANZA TOTAL</span>
       </div>
     </div>
   `;
@@ -7068,17 +7068,17 @@ window.renderSlidePubAgencyIdentity = renderSlidePubAgencyIdentity;
 
 // 4. Diapositiva: Beneficios Exclusivos de Nuestra Agencia (Requisito 5)
 function renderSlidePubAgencyBenefits(slide, stage) {
-  const subtitle = slide.subtitle || 'MÃ¡xima solidez, transparencia absoluta y la mejor atenciÃ³n en taquilla';
+  const subtitle = slide.subtitle || 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla';
 
   const benefits = [
-    { icon: 'ðŸ›ï¸', title: 'Solidez Financiera', desc: 'Respaldo de capital garantizado para pagar hasta los premios mÃ¡s grandes sin demoras ni intermediarios.' },
-    { icon: 'âš¡', title: 'Pagos Inmediatos', desc: 'Cobra al instante en taquilla: Pago MÃ³vil instantÃ¡neo, efectivo o transferencia bancaria en segundos.' },
-    { icon: 'ðŸ“œ', title: '100% Legal y Oficial', desc: 'Agencia debidamente autorizada con conexiÃ³n directa a los servidores oficiales de las loterÃ­as de Venezuela.' },
-    { icon: 'â±ï¸', title: 'AtenciÃ³n UltrarrÃ¡pida', desc: 'Taquillas mÃºltiples de alta velocidad para que selles tus tickets sin colas ni esperas.' },
-    { icon: 'ðŸ›¡ï¸', title: 'Seguridad y Confianza', desc: 'Instalaciones cÃ³modas y seguras con monitoreo continuo para tu total tranquilidad.' },
-    { icon: 'ðŸ’³', title: 'Todos los Medios de Pago', desc: 'Aceptamos Pago MÃ³vil, Punto de Venta, Biopago, Efectivo Divisas y BolÃ­vares al cambio oficial.' },
-    { icon: 'ðŸ“º', title: 'Pantallas 4K en Vivo', desc: 'Monitoreo en tiempo real de todos los resultados con actualizaciÃ³n inmediata y audio en alta definiciÃ³n.' },
-    { icon: 'ðŸ¤', title: 'AtenciÃ³n de Primera', desc: 'Personal amable, calificado y siempre dispuesto a orientarte en tus jugadas y combinaciones favoritas.' }
+    { icon: '🏛️', title: 'Solidez Financiera', desc: 'Respaldo de capital garantizado para pagar hasta los premios más grandes sin demoras ni intermediarios.' },
+    { icon: '⚡', title: 'Pagos Inmediatos', desc: 'Cobra al instante en taquilla: Pago Móvil instantáneo, efectivo o transferencia bancaria en segundos.' },
+    { icon: '📜', title: '100% Legal y Oficial', desc: 'Agencia debidamente autorizada con conexión directa a los servidores oficiales de las loterías de Venezuela.' },
+    { icon: '⏱️', title: 'Atención Ultrarrápida', desc: 'Taquillas múltiples de alta velocidad para que selles tus tickets sin colas ni esperas.' },
+    { icon: '🛡️', title: 'Seguridad y Confianza', desc: 'Instalaciones cómodas y seguras con monitoreo continuo para tu total tranquilidad.' },
+    { icon: '💳', title: 'Todos los Medios de Pago', desc: 'Aceptamos Pago Móvil, Punto de Venta, Biopago, Efectivo Divisas y Bolívares al cambio oficial.' },
+    { icon: '📺', title: 'Pantallas 4K en Vivo', desc: 'Monitoreo en tiempo real de todos los resultados con actualización inmediata y audio en alta definición.' },
+    { icon: '🤝', title: 'Atención de Primera', desc: 'Personal amable, calificado y siempre dispuesto a orientarte en tus jugadas y combinaciones favoritas.' }
   ];
 
   const tilesHtml = benefits.map(b => `
@@ -7093,9 +7093,9 @@ function renderSlidePubAgencyBenefits(slide, stage) {
     <div class="pub-showcase-slide">
       <div class="pub-header-banner">
         <div class="pub-header-left">
-          <span class="pub-header-badge">ðŸ’Ž</span>
+          <span class="pub-header-badge">💎</span>
           <div>
-            <div class="pub-header-title">${slide.name || 'ðŸ’Ž BENEFICIOS EXCLUSIVOS DE NUESTRA AGENCIA'}</div>
+            <div class="pub-header-title">${slide.name || '💎 BENEFICIOS EXCLUSIVOS DE NUESTRA AGENCIA'}</div>
             <div class="pub-header-subtitle">${subtitle}</div>
           </div>
         </div>
@@ -7109,8 +7109,8 @@ function renderSlidePubAgencyBenefits(slide, stage) {
       </div>
 
       <div class="stats-footer-cta">
-        <span class="stats-cta-text">ðŸ’Ž Â¡GRACIAS POR PREFERIRNOS! â€¢ La agencia #1 en confianza, rapidez y atenciÃ³n al cliente</span>
-        <span class="stats-cta-pill">ðŸŒŸ Â¡LA MEJOR AGENCIA DEL PAÃS!</span>
+        <span class="stats-cta-text">💎 ¡GRACIAS POR PREFERIRNOS! • La agencia #1 en confianza, rapidez y atención al cliente</span>
+        <span class="stats-cta-pill">🌟 ¡LA MEJOR AGENCIA DEL PAÍS!</span>
       </div>
     </div>
   `;
@@ -7118,7 +7118,7 @@ function renderSlidePubAgencyBenefits(slide, stage) {
 window.renderSlidePubAgencyBenefits = renderSlidePubAgencyBenefits;
 
 // ==========================================
-// MOTOR MULTI-SECCIÃ“N DE DIAPOSITIVAS Y NAVEGACIÃ“N
+// MOTOR MULTI-SECCIÓN DE DIAPOSITIVAS Y NAVEGACIÓN
 // ==========================================
 let currentCarouselSlideIdx = 0;
 let carouselTransitionTimer = null;
@@ -7129,7 +7129,7 @@ function getActiveCarouselSlides() {
   const slidesQueue = [];
 
   if (sections) {
-    // 1. SecciÃ³n Resultados (5 Pizarras Fijas Reordenables)
+    // 1. Sección Resultados (5 Pizarras Fijas Reordenables)
     if (sections.resultados && sections.resultados.enabled !== false && Array.isArray(sections.resultados.slides)) {
       sections.resultados.slides.forEach((s, idx) => {
         if (s && s.enabled !== false) {
@@ -7148,7 +7148,7 @@ function getActiveCarouselSlides() {
       });
     }
 
-    // 2. SecciÃ³n EstadÃ­sticas (3 Diapositivas Maestras Reordenables)
+    // 2. Sección Estadísticas (3 Diapositivas Maestras Reordenables)
     if (sections.estadisticas && sections.estadisticas.enabled !== false && Array.isArray(sections.estadisticas.slides)) {
       sections.estadisticas.slides.forEach((s, idx) => {
         if (s && s.enabled !== false) {
@@ -7159,7 +7159,7 @@ function getActiveCarouselSlides() {
             id: s.id || `slide_stat_${idx + 1}`,
             serial: s.serial || `Estadistica${idx + 1}`,
             order: parseInt(s.order) || (idx + 6),
-            name: s.name || (idx === 0 ? 'ðŸ”¥ Top 5 Animalitos MÃ¡s Premiados' : (idx === 1 ? 'â„ï¸ Animalitos Por Reventar' : 'ðŸ”º PirÃ¡mide de la Suerte')),
+            name: s.name || (idx === 0 ? '🔥 Top 5 Animalitos Más Premiados' : (idx === 1 ? '❄️ Animalitos Por Reventar' : '🔺 Pirámide de la Suerte')),
             duration: Math.max(5, parseInt(s.duration) || 22),
             lotteryCount: Math.min(4, Math.max(1, parseInt(s.lotteryCount) || 3)),
             lotteries: Array.isArray(s.lotteries) ? s.lotteries : []
@@ -7168,7 +7168,7 @@ function getActiveCarouselSlides() {
       });
     }
 
-    // 3. SecciÃ³n Publicidad (4 Diapositivas Maestras o hasta 15 Reordenables)
+    // 3. Sección Publicidad (4 Diapositivas Maestras o hasta 15 Reordenables)
     if (sections.publicidad && sections.publicidad.enabled !== false && Array.isArray(sections.publicidad.slides)) {
       sections.publicidad.slides.forEach((s, idx) => {
         if (s && s.enabled !== false) {
@@ -7188,7 +7188,7 @@ function getActiveCarouselSlides() {
     }
   }
 
-  // Ordenar la cola de reproducciÃ³n segÃºn la posiciÃ³n/orden personalizada del usuario
+  // Ordenar la cola de reproducción según la posición/orden personalizada del usuario
   slidesQueue.sort((a, b) => (parseInt(a.order) || 99) - (parseInt(b.order) || 99));
 
   if (slidesQueue.length === 0) {
@@ -7198,7 +7198,7 @@ function getActiveCarouselSlides() {
       id: 'slide_res_1',
       serial: 'Pizarra1',
       order: 1,
-      name: 'Pizarra 1: Animalitos LÃ­deres',
+      name: 'Pizarra 1: Animalitos Líderes',
       duration: 20,
       lotteryCount: 5,
       lotteries: ['la-granjita', 'guacharo-activo', 'lotto-activo', 'guacharito-millonario', 'chance-animal']
@@ -7247,7 +7247,7 @@ function renderCurrentCarouselSlide() {
 
   const lblModule = document.getElementById('lblActiveModuleName');
   if (lblModule) {
-    lblModule.textContent = activeSlide.name || 'RESULTADOS DE LOTERÃAS';
+    lblModule.textContent = activeSlide.name || 'RESULTADOS DE LOTERÍAS';
   }
 
   updateLotteryPageIndicator(currentCarouselSlideIdx, slides.length, activeSlide);
@@ -7299,8 +7299,8 @@ function renderCurrentCarouselSlide() {
         stage.innerHTML = `
           <div style="display:flex; justify-content:center; align-items:center; height:320px; color:#cbd5e1; font-weight:700;">
             <div style="text-align:center;">
-              <div style="font-size:2rem; margin-bottom:8px;">ðŸŽ°</div>
-              <div>Cargando sorteos de ${activeSlide.name || 'LoterÃ­as'}...</div>
+              <div style="font-size:2rem; margin-bottom:8px;">🎰</div>
+              <div>Cargando sorteos de ${activeSlide.name || 'Loterías'}...</div>
             </div>
           </div>
         `;
@@ -7363,7 +7363,7 @@ function goToFirstLotteryModule(isManual = true) {
   currentCarouselSlideIdx = 0;
   const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log('[LotteryCarousel] NavegaciÃ³n: Primera diapositiva');
+  if (isManual) console.log('[LotteryCarousel] Navegación: Primera diapositiva');
 }
 window.goToFirstLotteryModule = goToFirstLotteryModule;
 
@@ -7372,7 +7372,7 @@ function goToLastLotteryModule(isManual = true) {
   currentCarouselSlideIdx = Math.max(0, slides.length - 1);
   const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log('[LotteryCarousel] NavegaciÃ³n: Ãšltima diapositiva');
+  if (isManual) console.log('[LotteryCarousel] Navegación: Última diapositiva');
 }
 window.goToLastLotteryModule = goToLastLotteryModule;
 
@@ -7381,7 +7381,7 @@ function goToPrevLotteryModule(isManual = true) {
   currentCarouselSlideIdx = (currentCarouselSlideIdx - 1 + slides.length) % slides.length;
   const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log(`[LotteryCarousel] NavegaciÃ³n: Diapositiva anterior (${currentCarouselSlideIdx + 1})`);
+  if (isManual) console.log(`[LotteryCarousel] Navegación: Diapositiva anterior (${currentCarouselSlideIdx + 1})`);
 }
 window.goToPrevLotteryModule = goToPrevLotteryModule;
 
@@ -7390,7 +7390,7 @@ function goToNextLotteryModule(isManual = true) {
   currentCarouselSlideIdx = (currentCarouselSlideIdx + 1) % slides.length;
   const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log(`[LotteryCarousel] NavegaciÃ³n: Siguiente diapositiva (${currentCarouselSlideIdx + 1})`);
+  if (isManual) console.log(`[LotteryCarousel] Navegación: Siguiente diapositiva (${currentCarouselSlideIdx + 1})`);
 }
 window.goToNextLotteryModule = goToNextLotteryModule;
 
@@ -7400,7 +7400,7 @@ function goToLotteryModuleByIndex(index, isManual = true) {
   currentCarouselSlideIdx = Math.max(0, Math.min(index, slides.length - 1));
   const durSec = renderCurrentCarouselSlide();
   scheduleNextCarouselTransition(durSec);
-  if (isManual) console.log(`[LotteryCarousel] NavegaciÃ³n directa: Diapositiva ${currentCarouselSlideIdx + 1}`);
+  if (isManual) console.log(`[LotteryCarousel] Navegación directa: Diapositiva ${currentCarouselSlideIdx + 1}`);
 }
 window.goToLotteryModuleByIndex = goToLotteryModuleByIndex;
 
@@ -7409,7 +7409,7 @@ function runAutonomousCarouselLoop() {
   scheduleNextCarouselTransition(durSec);
 }
 
-// Cargar Datos de LoterÃ­as desde API
+// Cargar Datos de Loterías desde API
 async function loadLotteryTop10Data(silent = false) {
   try {
     const res = await fetch('/api/lottery/top10');
@@ -7421,7 +7421,7 @@ async function loadLotteryTop10Data(silent = false) {
       updateAdminManualLotteryDropdowns();
     }
   } catch (err) {
-    if (!silent) console.error('Error cargando Top 10 loterÃ­as:', err);
+    if (!silent) console.error('Error cargando Top 10 loterías:', err);
   }
 }
 
@@ -7466,8 +7466,8 @@ function renderLotteryTicker() {
     `;
   }).join('');
 
-  // Solo reinyectar en el DOM si el contenido realmente cambiÃ³ o si el track estÃ¡ vacÃ­o
-  // Esto evita reiniciar la animaciÃ³n CSS a 0 cada 40 segundos en cada ciclo de polling
+  // Solo reinyectar en el DOM si el contenido realmente cambió o si el track está vacío
+  // Esto evita reiniciar la animación CSS a 0 cada 40 segundos en cada ciclo de polling
   if (track.innerHTML === '' || lastRenderedTickerContent !== itemsHtml) {
     track.innerHTML = itemsHtml + itemsHtml;
     lastRenderedTickerContent = itemsHtml;
@@ -7509,7 +7509,7 @@ function stopLotteryEngineView() {
 }
 
 // ==========================================
-// Panel Administrativo de ConfiguraciÃ³n de Pantallas (Peticiones 2, 4, 5)
+// Panel Administrativo de Configuración de Pantallas (Peticiones 2, 4, 5)
 // ==========================================
 let approvedDevicesCache = [];
 
@@ -7534,7 +7534,7 @@ async function loadScreenConfigManager() {
       container.innerHTML = approvedDevicesCache.map(dev => `
         <label class="screen-check-item">
           <input type="checkbox" class="chk-screen-config" value="${dev.id}" checked>
-          <span>ðŸ“º <strong>${dev.tvName || dev.id}</strong> <small style="color:#64748b;">(${dev.clientId || 'Fenix'})</small></span>
+          <span>📺 <strong>${dev.tvName || dev.id}</strong> <small style="color:#64748b;">(${dev.clientId || 'Fenix'})</small></span>
         </label>
       `).join('');
     }
@@ -7542,7 +7542,7 @@ async function loadScreenConfigManager() {
     // Poblar Selector de Pantalla Origen para Clonar
     if (selSource) {
       selSource.innerHTML = '<option value="">Seleccione pantalla origen...</option>' +
-        approvedDevicesCache.map(dev => `<option value="${dev.id}">ðŸ“º ${dev.tvName || dev.id} (${dev.clientId || 'Fenix'})</option>`).join('');
+        approvedDevicesCache.map(dev => `<option value="${dev.id}">📺 ${dev.tvName || dev.id} (${dev.clientId || 'Fenix'})</option>`).join('');
 
       if (!selSource.dataset.hasChangeListener) {
         selSource.dataset.hasChangeListener = 'true';
@@ -7557,19 +7557,19 @@ async function loadScreenConfigManager() {
       }
     }
 
-    // Cargar catÃ¡logo maestro antes de inicializar los selectores
+    // Cargar catálogo maestro antes de inicializar los selectores
     await loadLotteryMasterCatalog();
 
-    // Poblar Selector de LoterÃ­as para MÃ³dulos 1, 2, 3
+    // Poblar Selector de Loterías para Módulos 1, 2, 3
     populateModuleLotteryPickers();
 
-    // Sincronizar campos del formulario con la configuraciÃ³n guardada y activa (Prioridad a config activa)
+    // Sincronizar campos del formulario con la configuración guardada y activa (Prioridad a config activa)
     const cfgToSync = (currentScreenConfig && Object.keys(currentScreenConfig).length > 0)
       ? currentScreenConfig
       : ((currentUser && currentUser.config) ? currentUser.config : DEFAULT_SCREEN_CONFIG);
     syncScreenConfigFormWithState(cfgToSync);
   } catch (err) {
-    console.error('Error cargando gestor de configuraciÃ³n de pantallas:', err);
+    console.error('Error cargando gestor de configuración de pantallas:', err);
   }
 }
 
@@ -7611,7 +7611,7 @@ function populateModuleLotteryPickers() {
 }
 
 // ==========================================
-// GESTOR DE CATÃLOGO MAESTRO DE LOTERÃAS (FRONTEND)
+// GESTOR DE CATÁLOGO MAESTRO DE LOTERÍAS (FRONTEND)
 // ==========================================
 async function loadLotteryMasterCatalog() {
   try {
@@ -7622,7 +7622,7 @@ async function loadLotteryMasterCatalog() {
       lotteryMasterCatalog = data.catalog;
     }
   } catch (err) {
-    console.warn('[LotteryCatalog] Error cargando catÃ¡logo:', err);
+    console.warn('[LotteryCatalog] Error cargando catálogo:', err);
   }
 }
 window.loadLotteryMasterCatalog = loadLotteryMasterCatalog;
@@ -7647,7 +7647,7 @@ function renderLotteryCatalogTable() {
   if (!tbody) return;
 
   if (lotteryMasterCatalog.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:16px;">No hay loterÃ­as registradas en el catÃ¡logo.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:16px;">No hay loterías registradas en el catálogo.</td></tr>';
     return;
   }
 
@@ -7657,7 +7657,7 @@ function renderLotteryCatalogTable() {
         <span style="display:inline-block; width:18px; height:18px; border-radius:4px; background:${g.color || '#10b981'}; vertical-align:middle; border:1px solid rgba(255,255,255,0.3);"></span>
       </td>
       <td>
-        ${g.logoUrl ? `<img src="${g.logoUrl}" style="width:24px; height:24px; object-fit:contain; border-radius:50%; background:#fff;" onerror="this.style.display='none'">` : (g.icon || 'ðŸŽ°')}
+        ${g.logoUrl ? `<img src="${g.logoUrl}" style="width:24px; height:24px; object-fit:contain; border-radius:50%; background:#fff;" onerror="this.style.display='none'">` : (g.icon || '🎰')}
       </td>
       <td>
         <strong>${g.name}</strong>
@@ -7665,15 +7665,15 @@ function renderLotteryCatalogTable() {
       </td>
       <td>
         <span style="background:${g.type === 'animalitos' ? 'rgba(16,185,129,0.2)' : 'rgba(59,130,246,0.2)'}; color:${g.type === 'animalitos' ? '#34d399' : '#60a5fa'}; padding:2px 8px; border-radius:10px; font-weight:800; font-size:0.75rem;">
-          ${g.type === 'animalitos' ? 'ðŸ¾ Animalitos' : 'ðŸŽ° Triples'}
+          ${g.type === 'animalitos' ? '🐾 Animalitos' : '🎰 Triples'}
         </span>
       </td>
       <td style="font-size:0.78rem; color:#94a3b8;">
         ${(g.hours && g.hours.length > 0) ? `${g.hours.length} sorteos diarios (${g.hours[0]} - ${g.hours[g.hours.length - 1]})` : 'Horario continuo'}
       </td>
       <td style="text-align:center;">
-        <button type="button" onclick="window.handleDeleteCatalogLottery('${g.id}')" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; font-size:0.75rem; font-weight:700; padding:4px 8px; border-radius:4px; cursor:pointer;" title="Eliminar del catÃ¡logo">
-          ðŸ—‘ï¸ Eliminar
+        <button type="button" onclick="window.handleDeleteCatalogLottery('${g.id}')" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; font-size:0.75rem; font-weight:700; padding:4px 8px; border-radius:4px; cursor:pointer;" title="Eliminar del catálogo">
+          🗑️ Eliminar
         </button>
       </td>
     </tr>
@@ -7690,7 +7690,7 @@ async function handleSaveNewCatalogLottery() {
 
   const name = txtName?.value.trim();
   if (!name) {
-    alert('Ingrese el nombre de la loterÃ­a.');
+    alert('Ingrese el nombre de la lotería.');
     return;
   }
 
@@ -7700,7 +7700,7 @@ async function handleSaveNewCatalogLottery() {
     type: selType?.value || 'animalitos',
     color: colColor?.value || '#10b981',
     logoUrl: txtLogo?.value.trim() || '',
-    icon: (selType?.value === 'triples') ? 'ðŸŽ°' : 'ðŸ¾'
+    icon: (selType?.value === 'triples') ? '🎰' : '🐾'
   };
 
   try {
@@ -7714,7 +7714,7 @@ async function handleSaveNewCatalogLottery() {
     });
     const data = await res.json();
     if (res.ok && data.success) {
-      alert(`Â¡LoterÃ­a "${name}" agregada exitosamente!`);
+      alert(`¡Lotería "${name}" agregada exitosamente!`);
       if (txtName) txtName.value = '';
       if (txtShort) txtShort.value = '';
       if (txtLogo) txtLogo.value = '';
@@ -7722,16 +7722,16 @@ async function handleSaveNewCatalogLottery() {
       renderLotteryCatalogTable();
       renderResultadosSlidesEditor();
     } else {
-      alert(data.error || 'Error registrando la loterÃ­a.');
+      alert(data.error || 'Error registrando la lotería.');
     }
   } catch (err) {
-    alert('Error de conexiÃ³n al guardar loterÃ­a.');
+    alert('Error de conexión al guardar lotería.');
   }
 }
 window.handleSaveNewCatalogLottery = handleSaveNewCatalogLottery;
 
 async function handleDeleteCatalogLottery(id) {
-  if (!confirm(`Â¿EstÃ¡ seguro de eliminar la loterÃ­a "${id}" del catÃ¡logo maestro?`)) return;
+  if (!confirm(`¿Está seguro de eliminar la lotería "${id}" del catálogo maestro?`)) return;
 
   try {
     const res = await fetch(`/api/lottery/catalog/${encodeURIComponent(id)}`, {
@@ -7744,19 +7744,19 @@ async function handleDeleteCatalogLottery(id) {
       renderLotteryCatalogTable();
       renderResultadosSlidesEditor();
     } else {
-      alert(data.error || 'Error al eliminar loterÃ­a.');
+      alert(data.error || 'Error al eliminar lotería.');
     }
   } catch (err) {
-    alert('Error de conexiÃ³n al eliminar loterÃ­a.');
+    alert('Error de conexión al eliminar lotería.');
   }
 }
 window.handleDeleteCatalogLottery = handleDeleteCatalogLottery;
 
 // ==========================================
-// GESTOR DE 3 SECCIONES & DIAPOSITIVAS (CONFIGURACIÃ“N)
+// GESTOR DE 3 SECCIONES & DIAPOSITIVAS (CONFIGURACIÓN)
 // ==========================================
 function switchLotteryConfigSection(secKey) {
-  // 1. Guardar cambios en caliente del DOM actual antes de alternar pestaÃ±a
+  // 1. Guardar cambios en caliente del DOM actual antes de alternar pestaña
   saveResultadosSlidesFromDOM();
   saveEstadisticasSlidesFromDOM();
   savePublicidadSlidesFromDOM();
@@ -7791,7 +7791,7 @@ function scrollToSlideEditor(secKey, idx) {
   if (targetCard) {
     targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     targetCard.classList.remove('slide-card-new-highlight');
-    void targetCard.offsetWidth; // reiniciar animaciÃ³n css
+    void targetCard.offsetWidth; // reiniciar animación css
     targetCard.classList.add('slide-card-new-highlight');
     setTimeout(() => {
       targetCard.classList.remove('slide-card-new-highlight');
@@ -7820,7 +7820,7 @@ function ensureLotterySectionsStructure() {
     currentScreenConfig.lotterySections.publicidad = { enabled: true, slides: [] };
   }
 
-  // 1. Garantizar estrictamente las 5 pizarras fijas para la secciÃ³n Resultados con Serial y Orden
+  // 1. Garantizar estrictamente las 5 pizarras fijas para la sección Resultados con Serial y Orden
   const res = currentScreenConfig.lotterySections.resultados;
   const defSlides = DEFAULT_SCREEN_CONFIG.lotterySections.resultados.slides;
   if (!Array.isArray(res.slides) || res.slides.length === 0) {
@@ -7841,7 +7841,7 @@ function ensureLotterySectionsStructure() {
     });
   }
 
-  // 2. Garantizar exactamente las 3 diapositivas configurables para la secciÃ³n EstadÃ­sticas
+  // 2. Garantizar exactamente las 3 diapositivas configurables para la sección Estadísticas
   const est = currentScreenConfig.lotterySections.estadisticas;
   const defEstSlides = DEFAULT_SCREEN_CONFIG.lotterySections.estadisticas.slides;
   if (!Array.isArray(est.slides) || est.slides.length === 0) {
@@ -7914,22 +7914,22 @@ function ensureLotterySectionsStructure() {
         if (!s.agencyName) s.agencyName = 'AGENCIA OFICIAL LA FORTUNA';
         if (s.agencyContact === undefined) s.agencyContact = '';
         if (s.logoUrl === undefined) s.logoUrl = '';
-        if (!s.agencySlogan) s.agencySlogan = 'Tu Agencia de Confianza â€¢ Pagos Seguros al Instante';
+        if (!s.agencySlogan) s.agencySlogan = 'Tu Agencia de Confianza • Pagos Seguros al Instante';
         if (!s.agencyHours) s.agencyHours = 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
-        if (!s.ticketValidity) s.ticketValidity = 'Los tickets premiados tienen una validez estricta de 3 dÃ­as continuos a partir de la fecha de emisiÃ³n.';
+        if (!s.ticketValidity) s.ticketValidity = 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
         if (!Array.isArray(s.agencyRules) || s.agencyRules.length === 0) {
           s.agencyRules = [
-            'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepciÃ³n.',
+            'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
             'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
-            'Los premios se pagan al instante en bolÃ­vares por Pago MÃ³vil, Efectivo o Transferencia bancaria.',
-            'Prohibida terminantemente la venta de apuestas a menores de 18 aÃ±os.',
-            'En caso de suspensiÃ³n oficial de un sorteo por el ente emisor, se aplicarÃ¡ el reglamento oficial de la loterÃ­a correspondiente.'
+            'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+            'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+            'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
           ];
         }
       }
       if (s.type === 'pub_agency_benefits') {
-        if (!s.title) s.title = 'Â¿POR QUÃ‰ APOSTAR CON NOSOTROS?';
-        if (!s.subtitle) s.subtitle = 'MÃ¡xima solidez, transparencia absoluta y la mejor atenciÃ³n en taquilla';
+        if (!s.title) s.title = '¿POR QUÉ APOSTAR CON NOSOTROS?';
+        if (!s.subtitle) s.subtitle = 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla';
       }
     });
   }
@@ -7948,7 +7948,7 @@ function renderResultadosSlidesEditor() {
     countLabel.textContent = `(${activeCount} activas de 5 pizarras fijas)`;
   }
 
-  // Renderizar pÃ­ldoras de navegaciÃ³n rÃ¡pida en la cabecera sticky con estado activo/inactivo
+  // Renderizar píldoras de navegación rápida en la cabecera sticky con estado activo/inactivo
   if (quickNav) {
     if (slides.length > 0) {
       quickNav.innerHTML = `
@@ -7957,7 +7957,7 @@ function renderResultadosSlidesEditor() {
           const isAct = s.enabled !== false;
           return `
             <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('resultados', ${i})" title="${s.name || `Pizarra #${i + 1}`} (${isAct ? 'Activa' : 'Desactivada'})">
-              ${isAct ? 'â—' : 'â—‹'} #${i + 1}
+              ${isAct ? '●' : '○'} #${i + 1}
             </button>
           `;
         }).join('')}
@@ -7979,7 +7979,7 @@ function renderResultadosSlidesEditor() {
     { id: 'guacharito-millonario', name: 'GUACHARITO MILLONARIO', type: 'animalitos' },
     { id: 'chance-animal', name: 'CHANCE ANIMAL', type: 'animalitos' },
     { id: 'triple-zulia', name: 'TRIPLE ZULIA', type: 'triples' },
-    { id: 'triple-tachira', name: 'TRIPLE TÃCHIRA', type: 'triples' },
+    { id: 'triple-tachira', name: 'TRIPLE TÁCHIRA', type: 'triples' },
     { id: 'triple-chance', name: 'TRIPLE CHANCE', type: 'triples' },
     { id: 'triple-chance-1', name: 'TRIPLE CHANCE (9 AM - 2 PM)', type: 'triples' },
     { id: 'triple-chance-2', name: 'TRIPLE CHANCE (3 PM - 7 PM)', type: 'triples' },
@@ -8004,7 +8004,7 @@ function renderResultadosSlidesEditor() {
 
     const countBtnsHtml = [1, 2, 3, 4, 5].map(n => `
       <button type="button" class="btn-count-lottery ${n === lotCount ? 'active' : ''}" onclick="window.setSlideLotteryCount('resultados', ${sIdx}, ${n})">
-        ${n} ${n === 1 ? 'LoterÃ­a' : 'LoterÃ­as'}
+        ${n} ${n === 1 ? 'Lotería' : 'Loterías'}
       </button>
     `).join('');
 
@@ -8015,7 +8015,7 @@ function renderResultadosSlidesEditor() {
 
       const optionsHtml = catalog.map(g => `
         <option value="${g.id}" ${g.id === selectedGameId ? 'selected' : ''}>
-          ${g.type === 'animalitos' ? 'ðŸ¾' : 'ðŸŽ°'} ${g.name}
+          ${g.type === 'animalitos' ? '🐾' : '🎰'} ${g.name}
         </option>
       `).join('');
 
@@ -8037,37 +8037,37 @@ function renderResultadosSlidesEditor() {
               <input type="checkbox" id="chkSlideRes_${sIdx}" ${isAct ? 'checked' : ''} onchange="window.toggleSlideEnabled('resultados', ${sIdx}, this.checked)">
             </label>
             <span class="slide-serial-badge">${serial}</span>
-            <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('resultados', ${sIdx})" title="Clic para alternar activaciÃ³n">
-              ${isAct ? 'âœ… ACTIVA' : 'â¸ï¸ DESACTIVADA'}
+            <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('resultados', ${sIdx})" title="Clic para alternar activación">
+              ${isAct ? '✅ ACTIVA' : '⏸️ DESACTIVADA'}
             </span>
           </div>
 
           <div class="slide-name-input-group">
-            <input type="text" class="slide-name-input" value="${slide.name || ''}" placeholder="Nombre de la pizarra (ej: Animalitos LÃ­deres)" oninput="window.updateSlideName('resultados', ${sIdx}, this.value)">
+            <input type="text" class="slide-name-input" value="${slide.name || ''}" placeholder="Nombre de la pizarra (ej: Animalitos Líderes)" oninput="window.updateSlideName('resultados', ${sIdx}, this.value)">
             <button type="button" class="btn-clear-name" onclick="window.clearSlideName('resultados', ${sIdx})" title="Limpiar / Quitar nombre">Limpiar</button>
           </div>
 
           <div style="display:flex; align-items:center; gap:10px;">
-            <div class="slide-order-selector-group" title="PosiciÃ³n en la secuencia del carrusel">
+            <div class="slide-order-selector-group" title="Posición en la secuencia del carrusel">
               <span class="slide-order-label">Pos:</span>
               <select class="slide-order-select" onchange="window.updateSlideOrder('resultados', ${sIdx}, this.value)">
                 ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(pos => `<option value="${pos}" ${pos === order ? 'selected' : ''}>#${pos}</option>`).join('')}
               </select>
             </div>
             <div class="slide-duration-box">
-              <span>DuraciÃ³n:</span>
+              <span>Duración:</span>
               <input type="number" class="slide-duration-input" value="${slide.duration || 20}" min="5" max="180" onchange="window.updateSlideDuration('resultados', ${sIdx}, this.value)">
               <span>seg</span>
             </div>
             <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('resultados', ${sIdx})" title="Desactivar pizarra (5 fijas)">
-              ${isAct ? 'â¸ï¸' : 'âœ…'}
+              ${isAct ? '⏸️' : '✅'}
             </button>
           </div>
         </div>
 
         <div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
-            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">Â¿CuÃ¡ntas loterÃ­as mostrar en esta pizarra?</span>
+            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">¿Cuántas loterías mostrar en esta pizarra?</span>
             <div class="lottery-count-selector-group">
               ${countBtnsHtml}
             </div>
@@ -8080,7 +8080,7 @@ function renderResultadosSlidesEditor() {
     `;
   }).join('');
 
-  // Las 5 pizarras son fijas: no mostrar botÃ³n de agregar nueva pizarra
+  // Las 5 pizarras son fijas: no mostrar botón de agregar nueva pizarra
   container.innerHTML = cardsHtml;
 }
 window.renderResultadosSlidesEditor = renderResultadosSlidesEditor;
@@ -8117,7 +8117,7 @@ function renderEstadisticasSlidesEditor() {
   const activeCount = slides.filter(s => s && s.enabled !== false).length;
   if (countLabel) countLabel.textContent = `(${activeCount} activas de 3 diapositivas fijas)`;
 
-  // Barra de navegaciÃ³n rÃ¡pida
+  // Barra de navegación rápida
   if (quickNav) {
     quickNav.innerHTML = `
       <span class="slides-quick-nav-label">Ir a:</span>
@@ -8125,7 +8125,7 @@ function renderEstadisticasSlidesEditor() {
         const isAct = s.enabled !== false;
         return `
           <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('estadisticas', ${i})" title="${s.name || `Diapositiva #${i + 1}`}">
-            ${isAct ? 'â—' : 'â—‹'} #${i + 1}
+            ${isAct ? '●' : '○'} #${i + 1}
           </button>
         `;
       }).join('')}
@@ -8149,7 +8149,7 @@ function renderEstadisticasSlidesEditor() {
     if (!isPyramid) {
       const countBtns = [1, 2, 3, 4].map(num => `
         <button type="button" class="btn-lottery-count-pill ${colCount === num ? 'active' : ''}" onclick="window.setStatsSlideLotteryCount(${sIdx}, ${num})">
-          ${num} ${num === 1 ? 'LoterÃ­a' : 'LoterÃ­as'}
+          ${num} ${num === 1 ? 'Lotería' : 'Loterías'}
         </button>
       `).join('');
 
@@ -8162,13 +8162,13 @@ function renderEstadisticasSlidesEditor() {
       const slotsHtml = chosen.map((selectedId, slotIdx) => {
         const optionsHtml = animalGames.map(g => `
           <option value="${g.id}" ${g.id === selectedId ? 'selected' : ''}>
-            ${g.icon || 'ðŸ¾'} ${g.name}
+            ${g.icon || '🐾'} ${g.name}
           </option>
         `).join('');
 
         return `
           <div class="slide-slot-box">
-            <span class="slot-box-label">LoterÃ­a #${slotIdx + 1} (Animalitos):</span>
+            <span class="slot-box-label">Lotería #${slotIdx + 1} (Animalitos):</span>
             <select class="slot-select" onchange="window.setStatsSlideLotterySlot(${sIdx}, ${slotIdx}, this.value)">
               ${optionsHtml}
             </select>
@@ -8179,7 +8179,7 @@ function renderEstadisticasSlidesEditor() {
       bodyContent = `
         <div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
-            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">Â¿CuÃ¡ntas loterÃ­as de animalitos mostrar en esta diapositiva?</span>
+            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">¿Cuántas loterías de animalitos mostrar en esta diapositiva?</span>
             <div class="lottery-count-selector-group">
               ${countBtns}
             </div>
@@ -8193,21 +8193,21 @@ function renderEstadisticasSlidesEditor() {
       const tripleSelected = Array.isArray(slide.lotteries) ? slide.lotteries : ['triple-zulia', 'triple-tachira', 'triple-chance-1'];
       const tripleOptions = tripleGames.map(g => `
         <option value="${g.id}" ${tripleSelected.includes(g.id) ? 'selected' : ''}>
-          ${g.icon || 'ðŸŽ°'} ${g.name}
+          ${g.icon || '🎰'} ${g.name}
         </option>
       `).join('');
 
       bodyContent = `
         <div style="background:rgba(15,23,42,0.6); padding:10px 14px; border-radius:8px; border:1px solid rgba(245,158,11,0.25);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="color:#fbbf24; font-size:0.88rem;">ðŸ”º PirÃ¡mide MatemÃ¡tica de la Fecha & Triples</strong>
-            <span style="font-size:0.75rem; color:#94a3b8;">(CÃ¡lculo numerolÃ³gico automÃ¡tico segÃºn la fecha)</span>
+            <strong style="color:#fbbf24; font-size:0.88rem;">🔺 Pirámide Matemática de la Fecha & Triples</strong>
+            <span style="font-size:0.75rem; color:#94a3b8;">(Cálculo numerológico automático según la fecha)</span>
           </div>
           <p style="margin:0 0 10px 0; font-size:0.82rem; color:#cbd5e1; line-height:1.4;">
-            Despliega la legendaria PirÃ¡mide de la Suerte basada en los 6 dÃ­gitos de la fecha de hoy, coronando el <strong>Triple Rey</strong>, las permutas, los terminales explosivos y la cÃ¡bala numerolÃ³gica para incentivar las jugadas de triples en taquilla.
+            Despliega la legendaria Pirámide de la Suerte basada en los 6 dígitos de la fecha de hoy, coronando el <strong>Triple Rey</strong>, las permutas, los terminales explosivos y la cábala numerológica para incentivar las jugadas de triples en taquilla.
           </p>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">LoterÃ­a de Triples foco:</span>
+            <span style="font-size:0.82rem; font-weight:700; color:#94a3b8;">Lotería de Triples foco:</span>
             <select class="triple-focus-select" style="background:#1e293b; color:#fff; border:1px solid #475569; padding:4px 8px; border-radius:6px; font-size:0.82rem;" onchange="window.setStatsSlideLotterySlot(${sIdx}, 0, this.value)">
               ${tripleOptions}
             </select>
@@ -8217,8 +8217,8 @@ function renderEstadisticasSlidesEditor() {
     }
 
     const defaultTitle = sIdx === 0 
-      ? 'ðŸ”¥ Top 5 Animalitos MÃ¡s Premiados (30D)' 
-      : (sIdx === 1 ? 'â„ï¸ Animalitos Por Reventar (Menos Salidos 30D)' : 'ðŸ”º PirÃ¡mide de la Suerte & Triples Millonarios');
+      ? '🔥 Top 5 Animalitos Más Premiados (30D)' 
+      : (sIdx === 1 ? '❄️ Animalitos Por Reventar (Menos Salidos 30D)' : '🔺 Pirámide de la Suerte & Triples Millonarios');
 
     return `
       <div class="slide-editor-card ${isAct ? '' : 'slide-deactivated'}" id="slideCard_stat_${sIdx}">
@@ -8229,7 +8229,7 @@ function renderEstadisticasSlidesEditor() {
             </label>
             <span class="slide-serial-badge">${serial}</span>
             <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('estadisticas', ${sIdx})">
-              ${isAct ? 'âœ… ACTIVA' : 'â¸ï¸ PAUSADA'}
+              ${isAct ? '✅ ACTIVA' : '⏸️ PAUSADA'}
             </span>
           </div>
           <div class="slide-name-input-group">
@@ -8237,19 +8237,19 @@ function renderEstadisticasSlidesEditor() {
             <button type="button" class="btn-clear-name" onclick="window.clearSlideName('estadisticas', ${sIdx})">Limpiar</button>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
-            <div class="slide-order-selector-group" title="PosiciÃ³n en la secuencia del carrusel">
+            <div class="slide-order-selector-group" title="Posición en la secuencia del carrusel">
               <span class="slide-order-label">Pos:</span>
               <select class="slide-order-select" onchange="window.updateSlideOrder('estadisticas', ${sIdx}, this.value)">
                 ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(pos => `<option value="${pos}" ${pos === order ? 'selected' : ''}>#${pos}</option>`).join('')}
               </select>
             </div>
             <div class="slide-duration-box">
-              <span>DuraciÃ³n:</span>
+              <span>Duración:</span>
               <input type="number" class="slide-duration-input" value="${slide.duration || 22}" min="5" max="180" onchange="window.updateSlideDuration('estadisticas', ${sIdx}, this.value)">
               <span>seg</span>
             </div>
             <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('estadisticas', ${sIdx})" title="Alternar pausa/activa">
-              ${isAct ? 'â¸ï¸' : 'âœ…'}
+              ${isAct ? '⏸️' : '✅'}
             </button>
           </div>
         </div>
@@ -8271,9 +8271,9 @@ function renderPublicidadSlidesEditor() {
 
   const slides = currentScreenConfig.lotterySections.publicidad.slides;
   const activeCount = slides.filter(s => s && s.enabled !== false).length;
-  if (countLabel) countLabel.textContent = `(${activeCount} activas de ${slides.length} configuradas / mÃ¡x 15)`;
+  if (countLabel) countLabel.textContent = `(${activeCount} activas de ${slides.length} configuradas / máx 15)`;
 
-  // Barra de navegaciÃ³n rÃ¡pida
+  // Barra de navegación rápida
   if (quickNav) {
     if (slides.length > 0) {
       quickNav.innerHTML = `
@@ -8282,7 +8282,7 @@ function renderPublicidadSlidesEditor() {
           const isAct = s.enabled !== false;
           return `
             <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('publicidad', ${i})" title="${s.name || `Publicidad #${i + 1}`} (${s.serial || `Publicidad${i + 1}`})">
-              ${isAct ? 'â—' : 'â—‹'} #${i + 1}
+              ${isAct ? '●' : '○'} #${i + 1}
             </button>
           `;
         }).join('')}
@@ -8320,8 +8320,8 @@ function renderPublicidadSlidesEditor() {
       bodyHtml = `
         <div style="background:rgba(15,23,42,0.65); padding:12px; border-radius:8px; border:1px solid rgba(16,185,129,0.3);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="color:#34d399; font-size:0.88rem;">ðŸ¾ LoterÃ­as de Animalitos en ExhibiciÃ³n (Hasta 10):</strong>
-            <span style="font-size:0.75rem; color:#94a3b8;">Muestra logos, nombres, horarios, cantidad de animales y multiplicadores (ej: Granjita 30Ã—, GuÃ¡charo 60Ã— / 120Ã—)</span>
+            <strong style="color:#34d399; font-size:0.88rem;">🐾 Loterías de Animalitos en Exhibición (Hasta 10):</strong>
+            <span style="font-size:0.75rem; color:#94a3b8;">Muestra logos, nombres, horarios, cantidad de animales y multiplicadores (ej: Granjita 30×, Guácharo 60× / 120×)</span>
           </div>
           <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">
             ${itemsHtml}
@@ -8336,7 +8336,7 @@ function renderPublicidadSlidesEditor() {
           <label style="display:flex; align-items:center; gap:6px; background:rgba(15,23,42,0.6); padding:6px 10px; border-radius:6px; border:1px solid ${isChecked ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; font-size:0.82rem; color:${isChecked ? '#f8fafc' : '#94a3b8'}; cursor:pointer;">
             <input type="checkbox" class="chk-pub-triple" value="${g.id}" ${isChecked ? 'checked' : ''} onchange="this.parentElement.style.borderColor = this.checked ? '#38bdf8' : 'rgba(255,255,255,0.08)'; this.parentElement.style.color = this.checked ? '#f8fafc' : '#94a3b8';">
             <span>${g.name}</span>
-            <span style="margin-left:auto; font-weight:800; color:#38bdf8; font-size:0.75rem;">700Ã— / 70Ã—</span>
+            <span style="margin-left:auto; font-weight:800; color:#38bdf8; font-size:0.75rem;">700× / 70×</span>
           </label>
         `;
       }).join('');
@@ -8344,8 +8344,8 @@ function renderPublicidadSlidesEditor() {
       bodyHtml = `
         <div style="background:rgba(15,23,42,0.65); padding:12px; border-radius:8px; border:1px solid rgba(56,189,248,0.3);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="color:#38bdf8; font-size:0.88rem;">ðŸŽ° LoterÃ­as de Triples y Terminales en ExhibiciÃ³n (Hasta 10):</strong>
-            <span style="font-size:0.75rem; color:#94a3b8;">Despliega tabla de pagos oficial: Triples (700Ã—), Terminales (70Ã—) y Signo/Astro (1.200Ã—)</span>
+            <strong style="color:#38bdf8; font-size:0.88rem;">🎰 Loterías de Triples y Terminales en Exhibición (Hasta 10):</strong>
+            <span style="font-size:0.75rem; color:#94a3b8;">Despliega tabla de pagos oficial: Triples (700×), Terminales (70×) y Signo/Astro (1.200×)</span>
           </div>
           <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px;">
             ${itemsHtml}
@@ -8355,15 +8355,15 @@ function renderPublicidadSlidesEditor() {
     } else if (s.type === 'pub_agency_identity' || idx === 2) {
       const aName = s.agencyName || 'AGENCIA OFICIAL LA FORTUNA';
       const aContact = s.agencyContact || '';
-      const aSlogan = s.agencySlogan || 'Tu Agencia de Confianza â€¢ Pagos Seguros al Instante';
+      const aSlogan = s.agencySlogan || 'Tu Agencia de Confianza • Pagos Seguros al Instante';
       const aHours = s.agencyHours || 'Lunes a Domingo: 07:30 AM a 07:30 PM (Horario Corrido)';
-      const aVal = s.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 dÃ­as continuos a partir de la fecha de emisiÃ³n.';
+      const aVal = s.ticketValidity || 'Los tickets premiados tienen una validez estricta de 3 días continuos a partir de la fecha de emisión.';
       const rulesText = (Array.isArray(s.agencyRules) ? s.agencyRules : [
-        'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepciÃ³n.',
+        'Conserve su ticket en perfecto estado. Sin ticket original o legible no se realizan pagos bajo ninguna excepción.',
         'Verifique su jugada antes de retirarse de la taquilla. Una vez emitido el ticket no se aceptan reclamos ni devoluciones.',
-        'Los premios se pagan al instante en bolÃ­vares por Pago MÃ³vil, Efectivo o Transferencia bancaria.',
-        'Prohibida terminantemente la venta de apuestas a menores de 18 aÃ±os.',
-        'En caso de suspensiÃ³n oficial de un sorteo por el ente emisor, se aplicarÃ¡ el reglamento oficial de la loterÃ­a correspondiente.'
+        'Los premios se pagan al instante en bolívares por Pago Móvil, Efectivo o Transferencia bancaria.',
+        'Prohibida terminantemente la venta de apuestas a menores de 18 años.',
+        'En caso de suspensión oficial de un sorteo por el ente emisor, se aplicará el reglamento oficial de la lotería correspondiente.'
       ]).join('\n');
 
       bodyHtml = `
@@ -8379,8 +8379,8 @@ function renderPublicidadSlidesEditor() {
             </div>
           </div>
           <div>
-            <label style="display:block; font-size:0.76rem; font-weight:800; color:#34d399; text-transform:uppercase; margin-bottom:4px;">ðŸ“± NÃºmero de Reclamos y Sugerencias (WhatsApp / TelÃ©fono):</label>
-            <input type="text" id="pubAgencyContact_${idx}" value="${aContact}" placeholder="Ej: +58 412-1234567 / 0414-9876543 (AtenciÃ³n al Cliente)" style="width:100%; background:#0f172a; border:1px solid rgba(16,185,129,0.5); color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
+            <label style="display:block; font-size:0.76rem; font-weight:800; color:#34d399; text-transform:uppercase; margin-bottom:4px;">📱 Número de Reclamos y Sugerencias (WhatsApp / Teléfono):</label>
+            <input type="text" id="pubAgencyContact_${idx}" value="${aContact}" placeholder="Ej: +58 412-1234567 / 0414-9876543 (Atención al Cliente)" style="width:100%; background:#0f172a; border:1px solid rgba(16,185,129,0.5); color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
             <small style="color:#94a3b8; font-size:0.72rem; display:block; margin-top:2px;">Se muestra en una pastilla destacada verde en el televisor debajo del nombre de la agencia.</small>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -8394,28 +8394,28 @@ function renderPublicidadSlidesEditor() {
             </div>
           </div>
           <div>
-            <label style="display:block; font-size:0.76rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Normas de Taquilla (Una norma por lÃ­nea):</label>
+            <label style="display:block; font-size:0.76rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Normas de Taquilla (Una norma por línea):</label>
             <textarea id="pubAgencyRules_${idx}" rows="4" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:8px 10px; border-radius:6px; font-size:0.82rem; font-family:inherit; resize:vertical;">${rulesText}</textarea>
           </div>
         </div>
       `;
     } else if (s.type === 'pub_agency_benefits' || idx === 3) {
-      const bSub = s.subtitle || 'MÃ¡xima solidez, transparencia absoluta y la mejor atenciÃ³n en taquilla';
+      const bSub = s.subtitle || 'Máxima solidez, transparencia absoluta y la mejor atención en taquilla';
 
       bodyHtml = `
         <div style="background:rgba(15,23,42,0.65); padding:12px; border-radius:8px; border:1px solid rgba(168,85,247,0.3); display:flex; flex-direction:column; gap:10px;">
           <div>
-            <label style="display:block; font-size:0.76rem; font-weight:800; color:#c084fc; text-transform:uppercase; margin-bottom:4px;">SubtÃ­tulo de la Diapositiva:</label>
+            <label style="display:block; font-size:0.76rem; font-weight:800; color:#c084fc; text-transform:uppercase; margin-bottom:4px;">Subtítulo de la Diapositiva:</label>
             <input type="text" id="pubBenefitsSubtitle_${idx}" value="${bSub}" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:6px 10px; border-radius:6px; font-size:0.85rem;">
           </div>
           <p style="margin:0; font-size:0.82rem; color:#cbd5e1; line-height:1.4;">
-            âœ¨ Despliega el mosaico institucional de los <strong>8 Beneficios Clave</strong> de apostar en la agencia: Solidez Financiera, Pagos Inmediatos, 100% Legalidad, Rapidez de Taquilla, Seguridad, Todos los Medios de Pago, Pantallas 4K en Vivo y AtenciÃ³n de Primera.
+            ✨ Despliega el mosaico institucional de los <strong>8 Beneficios Clave</strong> de apostar en la agencia: Solidez Financiera, Pagos Inmediatos, 100% Legalidad, Rapidez de Taquilla, Seguridad, Todos los Medios de Pago, Pantallas 4K en Vivo y Atención de Primera.
           </p>
         </div>
       `;
     } else {
       bodyHtml = `
-        <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Diapositiva promocional personalizada con llamado a la acciÃ³n en taquilla y respaldo oficial de la agencia.</p>
+        <p style="margin:0; font-size:0.85rem; color:#94a3b8;">Diapositiva promocional personalizada con llamado a la acción en taquilla y respaldo oficial de la agencia.</p>
       `;
     }
 
@@ -8428,7 +8428,7 @@ function renderPublicidadSlidesEditor() {
             </label>
             <span class="slide-serial-badge">${serial}</span>
             <span class="slide-status-pill ${isAct ? 'active' : 'inactive'}" onclick="window.toggleSlideEnabledFromPill('publicidad', ${idx})">
-              ${isAct ? 'âœ… ACTIVA' : 'â¸ï¸ DESACTIVADA'}
+              ${isAct ? '✅ ACTIVA' : '⏸️ DESACTIVADA'}
             </span>
           </div>
 
@@ -8438,19 +8438,19 @@ function renderPublicidadSlidesEditor() {
           </div>
 
           <div style="display:flex; align-items:center; gap:10px;">
-            <div class="slide-order-selector-group" title="PosiciÃ³n en la secuencia del carrusel">
+            <div class="slide-order-selector-group" title="Posición en la secuencia del carrusel">
               <span class="slide-order-label">Pos:</span>
               <select class="slide-order-select" onchange="window.updateSlideOrder('publicidad', ${idx}, this.value)">
                 ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(pos => `<option value="${pos}" ${pos === order ? 'selected' : ''}>#${pos}</option>`).join('')}
               </select>
             </div>
             <div class="slide-duration-box">
-              <span>DuraciÃ³n:</span>
+              <span>Duración:</span>
               <input type="number" class="slide-duration-input" value="${s.duration || 16}" min="5" max="180" onchange="window.updateSlideDuration('publicidad', ${idx}, this.value)">
               <span>seg</span>
             </div>
-            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('publicidad', ${idx})" title="${idx < 4 ? 'Alternar activaciÃ³n' : 'Eliminar diapositiva'}">
-              ${idx < 4 ? (isAct ? 'â¸ï¸' : 'âœ…') : 'ðŸ—‘ï¸'}
+            <button type="button" class="btn-delete-slide" onclick="window.deleteSlide('publicidad', ${idx})" title="${idx < 4 ? 'Alternar activación' : 'Eliminar diapositiva'}">
+              ${idx < 4 ? (isAct ? '⏸️' : '✅') : '🗑️'}
             </button>
           </div>
         </div>
@@ -8462,12 +8462,12 @@ function renderPublicidadSlidesEditor() {
   const addBtnPubHtml = (slides.length < 15) ? `
     <div style="margin-top:16px; margin-bottom:12px; text-align:center;">
       <button type="button" id="btnBottomAddPubSlide" onclick="window.addNewPubSlide()" style="background:linear-gradient(135deg, #10b981, #059669); color:#fff; font-size:0.95rem; padding:10px 24px; font-weight:800; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:8px;">
-        âž• AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
+        ➕ AGREGAR NUEVA DIAPOSITIVA #${slides.length + 1} (Hasta 15)
       </button>
     </div>
   ` : `
     <div style="margin-top:16px; text-align:center; color:#94a3b8; font-size:0.88rem; font-weight:700;">
-      âœ… LÃ­mite mÃ¡ximo de 15 diapositivas alcanzado para la secciÃ³n Publicidad.
+      ✅ Límite máximo de 15 diapositivas alcanzado para la sección Publicidad.
     </div>
   `;
 
@@ -8528,13 +8528,13 @@ function saveEstadisticasSlidesFromDOM() {
     if (selOrder) slide.order = parseInt(selOrder.value) || (idx + 6);
     if (!slide.serial) slide.serial = `Estadistica${idx + 1}`;
 
-    // Guardar loterÃ­as de animalitos seleccionadas
+    // Guardar loterías de animalitos seleccionadas
     const slotSelects = card.querySelectorAll('.slot-select');
     if (slotSelects && slotSelects.length > 0) {
       slide.lotteries = Array.from(slotSelects).map(sel => sel.value);
       slide.lotteryCount = slide.lotteries.length;
     }
-    // Guardar loterÃ­a de triples para la pirÃ¡mide
+    // Guardar lotería de triples para la pirámide
     const tripleSelect = card.querySelector('.triple-focus-select');
     if (tripleSelect) {
       slide.lotteries = [tripleSelect.value];
@@ -8560,7 +8560,7 @@ function savePublicidadSlidesFromDOM() {
     if (selOrder) slide.order = parseInt(selOrder.value) || (idx + 9);
     if (!slide.serial) slide.serial = `Publicidad${idx + 1}`;
 
-    // Guardar campos especÃ­ficos segÃºn tipo de publicidad
+    // Guardar campos específicos según tipo de publicidad
     if (slide.type === 'pub_rules_animalitos' || idx === 0) {
       const chkGames = Array.from(card.querySelectorAll('.chk-pub-animal:checked')).map(c => c.value);
       if (chkGames.length > 0) slide.lotteries = chkGames;
@@ -8604,7 +8604,7 @@ function addNewResultSlide() {
   saveResultadosSlidesFromDOM();
   const slides = currentScreenConfig.lotterySections.resultados.slides;
   if (slides.length >= 15) {
-    alert('Ha alcanzado el lÃ­mite mÃ¡ximo de 15 diapositivas para la secciÃ³n Resultados.');
+    alert('Ha alcanzado el límite máximo de 15 diapositivas para la sección Resultados.');
     return;
   }
   const catalog = (lotteryMasterCatalog.length > 0) ? lotteryMasterCatalog : (lotteryTop10.length > 0 ? lotteryTop10 : []);
@@ -8630,7 +8630,7 @@ function addNewResultSlide() {
 window.addNewResultSlide = addNewResultSlide;
 
 function addNewStatsSlide() {
-  alert('La secciÃ³n EstadÃ­sticas opera con 3 diapositivas maestras fijas altamente configurables: Top 5 Calientes, Top 5 FrÃ­os y PirÃ¡mide de Triples.');
+  alert('La sección Estadísticas opera con 3 diapositivas maestras fijas altamente configurables: Top 5 Calientes, Top 5 Fríos y Pirámide de Triples.');
 }
 window.addNewStatsSlide = addNewStatsSlide;
 
@@ -8639,7 +8639,7 @@ function addNewPubSlide() {
   savePublicidadSlidesFromDOM();
   const slides = currentScreenConfig.lotterySections.publicidad.slides;
   if (slides.length >= 15) {
-    alert('Ha alcanzado el lÃ­mite mÃ¡ximo de 15 diapositivas para la secciÃ³n Publicidad.');
+    alert('Ha alcanzado el límite máximo de 15 diapositivas para la sección Publicidad.');
     return;
   }
   slides.push({
@@ -8672,7 +8672,7 @@ function deleteSlide(secKey, idx) {
     return;
   }
   if (secKey === 'estadisticas') {
-    // Las 3 diapositivas de estadÃ­sticas son maestras fijas: alternar/pausar en lugar de eliminar del array
+    // Las 3 diapositivas de estadísticas son maestras fijas: alternar/pausar en lugar de eliminar del array
     saveEstadisticasSlidesFromDOM();
     const slide = currentScreenConfig.lotterySections.estadisticas.slides[idx];
     if (slide) {
@@ -8696,7 +8696,7 @@ function deleteSlide(secKey, idx) {
 
   const slides = currentScreenConfig.lotterySections[secKey].slides;
   if (slides.length <= 1) {
-    if (!confirm('Esta es la Ãºnica diapositiva de esta secciÃ³n. Â¿Desea eliminarla de todos modos?')) return;
+    if (!confirm('Esta es la única diapositiva de esta sección. ¿Desea eliminarla de todos modos?')) return;
   }
   slides.splice(idx, 1);
   if (secKey === 'publicidad') renderPublicidadSlidesEditor();
@@ -8736,7 +8736,7 @@ function toggleSlideEnabled(secKey, idx, isChecked) {
   const slide = currentScreenConfig.lotterySections[secKey]?.slides?.[idx];
   if (slide) slide.enabled = isChecked;
 
-  // ActualizaciÃ³n visual en caliente para Resultados sin recargar inputs
+  // Actualización visual en caliente para Resultados sin recargar inputs
   if (secKey === 'resultados') {
     const card = document.getElementById(`slideCard_res_${idx}`);
     if (card) {
@@ -8744,7 +8744,7 @@ function toggleSlideEnabled(secKey, idx, isChecked) {
       const pill = card.querySelector('.slide-status-pill');
       if (pill) {
         pill.className = `slide-status-pill ${isChecked ? 'active' : 'inactive'}`;
-        pill.textContent = isChecked ? 'âœ… ACTIVA' : 'â¸ï¸ DESACTIVADA';
+        pill.textContent = isChecked ? '✅ ACTIVA' : '⏸️ DESACTIVADA';
       }
       const chk = document.getElementById(`chkSlideRes_${idx}`);
       if (chk && chk.checked !== isChecked) chk.checked = isChecked;
@@ -8762,7 +8762,7 @@ function toggleSlideEnabled(secKey, idx, isChecked) {
           const isAct = s.enabled !== false;
           return `
             <button type="button" class="btn-quick-slide-jump ${isAct ? 'active' : 'inactive'}" onclick="window.scrollToSlideEditor('resultados', ${i})" title="${s.name || `Pizarra #${i + 1}`} (${isAct ? 'Activa' : 'Desactivada'})">
-              ${isAct ? 'â—' : 'â—‹'} #${i + 1}
+              ${isAct ? '●' : '○'} #${i + 1}
             </button>
           `;
         }).join('')}
@@ -8808,7 +8808,7 @@ window.setSlideLotterySlot = setSlideLotterySlot;
 function syncScreenConfigFormWithState(cfg) {
   if (!cfg) return;
 
-  // Sincronizar secciones y mÃ³dulos en el estado global activo
+  // Sincronizar secciones y módulos en el estado global activo
   if (cfg.lotterySections) {
     currentScreenConfig.lotterySections = JSON.parse(JSON.stringify(cfg.lotterySections));
   }
@@ -8861,7 +8861,7 @@ function syncScreenConfigFormWithState(cfg) {
   if (lblVoice) lblVoice.textContent = `${Math.round((cfg.voiceVolume || 0.9) * 100)}%`;
   if (chkAnimalSfx) chkAnimalSfx.checked = cfg.animalSfxEnabled !== false;
 
-  // MÃºsica de Fondo
+  // Música de Fondo
   const chkMusic = document.getElementById('cfgBgMusicEnabled');
   const selTrack = document.getElementById('cfgBgMusicTrack');
   const rngMusicVol = document.getElementById('cfgBgMusicVolume');
@@ -8882,7 +8882,7 @@ function syncScreenConfigFormWithState(cfg) {
   renderEstadisticasSlidesEditor();
   renderPublicidadSlidesEditor();
 
-  // Duraciones y estados de los 7 mÃ³dulos (retrocompatibilidad)
+  // Duraciones y estados de los 7 módulos (retrocompatibilidad)
   const modules = cfg.modules || {};
   const modMap = {
     top5_animalitos: { chk: 'modEnabled_top5_animalitos', dur: 'modDuration_top5_animalitos' },
@@ -8903,9 +8903,9 @@ function syncScreenConfigFormWithState(cfg) {
   }
 }
 
-// Bindeo de Eventos para el Formulario de ConfiguraciÃ³n
+// Bindeo de Eventos para el Formulario de Configuración
 function setupScreenConfigEventListeners() {
-  // BotÃ³n Abrir CatÃ¡logo MÃ¡ster de LoterÃ­as
+  // Botón Abrir Catálogo Máster de Loterías
   const btnOpenCat = document.getElementById('btnOpenLotteryCatalogModal');
   if (btnOpenCat) {
     btnOpenCat.addEventListener('click', () => {
@@ -8950,14 +8950,14 @@ function setupScreenConfigEventListeners() {
       const file = e.target.files[0];
       if (!file) return;
       if (!file.type.startsWith('image/')) {
-        alert('Por favor seleccione un archivo de imagen vÃ¡lido (PNG, JPG, WebP o SVG).');
+        alert('Por favor seleccione un archivo de imagen válido (PNG, JPG, WebP o SVG).');
         return;
       }
       const reader = new FileReader();
       reader.onload = (evt) => {
         const img = new Image();
         img.onload = () => {
-          // Redimensionar suavemente en canvas (mÃ¡x 280x120) para mantener payload ligero (<30KB)
+          // Redimensionar suavemente en canvas (máx 280x120) para mantener payload ligero (<30KB)
           const maxW = 280;
           const maxH = 120;
           let w = img.width;
@@ -9007,7 +9007,7 @@ function setupScreenConfigEventListeners() {
     });
   }
 
-  // Motor de Voz / SÃ­ntesis
+  // Motor de Voz / Síntesis
   const selVoiceEngine = document.getElementById('cfgVoiceEngine');
   if (selVoiceEngine) {
     selVoiceEngine.addEventListener('change', () => {
@@ -9015,7 +9015,7 @@ function setupScreenConfigEventListeners() {
     });
   }
 
-  // Probar LocuciÃ³n Ahora (BotÃ³n de Prueba)
+  // Probar Locución Ahora (Botón de Prueba)
   const btnTestVoice = document.getElementById('btnTestVoiceNow');
   const lblTestStatus = document.getElementById('lblTestVoiceStatus');
   if (btnTestVoice) {
@@ -9023,12 +9023,12 @@ function setupScreenConfigEventListeners() {
       if (lblTestStatus) {
         lblTestStatus.style.display = 'inline';
         lblTestStatus.style.color = '#38bdf8';
-        lblTestStatus.textContent = 'ðŸ”Š Reproduciendo locuciÃ³n de prueba...';
+        lblTestStatus.textContent = '🔊 Reproduciendo locución de prueba...';
       }
       speakLotteryDraw('La Granjita', '12:00 PM', '11 GATO', () => {
         if (lblTestStatus) {
           lblTestStatus.style.color = '#34d399';
-          lblTestStatus.textContent = 'âœ… LocuciÃ³n completada exitosamente.';
+          lblTestStatus.textContent = '✅ Locución completada exitosamente.';
           setTimeout(() => { lblTestStatus.style.display = 'none'; }, 3500);
         }
       });
@@ -9044,7 +9044,7 @@ function setupScreenConfigEventListeners() {
     });
   }
 
-  // Selector de Pista de MÃºsica de Circo
+  // Selector de Pista de Música de Circo
   const selTrack = document.getElementById('cfgBgMusicTrack');
   const grpCustom = document.getElementById('groupCustomMusicUrl');
   if (selTrack && grpCustom) {
@@ -9053,7 +9053,7 @@ function setupScreenConfigEventListeners() {
     });
   }
 
-  // Deslizador de Volumen de MÃºsica
+  // Deslizador de Volumen de Música
   const rngMusicVol = document.getElementById('cfgBgMusicVolume');
   const lblMusicVol = document.getElementById('lblCfgMusicVol');
   if (rngMusicVol && lblMusicVol) {
@@ -9062,7 +9062,7 @@ function setupScreenConfigEventListeners() {
     });
   }
 
-  // Carga de archivo personalizado de mÃºsica
+  // Carga de archivo personalizado de música
   const fileMusic = document.getElementById('fileCustomMusic');
   const txtMusicUrl = document.getElementById('cfgBgMusicCustomUrl');
   if (fileMusic && txtMusicUrl) {
@@ -9077,7 +9077,7 @@ function setupScreenConfigEventListeners() {
     });
   }
 
-  // Ejecutar ClonaciÃ³n de ConfiguraciÃ³n entre Pantallas Existentes
+  // Ejecutar Clonación de Configuración entre Pantallas Existentes
   const btnExecuteClone = document.getElementById('btnExecuteCopyConfig');
   if (btnExecuteClone) {
     btnExecuteClone.addEventListener('click', async () => {
@@ -9086,7 +9086,7 @@ function setupScreenConfigEventListeners() {
       const msg = document.getElementById('screenConfigMsg');
 
       if (!sourceDeviceId) {
-        alert('Seleccione la pantalla origen de la cual desea copiar la configuraciÃ³n.');
+        alert('Seleccione la pantalla origen de la cual desea copiar la configuración.');
         return;
       }
       if (checkedBoxes.length === 0) {
@@ -9107,7 +9107,7 @@ function setupScreenConfigEventListeners() {
         if (res.ok && data.success) {
           if (msg) {
             msg.style.color = '#34d399';
-            msg.textContent = `Â¡${data.message}!`;
+            msg.textContent = `¡${data.message}!`;
           }
           if (checkedBoxes.includes(currentDeviceId)) {
             await checkDeviceAuthorization();
@@ -9115,16 +9115,16 @@ function setupScreenConfigEventListeners() {
         } else {
           if (msg) {
             msg.style.color = '#fca5a5';
-            msg.textContent = data.error || 'Error al clonar configuraciÃ³n.';
+            msg.textContent = data.error || 'Error al clonar configuración.';
           }
         }
       } catch (err) {
-        alert('Error de conexiÃ³n al clonar configuraciÃ³n.');
+        alert('Error de conexión al clonar configuración.');
       }
     });
   }
 
-  // Guardar ConfiguraciÃ³n en Bloque para las Pantallas Seleccionadas
+  // Guardar Configuración en Bloque para las Pantallas Seleccionadas
   const btnSaveConfig = document.getElementById('btnSaveScreenConfig');
   if (btnSaveConfig) {
     btnSaveConfig.addEventListener('click', async () => {
@@ -9132,7 +9132,7 @@ function setupScreenConfigEventListeners() {
       const msg = document.getElementById('screenConfigMsg');
 
       if (checkedBoxes.length === 0) {
-        alert('Seleccione al menos una pantalla a la cual aplicar la configuraciÃ³n.');
+        alert('Seleccione al menos una pantalla a la cual aplicar la configuración.');
         return;
       }
 
@@ -9240,7 +9240,7 @@ function setupScreenConfigEventListeners() {
             const resSlidesCount = assembledConfig.lotterySections?.resultados?.slides?.length || 0;
             const statSlidesCount = assembledConfig.lotterySections?.estadisticas?.slides?.length || 0;
             const pubSlidesCount = assembledConfig.lotterySections?.publicidad?.slides?.length || 0;
-            msg.textContent = `Â¡ConfiguraciÃ³n guardada y sincronizada en ${checkedBoxes.length} televisor(es) de agencia! (${resSlidesCount} Resultados, ${statSlidesCount} EstadÃ­sticas, ${pubSlidesCount} Publicidad)`;
+            msg.textContent = `¡Configuración guardada y sincronizada en ${checkedBoxes.length} televisor(es) de agencia! (${resSlidesCount} Resultados, ${statSlidesCount} Estadísticas, ${pubSlidesCount} Publicidad)`;
           }
           applyScreenConfig(assembledConfig);
           if (currentUser) {
@@ -9256,23 +9256,23 @@ function setupScreenConfigEventListeners() {
         } else {
           if (msg) {
             msg.style.color = '#fca5a5';
-            msg.textContent = data.error || 'Error al guardar configuraciÃ³n.';
+            msg.textContent = data.error || 'Error al guardar configuración.';
           }
         }
       } catch (err) {
-        alert('Error al guardar configuraciÃ³n de pantallas.');
+        alert('Error al guardar configuración de pantallas.');
       }
     });
   }
 }
 
-// Inicializar configuraciÃ³n al arrancar
+// Inicializar configuración al arrancar
 setTimeout(() => {
   setupScreenConfigEventListeners();
 }, 200);
 
 // ==========================================
-// Carga Manual de Resultados (Tab 6 TÃ©cnico)
+// Carga Manual de Resultados (Tab 6 Técnico)
 // ==========================================
 function updateAdminManualLotteryDropdowns() {
   const selGame = document.getElementById('selManualGame');
@@ -9281,7 +9281,7 @@ function updateAdminManualLotteryDropdowns() {
   const currentVal = selGame.value;
   selGame.innerHTML = lotteryTop10.map(g => {
     const gId = g.gameId || g.id;
-    const icon = g.icon || (g.type === 'animalitos' ? 'ðŸ¾' : 'ðŸŽ°');
+    const icon = g.icon || (g.type === 'animalitos' ? '🐾' : '🎰');
     return `<option value="${gId}" ${gId === currentVal ? 'selected' : ''}>${icon} ${g.name}</option>`;
   }).join('');
 
@@ -9385,7 +9385,7 @@ function handleTvRemoteKey(keyName) {
     return false;
   }
 
-  // 2. Si hay un botÃ³n o enlace enfocado en un modal y se presiona Enter, ejecutar clic
+  // 2. Si hay un botón o enlace enfocado en un modal y se presiona Enter, ejecutar clic
   if (activeEl && (activeEl.tagName === 'BUTTON' || activeEl.tagName === 'A') && (keyName === 'Enter' || keyName === 'Center')) {
     if (activeEl !== document.body && !activeEl.classList.contains('btn-cintillo-nav')) {
       activeEl.click();
@@ -9393,7 +9393,7 @@ function handleTvRemoteKey(keyName) {
     }
   }
 
-  // 3. Procesar acciones universales de navegaciÃ³n de pantalla
+  // 3. Procesar acciones universales de navegación de pantalla
   switch (keyName) {
     case 'ArrowRight':
     case 'Next':
@@ -9522,15 +9522,15 @@ window.handleTvRemoteKey = handleTvRemoteKey;
 // D-Pad Remote Navigation & Universal Shortcuts para Smart TV y PC
 function setupKeyboardNavigation() {
   document.addEventListener('keydown', (e) => {
-    // Si el foco estÃ¡ en un input/textarea/select, permitir escritura y uso normal de teclas
+    // Si el foco está en un input/textarea/select, permitir escritura y uso normal de teclas
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
       return;
     }
 
-    // Si el foco estÃ¡ en un botÃ³n o elemento interactivo y se presiona Enter o Espacio, permitir clic nativo
+    // Si el foco está en un botón o elemento interactivo y se presiona Enter o Espacio, permitir clic nativo
     if (['BUTTON', 'A'].includes(document.activeElement?.tagName) || (document.activeElement && document.activeElement.hasAttribute('tabindex'))) {
       if (document.activeElement !== document.body && (e.key === 'Enter' || e.key === ' ')) {
-        return; // El navegador ejecutarÃ¡ el clic nativo del elemento enfocado
+        return; // El navegador ejecutará el clic nativo del elemento enfocado
       }
     }
 
@@ -9550,7 +9550,7 @@ function setupKeyboardNavigation() {
       return;
     }
 
-    // Teclas estÃ¡ndar procesadas a travÃ©s del gestor universal
+    // Teclas estándar procesadas a través del gestor universal
     if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Enter', ' ', '1', '2', '3', '4', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key)) {
       e.preventDefault();
       handleTvRemoteKey(e.key);
@@ -9559,7 +9559,7 @@ function setupKeyboardNavigation() {
 }
 
 // ==========================================
-// ExposiciÃ³n Global de Controladores para HTML
+// Exposición Global de Controladores para HTML
 // ==========================================
 window.openAdminModalDirectly = openAdminModalDirectly;
 window.closeLoginModalSafely = closeLoginModalSafely;
