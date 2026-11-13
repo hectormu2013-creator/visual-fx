@@ -462,7 +462,7 @@
     function switchSingleVideoStream(sourceKey, streamUrl, enableAudio) {
       if (currentVideoSourceKey === sourceKey && !videoEl.ended && !videoEl.error) {
         videoEl.muted = !(enableAudio && parentAllowsAudio);
-        if (videoEl.paused && videoEl.readyState >= 2) {
+        if (videoEl.paused && videoEl.readyState >= 2 && !bufferGateActive) {
           videoEl.play().catch(() => {});
         }
         return;
@@ -502,42 +502,95 @@
         activeHls = hls;
       } else {
         videoEl._activeStreamUrl = streamUrl;
-        videoEl._lastProgressTime = -1;
-        videoEl._stallTicks = 0;
+        videoEl._lastBufferedEnd = 0;
+        videoEl._lastDataAt = Date.now();
+        videoEl.autoplay = false;
         videoEl.src = streamUrl;
+        bufferGateActive = true; // No reproducir hasta acumular colchón (evita paralizaciones por variaciones de red)
         const reconnectMp4 = (delayMs = 1800) => {
           if (videoEl._reconnectTimer) clearTimeout(videoEl._reconnectTimer);
           videoEl._reconnectTimer = setTimeout(() => {
             if (currentVideoSourceKey === sourceKey) {
               const sep = streamUrl.includes('?') ? '&' : '?';
+              videoEl._lastDataAt = Date.now();
               videoEl.src = `${streamUrl}${sep}_t=${Date.now()}`;
-              videoEl.play().catch(() => {});
+              bufferGateActive = true;
             }
           }, delayMs);
         };
         videoEl.onerror = () => reconnectMp4(2000);
         videoEl.onended = () => reconnectMp4(1200);
-        videoEl.play().catch(() => {});
       }
     }
 
+    // ---- Control de colchón (buffer) para video en vivo fMP4 ----
+    // Arranca solo con >= 2.5s acumulados; si se vacía, pausa en el último cuadro (sin negro) y reanuda al recuperar 1.5s.
+    const START_BUFFER_SEC = 2.5;
+    const RESUME_BUFFER_SEC = 1.5;
+    let bufferGateActive = false;
+
+    function bufferedAhead() {
+      try {
+        const b = videoEl.buffered;
+        if (!b || b.length === 0) return 0;
+        return b.end(b.length - 1) - videoEl.currentTime;
+      } catch (e) { return 0; }
+    }
+
+    function bufferedEnd() {
+      try {
+        const b = videoEl.buffered;
+        return (b && b.length) ? b.end(b.length - 1) : 0;
+      } catch (e) { return 0; }
+    }
+
+    videoEl.addEventListener('waiting', () => {
+      if (activeHls || !videoEl._activeStreamUrl) return;
+      bufferGateActive = true;
+    });
+
     setInterval(() => {
       if (!videoEl || activeHls || !videoEl._activeStreamUrl) return;
-      const curT = videoEl.currentTime || 0;
-      const isStalled = (videoEl.readyState < 2) || (Math.abs(curT - videoEl._lastProgressTime) < 0.04);
-      if (isStalled) {
-        videoEl._stallTicks = (videoEl._stallTicks || 0) + 1;
-        if (videoEl._stallTicks >= 2) {
-          videoEl._stallTicks = 0;
-          const sep = videoEl._activeStreamUrl.includes('?') ? '&' : '?';
-          videoEl.src = `${videoEl._activeStreamUrl}${sep}_t=${Date.now()}`;
+      const ahead = bufferedAhead();
+
+      if (bufferGateActive) {
+        const needed = (videoEl.currentTime > 0) ? RESUME_BUFFER_SEC : START_BUFFER_SEC;
+        if (ahead >= needed && videoEl.readyState >= 2) {
+          bufferGateActive = false;
           videoEl.play().catch(() => {});
+        } else if (!videoEl.paused) {
+          videoEl.pause();
         }
       } else {
-        videoEl._lastProgressTime = curT;
-        videoEl._stallTicks = 0;
+        // Mantener latencia estable: acelerar levemente si se acumula demasiado colchón
+        if (ahead > 6) {
+          if (videoEl.playbackRate !== 1.06) videoEl.playbackRate = 1.06;
+        } else if (ahead < 3.5 && videoEl.playbackRate !== 1.0) {
+          videoEl.playbackRate = 1.0;
+        }
+        if (videoEl.paused && ahead >= RESUME_BUFFER_SEC) {
+          videoEl.play().catch(() => {});
+        }
       }
-    }, 4000);
+    }, 250);
+
+    // Reconectar SOLO si dejan de llegar datos nuevos del servidor por más de 10s
+    setInterval(() => {
+      if (!videoEl || activeHls || !videoEl._activeStreamUrl) return;
+      const end = bufferedEnd();
+      if (end > (videoEl._lastBufferedEnd || 0) + 0.05) {
+        videoEl._lastBufferedEnd = end;
+        videoEl._lastDataAt = Date.now();
+        return;
+      }
+      if (Date.now() - (videoEl._lastDataAt || Date.now()) > 10000) {
+        videoEl._lastDataAt = Date.now();
+        videoEl._lastBufferedEnd = 0;
+        const sep = videoEl._activeStreamUrl.includes('?') ? '&' : '?';
+        videoEl.src = `${videoEl._activeStreamUrl}${sep}_t=${Date.now()}`;
+        bufferGateActive = true;
+      }
+    }, 2000);
 
     function renderSlateResultHtml(quad) {
       let html = `<div class="slate-track-title">${quad.flag || '🇺🇸'} ${quad.name}</div>`;
