@@ -28,27 +28,27 @@ function resolveFourMulticanalTracks(catalogMap, requestedTrackIds = []) {
 
   const fixedFourIds = [];
 
-  // 1. Priorizar siempre el orden canónico oficial del día para los hipódromos EN VIVO (garantiza 1 solo Hub FFmpeg compartido)
+  // 1. Priorizar siempre pistas EN VIVO con flujo de video directo (type !== 'iframe') en el orden oficial del día
   for (const tid of defaultOrder) {
     const ch = catalogMap.get(tid);
-    if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
+    if (ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
     if (fixedFourIds.length === 4) return fixedFourIds;
   }
 
-  // 2. Completar con pistas EN VIVO de requestedTrackIds si hubiera alguna adicional
-  for (const tid of (requestedTrackIds || [])) {
+  // 2. Completar con cualquier otra pista individual EN VIVO con video directo (type !== 'iframe') en el catálogo
+  for (const [tid, ch] of catalogMap.entries()) {
+    if (ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl && !FILLER_24_7_IDS.has(tid) && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) return fixedFourIds;
+  }
+
+  // 3. Si aún faltan, aceptar pistas EN VIVO de cualquier tipo (incluyendo iframe)
+  for (const tid of [...defaultOrder, ...(requestedTrackIds || [])]) {
     const ch = tid ? catalogMap.get(tid) : null;
     if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
-      fixedFourIds.push(tid);
-    }
-    if (fixedFourIds.length === 4) return fixedFourIds;
-  }
-
-  // 3. Completar con cualquier otra pista individual EN VIVO en el catálogo (ej. Zia Park, Mountaineer, etc.)
-  for (const [tid, ch] of catalogMap.entries()) {
-    if (ch && ch.onAir && !FILLER_24_7_IDS.has(tid) && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
     if (fixedFourIds.length === 4) return fixedFourIds;
@@ -644,7 +644,8 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         if (warmResults[i] && inputCandidates[i].localStreamUrl) {
           ffArgs.push(
             '-threads', '1',
-            '-fflags', '+nobuffer+discardcorrupt+genpts',
+            '-use_wallclock_as_timestamps', '1',
+            '-fflags', '+nobuffer+discardcorrupt+genpts+igndts',
             '-flags', 'low_delay',
             '-fpsprobesize', '0',
             '-probesize', '500000',
@@ -663,11 +664,11 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
 
       ffArgs.push(
         '-filter_complex',
-        '[0:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v0];' +
-        '[1:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v1];' +
-        '[2:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v2];' +
-        '[3:v]scale=640:360:flags=bicubic,fps=20,setsar=1[v3];' +
-        '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
+        '[0:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v0];' +
+        '[1:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v1];' +
+        '[2:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v2];' +
+        '[3:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v3];' +
+        '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0:shortest=0[v]',
         '-map', '[v]',
         '-an',
         '-threads', '2',
@@ -691,6 +692,8 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
 
       const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
       hub.ffmpegProc = ffProc;
+      hub.startedAt = Date.now();
+      hub.lastFragmentAt = Date.now();
 
       let pendingBuf = Buffer.alloc(0);
       let ftypBox = null;
@@ -719,10 +722,17 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
       };
       hub.cleanup = cleanup;
 
-      // Perro Guardián del Mosaico 4-en-1: Si alguna de las 4 pistas en vivo no entró en el arranque inicial
-      // o su hub Millicast se reinició (quedando con 0 clientes), reiniciar el compositor para reconectar las 4 señales.
+      // Perro Guardián del Mosaico 4-en-1:
+      // 1. Si FFmpeg lleva > 9s sin emitir fragmentos nuevos (ej. bloqueo de xstack por salto de PTS), reiniciar de inmediato.
+      // 2. Si alguna de las 4 pistas no entró en frío o su hub Millicast se reinició, reconectar las 4 señales.
       hub.healInterval = setInterval(() => {
         if (!hub.running) return;
+        const fragSilenceMs = Date.now() - (hub.lastFragmentAt || hub.startedAt || Date.now());
+        if (fragSilenceMs > 9000) {
+          console.log(`🔄 [Compositor 4-en-1] Watchdog: ${fragSilenceMs}ms sin emitir fragmentos fMP4 en (${hubKey}), reiniciando compositor...`);
+          cleanup(true);
+          return;
+        }
         const diag = getMillicastDiagnostics();
         const activeHubMap = new Map((diag.activeHubs || []).map(h => [h.trackCode, h]));
         for (let i = 0; i < 4; i++) {
@@ -750,9 +760,10 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
             }
           }
         }
-      }, 15000);
+      }, 6000);
 
       ffProc.stdout.on('data', (chunk) => {
+        hub.lastFragmentAt = Date.now();
         pendingBuf = Buffer.concat([pendingBuf, chunk]);
         while (pendingBuf.length >= 8) {
           const boxSize = pendingBuf.readUInt32BE(0);

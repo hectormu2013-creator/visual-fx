@@ -30,11 +30,15 @@ async function syncRtnStreams(channelsCatalog, forceManual = false) {
   syncInProgress = true;
   try {
     // 1. Obtener señales desde el puente de señales públicas, 1/ST TV y RTN (si está habilitado)
-    //    Se pasa publicStreams a RTN para NO tocar RTN en pistas que ya tienen HLS público oficial gratuito.
+    //    Solo excluir de RTN las pistas que ya tengan flujo de video directo (type !== 'iframe'),
+    //    para que el video directo H.264 de RTN siempre reemplace a los embeds de YouTube (iframe).
     const publicStreams = await fetchPublicLiveStreams();
-    const firstTvStreams = await fetchFirstTvLiveStreams(publicStreams);
+    const directPublicOnly = Object.fromEntries(
+      Object.entries(publicStreams || {}).filter(([, val]) => val && val.type && val.type !== 'iframe')
+    );
+    const firstTvStreams = await fetchFirstTvLiveStreams(directPublicOnly);
     const bridgeStreams = (process.env.RTN_ENABLED === 'true')
-      ? await fetchRtnLiveStreams({ ...publicStreams, ...firstTvStreams })
+      ? await fetchRtnLiveStreams({ ...directPublicOnly, ...firstTvStreams })
       : {};
 
     // Combinar señales activas verificadas (RTN y 1/ST TV tienen prioridad de flujo directo sobre iframes públicos)

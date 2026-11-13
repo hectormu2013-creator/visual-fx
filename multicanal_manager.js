@@ -145,19 +145,30 @@ function syncMulticanalChannels(channelsCatalog) {
 
   function addOfficialMultivisual(id, name, flag, location, preferredIds, fallbackPool, badgeLabel) {
     const validIds = [];
-    // 1. Primero elegir de preferredIds los que están EN VIVO (onAir = true) ahora mismo
+    // 1. Primero elegir de preferredIds los que están EN VIVO con video directo (type !== 'iframe')
     for (const t of preferredIds) {
       const tid = typeof t === 'string' ? t : t?.id;
       const ch = tid ? catalogMap.get(tid) : null;
-      if (ch && ch.onAir && !validIds.includes(tid)) {
+      if (ch && ch.onAir && ch.type !== 'iframe' && !validIds.includes(tid)) {
         validIds.push(tid);
       }
       if (validIds.length === 4) break;
     }
-    // 2. Si faltan para llegar a 4, completar con pistas EN VIVO (onAir = true) del fallbackPool
+    // 2. Si faltan para llegar a 4, completar con pistas EN VIVO con video directo (type !== 'iframe') del fallbackPool
     if (validIds.length < 4) {
       for (const fb of fallbackPool) {
         const tid = typeof fb === 'string' ? fb : fb?.id;
+        const ch = tid ? catalogMap.get(tid) : null;
+        if (ch && ch.onAir && ch.type !== 'iframe' && !validIds.includes(tid)) {
+          validIds.push(tid);
+        }
+        if (validIds.length === 4) break;
+      }
+    }
+    // 3. Si aún faltan, aceptar cualquier pista EN VIVO (incluyendo iframe) de preferredIds o fallbackPool
+    if (validIds.length < 4) {
+      for (const t of [...preferredIds, ...fallbackPool]) {
+        const tid = typeof t === 'string' ? t : t?.id;
         const ch = tid ? catalogMap.get(tid) : null;
         if (ch && ch.onAir && !validIds.includes(tid)) {
           validIds.push(tid);
@@ -165,7 +176,7 @@ function syncMulticanalChannels(channelsCatalog) {
         if (validIds.length === 4) break;
       }
     }
-    // 3. Si hay menos de 4 hipódromos en vivo en todo el sistema, completar con los preferidos programados del día
+    // 4. Si hay menos de 4 hipódromos en vivo en todo el sistema, completar con los preferidos programados del día
     if (validIds.length < 4) {
       for (const t of preferredIds) {
         const tid = typeof t === 'string' ? t : t?.id;

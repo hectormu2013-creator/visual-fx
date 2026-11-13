@@ -524,7 +524,8 @@
     setInterval(() => {
       if (!videoEl || activeHls || !videoEl._activeStreamUrl) return;
       const curT = videoEl.currentTime || 0;
-      if (curT > 0 && Math.abs(curT - videoEl._lastProgressTime) < 0.04) {
+      const isStalled = (videoEl.readyState < 2) || (Math.abs(curT - videoEl._lastProgressTime) < 0.04);
+      if (isStalled) {
         videoEl._stallTicks = (videoEl._stallTicks || 0) + 1;
         if (videoEl._stallTicks >= 2) {
           videoEl._stallTicks = 0;
