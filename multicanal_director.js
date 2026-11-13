@@ -3,6 +3,7 @@
 
 const fetch = require('node-fetch');
 const http = require('http');
+const net = require('net');
 const { spawn } = require('child_process');
 const ffmpegPath = require('ffmpeg-static');
 const {
@@ -511,9 +512,183 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
   };
 }
 
+// ============================================================================
+// Compositor 4-en-1 con Sincronizador de Cuadros por Cuadrante (Frame Synchronizer)
+// ----------------------------------------------------------------------------
+// Cada cuadrante tiene su propio decodificador independiente (ffmpeg -> rawvideo 640x360 @20fps).
+// Node.js entrega al compositor exactamente 20 cuadros/seg por cuadrante desde 4 sockets TCP locales:
+//   - Si el hipódromo envía video: se usa el último cuadro recibido.
+//   - Si el hipódromo se congela/cae: se repite el último cuadro hasta 5s y luego una pizarra azul.
+// Resultado: el mosaico NUNCA se detiene ni se pone en negro porque un solo hipódromo falle;
+// solo ese cuadrante se reconecta en segundo plano (con espera progresiva anti-baneo 3s -> 20s).
+// ============================================================================
+const SLOT_W = 640;
+const SLOT_H = 360;
+const SLOT_FPS = 20;
+const SLOT_FRAME_MS = 1000 / SLOT_FPS;
+const SLOT_FRAME_BYTES = (SLOT_W * SLOT_H * 3) / 2;
+const SLOT_HOLD_LAST_FRAME_MS = 5000;
+const SLOT_STALL_KILL_MS = 9000;
+
+function buildSlateFrame() {
+  const buf = Buffer.alloc(SLOT_FRAME_BYTES);
+  const ySize = SLOT_W * SLOT_H;
+  buf.fill(22, 0, ySize);
+  buf.fill(138, ySize, ySize + ySize / 4);
+  buf.fill(122, ySize + ySize / 4);
+  return buf;
+}
+const SLATE_FRAME = buildSlateFrame();
+
+function createSlotFeeder(slotIndex, tid, getSourceUrl) {
+  const slot = {
+    index: slotIndex,
+    tid,
+    latestFrame: null,
+    lastFrameAt: 0,
+    decoder: null,
+    decoderStartedAt: 0,
+    currentUrl: null,
+    failCount: 0,
+    nextRetryAt: 0,
+    socket: null,
+    server: null,
+    port: 0,
+    stopped: false
+  };
+
+  const killDecoder = () => {
+    if (slot.decoder) {
+      const p = slot.decoder;
+      slot.decoder = null;
+      try { p.kill('SIGKILL'); } catch (e) {}
+    }
+  };
+
+  const startDecoder = (url) => {
+    if (slot.stopped || slot.decoder) return;
+    const args = [
+      '-loglevel', 'error',
+      '-threads', '1',
+      '-fflags', '+nobuffer+discardcorrupt+genpts',
+      '-flags', 'low_delay',
+      '-probesize', '500000',
+      '-analyzeduration', '1500000',
+      '-i', url,
+      '-an',
+      '-vf', `fps=${SLOT_FPS},scale=${SLOT_W}:${SLOT_H}:flags=bicubic,setsar=1,format=yuv420p`,
+      '-f', 'rawvideo',
+      '-pix_fmt', 'yuv420p',
+      'pipe:1'
+    ];
+    const proc = spawn(ffmpegPath, args, { stdio: ['ignore', 'pipe', 'ignore'] });
+    slot.decoder = proc;
+    slot.decoderStartedAt = Date.now();
+    slot.currentUrl = url;
+    let gotFrames = false;
+    let chunks = [];
+    let total = 0;
+
+    proc.stdout.on('data', (chunk) => {
+      chunks.push(chunk);
+      total += chunk.length;
+      if (total < SLOT_FRAME_BYTES) return;
+      const buf = Buffer.concat(chunks, total);
+      let off = 0;
+      let lastStart = -1;
+      while (buf.length - off >= SLOT_FRAME_BYTES) {
+        lastStart = off;
+        off += SLOT_FRAME_BYTES;
+      }
+      if (lastStart >= 0) {
+        slot.latestFrame = Buffer.from(buf.subarray(lastStart, lastStart + SLOT_FRAME_BYTES));
+        slot.lastFrameAt = Date.now();
+        if (!gotFrames) {
+          gotFrames = true;
+          slot.failCount = 0;
+        }
+      }
+      const rest = buf.subarray(off);
+      chunks = rest.length ? [Buffer.from(rest)] : [];
+      total = rest.length;
+    });
+
+    const onEnd = () => {
+      if (slot.decoder === proc) slot.decoder = null;
+      if (!gotFrames) slot.failCount++;
+      const backoff = Math.min(20000, 3000 * Math.pow(2, Math.min(slot.failCount, 3)));
+      slot.nextRetryAt = Date.now() + (gotFrames ? 2500 : backoff);
+    };
+    proc.on('close', onEnd);
+    proc.on('error', onEnd);
+  };
+
+  // Supervisor del cuadrante (cada 2s): arranca, reinicia por congelamiento o cambio de URL
+  slot.supervisor = setInterval(() => {
+    if (slot.stopped) return;
+    const now = Date.now();
+    const url = getSourceUrl();
+    if (slot.decoder) {
+      if (!url || url !== slot.currentUrl) {
+        killDecoder();
+        slot.nextRetryAt = now + 1500;
+        return;
+      }
+      const refT = Math.max(slot.lastFrameAt, slot.decoderStartedAt);
+      if (now - refT > SLOT_STALL_KILL_MS) {
+        console.log(`🔄 [Compositor 4-en-1] Cuadrante ${slot.index + 1} (${slot.tid}) congelado ${now - refT}ms, reconectando solo ese cuadrante...`);
+        killDecoder();
+        slot.failCount++;
+        slot.nextRetryAt = now + 2500;
+      }
+      return;
+    }
+    if (url && now >= slot.nextRetryAt) {
+      startDecoder(url);
+    }
+  }, 2000);
+
+  slot.getFrame = () => {
+    if (slot.latestFrame && (Date.now() - slot.lastFrameAt) < SLOT_HOLD_LAST_FRAME_MS) {
+      return slot.latestFrame;
+    }
+    return SLATE_FRAME;
+  };
+
+  slot.listen = () => new Promise((resolve, reject) => {
+    slot.server = net.createServer((sock) => {
+      if (slot.socket && slot.socket !== sock) {
+        try { slot.socket.destroy(); } catch (e) {}
+      }
+      slot.socket = sock;
+      sock.setNoDelay(true);
+      sock.on('error', () => {});
+      sock.on('close', () => { if (slot.socket === sock) slot.socket = null; });
+    });
+    slot.server.once('error', reject);
+    slot.server.listen(0, '127.0.0.1', () => {
+      slot.port = slot.server.address().port;
+      resolve(slot.port);
+    });
+  });
+
+  slot.stop = () => {
+    slot.stopped = true;
+    clearInterval(slot.supervisor);
+    killDecoder();
+    if (slot.socket) { try { slot.socket.destroy(); } catch (e) {} slot.socket = null; }
+    if (slot.server) { try { slot.server.close(); } catch (e) {} slot.server = null; }
+  };
+
+  // Arranque inmediato si ya está en vivo
+  const firstUrl = getSourceUrl();
+  if (firstUrl) startDecoder(firstUrl);
+
+  return slot;
+}
+
 /**
- * Compositor de Servidor 4 en 1 (FFmpeg xstack 2x2 -> 1 solo stream fMP4 ligero de 852x480 a 15fps).
- * Permite que cualquier Smart TV decodifique los 4 hipódromos usando UN SOLO reproductor <video>.
+ * Compositor de Servidor 4 en 1 (1280x720 HD -> 1 solo stream fMP4 ligero compartido 1-a-N).
  */
 function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, res, localPort = 3500) {
   const catalogMap = new Map();
@@ -524,32 +699,20 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
   }
 
   const fixedFourIds = resolveFourMulticanalTracks(catalogMap, requestedTrackIds);
-
-  const signature = fixedFourIds.map(tid => {
-    const c = catalogMap.get(tid);
-    const isDirectVideo = c && c.onAir && c.type !== 'iframe' && c.streamUrl;
-    return `${tid}:${isDirectVideo ? 'LIVE' : 'SLATE'}`;
-  }).join('|');
-
   const hubKey = fixedFourIds.join(',') || 'default';
   let hub = compositeHubs.get(hubKey);
-
-  if (hub && hub.signature !== signature && hub.cleanup) {
-    hub.cleanup();
-    hub = null;
-  }
 
   if (!hub) {
     hub = {
       hubKey,
-      signature,
       clients: new Set(),
       initSegment: null,
       latestFragment: null,
       running: false,
       ffmpegProc: null,
       idleTimer: null,
-      cleanup: null
+      cleanup: null,
+      slots: null
     };
     compositeHubs.set(hubKey, hub);
   }
@@ -585,90 +748,63 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
   if (!hub.running) {
     hub.running = true;
 
-    // Pre-calentar en paralelo los 4 flujos vivos y mantener su conexión abierta hasta que FFmpeg abra los 4 inputs
-    const prewarmReqs = [];
-    const prewarmInput = (localStreamUrl) => new Promise((resolve) => {
-      let settled = false;
-      const done = (ok) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        resolve(ok);
-      };
-      const timer = setTimeout(() => done(false), 12000);
-      const reqObj = http.get(localStreamUrl, (upRes) => {
-        if (upRes.statusCode !== 200) {
-          upRes.resume();
-          return done(false);
-        }
-        upRes.once('data', () => {
-          upRes.resume();
-          done(true);
-        });
-        upRes.once('error', () => done(false));
-      });
-      reqObj.on('error', () => done(false));
-      prewarmReqs.push(reqObj);
-    });
-
     (async () => {
-      const inputCandidates = [];
-      for (let i = 0; i < 4; i++) {
-        const tid = fixedFourIds[i];
-        const ch = catalogMap.get(tid);
-        const isDirectVideo = Boolean(ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl);
-        const millicastCode = isDirectVideo ? parseTrackCodeFromSyntheticUrl(ch.streamUrl) : null;
-        const localStreamUrl = isDirectVideo
-          ? `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR-${i + 1}`
-          : null;
-        inputCandidates.push({ tid, isDirectVideo, millicastCode, localStreamUrl });
-      }
-
-      const warmResults = await Promise.all(
-        inputCandidates.map(c => (c.isDirectVideo && c.localStreamUrl) ? prewarmInput(c.localStreamUrl) : Promise.resolve(false))
-      );
-
-      // Liberar las peticiones de precalentamiento 6 segundos después de lanzar FFmpeg
-      setTimeout(() => {
-        for (const r of prewarmReqs) {
-          try { r.destroy(); } catch (e) {}
+      // 1. Crear los 4 alimentadores de cuadrante (persisten aunque el compositor se reinicie)
+      if (!hub.slots) {
+        hub.slots = fixedFourIds.map((tid, i) => createSlotFeeder(i, tid, () => {
+          const ch = catalogMap.get(tid);
+          if (!(ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl)) return null;
+          return `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR-${i + 1}`;
+        }));
+        while (hub.slots.length < 4) {
+          hub.slots.push(createSlotFeeder(hub.slots.length, 'slate', () => null));
         }
-      }, 6000);
+        try {
+          await Promise.all(hub.slots.map(s => s.listen()));
+        } catch (e) {
+          console.error('[Compositor 4-en-1] Error abriendo sockets locales:', e.message);
+          hub.running = false;
+          return;
+        }
 
-      if (!hub.running) {
-        return;
+        // 2. Reloj maestro: entrega exactamente 20 cuadros/seg por cuadrante (corrigiendo deriva del temporizador)
+        hub.tickStart = Date.now();
+        hub.framesSent = 0;
+        hub.ticker = setInterval(() => {
+          const due = Math.floor((Date.now() - hub.tickStart) / SLOT_FRAME_MS);
+          let toSend = due - hub.framesSent;
+          if (toSend <= 0) return;
+          if (toSend > 3) {
+            hub.framesSent = due - 3;
+            toSend = 3;
+          }
+          for (let k = 0; k < toSend; k++) {
+            for (const s of hub.slots) {
+              if (!s.socket || s.socket.destroyed) continue;
+              if (s.socket.writableLength > SLOT_FRAME_BYTES * 6) continue;
+              try { s.socket.write(s.getFrame()); } catch (e) {}
+            }
+            hub.framesSent++;
+          }
+        }, 20);
       }
 
+      if (!hub.running) return;
+
+      // 3. Compositor xstack 2x2 alimentado por los 4 sockets rawvideo (ritmo constante garantizado)
       const ffArgs = ['-loglevel', 'warning'];
-      for (let i = 0; i < 4; i++) {
-        if (warmResults[i] && inputCandidates[i].localStreamUrl) {
-          ffArgs.push(
-            '-threads', '1',
-            '-use_wallclock_as_timestamps', '1',
-            '-fflags', '+nobuffer+discardcorrupt+genpts+igndts',
-            '-flags', 'low_delay',
-            '-fpsprobesize', '0',
-            '-probesize', '500000',
-            '-analyzeduration', '1500000',
-            '-thread_queue_size', '512',
-            '-reconnect', '1',
-            '-reconnect_streamed', '1',
-            '-reconnect_delay_max', '4',
-            '-rw_timeout', '10000000',
-            '-i', inputCandidates[i].localStreamUrl
-          );
-        } else {
-          ffArgs.push('-f', 'lavfi', '-i', 'color=c=#060d1f:s=640x360:r=20');
-        }
+      for (const s of hub.slots) {
+        ffArgs.push(
+          '-f', 'rawvideo',
+          '-pix_fmt', 'yuv420p',
+          '-video_size', `${SLOT_W}x${SLOT_H}`,
+          '-framerate', String(SLOT_FPS),
+          '-thread_queue_size', '64',
+          '-i', `tcp://127.0.0.1:${s.port}`
+        );
       }
-
       ffArgs.push(
-        '-filter_complex',
-        '[0:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v0];' +
-        '[1:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v1];' +
-        '[2:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v2];' +
-        '[3:v]setpts=PTS-STARTPTS,fps=20,scale=640:360:flags=bicubic,setsar=1[v3];' +
-        '[v0][v1][v2][v3]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0:shortest=0[v]',
+        '-filter_complex', '[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
         '-map', '[v]',
         '-an',
         '-threads', '2',
@@ -690,7 +826,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         'pipe:1'
       );
 
-      const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'pipe'] });
+      const ffProc = spawn(ffmpegPath, ffArgs, { stdio: ['ignore', 'pipe', 'ignore'] });
       hub.ffmpegProc = ffProc;
       hub.startedAt = Date.now();
       hub.lastFragmentAt = Date.now();
@@ -713,6 +849,14 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
           hub.ffmpegProc = null;
           try { proc.kill('SIGKILL'); } catch (e) {}
         }
+        if (hub.ticker) {
+          clearInterval(hub.ticker);
+          hub.ticker = null;
+        }
+        if (hub.slots) {
+          for (const s of hub.slots) s.stop();
+          hub.slots = null;
+        }
         if (closeClients && hub.clients && hub.clients.size > 0) {
           for (const c of Array.from(hub.clients)) {
             try { c.res.end(); } catch (e) {}
@@ -722,45 +866,15 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
       };
       hub.cleanup = cleanup;
 
-      // Perro Guardián del Mosaico 4-en-1:
-      // 1. Si FFmpeg lleva > 9s sin emitir fragmentos nuevos (ej. bloqueo de xstack por salto de PTS), reiniciar de inmediato.
-      // 2. Si alguna de las 4 pistas no entró en frío o su hub Millicast se reinició, reconectar las 4 señales.
+      // Perro guardián del compositor: solo actúa si el propio codificador se cuelga (>12s sin salida)
       hub.healInterval = setInterval(() => {
         if (!hub.running) return;
-        const fragSilenceMs = Date.now() - (hub.lastFragmentAt || hub.startedAt || Date.now());
-        if (fragSilenceMs > 9000) {
-          console.log(`🔄 [Compositor 4-en-1] Watchdog: ${fragSilenceMs}ms sin emitir fragmentos fMP4 en (${hubKey}), reiniciando compositor...`);
+        const silence = Date.now() - (hub.lastFragmentAt || hub.startedAt || Date.now());
+        if (silence > 12000) {
+          console.log(`🔄 [Compositor 4-en-1] Codificador sin salida ${silence}ms en (${hubKey}), reiniciando...`);
           cleanup(true);
-          return;
         }
-        const diag = getMillicastDiagnostics();
-        const activeHubMap = new Map((diag.activeHubs || []).map(h => [h.trackCode, h]));
-        for (let i = 0; i < 4; i++) {
-          const cand = inputCandidates[i];
-          if (!cand) continue;
-          const liveCh = catalogMap.get(cand.tid);
-          const nowDirect = Boolean(liveCh && liveCh.onAir && liveCh.type !== 'iframe' && liveCh.streamUrl);
-          if (!cand.isDirectVideo && nowDirect) {
-            console.log(`🔄 [Compositor 4-en-1] Reconectando mosaico (${hubKey}) porque cuadrante ${i + 1} (${cand.tid}) acaba de entrar EN VIVO.`);
-            cleanup(true);
-            return;
-          }
-          if (!cand.isDirectVideo) continue;
-          if (!warmResults[i]) {
-            console.log(`🔄 [Compositor 4-en-1] Reconectando mosaico (${hubKey}) porque cuadrante ${i + 1} (${cand.tid}) no estuvo listo en frío.`);
-            cleanup(true);
-            return;
-          }
-          if (cand.millicastCode) {
-            const mh = activeHubMap.get(cand.millicastCode);
-            if (!mh || !mh.running || mh.clients === 0) {
-              console.log(`🔄 [Compositor 4-en-1] Reconectando mosaico (${hubKey}) porque cuadrante ${i + 1} (${cand.millicastCode}) perdió su flujo.`);
-              cleanup(true);
-              return;
-            }
-          }
-        }
-      }, 6000);
+      }, 4000);
 
       ffProc.stdout.on('data', (chunk) => {
         hub.lastFragmentAt = Date.now();
@@ -840,6 +954,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
           hub.cleanup();
           hub.initSegment = null;
           hub.latestFragment = null;
+          compositeHubs.delete(hubKey);
         }
       }, 180000);
     }
