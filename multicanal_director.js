@@ -529,6 +529,9 @@ const SLOT_FRAME_MS = 1000 / SLOT_FPS;
 const SLOT_FRAME_BYTES = (SLOT_W * SLOT_H * 3) / 2;
 const SLOT_HOLD_LAST_FRAME_MS = 5000;
 const SLOT_STALL_KILL_MS = 9000;
+// Colchón por cuadrante: las señales llegan en ráfagas de ~2s; se acumulan 2.5s y se reparten a 20fps exactos
+const SLOT_PRIME_FRAMES = Math.round(SLOT_FPS * 2.5);
+const SLOT_MAX_QUEUE_FRAMES = Math.round(SLOT_FPS * 4.5);
 
 function buildSlateFrame() {
   const buf = Buffer.alloc(SLOT_FRAME_BYTES);
@@ -544,7 +547,10 @@ function createSlotFeeder(slotIndex, tid, getSourceUrl) {
   const slot = {
     index: slotIndex,
     tid,
-    latestFrame: null,
+    queue: [],
+    primed: false,
+    lastShown: null,
+    lastShownAt: 0,
     lastFrameAt: 0,
     decoder: null,
     decoderStartedAt: 0,
@@ -558,6 +564,8 @@ function createSlotFeeder(slotIndex, tid, getSourceUrl) {
   };
 
   const killDecoder = () => {
+    slot.queue = [];
+    slot.primed = false;
     if (slot.decoder) {
       const p = slot.decoder;
       slot.decoder = null;
@@ -595,13 +603,16 @@ function createSlotFeeder(slotIndex, tid, getSourceUrl) {
       if (total < SLOT_FRAME_BYTES) return;
       const buf = Buffer.concat(chunks, total);
       let off = 0;
-      let lastStart = -1;
+      let produced = 0;
       while (buf.length - off >= SLOT_FRAME_BYTES) {
-        lastStart = off;
+        slot.queue.push(Buffer.from(buf.subarray(off, off + SLOT_FRAME_BYTES)));
         off += SLOT_FRAME_BYTES;
+        produced++;
       }
-      if (lastStart >= 0) {
-        slot.latestFrame = Buffer.from(buf.subarray(lastStart, lastStart + SLOT_FRAME_BYTES));
+      if (slot.queue.length > SLOT_MAX_QUEUE_FRAMES) {
+        slot.queue.splice(0, slot.queue.length - SLOT_MAX_QUEUE_FRAMES);
+      }
+      if (produced > 0) {
         slot.lastFrameAt = Date.now();
         if (!gotFrames) {
           gotFrames = true;
@@ -649,8 +660,25 @@ function createSlotFeeder(slotIndex, tid, getSourceUrl) {
   }, 2000);
 
   slot.getFrame = () => {
-    if (slot.latestFrame && (Date.now() - slot.lastFrameAt) < SLOT_HOLD_LAST_FRAME_MS) {
-      return slot.latestFrame;
+    const now = Date.now();
+    if (!slot.primed && slot.queue.length >= SLOT_PRIME_FRAMES) {
+      slot.primed = true;
+    }
+    if (slot.primed) {
+      if (slot.queue.length > 0) {
+        slot.lastShown = slot.queue.shift();
+        slot.lastShownAt = now;
+        return slot.lastShown;
+      }
+      // Se vació el colchón: volver a acumular sin mostrar negro
+      slot.primed = false;
+    }
+    if (slot.lastShown && (now - slot.lastShownAt) < SLOT_HOLD_LAST_FRAME_MS) {
+      return slot.lastShown;
+    }
+    if (slot.queue.length > 0) {
+      // Primer arranque: mostrar el primer cuadro disponible mientras se llena el colchón
+      return slot.queue[0];
     }
     return SLATE_FRAME;
   };
