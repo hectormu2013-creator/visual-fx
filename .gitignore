@@ -6,6 +6,7 @@ yarn-error.log*
 Thumbs.db
 *.zip
 .render_config.json
+.contabo_config.json
 .gradle/
 build/
 local.properties
