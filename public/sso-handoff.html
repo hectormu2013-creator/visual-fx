@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visual-FX • Conectando...</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #060913;
+      color: #cbd5e1;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .box {
+      text-align: center;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">Conectando señal en vivo Visual-FX...</div>
+  <script>
+    (function () {
+      var dest = '/';
+      try {
+        var rawHash = (window.location.hash || '').replace(/^#/, '');
+        if (rawHash) {
+          var jsonStr = decodeURIComponent(escape(window.atob(decodeURIComponent(rawHash))));
+          var payload = JSON.parse(jsonStr);
+          if (payload && typeof payload.p === 'string' && payload.p.charAt(0) === '/') {
+            if (payload.p.indexOf('/sso-handoff') !== 0) {
+              dest = payload.p;
+            }
+          }
+          var incoming = (payload && payload.s && typeof payload.s === 'object') ? payload.s : null;
+          if (incoming) {
+            var alreadyHasToken = false;
+            try {
+              alreadyHasToken = Boolean(localStorage.getItem('visual_fx_token'));
+            } catch (e) {}
+            var keys = Object.keys(incoming);
+            for (var i = 0; i < keys.length; i++) {
+              var k = keys[i];
+              if (!k || (k.indexOf('visual_fx_') !== 0 && k.indexOf('vfx_') !== 0)) continue;
+              var val = incoming[k];
+              if (typeof val !== 'string') continue;
+              try {
+                if (!alreadyHasToken || localStorage.getItem(k) === null) {
+                  localStorage.setItem(k, val);
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[SSO Handoff]', err);
+      }
+      window.location.replace(dest);
+    })();
+  </script>
+</body>
+</html>

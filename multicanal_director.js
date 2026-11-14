@@ -984,7 +984,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
           hub.latestFragment = null;
           compositeHubs.delete(hubKey);
         }
-      }, 180000);
+      }, 30000);
     }
   };
 

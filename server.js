@@ -72,17 +72,47 @@ const PORT = process.env.PORT || 3500;
 app.use(cors());
 app.use(express.json());
 
-// Redirección Permanente (HTTP 301) desde el dominio antiguo de Render hacia el nuevo servidor oficial en Railway
-const OFFICIAL_RAILWAY_ORIGIN = process.env.OFFICIAL_PUBLIC_ORIGIN || 'https://visual-fx.up.railway.app';
+// Puente de Redirección sin Consumo (0 MB): Render legado -> Contabo, y Railway -> Contabo (con traspaso SSO de localStorage)
+const OFFICIAL_PUBLIC_ORIGIN = (process.env.OFFICIAL_PUBLIC_ORIGIN || 'https://visual-fx.217-216-84-239.sslip.io').replace(/\/+$/, '');
+const REDIRECT_TO_ORIGIN = (process.env.REDIRECT_TO_ORIGIN || '').trim().replace(/\/+$/, '');
 const IS_RENDER_LEGACY_HOST = Boolean(process.env.RENDER || process.env.RENDER_EXTERNAL_URL);
+const IS_REDIRECT_ONLY_HOST = IS_RENDER_LEGACY_HOST || Boolean(REDIRECT_TO_ORIGIN);
+
+app.get('/api/bridge-ping', (req, res) => {
+  return res.json({ ok: true, mode: IS_REDIRECT_ONLY_HOST ? 'redirect-bridge' : 'active-origin', target: REDIRECT_TO_ORIGIN || OFFICIAL_PUBLIC_ORIGIN });
+});
 
 app.use((req, res, next) => {
   const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').toLowerCase();
   if (IS_RENDER_LEGACY_HOST || host.includes('onrender.com')) {
-    const targetUrl = `${OFFICIAL_RAILWAY_ORIGIN}${req.originalUrl || '/'}`;
+    const targetUrl = `${OFFICIAL_PUBLIC_ORIGIN}${req.originalUrl || '/'}`;
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     return res.redirect(301, targetUrl);
   }
+
+  if (REDIRECT_TO_ORIGIN && !host.includes('217-216-84-239') && !host.includes('217.216.84.239')) {
+    const reqPath = req.path || '/';
+    const accept = String(req.headers.accept || '').toLowerCase();
+    const isHtmlDoc = req.method === 'GET' && (
+      reqPath === '/' ||
+      reqPath === '/landing' ||
+      reqPath === '/login' ||
+      reqPath.endsWith('.html') ||
+      (accept.includes('text/html') && !reqPath.startsWith('/api/') && !reqPath.startsWith('/app') && !reqPath.startsWith('/download/'))
+    );
+
+    if (isHtmlDoc) {
+      const safeTarget = JSON.stringify(REDIRECT_TO_ORIGIN);
+      const safeDestPath = JSON.stringify(req.originalUrl || '/');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      return res.status(200).send(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Visual-FX</title><style>html,body{margin:0;height:100%;background:#060913;color:#cbd5e1;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center}</style></head><body><div>Conectando a Visual-FX...</div><script>(function(){var t=${safeTarget},p=${safeDestPath},d={p:p,s:{}},n=0;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&(k.indexOf('visual_fx_')===0||k.indexOf('vfx_')===0)){d.s[k]=localStorage.getItem(k);n++;}}}catch(e){}if(n>0){try{var h=encodeURIComponent(window.btoa(unescape(encodeURIComponent(JSON.stringify(d)))));window.location.replace(t+'/sso-handoff.html#'+h);return;}catch(e){}}window.location.replace(t+p);})();</script></body></html>`);
+    }
+
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    return res.redirect(307, `${REDIRECT_TO_ORIGIN}${req.originalUrl || '/'}`);
+  }
+
   next();
 });
 
@@ -125,15 +155,15 @@ app.get(['/app', '/download/apk', '/visual-fx-tv.apk'], (req, res) => {
 });
 
 // Inicializar Medidor de Consumo, Gestor de Horarios Oficiales, Ingestor Máster y Motor de Loterías
-// (En Render legado no iniciamos motores de ingesta para que solo actúe como puente 301 de 0 MB)
-if (!IS_RENDER_LEGACY_HOST) {
+// (En hosts puente Render/Railway no iniciamos motores de ingesta para operar con 0 MB de video y 0 conexiones a terceros)
+if (!IS_REDIRECT_ONLY_HOST) {
   Promise.all([initBandwidthTracker(), initScheduleManager()]).then(() => {
     initMasterIngest(CHANNELS);
     initSelfHealer(CHANNELS);
   });
   initLotteryEngine();
 } else {
-  console.log(`🔀 [Render Redirector] Modo puente 301 activo -> ${OFFICIAL_RAILWAY_ORIGIN} (0 MB de consumo)`);
+  console.log(`🔀 [Redirect Bridge] Modo puente ligero activo -> ${REDIRECT_TO_ORIGIN || OFFICIAL_PUBLIC_ORIGIN} (0 MB de video / 0 ingesta)`);
 }
 
 // Middleware para verificar Roles
