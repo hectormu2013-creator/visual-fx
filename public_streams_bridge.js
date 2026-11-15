@@ -4,8 +4,20 @@ const fetch = require('node-fetch');
 
 const FETCH_TIMEOUT = 10000;
 
-// Señales HLS (.m3u8) Directas 24/7 desactivadas (no se comercializan en los sistemas de Agencias Fénix)
-const DIRECT_HLS_24_7_CHANNELS = [];
+// Señales HLS (.m3u8) Directas 24/7 Oficiales comercializadas en Triple7 (0 consumo de RTN, 100% componibles en 4-en-1)
+const DIRECT_HLS_24_7_CHANNELS = [
+  {
+    id: 'australia-flemington',
+    name: 'Australia A - Flemington',
+    flag: '🇦🇺',
+    location: 'Melbourne / Sydney, Australia (Sky Racing)',
+    streamUrl: 'https://636ffd31f0e12.streamlock.net/RacingStream1/RacingStream1/playlist.m3u8',
+    type: 'hls',
+    activeToday: true,
+    statusText: 'Carreras en Vivo • Sky Racing Australia HD Oficial',
+    nextRace: 'Señal Oficial Directa • Triple7 Internacional'
+  }
+];
 
 // Palabras prohibidas para descartar youtubers, pronosticadores, podcasts y cámaras ajenas
 const BLOCKED_KEYWORDS_REGEX = /picks|pronostico|pronóstico|handicapping|podcast|show ever|sportsmoneynetwork|deportes max|equinedge|seminar|preview show|railcam|train|airport|aeropuerto|sleep|insomnia|music|santa claus|furniture|football|minecraft|roblox|caballos de historia|la odisea|grupo hipico|grupo hípico|solo audio|narracion|narración|mas hipica|más hípica|sint rocha|hipodromo de rocha/i;
@@ -34,15 +46,44 @@ const LIVE_SEARCH_TARGETS = [
     ]
   },
   {
-    query: 'Woodbine Racetrack live',
+    query: 'Woodbine Racetrack Mohawk Park live',
     assignTo: [
       {
         id: 'woodbine',
         name: 'Woodbine',
         flag: '🇨🇦',
         location: 'Toronto, Ontario, Canadá',
-        matchKeywords: ['woodbine racetrack'],
+        matchKeywords: ['woodbine racetrack', 'thoroughbred'],
         requireOfficialChannel: /woodbine/i
+      },
+      {
+        id: 'woodbine-harness',
+        name: 'Woodbine Harness (Mohawk)',
+        flag: '🇨🇦',
+        location: 'Milton, Ontario, Canadá',
+        matchKeywords: ['mohawk', 'standardbred', 'harness', 'woodbine'],
+        requireOfficialChannel: /woodbine|mohawk/i
+      }
+    ]
+  },
+  {
+    query: 'Meadowlands Racing Hoosier Park live',
+    assignTo: [
+      {
+        id: 'meadowlands',
+        name: 'Meadowlands Racing',
+        flag: '🇺🇸',
+        location: 'East Rutherford, New Jersey, EE.UU.',
+        matchKeywords: ['meadowlands'],
+        requireOfficialChannel: /meadowlands/i
+      },
+      {
+        id: 'hoosier-park',
+        name: 'Hoosier Park',
+        flag: '🇺🇸',
+        location: 'Anderson, Indiana, EE.UU.',
+        matchKeywords: ['hoosier'],
+        requireOfficialChannel: /hoosier/i
       }
     ]
   },

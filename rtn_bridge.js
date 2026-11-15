@@ -9,6 +9,7 @@
 const fetch = require('node-fetch');
 const { extractRcnVariantsFromLiveUrl, probeRcnStreamIsLive } = require('./first_tv_bridge');
 const { setMillicastUrlRefresher } = require('./millicast_bridge');
+const { isTrackCardFinished } = require('./multicanal_director');
 const { saveToCloud, loadFromCloud } = require('./supabase_sync');
 
 let RTN_ENABLED = process.env.RTN_ENABLED === 'true';
@@ -17,13 +18,14 @@ let lastRtnError = null;
 let cloudRestored = false;
 
 // 1. Caché prolongado de sesión PHPSESSID (6h) + TTL real de 18 min para firma t= de Robertsstream
+// REGLA DE ORO INQUEBRANTABLE: JAMÁS CAPTAR MÁS DE 4 CANALES DE RTN AL MISMO TIEMPO (EVITAR BLOQUEO DE CUENTA)
 const SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 const ROBERTS_TOKEN_TTL_MS = 18 * 60 * 1000;
 const TRACK_LIST_TTL_MS = 18 * 60 * 1000;
 const LIVE_STATUS_TTL_MS = 18 * 60 * 1000;
 const OFFAIR_STATUS_TTL_MS = 6 * 60 * 1000;
-const MAX_NEW_FETCHES_PER_CYCLE = 8;
-const MAX_SIMULTANEOUS_RTN_TRACKS = 8;
+const MAX_NEW_FETCHES_PER_CYCLE = 4;
+const MAX_SIMULTANEOUS_RTN_TRACKS = 4;
 
 let cachedCookieHeader = null;
 let cachedCookieTimestamp = 0;
@@ -86,74 +88,89 @@ const RTN_TRACK_MAP = {
   'los alamitos': { id: 'los-alamitos', name: 'Los Alamitos', flag: '🇺🇸', location: 'Cypress, California, EE.UU.' },
   'zia park': { id: 'zia-park', name: 'Zia Park', flag: '🇺🇸', location: 'Hobbs, New Mexico, EE.UU.' },
   'sam houston': { id: 'sam-houston', name: 'Sam Houston Race Park', flag: '🇺🇸', location: 'Houston, Texas, EE.UU.' },
-  'la rinconada': { id: 'la-rinconada', name: 'La Rinconada', flag: '🇻🇪', location: 'Caracas, Venezuela' }
+  'lone star': { id: 'lone-star-park', name: 'Lone Star Park', flag: '🇺🇸', location: 'Grand Prairie, Texas, EE.UU.' },
+  'will rogers': { id: 'will-rogers-downs', name: 'Will Rogers Downs', flag: '🇺🇸', location: 'Claremore, Oklahoma, EE.UU.' },
+  'la rinconada': { id: 'la-rinconada', name: 'La Rinconada', flag: '🇻🇪', location: 'Caracas, Venezuela' },
+
+  // Hipódromos de Carretas / Trote vendidos en Triple7 (Solo usan cupo libre de los 4 de RTN si hay menos de 4 Purasangre en vivo)
+  'mohawk': { id: 'woodbine-harness', name: 'Woodbine Harness (Mohawk)', flag: '🇨🇦', location: 'Milton, Ontario, Canadá', isHarness: true },
+  'woodbine sb': { id: 'woodbine-harness', name: 'Woodbine Harness (Mohawk)', flag: '🇨🇦', location: 'Milton, Ontario, Canadá', isHarness: true },
+  'woodbine harness': { id: 'woodbine-harness', name: 'Woodbine Harness (Mohawk)', flag: '🇨🇦', location: 'Milton, Ontario, Canadá', isHarness: true },
+  'meadowlands': { id: 'meadowlands', name: 'Meadowlands Racing', flag: '🇺🇸', location: 'East Rutherford, New Jersey, EE.UU.', isHarness: true },
+  'yonkers': { id: 'yonkers-raceway', name: 'Yonkers Raceway', flag: '🇺🇸', location: 'Yonkers, New York, EE.UU.', isHarness: true },
+  'hoosier': { id: 'hoosier-park', name: 'Hoosier Park', flag: '🇺🇸', location: 'Anderson, Indiana, EE.UU.', isHarness: true },
+  'pocono': { id: 'pocono-downs', name: 'Pocono Downs', flag: '🇺🇸', location: 'Wilkes-Barre, Pennsylvania, EE.UU.', isHarness: true },
+  'northfield': { id: 'northfield-park', name: 'Northfield Park', flag: '🇺🇸', location: 'Northfield, Ohio, EE.UU.', isHarness: true },
+  'dover': { id: 'dover-downs', name: 'Dover Downs', flag: '🇺🇸', location: 'Dover, Delaware, EE.UU.', isHarness: true },
+  'dayton': { id: 'dayton-raceway', name: 'Dayton Raceway', flag: '🇺🇸', location: 'Dayton, Ohio, EE.UU.', isHarness: true },
+  'the meadows': { id: 'the-meadows', name: 'The Meadows', flag: '🇺🇸', location: 'Washington, Pennsylvania, EE.UU.', isHarness: true },
+  'philadelphia harness': { id: 'harrahs-philadelphia', name: 'Harrahs Philadelphia', flag: '🇺🇸', location: 'Chester, Pennsylvania, EE.UU.', isHarness: true },
+  'harrah': { id: 'harrahs-philadelphia', name: 'Harrahs Philadelphia', flag: '🇺🇸', location: 'Chester, Pennsylvania, EE.UU.', isHarness: true },
+  'saratoga harness': { id: 'saratoga-harness', name: 'Saratoga Carretas', flag: '🇺🇸', location: 'Saratoga Springs, New York, EE.UU.', isHarness: true },
+  'batavia': { id: 'batavia-downs', name: 'Batavia Downs', flag: '🇺🇸', location: 'Batavia, New York, EE.UU.', isHarness: true },
+  'vernon': { id: 'vernon-downs', name: 'Vernon Downs', flag: '🇺🇸', location: 'Vernon, New York, EE.UU.', isHarness: true },
+  'monticello': { id: 'monticello-raceway', name: 'Monticello Raceway', flag: '🇺🇸', location: 'Monticello, New York, EE.UU.', isHarness: true },
+  'plainridge': { id: 'plainridge-park', name: 'Plainridge Park', flag: '🇺🇸', location: 'Plainville, Massachusetts, EE.UU.', isHarness: true },
+  'rosecroft': { id: 'rosecroft-raceway', name: 'Rosecroft Raceway', flag: '🇺🇸', location: 'Fort Washington, Maryland, EE.UU.', isHarness: true },
+  'flamboro': { id: 'flamboro-downs', name: 'Flamboro Downs', flag: '🇨🇦', location: 'Dundas, Ontario, Canadá', isHarness: true },
+  'western fair': { id: 'western-fair', name: 'Western Fair Raceway', flag: '🇨🇦', location: 'London, Ontario, Canadá', isHarness: true }
 };
+
+const HARNESS_PRIORITY_ORDER = [
+  'meadowlands', 'woodbine-harness', 'hoosier-park', 'yonkers-raceway',
+  'pocono-downs', 'northfield-park', 'dayton-raceway', 'dover-downs',
+  'the-meadows', 'harrahs-philadelphia', 'saratoga-harness', 'batavia-downs',
+  'vernon-downs', 'monticello-raceway', 'plainridge-park', 'rosecroft-raceway',
+  'flamboro-downs', 'western-fair'
+];
 
 function getPriorityRankForTrack(trackId) {
   const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
   const vetDay = vetDate.getUTCDay(); // 0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb
   const vetHour = vetDate.getUTCHours(); // Hora en Venezuela (UTC-4)
 
-  // De Lunes a Miércoles después de las 4:00 PM (UTC-4), Parx y Mahoning suelen haber cerrado,
-  // mientras Indiana Grand (Horseshoe), Finger Lakes y Mountaineer están en plena acción.
-  const monWedOrder = (vetHour >= 17)
+  // Si Equibase confirma que el hipódromo ya finalizó todas sus carreras de hoy, enviarlo al fondo para liberar el cupo de RTN
+  let finishedPenalty = 0;
+  try {
+    if (isTrackCardFinished(trackId)) finishedPenalty = 160;
+  } catch (e) {}
+
+  const harnessIdx = HARNESS_PRIORITY_ORDER.indexOf(trackId);
+  if (harnessIdx !== -1) {
+    return 65 + harnessIdx + finishedPenalty;
+  }
+
+  const monWedOrder = (vetHour >= 18)
     ? [
-        'horseshoe-indianapolis',
-        'mountaineer-park',
-        'delta-downs',
-        'penn-national',
-        'charles-town',
-        'turfway-park',
-        'turf-paradise',
-        'presque-isle',
-        'finger-lakes',
-        'parx-racing',
-        'mahoning-valley',
-        'churchill-downs',
-        'thistledown',
-        'zia-park'
+        'horseshoe-indianapolis', 'mountaineer-park', 'delta-downs', 'penn-national',
+        'charles-town', 'will-rogers-downs', 'zia-park', 'turfway-park', 'turf-paradise',
+        'presque-isle', 'finger-lakes', 'parx-racing', 'mahoning-valley', 'thistledown'
       ]
     : [
-        'parx-racing',
-        'finger-lakes',
-        'horseshoe-indianapolis',
-        'mahoning-valley',
-        'churchill-downs',
-        'tampa-bay-downs',
-        'thistledown',
-        'delaware-park',
-        'keeneland',
-        'gulfstream-park',
-        'presque-isle',
-        'turf-paradise',
-        'zia-park',
-        'mountaineer-park',
-        'delta-downs'
+        'parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley',
+        'will-rogers-downs', 'zia-park', 'thistledown', 'churchill-downs', 'tampa-bay-downs',
+        'delaware-park', 'keeneland', 'gulfstream-park', 'presque-isle', 'turf-paradise',
+        'mountaineer-park', 'delta-downs'
       ];
 
-  const thuSunOrder = [
-    'gulfstream-park',
-    'laurel-park',
-    'aqueduct-racetrack',
-    'belmont-park',
-    'saratoga',
-    'tampa-bay-downs',
-    'santa-anita-park',
-    'woodbine',
-    'keeneland',
-    'churchill-downs',
-    'del-mar',
-    'oaklawn-park',
-    'fair-grounds',
-    'parx-racing',
-    'finger-lakes',
-    'horseshoe-indianapolis',
-    'mahoning-valley'
-  ];
+  const thuSunOrder = (vetHour >= 19)
+    ? [
+        'del-mar', 'charles-town', 'delta-downs', 'evangeline-downs',
+        'remington-park', 'lone-star-park', 'santa-anita-park', 'los-alamitos',
+        'penn-national', 'mountaineer-park', 'turfway-park', 'sam-houston',
+        'churchill-downs', 'woodbine', 'zia-park', 'gulfstream-park', 'laurel-park', 'belmont-park'
+      ]
+    : [
+        'gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack',
+        'saratoga', 'tampa-bay-downs', 'woodbine', 'churchill-downs',
+        'keeneland', 'del-mar', 'santa-anita-park', 'oaklawn-park',
+        'fair-grounds', 'parx-racing', 'finger-lakes', 'horseshoe-indianapolis',
+        'mahoning-valley', 'zia-park', 'lone-star-park', 'charles-town'
+      ];
 
   const list = (vetDay >= 1 && vetDay <= 3) ? monWedOrder : thuSunOrder;
   const idx = list.indexOf(trackId);
-  return idx === -1 ? 99 : idx;
+  return (idx === -1 ? 45 : idx) + finishedPenalty;
 }
 
 /**
@@ -173,18 +190,18 @@ function getMtpScore(info) {
   return 0;
 }
 
-function matchOfficialTrack(rawTrackName) {
+function matchOfficialTrack(rawTrackName, rawBreed = '') {
   const lower = (rawTrackName || '').toLowerCase().trim();
-  // Ignorar carreras de trote/arneses y subastas (Auction / Sale) que no son carreras purasangre
-  if (
-    lower.includes('mohawk') ||
-    lower.includes('harness') ||
-    lower.includes('yonkers') ||
-    lower.includes('auction') ||
-    lower.includes('sale')
-  ) {
+  // Ignorar estrictamente subastas (Auction / Sale) y galgos
+  if (lower.includes('auction') || lower.includes('sale') || lower.includes('greyhound') || lower.includes('wheeling')) {
     return null;
   }
+  const isHarnessFeed = /harness|sb|standardbred/i.test(rawBreed) || lower.includes('harness') || lower.includes('mohawk');
+  // Si es Woodbine o Saratoga de trote, mapear a su canal de carretas específico de Triple7
+  if (isHarnessFeed && lower.includes('woodbine')) return RTN_TRACK_MAP['woodbine harness'];
+  if (isHarnessFeed && lower.includes('saratoga')) return RTN_TRACK_MAP['saratoga harness'];
+  if (isHarnessFeed && lower.includes('philadelphia')) return RTN_TRACK_MAP['philadelphia harness'];
+
   for (const [key, meta] of Object.entries(RTN_TRACK_MAP)) {
     if (lower.includes(key)) {
       return meta;
@@ -394,11 +411,11 @@ async function fetchRtnLiveStreams(existingPublicStreams = {}) {
           const jsonText = matchStr.replace(/^data-linkInfo=['"]/, '').replace(/['"]$/, '');
           const info = JSON.parse(jsonText);
           if (!info.trackName) continue;
-          // Ignorar pistas de galgos (Greyhound = GH)
-          if (info.breed && /gh|greyhound|harness/i.test(info.breed) && !/notgh|thoroughbred|tb|qh/i.test(info.breed)) {
+          // Ignorar estrictamente pistas de galgos (Greyhound = GH)
+          if (info.breed && /^\s*(gh|greyhound)\s*$/i.test(info.breed)) {
             continue;
           }
-          const meta = matchOfficialTrack(info.trackName);
+          const meta = matchOfficialTrack(info.trackName, info.breed || '');
           if (!meta || seenTrackIds.has(meta.id)) continue;
           seenTrackIds.add(meta.id);
           candidateTracks.push({ meta, info });
@@ -416,6 +433,13 @@ async function fetchRtnLiveStreams(existingPublicStreams = {}) {
       cachedCandidateDateStr = isoDateStr;
       recordRtnDiag('LIST', 'CANDIDATES', candidateTracks.map(c => `${c.meta.id}(R:${c.info.race || c.info.Race || '-'},MTP:${c.info.mtp || c.info.MTP || '-'})`).join(', '));
     }
+
+    // Reordenar dinámicamente en cada ciclo según hora actual y pistas ya finalizadas en Equibase (sin tocar RTN)
+    candidateTracks = [...candidateTracks].sort((a, b) => {
+      const scoreA = getPriorityRankForTrack(a.meta.id) + getMtpScore(a.info);
+      const scoreB = getPriorityRankForTrack(b.meta.id) + getMtpScore(b.info);
+      return scoreA - scoreB;
+    });
 
     let newTokensRequested = 0;
 

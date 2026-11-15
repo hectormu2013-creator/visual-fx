@@ -350,21 +350,46 @@ function bindSocketRandomPort(sock) {
   });
 }
 
-const MAX_CONCURRENT_MILLICAST_HUBS = 8;
+const MAX_CONCURRENT_MILLICAST_HUBS = 14;
+const MAX_CONCURRENT_RTN_HUBS = 4; // REGLA DE ORO ANTI-BANEO RTN: Jamás abrir más de 4 canales simultáneos de RTN
+
+function isRtnMillicastTrack(trackCode) {
+  const entry = millicastTrackRegistry.get((trackCode || '').toUpperCase());
+  if (!entry) return false;
+  return entry.provider === 'rtn' || Boolean(entry.referer && /rtn\.tv/i.test(entry.referer));
+}
 
 /**
  * Inicia el Hub compartido 1-a-N para un hipódromo en Millicast:
- * 1 sola conexión WebRTC desde Railway EE.UU. -> RTP local -> ffmpeg (-c:v copy) -> fMP4 en RAM -> N televisores.
+ * 1 sola conexión WebRTC desde Contabo EE.UU. -> RTP local -> ffmpeg (-c:v copy) -> fMP4 en RAM -> N televisores.
  */
 async function startMillicastHubUpstream(hub) {
   if (hub.connecting || hub.running) return;
 
+  const isCurrentRtn = isRtnMillicastTrack(hub.trackCode);
   const activeOthers = Array.from(millicastSharedHubs.values()).filter(
     h => h.trackCode !== hub.trackCode && (h.running || h.connecting)
   );
-  if (activeOthers.length >= MAX_CONCURRENT_MILLICAST_HUBS) {
-    activeOthers.sort((a, b) => (a.clients.size - b.clients.size) || ((a.startedAt || 0) - (b.startedAt || 0)));
-    const victim = activeOthers[0];
+
+  // Candado Estricto Anti-Baneo RTN: máximo 4 conexiones activas provenientes de RTN al mismo tiempo
+  if (isCurrentRtn) {
+    const activeRtnOthers = activeOthers.filter(h => isRtnMillicastTrack(h.trackCode));
+    if (activeRtnOthers.length >= MAX_CONCURRENT_RTN_HUBS) {
+      activeRtnOthers.sort((a, b) => (a.clients.size - b.clients.size) || ((a.startedAt || 0) - (b.startedAt || 0)));
+      const rtnVictim = activeRtnOthers[0];
+      if (rtnVictim && rtnVictim.cleanupUpstream) {
+        recordMillicastDiag(rtnVictim.trackCode, 'RTN_4CAP_EVICT', `Regla de Oro RTN (<=4): liberando ${rtnVictim.trackCode} para abrir ${hub.trackCode}`);
+        rtnVictim.cleanupUpstream(true);
+      }
+    }
+  }
+
+  const remainingOthers = Array.from(millicastSharedHubs.values()).filter(
+    h => h.trackCode !== hub.trackCode && (h.running || h.connecting)
+  );
+  if (remainingOthers.length >= MAX_CONCURRENT_MILLICAST_HUBS) {
+    remainingOthers.sort((a, b) => (a.clients.size - b.clients.size) || ((a.startedAt || 0) - (b.startedAt || 0)));
+    const victim = remainingOthers[0];
     if (victim && victim.cleanupUpstream) {
       recordMillicastDiag(victim.trackCode, 'HUB_CAP_EVICT', `Liberando cupo para ${hub.trackCode} (máx ${MAX_CONCURRENT_MILLICAST_HUBS} simultáneos)`);
       victim.cleanupUpstream(true);

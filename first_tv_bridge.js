@@ -82,7 +82,25 @@ const ALL_FIRST_TV_TRACKS = [
   { id: 'fair-grounds', code: 'FG', name: 'Fair Grounds', flag: '🇺🇸', location: 'New Orleans, Louisiana, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5, 6] },
   { id: 'colonial-downs', code: 'CNL', name: 'Colonial Downs', flag: '🇺🇸', location: 'New Kent, Virginia, EE.UU.', schedule: 'DAY', activeDays: [4, 5, 6] },
   { id: 'kentucky-downs', code: 'KD', name: 'Kentucky Downs', flag: '🇺🇸', location: 'Franklin, Kentucky, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 6] },
-  { id: 'ellis-park', code: 'ELP', name: 'Ellis Park', flag: '🇺🇸', location: 'Henderson, Kentucky, EE.UU.', schedule: 'DAY', activeDays: [0, 1, 5, 6] }
+  { id: 'ellis-park', code: 'ELP', name: 'Ellis Park', flag: '🇺🇸', location: 'Henderson, Kentucky, EE.UU.', schedule: 'DAY', activeDays: [0, 1, 5, 6] },
+  { id: 'lone-star-park', code: 'LS', name: 'Lone Star Park', flag: '🇺🇸', location: 'Grand Prairie, Texas, EE.UU.', schedule: 'NIGHT', activeDays: [0, 4, 5, 6] },
+  { id: 'will-rogers-downs', code: 'WRD', name: 'Will Rogers Downs', flag: '🇺🇸', location: 'Claremore, Oklahoma, EE.UU.', schedule: 'DAY', activeDays: [0, 1, 2, 3] },
+  { id: 'sam-houston', code: 'HOU', name: 'Sam Houston Race Park', flag: '🇺🇸', location: 'Houston, Texas, EE.UU.', schedule: 'NIGHT', activeDays: [0, 5, 6] },
+
+  // Hipódromos de Carretas / Trote comercializados en Triple7 (100% gratis vía 1/ST TV sin gastar cupos de RTN)
+  { id: 'woodbine-harness', code: 'WBSB', name: 'Woodbine Harness (Mohawk)', flag: '🇨🇦', location: 'Milton, Ontario, Canadá', schedule: 'NIGHT', activeDays: [0, 1, 4, 5, 6] },
+  { id: 'meadowlands', code: 'MXX', name: 'Meadowlands Racing', flag: '🇺🇸', location: 'East Rutherford, New Jersey, EE.UU.', schedule: 'NIGHT', activeDays: [5, 6] },
+  { id: 'yonkers-raceway', code: 'YR', name: 'Yonkers Raceway', flag: '🇺🇸', location: 'Yonkers, New York, EE.UU.', schedule: 'NIGHT', activeDays: [1, 2, 3, 4, 5] },
+  { id: 'hoosier-park', code: 'HOP', name: 'Hoosier Park', flag: '🇺🇸', location: 'Anderson, Indiana, EE.UU.', schedule: 'NIGHT', activeDays: [2, 3, 4, 5, 6] },
+  { id: 'pocono-downs', code: 'PCD', name: 'Pocono Downs', flag: '🇺🇸', location: 'Wilkes-Barre, Pennsylvania, EE.UU.', schedule: 'DAY', activeDays: [1, 2, 6] },
+  { id: 'northfield-park', code: 'NFLD', name: 'Northfield Park', flag: '🇺🇸', location: 'Northfield, Ohio, EE.UU.', schedule: 'NIGHT', activeDays: [0, 1, 2, 3, 6] },
+  { id: 'dover-downs', code: 'DD', name: 'Dover Downs', flag: '🇺🇸', location: 'Dover, Delaware, EE.UU.', schedule: 'BOTH', activeDays: [1, 2, 3, 4] },
+  { id: 'dayton-raceway', code: 'DAY', name: 'Dayton Raceway', flag: '🇺🇸', location: 'Dayton, Ohio, EE.UU.', schedule: 'BOTH', activeDays: [2, 3, 4, 5, 6] },
+  { id: 'the-meadows', code: 'MEA', name: 'The Meadows', flag: '🇺🇸', location: 'Washington, Pennsylvania, EE.UU.', schedule: 'DAY', activeDays: [3, 4, 5] },
+  { id: 'harrahs-philadelphia', code: 'PHL', name: 'Harrahs Philadelphia', flag: '🇺🇸', location: 'Chester, Pennsylvania, EE.UU.', schedule: 'DAY', activeDays: [0, 4, 5] },
+  { id: 'saratoga-harness', code: 'STGA', name: 'Saratoga Carretas', flag: '🇺🇸', location: 'Saratoga Springs, New York, EE.UU.', schedule: 'DAY', activeDays: [0, 1, 6] },
+  { id: 'batavia-downs', code: 'BAT', name: 'Batavia Downs', flag: '🇺🇸', location: 'Batavia, New York, EE.UU.', schedule: 'NIGHT', activeDays: [3, 6] },
+  { id: 'vernon-downs', code: 'VD', name: 'Vernon Downs', flag: '🇺🇸', location: 'Vernon, New York, EE.UU.', schedule: 'NIGHT', activeDays: [5, 6] }
 ];
 
 /**
@@ -262,10 +280,12 @@ async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl, customReferer =
       const mAccountId = accountIdMatch[1];
       const mSubToken = subTokenMatch[1];
 
+      const isRtnSource = Boolean((customReferer && /rtn\.tv/i.test(customReferer)) || (liveUrl && /referer=RTN/i.test(liveUrl)));
       registerMillicastTrack({
         trackCode,
         liveUrl,
         referer: refererHeader,
+        provider: isRtnSource ? 'rtn' : 'first_tv',
         streamAccountId: mAccountId,
         streamName: mStreamName,
         subscriberToken: mSubToken,

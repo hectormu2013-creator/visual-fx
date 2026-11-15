@@ -1,7 +1,9 @@
 // Gestor de Multicanales Preconfigurados y Personalizados (4 en 1) para Agencias Fénix
 // Prioriza los ~10 hipódromos favoritos en Venezuela y evita combinaciones duplicadas.
 
-// Orden de preferencia de hipódromos en Venezuela (USA / Canadá)
+const { isTrackCardFinished } = require('./multicanal_director');
+
+// Orden de preferencia de hipódromos en Venezuela (USA / Canadá / Triple7)
 const VENEZUELA_US_FAVORITES = [
   'gulfstream-park',        // 1. Gulfstream Park (Favorito #1 en Venezuela)
   'saratoga',               // 2. NYRA Saratoga
@@ -19,17 +21,36 @@ const VENEZUELA_US_FAVORITES = [
   'mahoning-valley',        // 14. Mahoning Valley
   'thistledown',            // 15. Thistledown
   'horseshoe-indianapolis', // 16. Horseshoe Indianapolis
-  'mountaineer-park',       // 17. Mountaineer Park
-  'charles-town',           // 18. Charles Town
-  'zia-park',               // 19. Zia Park
-  'turf-paradise',          // 20. Turf Paradise
-  'presque-isle',           // 21. Presque Isle Downs
-  'monmouth-park',          // 22. Monmouth Park
-  'delaware-park',          // 23. Delaware Park
-  'colonial-downs',         // 24. Colonial Downs
-  'penn-national',          // 25. Penn National
-  'remington-park',         // 26. Remington Park
-  'hawthorne'               // 27. Hawthorne
+  'will-rogers-downs',      // 17. Will Rogers Downs
+  'mountaineer-park',       // 18. Mountaineer Park
+  'charles-town',           // 19. Charles Town
+  'delta-downs',            // 20. Delta Downs
+  'evangeline-downs',       // 21. Evangeline Downs
+  'remington-park',         // 22. Remington Park
+  'lone-star-park',         // 23. Lone Star Park
+  'penn-national',          // 24. Penn National
+  'zia-park',               // 25. Zia Park
+  'los-alamitos',           // 26. Los Alamitos
+  'turfway-park',           // 27. Turfway Park
+  'turf-paradise',          // 28. Turf Paradise
+  'presque-isle',           // 29. Presque Isle Downs
+  'oaklawn-park',           // 30. Oaklawn Park
+  'fair-grounds',           // 31. Fair Grounds
+  'sam-houston',            // 32. Sam Houston
+  'monmouth-park',          // 33. Monmouth Park
+  'delaware-park',          // 34. Delaware Park
+  'colonial-downs',         // 35. Colonial Downs
+  'hawthorne',              // 36. Hawthorne
+  // Carretas / Internacional Triple7
+  'meadowlands',
+  'woodbine-harness',
+  'hoosier-park',
+  'yonkers-raceway',
+  'pocono-downs',
+  'northfield-park',
+  'dayton-raceway',
+  'dover-downs',
+  'australia-flemington'
 ];
 
 // Orden de preferencia de Capital OTB (NY + Costa Este y Lunes a Miércoles: Parx, Finger Lakes, Indiana Grand, Mahoning Valley)
@@ -211,59 +232,98 @@ function syncMulticanalChannels(channelsCatalog) {
     });
   }
 
-  // Programación oficial: SOLO 1 Multivisual automático según el día + el canal Capital OTB
+  // Programación oficial: 3 Multicanales Automáticos (Multivisual 1, Multivisual 2 y Capital OTB)
+  const vetHour = new Date(Date.now() - 4 * 3600 * 1000).getUTCHours();
   const dayLabel = isMonWed ? 'Lun-Mié' : 'Jue-Dom';
 
-  // 1. Único Multicanal listo según el día (Lunes a Miércoles vs. Jueves a Domingo)
-  const multivisualPreferred = isMonWed
+  // Ordenar todas las pistas activas priorizando aquellas con flujo directo (HLS/fMP4) y cuya jornada NO haya terminado
+  const directActiveSorted = [...activeIndividual]
+    .filter(c => c.type !== 'iframe' && c.streamUrl)
+    .sort((a, b) => {
+      let finA = 0, finB = 0;
+      try { finA = isTrackCardFinished(a.id) ? 1 : 0; } catch (e) {}
+      try { finB = isTrackCardFinished(b.id) ? 1 : 0; } catch (e) {}
+      if (finA !== finB) return finA - finB;
+      const idxA = VENEZUELA_US_FAVORITES.indexOf(a.id);
+      const idxB = VENEZUELA_US_FAVORITES.indexOf(b.id);
+      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+    });
+
+  // 1. Multivisual 1: Top 4 hipódromos principales activos ahora mismo
+  const multivisual1Preferred = isMonWed
     ? [
+        ...directActiveSorted.slice(0, 4).map(c => c.id),
         'parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley',
-        'thistledown', 'mountaineer-park', 'presque-isle', 'turf-paradise'
+        'will-rogers-downs', 'zia-park', 'mountaineer-park', 'delta-downs'
       ]
     : [
-        ...venTodaySorted.slice(0, 4).map(c => c.id),
-        'gulfstream-park', 'belmont-park', 'aqueduct-racetrack', 'saratoga',
-        'laurel-park', 'tampa-bay-downs', 'santa-anita-park', 'churchill-downs',
-        'keeneland', 'woodbine', 'del-mar', 'oaklawn-park'
+        ...directActiveSorted.slice(0, 4).map(c => c.id),
+        ...(vetHour >= 19
+          ? ['del-mar', 'charles-town', 'delta-downs', 'evangeline-downs', 'remington-park', 'lone-star-park']
+          : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'tampa-bay-downs', 'woodbine'])
       ];
 
-  // 2. Canal Oficial Capital OTB (Circuito NY / Costa Este / OTB)
-  const capitalOtbPreferred = [
-    ...cotbSorted.slice(0, 4).map(c => c.id),
-    'aqueduct-racetrack', 'belmont-park', 'saratoga', 'finger-lakes',
-    'parx-racing', 'laurel-park', 'gulfstream-park', 'tampa-bay-downs',
-    'horseshoe-indianapolis', 'mahoning-valley', 'woodbine'
-  ];
-
   const generalFallback = [
+    ...directActiveSorted.map(c => c.id),
     ...venTodaySorted.map(c => c.id),
     ...activeIndividual.map(c => c.id),
-    'parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'gulfstream-park', 'laurel-park'
+    'gulfstream-park', 'laurel-park', 'parx-racing', 'finger-lakes', 'charles-town', 'delta-downs'
   ];
 
-  // Canal 1: Único Multivisual del Día (ID 'multivisual-1')
+  // Canal 1: Multivisual 1 (Principales)
   addOfficialMultivisual(
     'multivisual-1',
-    `Multivisual (${dayLabel})`,
+    `Multivisual 1 (${dayLabel})`,
     '📺',
-    `Multicanal 4 en 1 • Favoritos ${dayLabel}`,
-    multivisualPreferred,
+    `Multicanal 4 en 1 • Principales ${dayLabel}`,
+    multivisual1Preferred,
     generalFallback,
-    `Multivisual ${dayLabel} Auto-Director`
+    `Multivisual 1 Auto-Director`
   );
 
-  // Canal 2: Capital OTB (ID 'capital-otb')
+  // Obtener las 4 pistas elegidas en Multivisual 1 para que Multivisual 2 priorice las pistas #5 a #8 sin repetir
+  const mv1Chosen = new Set((presets.find(p => p.id === 'multivisual-1')?.multicanalTracks) || []);
+  const mv2DistinctLive = directActiveSorted.filter(c => !mv1Chosen.has(c.id)).map(c => c.id);
+  const multivisual2Preferred = [
+    ...mv2DistinctLive,
+    'charles-town', 'delta-downs', 'evangeline-downs', 'remington-park',
+    'lone-star-park', 'penn-national', 'mountaineer-park', 'zia-park',
+    'will-rogers-downs', 'australia-flemington', 'meadowlands', 'woodbine-harness', 'hoosier-park'
+  ];
+
+  // Canal 2: Multivisual 2 (Simultáneo / Nocturno / Internacional Triple7)
+  addOfficialMultivisual(
+    'multivisual-2',
+    'Multivisual 2 (Simultáneo)',
+    '📡',
+    'Multicanal 4 en 1 • Circuito Alterno & Nocturno',
+    multivisual2Preferred,
+    generalFallback,
+    'Multivisual 2 Auto-Director'
+  );
+
+  // 3. Canal Oficial Capital OTB (Circuito NY / Costa Este / OTB)
+  const capitalOtbPreferred = [
+    ...cotbSorted.filter(c => {
+      try { return !isTrackCardFinished(c.id); } catch (e) { return true; }
+    }).slice(0, 4).map(c => c.id),
+    'aqueduct-racetrack', 'belmont-park', 'saratoga', 'finger-lakes',
+    'parx-racing', 'laurel-park', 'gulfstream-park', 'charles-town',
+    'penn-national', 'tampa-bay-downs', 'horseshoe-indianapolis', 'mahoning-valley', 'woodbine'
+  ];
+
+  // Canal 3: Capital OTB (ID 'capital-otb')
   addOfficialMultivisual(
     'capital-otb',
-    'Capital OTB',
+    'Capital OTB (Costa Este)',
     '🏇',
-    'Multicanal 4 en 1 • Circuito OTB NY',
+    'Multicanal 4 en 1 • Circuito OTB NY & Este',
     capitalOtbPreferred,
     generalFallback,
     'Capital OTB Auto-Director'
   );
 
-  // Limpiar del catálogo cualquier multicanal viejo (multivisual-2, multivisual-3 o personalizados)
+  // Limpiar del catálogo cualquier multicanal viejo no activo
   const activePresetIds = new Set(presets.map(p => p.id));
   for (let i = channelsCatalog.length - 1; i >= 0; i--) {
     const ch = channelsCatalog[i];
@@ -272,7 +332,7 @@ function syncMulticanalChannels(channelsCatalog) {
     }
   }
 
-  // Insertar o actualizar los 2 únicos canales multicanal en channelsCatalog
+  // Insertar o actualizar los 3 canales multicanal oficiales en channelsCatalog
   for (const preset of presets) {
     const existing = channelsCatalog.find(c => c.id === preset.id);
     if (existing) {

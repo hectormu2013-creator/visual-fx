@@ -18,36 +18,73 @@ const { parseTrackCodeFromSyntheticUrl, getMillicastDiagnostics } = require('./m
 const FILLER_24_7_IDS = new Set(['vsin', 'horse-tv', 'sky-racing-1', 'equidia-hd', 'tjk-tv', 'turf-movil']);
 
 /**
- * Resuelve siempre 4 pistas priorizando estrictamente las que están EN VIVO (onAir = true) ahora mismo.
+ * Consulta en RAM si el hipódromo ya finalizó todas sus carreras programadas del día en Equibase.
+ */
+function isTrackCardFinished(trackId) {
+  const { dateKey } = getUsEasternDateParts();
+  const card = raceCardCache.get(trackId);
+  const sum = raceSummaryCache.get(trackId);
+  if (!card || !sum || card.dateKey !== dateKey || sum.dateKey !== dateKey) return false;
+  if (!card.races || card.races.length === 0) return false;
+  return sum.completedRaces && sum.completedRaces.size >= card.races.length;
+}
+
+/**
+ * Resuelve siempre 4 pistas priorizando:
+ * 1) Las solicitadas explícitamente para este Multicanal (requestedTrackIds) que estén EN VIVO y con carreras activas.
+ * 2) Otras pistas EN VIVO con carreras activas (no finalizadas).
+ * 3) Pistas EN VIVO aunque hayan finalizado su jornada, o respaldo del día.
  */
 function resolveFourMulticanalTracks(catalogMap, requestedTrackIds = []) {
   const vetDate = new Date(Date.now() - 4 * 3600 * 1000);
   const vetDay = vetDate.getUTCDay();
+  const vetHour = vetDate.getUTCHours();
   const defaultOrder = (vetDay >= 1 && vetDay <= 3)
-    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'zia-park', 'mountaineer-park', 'thistledown', 'turf-paradise', 'presque-isle']
-    : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'santa-anita-park', 'tampa-bay-downs', 'churchill-downs', 'woodbine', 'del-mar', 'parx-racing'];
+    ? ['parx-racing', 'finger-lakes', 'horseshoe-indianapolis', 'mahoning-valley', 'will-rogers-downs', 'zia-park', 'mountaineer-park', 'delta-downs', 'penn-national', 'charles-town', 'thistledown', 'turf-paradise', 'presque-isle']
+    : (vetHour >= 19
+        ? ['del-mar', 'charles-town', 'delta-downs', 'evangeline-downs', 'remington-park', 'lone-star-park', 'santa-anita-park', 'los-alamitos', 'churchill-downs', 'woodbine-harness', 'meadowlands', 'hoosier-park', 'gulfstream-park', 'laurel-park']
+        : ['gulfstream-park', 'laurel-park', 'belmont-park', 'aqueduct-racetrack', 'tampa-bay-downs', 'woodbine', 'churchill-downs', 'keeneland', 'del-mar', 'santa-anita-park', 'parx-racing', 'oaklawn-park']);
 
   const fixedFourIds = [];
+  const reqClean = (requestedTrackIds || []).filter(Boolean);
 
-  // 1. Priorizar siempre pistas EN VIVO con flujo de video directo (type !== 'iframe') en el orden oficial del día
-  for (const tid of defaultOrder) {
+  // 0. Respetar primero las pistas solicitadas explícitamente para este Multicanal (ej. Multivisual 2) que tengan video directo y NO hayan finalizado jornada
+  for (const tid of reqClean) {
     const ch = catalogMap.get(tid);
-    if (ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl && !fixedFourIds.includes(tid)) {
+    if (ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl && !isTrackCardFinished(tid) && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
     if (fixedFourIds.length === 4) return fixedFourIds;
   }
 
-  // 2. Completar con cualquier otra pista individual EN VIVO con video directo (type !== 'iframe') en el catálogo
+  // 1. Priorizar pistas EN VIVO con flujo directo y carreras aún activas en el orden oficial del día/hora
+  for (const tid of defaultOrder) {
+    const ch = catalogMap.get(tid);
+    if (ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl && !isTrackCardFinished(tid) && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) return fixedFourIds;
+  }
+
+  // 2. Completar con cualquier otra pista individual EN VIVO con video directo y carreras activas
   for (const [tid, ch] of catalogMap.entries()) {
+    if (ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl && !FILLER_24_7_IDS.has(tid) && !isTrackCardFinished(tid) && !fixedFourIds.includes(tid)) {
+      fixedFourIds.push(tid);
+    }
+    if (fixedFourIds.length === 4) return fixedFourIds;
+  }
+
+  // 3. Si hay menos de 4 hipódromos activos en carrera, aceptar pistas con video directo aunque su jornada haya finalizado
+  for (const tid of [...reqClean, ...defaultOrder, ...Array.from(catalogMap.keys())]) {
+    const ch = tid ? catalogMap.get(tid) : null;
     if (ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl && !FILLER_24_7_IDS.has(tid) && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
     if (fixedFourIds.length === 4) return fixedFourIds;
   }
 
-  // 3. Si aún faltan, aceptar pistas EN VIVO de cualquier tipo (incluyendo iframe)
-  for (const tid of [...defaultOrder, ...(requestedTrackIds || [])]) {
+  // 4. Si aún faltan, aceptar pistas EN VIVO de cualquier tipo (incluyendo iframe)
+  for (const tid of [...reqClean, ...defaultOrder]) {
     const ch = tid ? catalogMap.get(tid) : null;
     if (ch && ch.onAir && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
@@ -55,8 +92,8 @@ function resolveFourMulticanalTracks(catalogMap, requestedTrackIds = []) {
     if (fixedFourIds.length === 4) return fixedFourIds;
   }
 
-  // 4. Solo si hay menos de 4 hipódromos en vivo en total, rellenar con los oficiales del día
-  for (const tid of [...defaultOrder, ...(requestedTrackIds || [])]) {
+  // 5. Solo si hay menos de 4 hipódromos en vivo en total, rellenar con los solicitados u oficiales del día
+  for (const tid of [...reqClean, ...defaultOrder]) {
     if (tid && catalogMap.has(tid) && !fixedFourIds.includes(tid)) {
       fixedFourIds.push(tid);
     }
@@ -105,7 +142,9 @@ const TRACK_ID_TO_EQB_CODE = {
   'los-alamitos': 'LRC',
   'ellis-park': 'ELP',
   'kentucky-downs': 'KD',
-  'sam-houston': 'HOU'
+  'sam-houston': 'HOU',
+  'lone-star-park': 'LS',
+  'will-rogers-downs': 'WRD'
 };
 
 // Caché de Cartelera Oficial del Día (Post Times) por trackId
@@ -995,5 +1034,6 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
 
 module.exports = {
   evaluateMulticanalDirector,
-  streamCompositeMulticanalMp4
+  streamCompositeMulticanalMp4,
+  isTrackCardFinished
 };
