@@ -496,9 +496,10 @@
     let localHoldRemainingSec = null;
     let localHoldPhaseActive = false;
 
-    function getAuthSuffix() {
+    function getAuthSuffix(isHdOverlay = false) {
       const token = localStorage.getItem('visual_fx_token') || '';
-      const deviceId = localStorage.getItem('visual_fx_device_id') || 'TV-COTB';
+      const rawDev = localStorage.getItem('visual_fx_device_id') || 'TV-COTB';
+      const deviceId = isHdOverlay ? `${rawDev}-HD` : rawDev;
       return `&deviceId=${encodeURIComponent(deviceId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
     }
 
@@ -863,7 +864,7 @@
           // B) Conectar en segundo plano la señal Full HD + Audio en vivo y hacer Cross-Fade solo cuando ya tenga imagen
           if (ft.proxyUrl) {
             const sepFs = ft.proxyUrl.includes('?') ? '&' : '?';
-            const streamUrl = `${ft.proxyUrl}${sepFs}quality=FULL${getAuthSuffix()}`;
+            const streamUrl = `${ft.proxyUrl}${sepFs}quality=FULL${getAuthSuffix(true)}`;
             startHdOverlayStream(`FS:${ft.trackId}`, streamUrl);
           }
         } else {

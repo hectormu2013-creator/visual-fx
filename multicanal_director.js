@@ -1062,6 +1062,10 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         hub.slots = fixedFourIds.map((tid, i) => createSlotFeeder(i, tid, () => {
           const ch = catalogMap.get(tid);
           if (!(ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl)) return null;
+          // Señales HLS públicas directas (.m3u8 fuera de RCNCDN) se leen directo desde Contabo EE.UU. para evitar bloqueo extension_picky de FFmpeg 7
+          if (ch.streamUrl.includes('.m3u8') && !ch.streamUrl.includes('ws.rcncdn.com')) {
+            return ch.streamUrl;
+          }
           return `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&quality=MEDIUM&deviceId=INTERNAL-COMPOSITOR-${i + 1}`;
         }));
         while (hub.slots.length < 4) {
