@@ -81,10 +81,11 @@ function getEffectiveQualityTier() {
       return HARDWARE_TIERS.LIGHT;
     }
     if (hardwareProfile.detectedTier === HARDWARE_TIERS.LIGHT) {
-      return HARDWARE_TIERS.LIGHT;
+      // En pantalla única (1 canal), cualquier Smart TV decodifica 720p HD (MEDIUM) por hardware sin esfuerzo;
+      // solo bajar a LIGHT si tiene múltiples celdas abiertas al mismo tiempo.
+      return activeGridMode > 1 ? HARDWARE_TIERS.LIGHT : HARDWARE_TIERS.MEDIUM;
     }
-    // En modo AUTO usar como tope MEDIUM (720p / buffers moderados) para no saturar enlaces Wi-Fi de 1–3 Mbps ni congelar YouTube.
-    return HARDWARE_TIERS.MEDIUM;
+    return activeGridMode === 1 ? HARDWARE_TIERS.FULL : HARDWARE_TIERS.MEDIUM;
   }
   return selectedQualityMode;
 }

@@ -702,7 +702,8 @@
             resBoxEl.classList.remove('visible');
           }
 
-          const streamUrl = `${ft.proxyUrl}${getAuthSuffix()}`;
+          const sepFs = ft.proxyUrl.includes('?') ? '&' : '?';
+          const streamUrl = `${ft.proxyUrl}${sepFs}quality=FULL${getAuthSuffix()}`;
           switchSingleVideoStream(`FS:${ft.trackId}`, streamUrl, true);
         } else {
           stageEl.classList.remove('cotb-Stage-Fullscreen');

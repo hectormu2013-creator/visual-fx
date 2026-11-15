@@ -57,7 +57,7 @@ async function runHealthCheckAndHeal(channelsCatalog, manualTrigger = false) {
     c => c.onAir && !c.isMulticanal && c.id !== 'capital-otb' && c.id !== 'vsin' && c.id !== 'horse-tv'
   );
 
-  const isPeakRacingWindow = sched.isRacingAllowed && vetMinutesOfDay >= (12 * 60 + 30) && vetMinutesOfDay <= (18 * 60 + 45);
+  const isPeakRacingWindow = sched.isRacingAllowed && vetMinutesOfDay >= (12 * 60 + 30) && vetMinutesOfDay <= (20 * 60 + 45);
 
   // Solo intervenir contra RTN si hay CERO (0) hipódromos en vivo en pleno horario pico,
   // y con un enfriamiento mínimo de 30 minutos para JAMÁS generar sobreuso en la cuenta de RTN.

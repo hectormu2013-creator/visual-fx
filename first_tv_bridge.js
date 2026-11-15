@@ -309,10 +309,10 @@ async function extractRcnVariantsFromLiveUrl(trackCode, liveUrl, customReferer =
     return `https://ws.rcncdn.com/h5live/http/playlist.m3u8?url=${encodeURIComponent(rtmpUrl)}&stream=${encodeURIComponent(streamname)}&h=${h}&e=${e}`;
   }
 
-  const lightMatch = pickMatchByOrder(['400', '550', '771', '878', '1308', '1200', '1000', '1800', '2200']);
+  const lightMatch = pickMatchByOrder(['550', '771', '400', '878', '1308', '1200', '1000', '1800', '2200']);
   const lightUrl = toM3u8(lightMatch);
-  const mediumUrl = toM3u8(pickMatchByOrder(['771', '878', '550', '400', '1308', '1200', '1000']));
-  const fullUrl = toM3u8(pickMatchByOrder(['1308', '1200', '1000', '878', '771', '1800', '2200', '400']));
+  const mediumUrl = toM3u8(pickMatchByOrder(['1308', '1200', '1000', '878', '771', '1800', '2200', '550', '400']));
+  const fullUrl = toM3u8(pickMatchByOrder(['2200', '1800', '1500', '1308', '1200', '1000', '878', '771', '400']));
   const eUnixSec = parseInt(lightMatch[5], 10) || 0;
   const rcnExpiresAt = eUnixSec > 0 ? (eUnixSec * 1000) : (Date.now() + 20 * 60 * 1000);
 
@@ -423,16 +423,14 @@ function resolveRcnQualityUrl(baseM3u8Url, qualityMode = 'AUTO', gridCount = 1) 
   }
   if (!variants) return baseM3u8Url;
   const grid = parseInt(gridCount, 10) || 1;
-  if (grid > 1 || qualityMode === 'LIGHT' || qualityMode === 'AUTO' || !qualityMode) {
+  if (grid >= 3 || qualityMode === 'LIGHT') {
     return variants.LIGHT || variants.MEDIUM || variants.FULL || baseM3u8Url;
   }
-  if (qualityMode === 'MEDIUM') {
-    return variants.MEDIUM || variants.LIGHT || variants.FULL || baseM3u8Url;
-  }
-  if (qualityMode === 'FULL') {
+  if (qualityMode === 'FULL' && grid === 1) {
     return variants.FULL || variants.MEDIUM || variants.LIGHT || baseM3u8Url;
   }
-  return variants.LIGHT || variants.MEDIUM || baseM3u8Url;
+  // En Contabo (tráfico ilimitado), el modo AUTO y MEDIUM entregan 720p HD nítido (1.3 Mbps)
+  return variants.MEDIUM || variants.FULL || variants.LIGHT || baseM3u8Url;
 }
 
 /**

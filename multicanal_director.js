@@ -524,7 +524,7 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
 // ============================================================================
 const SLOT_W = 640;
 const SLOT_H = 360;
-const SLOT_FPS = 20;
+const SLOT_FPS = 24;
 const SLOT_FRAME_MS = 1000 / SLOT_FPS;
 const SLOT_FRAME_BYTES = (SLOT_W * SLOT_H * 3) / 2;
 const SLOT_HOLD_LAST_FRAME_MS = 5000;
@@ -584,7 +584,7 @@ function createSlotFeeder(slotIndex, tid, getSourceUrl) {
       '-analyzeduration', '1500000',
       '-i', url,
       '-an',
-      '-vf', `fps=${SLOT_FPS},scale=${SLOT_W}:${SLOT_H}:flags=bicubic,setsar=1,format=yuv420p`,
+      '-vf', `fps=${SLOT_FPS},scale=${SLOT_W}:${SLOT_H}:flags=lanczos,setsar=1,format=yuv420p`,
       '-f', 'rawvideo',
       '-pix_fmt', 'yuv420p',
       'pipe:1'
@@ -782,7 +782,7 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         hub.slots = fixedFourIds.map((tid, i) => createSlotFeeder(i, tid, () => {
           const ch = catalogMap.get(tid);
           if (!(ch && ch.onAir && ch.type !== 'iframe' && ch.streamUrl)) return null;
-          return `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&deviceId=INTERNAL-COMPOSITOR-${i + 1}`;
+          return `http://127.0.0.1:${localPort}/api/stream/proxy?url=${encodeURIComponent(ch.streamUrl)}&quality=MEDIUM&deviceId=INTERNAL-COMPOSITOR-${i + 1}`;
         }));
         while (hub.slots.length < 4) {
           hub.slots.push(createSlotFeeder(hub.slots.length, 'slate', () => null));
@@ -835,18 +835,18 @@ function streamCompositeMulticanalMp4(channelsCatalog, requestedTrackIds, req, r
         '-filter_complex', '[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]',
         '-map', '[v]',
         '-an',
-        '-threads', '2',
+        '-threads', '4',
         '-c:v', 'libx264',
         '-preset', 'veryfast',
         '-tune', 'zerolatency',
         '-profile:v', 'main',
         '-level', '3.1',
         '-pix_fmt', 'yuv420p',
-        '-crf', '24',
-        '-maxrate', '800k',
-        '-bufsize', '1600k',
-        '-g', '20',
-        '-keyint_min', '20',
+        '-crf', '21',
+        '-maxrate', '1800k',
+        '-bufsize', '3600k',
+        '-g', '24',
+        '-keyint_min', '24',
         '-sc_threshold', '0',
         '-flush_packets', '1',
         '-f', 'mp4',

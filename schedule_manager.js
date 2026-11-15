@@ -1,6 +1,5 @@
 // schedule_manager.js - Controlador de Horarios Oficiales de Transmisión Hípica (Hora Venezuela UTC-4)
-// Lunes a Jueves: 11:30 AM a 7:00 PM (19:00)
-// Viernes a Domingo: 11:00 AM a 8:00 PM (20:00)
+// Lunes a Domingo: 10:00 AM a 9:00 PM (21:00)
 // Fuera de horario: Cambio automático de todos los TVs a Modo Loterías y corte de consumo de video (0 MB).
 
 const fs = require('fs');
@@ -14,10 +13,10 @@ const CLOUD_KEY = 'racing_schedule';
 const DEFAULT_RACING_SCHEDULE = {
   enabled: true,
   mode: 'AUTO', // 'AUTO' | 'FORCE_OPEN' | 'FORCE_LOTTERY'
-  monThuStart: '11:30',
-  monThuEnd: '19:00',
-  friSunStart: '11:00',
-  friSunEnd: '20:00',
+  monThuStart: '10:00',
+  monThuEnd: '21:00',
+  friSunStart: '10:00',
+  friSunEnd: '21:00',
   offHoursService: 'loteria',
   updatedAt: new Date().toISOString(),
   updatedBy: 'Sistema'
@@ -52,10 +51,10 @@ function sanitizeSchedule(input = {}) {
   const validModes = ['AUTO', 'FORCE_OPEN', 'FORCE_LOTTERY'];
   const mode = validModes.includes(input.mode) ? input.mode : currentSchedule.mode || 'AUTO';
   const enabled = input.enabled !== undefined ? Boolean(input.enabled) : (currentSchedule.enabled !== false);
-  const monThuStart = /^\d{2}:\d{2}$/.test(input.monThuStart || '') ? input.monThuStart : (currentSchedule.monThuStart || '11:30');
-  const monThuEnd = /^\d{2}:\d{2}$/.test(input.monThuEnd || '') ? input.monThuEnd : (currentSchedule.monThuEnd || '19:00');
-  const friSunStart = /^\d{2}:\d{2}$/.test(input.friSunStart || '') ? input.friSunStart : (currentSchedule.friSunStart || '11:00');
-  const friSunEnd = /^\d{2}:\d{2}$/.test(input.friSunEnd || '') ? input.friSunEnd : (currentSchedule.friSunEnd || '20:00');
+  const monThuStart = /^\d{2}:\d{2}$/.test(input.monThuStart || '') ? input.monThuStart : (currentSchedule.monThuStart || '10:00');
+  const monThuEnd = /^\d{2}:\d{2}$/.test(input.monThuEnd || '') ? input.monThuEnd : (currentSchedule.monThuEnd || '21:00');
+  const friSunStart = /^\d{2}:\d{2}$/.test(input.friSunStart || '') ? input.friSunStart : (currentSchedule.friSunStart || '10:00');
+  const friSunEnd = /^\d{2}:\d{2}$/.test(input.friSunEnd || '') ? input.friSunEnd : (currentSchedule.friSunEnd || '21:00');
 
   return {
     enabled,
@@ -89,8 +88,27 @@ async function initScheduleManager() {
   try {
     const cloudData = await loadFromCloud(CLOUD_KEY);
     if (cloudData && typeof cloudData === 'object') {
-      currentSchedule = sanitizeSchedule(cloudData);
-      saveLocalSchedule(currentSchedule);
+      // Migrar automáticamente el horario antiguo de ahorro de Railway (11:30-19:00 / 11:00-20:00) al nuevo horario Contabo (10:00-21:00)
+      const isLegacyRailwayWindow = (
+        (cloudData.monThuStart === '11:30' && cloudData.monThuEnd === '19:00') ||
+        (cloudData.friSunStart === '11:00' && cloudData.friSunEnd === '20:00')
+      );
+      if (isLegacyRailwayWindow) {
+        currentSchedule = sanitizeSchedule({
+          ...cloudData,
+          monThuStart: '10:00',
+          monThuEnd: '21:00',
+          friSunStart: '10:00',
+          friSunEnd: '21:00',
+          updatedAt: new Date().toISOString(),
+          updatedBy: 'Migracion Contabo (10am-9pm)'
+        });
+        saveLocalSchedule(currentSchedule);
+        await saveToCloud(CLOUD_KEY, currentSchedule);
+      } else {
+        currentSchedule = sanitizeSchedule(cloudData);
+        saveLocalSchedule(currentSchedule);
+      }
     } else {
       await saveToCloud(CLOUD_KEY, currentSchedule);
     }
@@ -137,8 +155,8 @@ function getRacingScheduleStatus(nowMs = Date.now()) {
   const todayStart = isWeekendBlock ? currentSchedule.friSunStart : currentSchedule.monThuStart;
   const todayEnd = isWeekendBlock ? currentSchedule.friSunEnd : currentSchedule.monThuEnd;
 
-  const startMinutes = parseTimeToMinutes(todayStart, isWeekendBlock ? 660 : 690);
-  const endMinutes = parseTimeToMinutes(todayEnd, isWeekendBlock ? 1200 : 1140);
+  const startMinutes = parseTimeToMinutes(todayStart, 600);
+  const endMinutes = parseTimeToMinutes(todayEnd, 1260);
 
   const withinTimeWindow = (currentMinutes >= startMinutes && currentMinutes < endMinutes);
 
