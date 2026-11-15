@@ -30,7 +30,7 @@
       overflow: hidden;
     }
 
-    /* Único decodificador <video> para máxima ligereza en Smart TVs */
+    /* Decodificador base permanente (Mosaico 4 en 1 con Zoom Óptico Instantáneo 0.0s sin pantallazo negro) */
     #cotbSingleVideo {
       position: absolute;
       inset: 0;
@@ -39,6 +39,43 @@
       object-fit: fill;
       background: #030712;
       z-index: 1;
+      transform: scale(1);
+      transform-origin: 50% 50%;
+      transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+    #cotbSingleVideo.zoom-q1 {
+      transform-origin: 0% 0%;
+      transform: scale(2);
+    }
+    #cotbSingleVideo.zoom-q2 {
+      transform-origin: 100% 0%;
+      transform: scale(2);
+    }
+    #cotbSingleVideo.zoom-q3 {
+      transform-origin: 0% 100%;
+      transform: scale(2);
+    }
+    #cotbSingleVideo.zoom-q4 {
+      transform-origin: 100% 100%;
+      transform: scale(2);
+    }
+
+    /* Capa Full HD + Audio en Vivo que hace Cross-Fade suave encima del Zoom apenas tiene imagen lista */
+    #cotbHdOverlayVideo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      background: transparent;
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    #cotbHdOverlayVideo.hd-ready {
+      opacity: 1;
     }
 
     /* Rejilla gráfica 2x2 transparente sobre el video compuesto (sin selectores ni botones editables) */
@@ -364,8 +401,9 @@
 </head>
 <body>
   <div class="cotb-stage" id="cotbStage">
-    <!-- Único reproductor <video> para el televisor (reproduce el Mosaico 4-en-1 de servidor o la Carrera en Pantalla Completa) -->
+    <!-- Reproductor base permanente del Mosaico 4-en-1 + Capa Full HD de Carrera sin corte negro -->
     <video id="cotbSingleVideo" autoplay muted playsinline></video>
+    <video id="cotbHdOverlayVideo" playsinline></video>
 
     <div class="cotb-network-bug">
       <span class="bug-dot"></span>
@@ -449,14 +487,110 @@
     }
 
     const videoEl = document.getElementById('cotbSingleVideo');
+    const hdVideoEl = document.getElementById('cotbHdOverlayVideo');
     const stageEl = document.getElementById('cotbStage');
     let currentVideoSourceKey = '';
     let activeHls = null;
+    let currentHdSourceKey = '';
+    let activeHdHls = null;
+    let localHoldRemainingSec = null;
+    let localHoldPhaseActive = false;
 
     function getAuthSuffix() {
       const token = localStorage.getItem('visual_fx_token') || '';
       const deviceId = localStorage.getItem('visual_fx_device_id') || 'TV-COTB';
       return `&deviceId=${encodeURIComponent(deviceId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
+    }
+
+    function applyZoomQuadClass(quadIndex) {
+      videoEl.classList.remove('zoom-q1', 'zoom-q2', 'zoom-q3', 'zoom-q4');
+      if (quadIndex >= 1 && quadIndex <= 4) {
+        videoEl.classList.add(`zoom-q${quadIndex}`);
+      }
+    }
+
+    function stopHdOverlayStream() {
+      currentHdSourceKey = '';
+      hdVideoEl.classList.remove('hd-ready');
+      if (hdVideoEl._reconnectTimer) {
+        clearTimeout(hdVideoEl._reconnectTimer);
+        hdVideoEl._reconnectTimer = null;
+      }
+      if (activeHdHls) {
+        try {
+          activeHdHls.stopLoad();
+          activeHdHls.detachMedia();
+          activeHdHls.destroy();
+        } catch (e) {}
+        activeHdHls = null;
+      }
+      try {
+        hdVideoEl.onplaying = null;
+        hdVideoEl.onerror = null;
+        hdVideoEl.onended = null;
+        hdVideoEl.pause();
+        hdVideoEl.removeAttribute('src');
+        hdVideoEl.load();
+      } catch (e) {}
+      videoEl.muted = true; // El mosaico base es silencioso; el audio en vivo va por hdVideoEl
+    }
+
+    function startHdOverlayStream(sourceKey, streamUrl) {
+      if (currentHdSourceKey === sourceKey && !hdVideoEl.ended && !hdVideoEl.error) {
+        hdVideoEl.muted = !parentAllowsAudio;
+        if (hdVideoEl.paused && hdVideoEl.readyState >= 2) {
+          hdVideoEl.play().catch(() => {});
+        }
+        return;
+      }
+      stopHdOverlayStream();
+      currentHdSourceKey = sourceKey;
+
+      const isHlsManifest = streamUrl.includes('.m3u8');
+      hdVideoEl.muted = !parentAllowsAudio;
+      hdVideoEl.onplaying = () => {
+        if (currentHdSourceKey === sourceKey) {
+          hdVideoEl.classList.add('hd-ready');
+        }
+      };
+
+      if (isHlsManifest && window.Hls && Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: false,
+          lowLatencyMode: false,
+          backBufferLength: 0,
+          maxBufferLength: 4,
+          maxMaxBufferLength: 6
+        });
+        hls.loadSource(streamUrl);
+        hls.attachMedia(hdVideoEl);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          hdVideoEl.play().catch(() => {});
+        });
+        activeHdHls = hls;
+      } else {
+        hdVideoEl.autoplay = true;
+        hdVideoEl.src = streamUrl;
+        hdVideoEl.play().catch(() => {});
+        const reconnectHd = (delayMs = 2000) => {
+          if (hdVideoEl._reconnectTimer) clearTimeout(hdVideoEl._reconnectTimer);
+          hdVideoEl.classList.remove('hd-ready'); // Mientras reconecta HD se ve el zoom óptico continuo detrás
+          hdVideoEl._reconnectTimer = setTimeout(() => {
+            if (currentHdSourceKey === sourceKey) {
+              const sep = streamUrl.includes('?') ? '&' : '?';
+              hdVideoEl.src = `${streamUrl}${sep}_t=${Date.now()}`;
+              hdVideoEl.play().catch(() => {});
+            }
+          }, delayMs);
+        };
+        hdVideoEl.onerror = () => reconnectHd(2200);
+        hdVideoEl.onended = () => reconnectHd(1500);
+      }
+    }
+
+    function ensureMosaicBaseStream() {
+      const compositeUrl = `/api/multicanal/composite.mp4?tracks=${encodeURIComponent(tracksQuery)}${getAuthSuffix()}`;
+      switchSingleVideoStream(`MOSAIC:${tracksQuery || 'default'}`, compositeUrl, false);
     }
 
     function switchSingleVideoStream(sourceKey, streamUrl, enableAudio) {
@@ -666,10 +800,16 @@
           }
         });
 
-        // 2. Evaluar si el Director Automático ordena Pantalla Completa (Partida + Carrera + 1 min Resultados) o Mosaico 4 en 1
+        // Mantener SIEMPRE vivo el mosaico base para transición 0.0s sin corte negro
+        ensureMosaicBaseStream();
+
+        // 2. Evaluar si el Director Automático ordena Pantalla Completa (Partida + Carrera + 1 min adicional) o Mosaico 4 en 1
         if (state.mode === 'FULLSCREEN_RACE' && state.fullscreenTrack) {
           const ft = state.fullscreenTrack;
           stageEl.classList.add('cotb-Stage-Fullscreen');
+
+          // A) Zoom óptico instantáneo (0.0s) sobre el cuadrante de la carrera en marcha
+          applyZoomQuadClass(ft.quadIndex);
 
           const bannerEl = document.getElementById('fsTopBanner');
           const pillEl = document.getElementById('fsLivePill');
@@ -681,50 +821,90 @@
           const resBodyEl = document.getElementById('fsResBody');
 
           const isResultsHold = (ft.phase === 'RESULTS_HOLD');
+          localHoldPhaseActive = isResultsHold;
+          if (isResultsHold && typeof ft.holdRemainingSec === 'number') {
+            localHoldRemainingSec = ft.holdRemainingSec;
+          } else if (!isResultsHold) {
+            localHoldRemainingSec = null;
+          }
+
           if (bannerEl) bannerEl.classList.toggle('results-mode', isResultsHold);
           if (pillEl) {
             pillEl.textContent = isResultsHold
-              ? '🏆 OFICIAL / RESULTADOS'
+              ? '🏁 FINAL + 1 MIN'
               : (ft.phase === 'STARTING' ? '🏁 ¡PARTIDA EN VIVO!' : '🏇 EN CARRERA');
           }
           if (titleEl) titleEl.textContent = `${ft.flag || '🇺🇸'} ${ft.name}`;
-          if (metaEl && ft.raceInfo) {
-            metaEl.textContent = `CARRERA ${ft.raceInfo.raceNumber || ''} ${ft.raceInfo.distance ? '• ' + ft.raceInfo.distance : ''} ${ft.raceInfo.surface ? '(' + ft.raceInfo.surface + ')' : ''}`;
+
+          const baseRaceText = (ft.raceInfo && ft.raceInfo.raceNumber)
+            ? `CARRERA ${ft.raceInfo.raceNumber}${ft.raceInfo.distance ? ' • ' + ft.raceInfo.distance : ''}${ft.raceInfo.surface ? ' (' + ft.raceInfo.surface + ')' : ''}`
+            : 'TRANSMISIÓN EN VIVO';
+
+          if (metaEl) {
+            metaEl.dataset.baseText = baseRaceText;
+            metaEl.textContent = (isResultsHold && localHoldRemainingSec !== null)
+              ? `${baseRaceText} • VOLVIENDO A 4 CANALES EN ${localHoldRemainingSec}s`
+              : baseRaceText;
           }
 
-          const resultToShow = (ft.raceInfo && ft.raceInfo.officialResult) || ft.lastResult;
-          if (isResultsHold && resultToShow && resBoxEl && resBodyEl) {
+          const currentRaceNum = ft.raceInfo ? ft.raceInfo.raceNumber : null;
+          const matchingOfficialResult = (ft.raceInfo && ft.raceInfo.officialResult)
+            || (ft.lastResult && currentRaceNum && ft.lastResult.raceNumber === currentRaceNum ? ft.lastResult : null);
+
+          if (isResultsHold && matchingOfficialResult && resBoxEl && resBodyEl) {
             resBoxEl.classList.add('visible');
-            if (resTitleEl) resTitleEl.textContent = `🏆 RESULTADOS OFICIALES — ${ft.name.toUpperCase()} (CARRERA ${resultToShow.raceNumber})`;
-            if (resTimerEl) resTimerEl.textContent = `Volviendo al Mosaico 4 en 1 en ${ft.holdRemainingSec || 60}s...`;
-            resBodyEl.innerHTML = renderFullscreenResultsHtml(resultToShow);
+            if (resTitleEl) resTitleEl.textContent = `🏆 RESULTADOS OFICIALES — ${ft.name.toUpperCase()} (CARRERA ${matchingOfficialResult.raceNumber})`;
+            if (resTimerEl) resTimerEl.textContent = `Volviendo al Mosaico 4 en 1 en ${localHoldRemainingSec || 60}s...`;
+            resBodyEl.innerHTML = renderFullscreenResultsHtml(matchingOfficialResult);
           } else if (resBoxEl) {
             resBoxEl.classList.remove('visible');
           }
 
-          const sepFs = ft.proxyUrl.includes('?') ? '&' : '?';
-          const streamUrl = `${ft.proxyUrl}${sepFs}quality=FULL${getAuthSuffix()}`;
-          switchSingleVideoStream(`FS:${ft.trackId}`, streamUrl, true);
+          // B) Conectar en segundo plano la señal Full HD + Audio en vivo y hacer Cross-Fade solo cuando ya tenga imagen
+          if (ft.proxyUrl) {
+            const sepFs = ft.proxyUrl.includes('?') ? '&' : '?';
+            const streamUrl = `${ft.proxyUrl}${sepFs}quality=FULL${getAuthSuffix()}`;
+            startHdOverlayStream(`FS:${ft.trackId}`, streamUrl);
+          }
         } else {
+          localHoldPhaseActive = false;
+          localHoldRemainingSec = null;
           stageEl.classList.remove('cotb-Stage-Fullscreen');
-          const compositeUrl = `/api/multicanal/composite.mp4?tracks=${encodeURIComponent(tracksQuery)}${getAuthSuffix()}`;
-          switchSingleVideoStream(`MOSAIC:${tracksQuery || 'default'}`, compositeUrl, false);
+          stopHdOverlayStream();
+          applyZoomQuadClass(0);
         }
       } catch (err) {
         console.error('Error sincronizando Director Capital OTB:', err);
       }
     }
 
+    // Reloj local segundo a segundo para la cuenta regresiva post-carrera (+1 minuto adicional)
+    setInterval(() => {
+      if (!localHoldPhaseActive || localHoldRemainingSec === null) return;
+      if (localHoldRemainingSec > 0) localHoldRemainingSec -= 1;
+      const metaEl = document.getElementById('fsRaceMeta');
+      const resTimerEl = document.getElementById('fsResTimer');
+      if (metaEl && metaEl.dataset.baseText) {
+        metaEl.textContent = `${metaEl.dataset.baseText} • VOLVIENDO A 4 CANALES EN ${localHoldRemainingSec}s`;
+      }
+      if (resTimerEl) {
+        resTimerEl.textContent = `Volviendo al Mosaico 4 en 1 en ${localHoldRemainingSec}s...`;
+      }
+    }, 1000);
+
     window.addEventListener('message', (event) => {
       const data = event.data;
       if (data && data.type === 'VFX_AUDIO_STATE') {
         parentAllowsAudio = !data.muted;
-        videoEl.muted = !parentAllowsAudio;
+        if (currentHdSourceKey) {
+          hdVideoEl.muted = !parentAllowsAudio;
+        }
       }
     });
 
+    ensureMosaicBaseStream();
     pollDirectorState();
-    setInterval(pollDirectorState, 10000);
+    setInterval(pollDirectorState, 4000);
   </script>
 </body>
 </html>

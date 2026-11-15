@@ -204,24 +204,198 @@ function getUsEasternDateParts() {
 }
 
 /**
- * Convierte una hora "1:30 PM ET" del día actual en America/New_York a timestamp UTC en milisegundos.
+ * Convierte una hora "1:30 PM ET", "5:35 PM CT", "1:15 PM MT" o "12:30 PM PT" de Equibase
+ * a timestamp UTC exacto en milisegundos respetando el huso horario real del hipódromo.
  */
-function parseEtPostTimeToEpochMs(postTimeStr) {
+function parseTrackPostTimeToEpochMs(postTimeStr, trackId = '') {
   if (!postTimeStr) return null;
-  const m = String(postTimeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  const m = String(postTimeStr).match(/(\d{1,2}):(\d{2})\s*(AM|PM)(?:\s*(E[SD]?T|C[SD]?T|M[SD]?T|P[SD]?T))?/i);
   if (!m) return null;
   let hour = parseInt(m[1], 10);
   const minute = parseInt(m[2], 10);
   const ampm = m[3].toUpperCase();
+  const tzToken = (m[4] || 'ET').toUpperCase();
   if (ampm === 'PM' && hour < 12) hour += 12;
   if (ampm === 'AM' && hour === 12) hour = 0;
 
-  const etNow = getUsEasternDateParts();
-  const nowMs = Date.now();
-  const etCurrentSecOfDay = (etNow.hour * 3600) + (etNow.minute * 60) + etNow.second;
+  let ianaTz = 'America/New_York';
+  if (tzToken.startsWith('P')) {
+    ianaTz = 'America/Los_Angeles';
+  } else if (tzToken.startsWith('M')) {
+    ianaTz = trackId === 'turf-paradise' ? 'America/Phoenix' : 'America/Denver';
+  } else if (tzToken.startsWith('C')) {
+    ianaTz = 'America/Chicago';
+  }
+
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: ianaTz,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = {};
+  for (const p of fmt.formatToParts(now)) {
+    parts[p.type] = p.value;
+  }
+  const curHour = parseInt(parts.hour, 10) % 24;
+  const curMin = parseInt(parts.minute, 10);
+  const curSec = parseInt(parts.second, 10);
+
+  const nowMs = now.getTime();
+  const tzCurrentSecOfDay = (curHour * 3600) + (curMin * 60) + curSec;
   const targetSecOfDay = (hour * 3600) + (minute * 60);
-  const diffSec = targetSecOfDay - etCurrentSecOfDay;
+  const diffSec = targetSecOfDay - tzCurrentSecOfDay;
   return nowMs + (diffSec * 1000);
+}
+
+// ============================================================================
+// Alimentador en Tiempo Real de Partidas (Tote Wire / Triple7 carreras_programadas.php)
+// 1 sola petición ligera (2 KB) cada 10s en servidor para las 38 TVs.
+// Detecta el segundo exacto en que la carrera entra en aparato / cierra jugadas (MTP = 0).
+// ============================================================================
+const TRIPLE7_NAME_TO_TRACK_ID = {
+  'AQUEDUCT': 'aqueduct-racetrack',
+  'BELMONT PARK': 'belmont-park',
+  'SARATOGA': 'saratoga',
+  'SARATOGA CARRETAS': 'saratoga-harness',
+  'GULFSTREAM PARK': 'gulfstream-park',
+  'LAUREL PARK': 'laurel-park',
+  'TAMPA BAY': 'tampa-bay-downs',
+  'TAMPA BAY DOWNS': 'tampa-bay-downs',
+  'PARX RACING': 'parx-racing',
+  'FINGER LAKES': 'finger-lakes',
+  'INDIANA GRAND RACE COURSE': 'horseshoe-indianapolis',
+  'HORSESHOE INDIANAPOLIS': 'horseshoe-indianapolis',
+  'MAHONING VALLEY': 'mahoning-valley',
+  'MAHONING VALLEY RACE': 'mahoning-valley',
+  'THISTLEDOWN': 'thistledown',
+  'MOUNTAINEER': 'mountaineer-park',
+  'PRESQUE ISLE': 'presque-isle',
+  'CHURCHILL DOWNS': 'churchill-downs',
+  'KEENELAND': 'keeneland',
+  'DEL MAR': 'del-mar',
+  'SANTA ANITA': 'santa-anita-park',
+  'LOS ALAMITOS': 'los-alamitos',
+  'WOODBINE': 'woodbine',
+  'WOODBINE HARNESS': 'woodbine-harness',
+  'CHARLES TOWN': 'charles-town',
+  'DELTA DOWNS': 'delta-downs',
+  'EVANGELINE DOWNS': 'evangeline-downs',
+  'REMINGTON PARK': 'remington-park',
+  'PENN NATIONAL': 'penn-national',
+  'LONE STAR': 'lone-star-park',
+  'WILL ROGERS': 'will-rogers-downs',
+  'ZIA PARK': 'zia-park',
+  'OAKLAWN PARK': 'oaklawn-park',
+  'FAIR GROUNDS': 'fair-grounds',
+  'TURFWAY PARK': 'turfway-park',
+  'TURF PARADISE': 'turf-paradise',
+  'SAM HOUSTON': 'sam-houston',
+  'DELAWARE PARK': 'delaware-park',
+  'MONMOUTH PARK': 'monmouth-park',
+  'COLONIAL DOWNS': 'colonial-downs',
+  'HAWTHORNE': 'hawthorne',
+  'MEADOWLANDS': 'meadowlands',
+  'HOOSIER PARK': 'hoosier-park',
+  'YONKERS RACEWAY': 'yonkers-raceway',
+  'POCONO DOWNS': 'pocono-downs',
+  'NORTHFIELD PARK': 'northfield-park',
+  'DOVER DOWNS': 'dover-downs',
+  'DAYTON RACEWAY': 'dayton-raceway',
+  'THE MEADOWS': 'the-meadows',
+  'HARRAHS PHILADELPHIA': 'harrahs-philadelphia',
+  'BATAVIA DOWNS': 'batavia-downs',
+  'VERNON DOWNS': 'vernon-downs',
+  'AUSTRALIA A - FLEMINGTON': 'australia-flemington'
+};
+
+let triple7LiveCache = { fetchedAt: 0, map: new Map() };
+let prevTriple7LiveMap = new Map();
+const completedFullscreenSet = new Set(); // "${dateKey}:${trackId}:${raceNum}"
+let currentLockedFullscreenKey = null;    // "${hubKey}" -> trackId actualmente en pantalla completa
+
+async function fetchTriple7LiveCountdowns() {
+  const now = Date.now();
+  if ((now - triple7LiveCache.fetchedAt) < 10000) {
+    return triple7LiveCache.map;
+  }
+  try {
+    const res = await fetch(`https://ny7.undo.it/includes/carreras_programadas.php?js=${Math.random()}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36' },
+      timeout: 4500
+    });
+    if (!res.ok) return triple7LiveCache.map;
+    const html = await res.text();
+    const trMatches = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
+    const nextMap = new Map();
+
+    for (const tr of trMatches) {
+      const tds = (tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || []).map(x =>
+        x.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+      );
+      if (tds.length < 3) continue;
+      // Ej: "REMINGTON PARK Carr: ...3" | "02:00:00pm" | "00:00:33"
+      const mTrack = tds[0].match(/^(.+?)\s+Carr:\s*\.+(\d+)/i);
+      const mTimer = tds[2].match(/(\d{2}):(\d{2}):(\d{2})/);
+      if (!mTrack || !mTimer) continue;
+
+      const rawName = mTrack[1].trim().toUpperCase();
+      const raceNumber = parseInt(mTrack[2], 10);
+      const remainingSec = (parseInt(mTimer[1], 10) * 3600) + (parseInt(mTimer[2], 10) * 60) + parseInt(mTimer[3], 10);
+
+      let trackId = TRIPLE7_NAME_TO_TRACK_ID[rawName];
+      if (!trackId) {
+        for (const [k, v] of Object.entries(TRIPLE7_NAME_TO_TRACK_ID)) {
+          if (rawName.includes(k)) { trackId = v; break; }
+        }
+      }
+      if (!trackId || !raceNumber) continue;
+      if (!nextMap.has(trackId) || remainingSec < nextMap.get(trackId).remainingSec) {
+        nextMap.set(trackId, { raceNumber, remainingSec, observedAt: now });
+      }
+    }
+
+    // Detectar qué carreras acaban de CERRAR TAQUILLA / DAR LA PARTIDA (estaban en <= 95s y acaban de desaparecer por STOP BETTING)
+    const { dateKey } = getUsEasternDateParts();
+    for (const [tid, prevEntry] of prevTriple7LiveMap.entries()) {
+      const curEntry = nextMap.get(tid);
+      const justClosed = !curEntry || curEntry.raceNumber > prevEntry.raceNumber;
+      const raceKey = `${dateKey}:${tid}:${prevEntry.raceNumber}`;
+      if (justClosed && prevEntry.remainingSec <= 95 && !completedFullscreenSet.has(raceKey) && !activeRaceHoldState.has(tid)) {
+        activeRaceHoldState.set(tid, {
+          raceNumber: prevEntry.raceNumber,
+          startedAtMs: now,
+          finishDetectedAtMs: null,
+          holdUntilMs: now + (140 + POST_RESULTS_HOLD_SEC) * 1000,
+          source: 'TOTE_STOP_BETTING'
+        });
+        console.log(`🏁 [Auto-Director Capital OTB] ¡PARTIDA DETECTADA (STOP BETTING)! ${tid} Carrera ${prevEntry.raceNumber} -> Pantalla Completa.`);
+      }
+    }
+
+    // También activar Pantalla Completa cuando faltan <= 25s para la partida (caballos entrando al aparato, MTP = 0)
+    for (const [tid, curEntry] of nextMap.entries()) {
+      const raceKey = `${dateKey}:${tid}:${curEntry.raceNumber}`;
+      if (curEntry.remainingSec <= 25 && !completedFullscreenSet.has(raceKey) && !activeRaceHoldState.has(tid)) {
+        activeRaceHoldState.set(tid, {
+          raceNumber: curEntry.raceNumber,
+          startedAtMs: now,
+          finishDetectedAtMs: null,
+          holdUntilMs: now + (curEntry.remainingSec + 140 + POST_RESULTS_HOLD_SEC) * 1000,
+          source: 'TOTE_MTP_0'
+        });
+        console.log(`🏁 [Auto-Director Capital OTB] ¡MTP 0 (${curEntry.remainingSec}s)! ${tid} Carrera ${curEntry.raceNumber} -> Pantalla Completa.`);
+      }
+    }
+
+    prevTriple7LiveMap = nextMap;
+    triple7LiveCache = { fetchedAt: now, map: nextMap };
+    return nextMap;
+  } catch (e) {
+    return triple7LiveCache.map;
+  }
 }
 
 /**
@@ -266,7 +440,7 @@ async function fetchTrackRaceCard(trackId) {
         continue;
       }
 
-      const postTimestampMs = parseEtPostTimeToEpochMs(postTimeEt);
+      const postTimestampMs = parseTrackPostTimeToEpochMs(postTimeEt, trackId);
       races.push({
         raceNumber: raceNum,
         purse: cells[1] || '',
@@ -274,7 +448,7 @@ async function fetchTrackRaceCard(trackId) {
         distance: cells[3] || '',
         surface: cells[4] || '',
         starters: cells[5] || '',
-        postTimeEt: postTimeEt.replace(/\s*ET$/i, '').trim(),
+        postTimeEt: postTimeEt.trim(),
         postTimestampMs
       });
     }
@@ -296,7 +470,8 @@ async function fetchTrackSummaryResults(trackId) {
 
   const { mmddyy, dateKey } = getUsEasternDateParts();
   const cached = raceSummaryCache.get(trackId);
-  if (cached && cached.dateKey === dateKey && (Date.now() - cached.fetchedAt) < SUMMARY_TTL_MS) {
+  const effectiveSummaryTtl = activeRaceHoldState.has(trackId) ? 15000 : SUMMARY_TTL_MS;
+  if (cached && cached.dateKey === dateKey && (Date.now() - cached.fetchedAt) < effectiveSummaryTtl) {
     return cached.completedRaces;
   }
 
@@ -390,10 +565,12 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
   }
 
   const fixedFourIds = resolveFourMulticanalTracks(catalogMap, requestedTrackIds);
+  const toteLiveMap = await fetchTriple7LiveCountdowns();
+  const { dateKey } = getUsEasternDateParts();
 
   const now = Date.now();
   const quads = [];
-  let fullscreenCandidate = null;
+  const candidateFullscreenList = [];
 
   for (let i = 0; i < 4; i++) {
     const trackId = fixedFourIds[i];
@@ -405,7 +582,7 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
       fetchTrackSummaryResults(trackId)
     ]);
 
-    // Encontrar la última carrera oficial completada y la próxima carrera pendiente
+    // Encontrar la última carrera oficial completada
     let lastCompleted = null;
     for (const [, resObj] of completedRaces.entries()) {
       if (!lastCompleted || resObj.raceNumber > lastCompleted.raceNumber) {
@@ -413,36 +590,107 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
       }
     }
 
-    const rtnLiveRaceNum = ch.race ? parseInt(String(ch.race), 10) : null;
-    const rtnLiveMtp = (ch.mtp !== undefined && ch.mtp !== '') ? parseInt(String(ch.mtp), 10) : null;
+    const toteLive = toteLiveMap.get(trackId) || null;
+    const rtnLiveRaceNum = toteLive ? toteLive.raceNumber : (ch.race ? parseInt(String(ch.race), 10) : null);
+    const rtnLiveMtp = toteLive
+      ? Math.max(0, Math.floor(toteLive.remainingSec / 60))
+      : ((ch.mtp !== undefined && ch.mtp !== '') ? parseInt(String(ch.mtp), 10) : null);
 
+    // Próxima carrera no completada aún (permite hasta +18 min sobre hora programada por retrasos reales en aparato)
     const nextRace = races.find(r => {
       if (completedRaces.has(r.raceNumber)) return false;
       if (rtnLiveRaceNum && !Number.isNaN(rtnLiveRaceNum) && r.raceNumber < rtnLiveRaceNum) return false;
-      if (r.postTimestampMs && (now - r.postTimestampMs) > (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC + 180) * 1000) {
+      if (r.postTimestampMs && (now - r.postTimestampMs) > 18 * 60 * 1000) {
         return false;
       }
       return true;
-    }) || null;
+    }) || (toteLive ? {
+      raceNumber: toteLive.raceNumber,
+      distance: '',
+      surface: '',
+      purse: '',
+      postTimeEt: 'EN VIVO',
+      postTimestampMs: now + (toteLive.remainingSec * 1000)
+    } : null);
 
     let mtpMinutes = null;
+    let remainingExactSec = toteLive ? Math.max(0, toteLive.remainingSec - Math.round((now - toteLive.observedAt) / 1000)) : null;
     let secFromPost = null;
 
-    if (nextRace && nextRace.postTimestampMs) {
+    if (remainingExactSec !== null) {
+      mtpMinutes = Math.max(0, Math.ceil(remainingExactSec / 60));
+      secFromPost = -remainingExactSec;
+    } else if (nextRace && nextRace.postTimestampMs) {
       secFromPost = Math.round((now - nextRace.postTimestampMs) / 1000);
       mtpMinutes = Math.max(0, Math.ceil((nextRace.postTimestampMs - now) / 60000));
     }
-    if (nextRace && rtnLiveRaceNum === nextRace.raceNumber && rtnLiveMtp !== null && !Number.isNaN(rtnLiveMtp)) {
-      mtpMinutes = Math.max(0, rtnLiveMtp);
+
+    // Respaldo Equibase si el hipódromo no aparece en Triple7 (ej. circuitos internacionales/especiales):
+    // Si estamos entre -20s y +180s del Post Time local y aún no hay resultado oficial, activar estado de carrera
+    if (!toteLive && nextRace && secFromPost !== null && secFromPost >= -20 && secFromPost <= 180 && ch.onAir && ch.type !== 'iframe') {
+      const raceKey = `${dateKey}:${trackId}:${nextRace.raceNumber}`;
+      if (!completedFullscreenSet.has(raceKey) && !activeRaceHoldState.has(trackId)) {
+        const isQuarterHorse = /\bY\b|Yards/i.test(nextRace.distance || '');
+        const runDur = isQuarterHorse ? 70 : DEFAULT_RACE_RUN_DURATION_SEC;
+        activeRaceHoldState.set(trackId, {
+          raceNumber: nextRace.raceNumber,
+          startedAtMs: now,
+          runDurationSec: runDur,
+          finishDetectedAtMs: null,
+          holdUntilMs: now + (runDur + POST_RESULTS_HOLD_SEC) * 1000,
+          source: 'EQB_POST_TIME'
+        });
+      }
     }
 
-    // Verificar ventana de Director Automático (Partida -> Carrera -> +60s de Resultados Oficiales)
+    // Evaluar Máquina de Estados Capital OTB: PARTIDA -> CARRERA -> FINAL + 60s ADICIONALES -> REGRESO A 4 EN 1
     let trackPhase = 'MOSAIC';
     let holdRemainingSec = 0;
     let activeRaceInfo = null;
 
-    // Caso A: La última carrera acaba de publicar resultados oficiales hace menos de 60 segundos (1 minuto de resultados en pantalla)
-    if (lastCompleted && (now - lastCompleted.detectedAt) <= POST_RESULTS_HOLD_SEC * 1000 && ch.onAir) {
+    const hold = activeRaceHoldState.get(trackId);
+    if (hold && ch.onAir && ch.type !== 'iframe') {
+      const matchedMeta = races.find(r => r.raceNumber === hold.raceNumber) || nextRace || {};
+      const isQuarterHorse = /\bY\b|Yards/i.test(matchedMeta.distance || '');
+      const expectedRunSec = hold.runDurationSec || (isQuarterHorse ? 70 : 140);
+
+      // Si Equibase ya publicó el resultado oficial de esta carrera, fijar exactamente +60s desde ese instante
+      if (completedRaces.has(hold.raceNumber) && !hold.finishDetectedAtMs) {
+        hold.finishDetectedAtMs = now;
+        hold.holdUntilMs = now + (POST_RESULTS_HOLD_SEC * 1000);
+      }
+
+      const elapsedSec = Math.round((now - hold.startedAtMs) / 1000);
+      if (now >= hold.holdUntilMs || elapsedSec > MAX_TOTAL_FULLSCREEN_SEC) {
+        activeRaceHoldState.delete(trackId);
+        completedFullscreenSet.add(`${dateKey}:${trackId}:${hold.raceNumber}`);
+      } else {
+        holdRemainingSec = Math.max(1, Math.ceil((hold.holdUntilMs - now) / 1000));
+        if (hold.finishDetectedAtMs || elapsedSec >= expectedRunSec) {
+          trackPhase = 'RESULTS_HOLD';
+          // Garantizar que al cruzar la meta tenga exactamente 1 minuto adicional (60s)
+          if (!hold.finishDetectedAtMs) {
+            hold.finishDetectedAtMs = now;
+            hold.holdUntilMs = now + (POST_RESULTS_HOLD_SEC * 1000);
+            holdRemainingSec = POST_RESULTS_HOLD_SEC;
+          }
+        } else if (elapsedSec < 22) {
+          trackPhase = 'STARTING';
+        } else {
+          trackPhase = 'RACING';
+        }
+
+        const officialRes = completedRaces.get(hold.raceNumber) || (lastCompleted && lastCompleted.raceNumber === hold.raceNumber ? lastCompleted : null);
+        activeRaceInfo = {
+          raceNumber: hold.raceNumber,
+          distance: matchedMeta.distance || '',
+          surface: matchedMeta.surface || '',
+          postTimeEt: matchedMeta.postTimeEt || '',
+          officialResult: officialRes
+        };
+      }
+    } else if (lastCompleted && lastCompleted.detectedAt > 0 && (now - lastCompleted.detectedAt) <= POST_RESULTS_HOLD_SEC * 1000 && ch.onAir && ch.type !== 'iframe') {
+      // Si acaba de salir un resultado oficial fresco hace < 60s, mostrar el minuto de dividendos oficiales
       trackPhase = 'RESULTS_HOLD';
       holdRemainingSec = Math.max(1, Math.ceil(((lastCompleted.detectedAt + POST_RESULTS_HOLD_SEC * 1000) - now) / 1000));
       const matchedRaceMeta = races.find(r => r.raceNumber === lastCompleted.raceNumber);
@@ -453,42 +701,21 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
         officialResult: lastCompleted
       };
     }
-    // Caso B: La próxima carrera está dando la partida (45s antes del Post Time hasta que termina la carrera + 1 min)
-    // Se valida que el MTP en vivo de RTN sea <= 1 min para no tomar pantalla completa si la carrera tiene retraso en hipódromo.
-    else if (
-      nextRace &&
-      secFromPost !== null &&
-      secFromPost >= -PRE_POST_TAKEOVER_SEC &&
-      secFromPost <= (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC) &&
-      (mtpMinutes === null || mtpMinutes <= 1) &&
-      ch.onAir
-    ) {
-      if (secFromPost <= DEFAULT_RACE_RUN_DURATION_SEC) {
-        trackPhase = secFromPost < 10 ? 'STARTING' : 'RACING';
-        holdRemainingSec = (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC) - secFromPost;
-      } else {
-        trackPhase = 'RESULTS_HOLD';
-        holdRemainingSec = (DEFAULT_RACE_RUN_DURATION_SEC + POST_RESULTS_HOLD_SEC) - secFromPost;
-      }
-      activeRaceInfo = {
-        raceNumber: nextRace.raceNumber,
-        distance: nextRace.distance,
-        surface: nextRace.surface,
-        postTimeEt: nextRace.postTimeEt,
-        officialResult: lastCompleted && lastCompleted.raceNumber === nextRace.raceNumber ? lastCompleted : null
-      };
-    }
 
     const allRacesDone = races.length > 0 && !nextRace && completedRaces.size >= races.length;
     let statusBadge = 'SEÑAL EN VIVO';
-    if (trackPhase === 'STARTING') {
-      statusBadge = `🏁 ¡PARTIDA! CARRERA ${nextRace.raceNumber}`;
-    } else if (trackPhase === 'RACING') {
-      statusBadge = `🏇 EN CARRERA • R${nextRace.raceNumber} (${nextRace.distance})`;
-    } else if (trackPhase === 'RESULTS_HOLD') {
-      statusBadge = `🏆 RESULTADOS OFICIALES • R${activeRaceInfo.raceNumber} (${holdRemainingSec}s)`;
-    } else if (nextRace) {
-      statusBadge = `CARRERA ${nextRace.raceNumber} • MTP ${mtpMinutes} MIN (${nextRace.postTimeEt})`;
+    if (trackPhase === 'STARTING' && activeRaceInfo) {
+      statusBadge = `🏁 ¡PARTIDA! CARRERA ${activeRaceInfo.raceNumber}`;
+    } else if (trackPhase === 'RACING' && activeRaceInfo) {
+      statusBadge = `🏇 EN CARRERA • R${activeRaceInfo.raceNumber}${activeRaceInfo.distance ? ' (' + activeRaceInfo.distance + ')' : ''}`;
+    } else if (trackPhase === 'RESULTS_HOLD' && activeRaceInfo) {
+      statusBadge = `🏆 FINAL / PIZARRA • R${activeRaceInfo.raceNumber} (${holdRemainingSec}s)`;
+    } else if (nextRace && remainingExactSec !== null && remainingExactSec <= 300) {
+      const mm = Math.floor(remainingExactSec / 60);
+      const ss = String(remainingExactSec % 60).padStart(2, '0');
+      statusBadge = `CARRERA ${nextRace.raceNumber} • PARTIDA EN ${mm}:${ss}`;
+    } else if (nextRace && mtpMinutes !== null) {
+      statusBadge = `CARRERA ${nextRace.raceNumber} • MTP ${mtpMinutes} MIN${nextRace.postTimeEt && nextRace.postTimeEt !== 'EN VIVO' ? ' (' + nextRace.postTimeEt + ')' : ''}`;
     } else if (allRacesDone) {
       statusBadge = `JORNADA FINALIZADA (${completedRaces.size} CARRERAS)`;
     }
@@ -526,8 +753,8 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
 
     quads.push(quadData);
 
-    if ((trackPhase === 'STARTING' || trackPhase === 'RACING' || trackPhase === 'RESULTS_HOLD') && !fullscreenCandidate) {
-      fullscreenCandidate = {
+    if (trackPhase === 'STARTING' || trackPhase === 'RACING' || trackPhase === 'RESULTS_HOLD') {
+      candidateFullscreenList.push({
         quadIndex: i + 1,
         trackId: ch.id,
         name: ch.name,
@@ -539,8 +766,22 @@ async function evaluateMulticanalDirector(channelsCatalog, requestedTrackIds = [
         streamUrl: quadData.streamUrl,
         raceInfo: activeRaceInfo,
         lastResult: quadData.lastResult
-      };
+      });
     }
+  }
+
+  // Arbitraje Capital OTB:
+  // 1) Una carrera en vivo (STARTING / RACING) siempre tiene prioridad sobre un post-carrera (RESULTS_HOLD).
+  // 2) Si la pista actualmente en pantalla completa sigue en vivo, mantenerla fija sin saltar entre canales.
+  let fullscreenCandidate = null;
+  if (candidateFullscreenList.length > 0) {
+    const liveRunning = candidateFullscreenList.filter(c => c.phase === 'STARTING' || c.phase === 'RACING');
+    const pool = liveRunning.length > 0 ? liveRunning : candidateFullscreenList;
+    const sticky = currentLockedFullscreenKey ? pool.find(c => c.trackId === currentLockedFullscreenKey) : null;
+    fullscreenCandidate = sticky || pool[0];
+    currentLockedFullscreenKey = fullscreenCandidate.trackId;
+  } else {
+    currentLockedFullscreenKey = null;
   }
 
   return {
