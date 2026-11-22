@@ -323,6 +323,24 @@ function syncMulticanalChannels(channelsCatalog) {
     'Capital OTB Auto-Director'
   );
 
+  // Deduplicación de compositor: si Capital OTB y Multivisual 1 tienen los mismos 4 hipódromos en distinto orden,
+  // unificar el orden para compartir 1 solo compositor FFmpeg 4-en-1 en el servidor (~50% menos CPU).
+  const mv1Preset = presets.find(p => p.id === 'multivisual-1');
+  const cotbPreset = presets.find(p => p.id === 'capital-otb');
+  if (mv1Preset && cotbPreset) {
+    const k1 = normalizeCombinationKey(mv1Preset.multicanalTracks || []);
+    const k2 = normalizeCombinationKey(cotbPreset.multicanalTracks || []);
+    if (k1 && k1 === k2 && mv1Preset.multicanalTracks.join(',') !== cotbPreset.multicanalTracks.join(',')) {
+      cotbPreset.multicanalTracks = [...mv1Preset.multicanalTracks];
+      cotbPreset.multicanalSummary = mv1Preset.multicanalSummary;
+      cotbPreset.statusText = `4 en 1: ${mv1Preset.multicanalSummary}`;
+      cotbPreset.nextRace = `Incluye: ${mv1Preset.multicanalSummary}`;
+      const sharedUrl = `/capital-otb.html?tracks=${encodeURIComponent(cotbPreset.multicanalTracks.join(','))}&title=${encodeURIComponent(cotbPreset.name)}`;
+      cotbPreset.streamUrl = sharedUrl;
+      cotbPreset.iframeUrl = sharedUrl;
+    }
+  }
+
   // Limpiar del catálogo cualquier multicanal viejo no activo
   const activePresetIds = new Set(presets.map(p => p.id));
   for (let i = channelsCatalog.length - 1; i >= 0; i--) {
